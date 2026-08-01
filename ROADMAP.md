@@ -11,6 +11,13 @@ and the App Store Connect records should not be created until this is settled**,
 because renaming either afterwards is disproportionately painful (ASC bundle IDs
 in particular are permanent).
 
+**Preferred register: tongue-in-cheek.** A wry name is wanted over an earnest
+one — but the joke has to be **about tuning**, not merely adjacent to it, and it
+has to land in one step. `Pitchfork` and the *tine*/*tune* pun worked because
+they sit on top of the subject; `Sumu`'s fog horn and `Fork Horn` failed because
+they're funny about something else, or ask the reader to assemble too many
+pieces.
+
 ### Screening checklist — run this BEFORE getting attached to a candidate
 
 Brainstorming has repeatedly produced names that felt right and turned out to be
@@ -75,6 +82,7 @@ target**, in one of two shapes:
 | Reference-point metaphor | *Polaris …* | A fixed point everything is measured against — semantically apt, and unrelated to the Finland/north angle, which doesn't carry meaning here. Heavily used commercially, so availability is doubtful. |
 | Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
 | Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout* | Concrete and violin-native; risks being obscure to guitarists. |
+| Tongue-in-cheek, on-topic | *Wolf* / *Wolftone*, *Nitpick*, *Sour*, *Peg Leg* | A wry name is wanted — but **the joke has to be about tuning**, not merely adjacent to it. (`Sumu` was briefly appealing for its accidental fog-horn image; a fog horn is funny but says nothing about pitch, so it reads as disconnected.) `Wolf` is the strongest: a *wolf tone* is the real term for a note that howls on a badly-resonating string — violin-native, technical, and dryly funny to the target audience while reading as a normal short name to everyone else. `Nitpick` puts "pitch" in a word that describes what a cent-accurate tuner does. |
 | Tine / tune wordplay | *Tine Up*, *Tine*, *Attine* | A tuning fork's **tines** are the part that actually vibrates, so this is the mechanism rather than a decorative pun — and *tine* is one letter from *tune*. `Tine Up` (from "tune up") is the strongest form: two words, names the activity. **Caveat:** *tine* is uncommon English vocabulary and unknown in Finnish/Japanese, so for most users it reads as an odd spelling rather than wordplay. Check Norwegian first — *tine* is a verb (to thaw) and a major dairy brand. |
 | Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is semantically exact and reads as a clean coined name in EN/JA — but **only works standalone or as a compound**, never as `Vire <Word>` (checklist #10). `Viritin` ends in a consonant, so it pairs cleanly. |
 | Japanese | *Oto* (音), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. **Check the Finnish meaning too**: *sumu* was a candidate for 澄む ("to become clear") until the Finnish sense (fog — and the fog-horn association) turned out to say the opposite of what a tuner promises. |
@@ -85,15 +93,17 @@ target**, in one of two shapes:
 `Forklore` (existing Japanese company), `Pitchfork` (the publication owns music
 search), `Tinetone` (stationery/graphic-design products), `Fork440` (implies a
 fixed pitch to exactly the players who most want it adjustable), `Vire Tuner`
-(Finnish gemination — *viret-tuner*), `Sumu` (Finnish "fog"/fog horn, opposite
-of what a tuner promises).
+(Finnish gemination — *viret-tuner*), `Sumu` (Finnish "fog"/fog horn — funny,
+but says nothing about pitch), `Fork Horn` (too many steps: spot the foghorn
+substitution, connect fork to tuning fork, and a tuner still isn't a horn).
 
 ### A note on how to run this
 
-Six candidates have now been eliminated by facts — existing apps, companies,
-trademarks, words in nearby languages, and one phonological rule — none of which
-are guessable. Brainstorming without screening has a near-zero hit rate here and
-burns a real check per candidate to disprove.
+Seven candidates have now been eliminated. Most died to facts — existing apps,
+companies, trademarks, words in nearby languages, one phonological rule — none
+of them guessable without looking. The rest died to taste: the joke pointing at
+the wrong thing, or needing too much assembly. Brainstorming without screening
+has a near-zero hit rate here and burns a real check per candidate to disprove.
 
 **Generate and screen in the same sitting**, with the store and TMview open, and
 **a native Finnish and Japanese ear available** for items #4 and #10. Those two

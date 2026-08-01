@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac App Store requires App Sandbox. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Audio input: the sandbox blocks every capture device without this, and
+	     on the Mac the input is usually a line-in / audio interface (electric
+	     guitar or bass through a DI or preamp) rather than the built-in mic.
+	     macOS gates them all behind this one entitlement plus the plist
+	     consent string. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<!-- No network entitlement: the app never makes a connection, and omitting
+	     it means the sandbox enforces that rather than merely documenting it. -->
+</dict>
+</plist>

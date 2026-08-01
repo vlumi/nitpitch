@@ -1,0 +1,32 @@
+# Coverage tracks the testable DSP + music-theory logic, not the audio-capture
+# and SwiftUI layer (which needs a real microphone and UI automation this project
+# doesn't run). The two are split by Swift target: TunerCore is pure, headlessly-
+# testable logic and is gated; TunerKit is AVAudioEngine + SwiftUI and is ignored
+# wholesale. Keep logic in TunerCore so it's covered automatically — no per-file
+# edits here when a view file is added or split for the lint length limit.
+#
+# This split is the reason pitch detection is worth gating at all: PitchDetector,
+# NoteMath, and the smoothing filters are deterministic functions over a Float
+# buffer, so they're testable against synthesized waveforms with no audio hardware.
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto          # don't drop below the current project coverage
+        threshold: 2%         # tolerate small fluctuations
+    patch:
+      default:
+        target: 80%           # new (non-ignored) code must be ≥80% covered
+        threshold: 0%         # no slack below the target
+
+comment:
+  # Only comment when coverage actually changed; keeps PRs quiet.
+  require_changes: true
+
+# The whole TunerKit target is the untestable capture/view layer. A new file under
+# it is ignored by the glob automatically; pure logic belongs in TunerCore instead,
+# where it's tracked. Tests themselves aren't coverage subjects.
+ignore:
+  - "Packages/TunerCore/Sources/TunerKit/**"
+  - "Packages/TunerCore/Tests/**"

@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref so stale builds don't queue up.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pin to the same Xcode the project is developed against, which is the
+  # macos-26 image's default. Explicit so CI stays deterministic if the image's
+  # default later changes.
+  XCODE_VERSION: "26.5"
+
+jobs:
+  lint:
+    name: Lint & format
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+      - name: SwiftLint
+        # Pinned to an exact version so CI and local installs agree (an unpinned
+        # `brew install` follows Homebrew's rolling latest, so a new SwiftLint
+        # release could turn CI red on untouched code). Bump SWIFTLINT_VERSION
+        # deliberately; keep AGENTS.md's documented version in step. Installed from
+        # the tagged release's portable binary rather than a brew formula URL
+        # (which is fragile across formula revisions).
+        env:
+          SWIFTLINT_VERSION: 0.65.0
+        run: |
+          curl -sSL -o swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
+          unzip -o -q swiftlint.zip -d swiftlint-bin
+          ./swiftlint-bin/swiftlint version | grep -qx "${SWIFTLINT_VERSION}" \
+            || { echo "SwiftLint version mismatch"; exit 1; }
+          ./swiftlint-bin/swiftlint lint --strict
+      - name: swift-format
+        run: |
+          swift format lint --strict --recursive --configuration .swift-format \
+            Packages/TunerCore/Sources Packages/TunerCore/Tests Sources
+
+  test:
+    name: Test core logic
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+      - name: Cache SwiftPM
+        uses: actions/cache@v6
+        with:
+          path: Packages/TunerCore/.build
+          key: spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Packages/TunerCore/Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-
+      - name: Run logic tests with coverage
+        working-directory: Packages/TunerCore
+        run: swift test --enable-code-coverage
+      - name: Export coverage report
+        working-directory: Packages/TunerCore
+        run: |
+          PROF=$(find .build -name '*.profdata' | head -1)
+          BIN=$(find .build -name 'TunerCorePackageTests.xctest' -type d | head -1)/Contents/MacOS/TunerCorePackageTests
+          # Exclude build artifacts, tests, and the audio-capture/SwiftUI layer
+          # (which needs a real microphone to exercise) so the figure reflects the
+          # unit-tested DSP + note math.
+          xcrun llvm-cov export "$BIN" -instr-profile "$PROF" -format=lcov \
+            -ignore-filename-regex='(\.build|Tests)/|Sources/TunerKit/' \
+            > coverage.lcov
+          # Rewrite absolute SF: paths to repo-relative so Codecov maps files
+          # correctly (its ignore globs and file tree are repo-relative). The
+          # job runs on macOS, so this is BSD sed.
+          sed -i '' -E 's#^SF:.*/(Packages/TunerCore/)#SF:\1#' coverage.lcov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: Packages/TunerCore/coverage.lcov
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build apps
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+      - name: Cache SwiftPM
+        uses: actions/cache@v6
+        with:
+          path: Packages/TunerCore/.build
+          key: spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Packages/TunerCore/Package.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build macOS (no signing)
+        run: |
+          xcodebuild build \
+            -project Tuner.xcodeproj \
+            -scheme Tuner-macOS \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Build iOS (simulator)
+        run: |
+          xcodebuild build \
+            -project Tuner.xcodeproj \
+            -scheme Tuner-iOS \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

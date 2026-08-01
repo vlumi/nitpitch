@@ -1,0 +1,155 @@
+name: Tuner
+
+options:
+  bundleIdPrefix: fi.misaki
+  deploymentTarget:
+    iOS: "16.0"
+    macOS: "14.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+packages:
+  TunerCore:
+    path: Packages/TunerCore
+
+targets:
+  Tuner-iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/iOS
+      - path: Sources/Shared
+    info:
+      path: Sources/iOS/Info.plist
+      properties:
+        CFBundleDisplayName: Tuner
+        # Track the version build settings so MARKETING_VERSION is the single
+        # source of truth.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # No encryption → declare it so every TestFlight/App Store upload skips
+        # the export-compliance prompt.
+        ITSAppUsesNonExemptEncryption: false
+        # The microphone IS the instrument input — the app cannot function
+        # without it. Audio is analysed in-process frame by frame and never
+        # recorded, buffered to disk, or sent anywhere.
+        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere.
+        LSApplicationCategoryType: public.app-category.music
+        UILaunchScreen:
+          UIImageRespectsSafeAreaInsets: true
+          UIColorName: LaunchBackground
+        # Portrait-only is wrong for a tuner clipped to a stand, and a universal
+        # (iPhone + iPad) app must support all four for iPad multitasking or App
+        # Store validation rejects the build. The readout is orientation-agnostic.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.tuner
+        # User-visible app/bundle name; without this it'd be the target name
+        # "Tuner-iOS". Module name stays Tuner_iOS (PRODUCT_MODULE_NAME).
+        PRODUCT_NAME: Tuner
+        CODE_SIGN_ENTITLEMENTS: Sources/iOS/Tuner.entitlements
+        MARKETING_VERSION: "0.1.0"
+        # Build number is shared across iOS + macOS (kept in lock-step by the
+        # release lane, `make release`) — bumped together so the apps never diverge.
+        # 0 = never released; the first `make release` cuts build 1.
+        CURRENT_PROJECT_VERSION: "0"
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Signing: the personal paid-account team. Automatic signing lets Xcode
+        # manage the certs/profiles for archive + TestFlight upload.
+        DEVELOPMENT_TEAM: U84DT7P75P
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - package: TunerCore
+        product: TunerKit
+    # Stamp the git commit into the bundled Info.plist (GitCommitSHA) so every
+    # build self-identifies its source. Runs last, after the plist is copied
+    # into the product; fires on archive too. See Scripts/embed-commit-sha.sh.
+    postBuildScripts:
+      - script: "\"$SRCROOT/Scripts/embed-commit-sha.sh\""
+        name: Embed git commit SHA
+        basedOnDependencyAnalysis: false
+    scheme:
+      # Wire the UI tests into the iOS app's scheme so `xcodebuild test
+      # -scheme Tuner-iOS` runs them (used by `make uitest`, locally only).
+      testTargets:
+        - Tuner-iOSUITests
+
+  # Local-only UI regression tests. CI runs `swift test` (the package logic
+  # suite) and `xcodebuild build` only — never `xcodebuild test` — so this
+  # target is built but its tests run solely via `make uitest` on a dev machine.
+  Tuner-iOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.tuner.uitests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Tuner-iOS
+
+  Tuner-macOS:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/macOS
+      - path: Sources/Shared
+    info:
+      path: Sources/macOS/Info.plist
+      properties:
+        CFBundleDisplayName: Tuner
+        CFBundleName: Tuner  # menu-bar app name (else PRODUCT_NAME)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        LSApplicationCategoryType: public.app-category.music
+        # Must track the deploymentTarget above — this explicit key OVERRIDES the
+        # build-setting-derived minimum, so a stale value advertises installability
+        # on an OS the binary was never built for.
+        LSMinimumSystemVersion: "14.0"
+        NSHighResolutionCapable: true
+        # On the Mac the input is typically a line-in / audio interface rather
+        # than the built-in mic (electric guitar and bass via a DI or preamp),
+        # but macOS gates every input device behind the same microphone consent.
+        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere.
+    settings:
+      base:
+        # Shares the iOS bundle ID for Universal Purchase: one App Store record
+        # spanning both platforms, sharing the name, Apple ID, and SKU.
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.tuner
+        PRODUCT_NAME: Tuner
+        MARKETING_VERSION: "0.1.0"
+        # Build number is shared across iOS + macOS (kept in lock-step by the
+        # release lane, `make release`) — bumped together so the apps never diverge.
+        # 0 = never released; the first `make release` cuts build 1.
+        CURRENT_PROJECT_VERSION: "0"
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        # Mac App Store requires App Sandbox; the entitlement enables it (and
+        # declares the audio-input exception the tuner needs).
+        CODE_SIGN_ENTITLEMENTS: Sources/macOS/Tuner.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Signing: same personal paid-account team as iOS; automatic signing.
+        DEVELOPMENT_TEAM: U84DT7P75P
+        CODE_SIGN_STYLE: Automatic
+    # See the iOS target: stamp the git commit into the bundled Info.plist.
+    postBuildScripts:
+      - script: "\"$SRCROOT/Scripts/embed-commit-sha.sh\""
+        name: Embed git commit SHA
+        basedOnDependencyAnalysis: false
+    dependencies:
+      - package: TunerCore
+        product: TunerKit
+    # Explicit scheme so XcodeGen writes a SHARED scheme file for the macOS app.
+    # Without it Xcode recreates it as a personal scheme on every open, and
+    # `xcodebuild -scheme Tuner-macOS` fails on a fresh checkout (the release
+    # lane's macOS archive).
+    scheme:
+      configVariants: []

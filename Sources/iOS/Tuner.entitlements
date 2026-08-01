@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Deliberately empty. The tuner needs no capability beyond microphone
+	     access, which is granted by NSMicrophoneUsageDescription (a plist
+	     consent string), not an entitlement. No iCloud, no Game Center, no
+	     associated domains — nothing leaves the device.
+
+	     The file exists (and is wired via CODE_SIGN_ENTITLEMENTS) so adding a
+	     capability later is a one-key edit rather than a project change. -->
+</dict>
+</plist>

@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "App name shown in the Dock and Cmd-Tab switcher.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tuner"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name (menu-bar app name).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tuner"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Privacy - Microphone Usage Description. Covers line-in / audio-interface capture too — macOS gates every input device behind this.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

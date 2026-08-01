@@ -34,6 +34,12 @@ taken. Screen first, fall in love second. Every candidate must clear all of:
 8. **Pronounceable** by a Finnish, Japanese, and English speaker. Avoid
    consonant clusters Japanese can't render and `ä`/`ö`, which are friction in a
    bundle id and in search.
+9. **Finnish word-boundary gemination** — for any two-word name. A first word
+   ending in a short vowel doubles the next word's initial consonant: "Vire
+   Tuner" is said *viret-tuner*, "Sumu Tuner" *sumut-tuner*. The name then
+   fights its own pronunciation for the audience most likely to see it. Either
+   end the first word in a consonant or a long vowel, or use a single compound
+   word, which has no boundary for this to act on.
 
 ### What the structure should be
 
@@ -42,11 +48,14 @@ Single short words are exhausted — the space is picked over, and short
 in a nearby language (see #2). **Two-word or compound names are the realistic
 target**, in one of two shapes:
 
-- **Distinctive + generic** (`Vire Tuner`) — the first word carries the
-  trademark, the second carries App Store search. Lower risk; the common pattern
-  for music apps.
-- **Coined compound** (`Tonefork`) — a real name, more trademarkable, but must
-  work as a unit in all three languages.
+- **Coined compound** (`Tonefork`) — a real name, more trademarkable, and no
+  word boundary for Finnish gemination to act on (checklist #9). **The preferred
+  shape.**
+- **Distinctive + generic** (`… Tuner`) — the first word carries the trademark,
+  the second carries App Store search. The common pattern for music apps, but
+  largely closed off here: a Finnish-derived first word ending in a short vowel
+  mangles the second word's pronunciation. Viable only if the first word ends in
+  a consonant or a long vowel.
 
 ### Directions explored
 
@@ -57,16 +66,16 @@ target**, in one of two shapes:
 | Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
 | Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout* | Concrete and violin-native; risks being obscure to guitarists. |
 | Tine / tune wordplay | *Tine Up*, *Tine*, *Attine* | A tuning fork's **tines** are the part that actually vibrates, so this is the mechanism rather than a decorative pun — and *tine* is one letter from *tune*. `Tine Up` (from "tune up") is the strongest form: two words, names the activity. **Caveat:** *tine* is uncommon English vocabulary and unknown in Finnish/Japanese, so for most users it reads as an odd spelling rather than wordplay. Check Norwegian first — *tine* is a verb (to thaw) and a major dairy brand. |
-| Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is the standout: semantically exact in Finnish, reads as a clean coined name in English and Japanese. Distinctive and likely free. |
-| Japanese | *Oto* (音), *Sumu* (澄む, to clarify), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. |
+| Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is semantically exact and reads as a clean coined name in EN/JA — but **only works standalone or as a compound**, never as `Vire <Word>` (checklist #9). `Viritin` ends in a consonant, so it pairs cleanly. |
+| Japanese | *Oto* (音), *Sumu* (澄む, to clarify), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. Same gemination caveat: these all end in short vowels, so don't pair them with a second word. |
 
-**Never screened, worth a look:** `Tonefork`, `FifthFork`, `Tine Up`,
-`Vire Tuner`, `Sumu Tuner`.
+**Never screened, worth a look:** `Tonefork`, `FifthFork`, `Tine Up`.
 
 **Already eliminated:** `ForkA` (Swedish verb + existing Swedish service),
 `Forklore` (existing Japanese company), `Pitchfork` (the publication owns music
 search), `Tinetone` (stationery/graphic-design products), `Fork440` (implies a
-fixed pitch to exactly the players who most want it adjustable).
+fixed pitch to exactly the players who most want it adjustable), `Vire Tuner`
+and `Sumu Tuner` (Finnish gemination — *viret-tuner*, *sumut-tuner*).
 
 ### A note on how to run this
 

@@ -3,45 +3,20 @@
 Open future work only. Settled decisions live in [AGENTS.md](AGENTS.md); what
 has shipped is in [CHANGELOG.md](CHANGELOG.md).
 
-## 1. Naming — settled
+## 1. Features needed for v0.1
 
-**The name is `Nitpitch`** — *nitpick* with "pitch" substituted in. The rename
-from the `Tuner` placeholder is done; the sources, schemes, and bundle id all
-carry it.
-
-Registered and therefore fixed: the GitHub repo at
-<https://github.com/vlumi/nitpitch>, the `nitpitch.app` domain, and the App
-Store Connect record under bundle id **`fi.misaki.nitpitch`**. That last one
-makes the name **irreversible in practice** — an ASC bundle id cannot be edited
-or reused once the record exists, only abandoned.
-
-Why it won: the joke is **about tuning** (nitpicking about pitch is literally
-what a cent-accurate tuner does) and lands in one step; it's self-deprecating
-about the app rather than mocking the player; it's one word, so Finnish
-word-boundary gemination doesn't arise; it's pronounceable in English, Finnish,
-and Japanese (ニットピッチ); and being coined, it's more trademarkable than the
-dictionary words that kept colliding.
-
-### If a name is ever needed again
-
-The screening rules below were expensive to learn — eight candidates died to
-them. Two checks need a **native ear, not a lookup**: Finnish word-boundary
-gemination is a per-word morphological property that **cannot be inferred from
-spelling** (*vire* triggers it, *sumu* does not), and a word can be perfect in
-one target language while meaning something unhelpful in another (*sumu* is
-Japanese for "become clear" and Finnish for "fog"). Generating candidates
-without screening them in the same sitting has a near-zero hit rate.
-
-Screening checklist: App Store search · Nordic + Baltic word check · Japanese
-word/company check · what it means in the *other* two languages · music-media
-trademarks (publications, not just software) · TMview/EUIPO classes 9 and 15 ·
-domain · bundle id · pronounceable in all three · Finnish gemination.
-
-Eliminated along the way: `ForkA` (Swedish verb + existing service), `Forklore`
-(Japanese company), `Pitchfork` (the publication owns music search), `Tinetone`
-(stationery products), `Fork440` (implies a fixed pitch to exactly the players
-who want it adjustable), `Vire Tuner` (gemination — *viret-tuner*), `Sumu`
-(Finnish "fog"), `Fork Horn` (too many steps to get the joke).
+- **Reference-pitch control — mandatory.** `ReferencePitch` is done in the core
+  (390–466 Hz, persisted, live-reconfiguring), but `NitpitchView` only *shows*
+  it: `Text(verbatim: "A=\(Int(settings.reference.hz))")`. There is no control
+  to change it, so the README's "adjustable reference pitch" is currently false.
+  A UI gap over a finished model — bind a stepper or a tap-to-edit field to
+  `settings.reference` and it's done. European orchestras at 442/443 are the
+  case that makes this non-optional.
+- **Decide what else v0.1 needs.** Everything in § 4 is currently unscheduled.
+  The two worth weighing against a first release are the **tone generator** (the
+  obvious companion to a tuner, and self-contained) and **string-specific mode**
+  (useful when a string is slack enough to read as a different note). Neither is
+  required to ship something honest; both are cheaper than double-stop fifths.
 
 ## 2. Before a first release
 
@@ -50,16 +25,15 @@ who want it adjustable), `Vire Tuner` (gemination — *viret-tuner*), `Sumu`
   App Store validation. Donpa generates its icon from a committed script
   (`Scripts/assets/make-icon.swift`) — worth copying that reproducible-asset
   approach rather than hand-editing PNGs.
-- **Verification against a real instrument.** Everything so far is
-  synthesized-waveform tests; a real violin in a real room is a different
-  signal. Worth checking specifically: the clarity threshold against actual bow
-  noise, behaviour during vibrato, and whether the smoothing constants feel
-  right to play against.
-
-  Start on the Mac (`make run-mac`) — it's real capture and the fastest loop.
-  Then repeat on an iPhone, which is both the primary target and the only way to
-  exercise the iOS audio-session and permission branches. Prefer an external mic
-  or interface over the built-in Mac one when judging thresholds (see § 5).
+- **Wire the git remote.** `git remote add origin
+  git@github.com:vlumi/nitpitch.git && git push -u origin main`. CI runs on
+  first push; without a `CODECOV_TOKEN` secret the coverage upload soft-fails
+  but the build stays green.
+- **Verification against a real instrument — started, not finished.** A violin
+  through `make run-mac` worked cleanly on a brief try, so the detector holds up
+  outside synthesized waveforms. Still to check, on an iPhone: vibrato, the
+  clarity gate through quiet bowing and string crossings, and whether the
+  smoothing feels right to tune against.
 - **App Store Connect tooling.** Donpa's `Scripts/asc/` (listing and screenshot
   sync) is deliberately not copied yet — bring it over when a release is close,
   minus the achievements parts, which are game-specific.
@@ -151,24 +125,11 @@ a real instrument.
 - **Watch app** — a tuner on the wrist is plausible but the microphone quality
   and screen size both work against it. Unclear; investigate before committing.
 
-## 5. Known limitations
+## 5. Owed upstream to donpa
 
-- The **iOS simulator has no usable microphone**, so no *automated* test can
-  exercise live detection: UI tests cover navigation and state only, and the
-  detector is covered headlessly against synthesized waveforms. This is an Apple
-  platform constraint with no way around it.
+Found while porting its scaffold; fixed here, still broken there:
 
-  It is not, however, a limit on manual verification — **`make run-mac` is a
-  real app with real capture on real hardware**, and is the intended loop for
-  hearing the detector work. What it can't reach is the `#if os(iOS)` code:
-  the `AVAudioSession` `.measurement` configuration, the iOS 17 vs 16 permission
-  split, and audio-interruption handling. Those need a device.
-- **The built-in Mac microphone is voice-processed**, and macOS offers no
-  equivalent of iOS's `.measurement` mode to opt out of it. Readings through it
-  will be noisier than the detector is capable of; an external mic or audio
-  interface is the honest reference when tuning thresholds.
-- **`PitchDetector` assumes a single monophonic source.** Two strings sounding at
-  once — a double stop, or an open string ringing sympathetically — produce an
-  unstable reading that flickers between them rather than reporting either. The
-  *deliberate* two-note case is addressed by the separate detector in § 3;
-  general polyphonic detection remains out of scope.
+1. `Scripts/embed-commit-sha.sh` fails the build on a repo with no commits yet
+   (fresh `git init`), not just on a non-git checkout.
+2. SwiftLint's `excluded:` paths resolve relative to the invocation directory —
+   worth a line in donpa's AGENTS.md, as here.

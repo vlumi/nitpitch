@@ -25,21 +25,31 @@ taken. Screen first, fall in love second. Every candidate must clear all of:
 3. **Japanese check** — both as a word and as an existing company/site. One of
    the three target languages. *(Killed `Forklore`: an existing Japanese
    company.)*
-4. **Music-media trademarks** — the field is crowded and includes publications,
+4. **What does it mean in the OTHER two languages?** A word chosen for its sense
+   in one target language may say something unhelpful in another. Borrowing
+   across the three is the whole appeal of this shortlist, so check all three
+   every time — a name only has to be wrong in one of them to be wrong.
+   *(Killed `Sumu`: chosen for Japanese 澄む, "to become clear", but the Finnish
+   sense is "fog" — and evokes a fog horn, which is the opposite of in-tune.)*
+5. **Music-media trademarks** — the field is crowded and includes publications,
    not just software. *(Killed `Pitchfork`: the publication dominates music
    search regardless of app-listing availability.)*
-5. **TMview / EUIPO**, Nice class 9 (software) and 15 (musical instruments).
-6. **Domain** — a free `.app` or `.fi`.
-7. **Bundle id** — `fi.misaki.<name>` free on App Store Connect.
-8. **Pronounceable** by a Finnish, Japanese, and English speaker. Avoid
+6. **TMview / EUIPO**, Nice class 9 (software) and 15 (musical instruments).
+7. **Domain** — a free `.app` or `.fi`.
+8. **Bundle id** — `fi.misaki.<name>` free on App Store Connect.
+9. **Pronounceable** by a Finnish, Japanese, and English speaker. Avoid
    consonant clusters Japanese can't render and `ä`/`ö`, which are friction in a
    bundle id and in search.
-9. **Finnish word-boundary gemination** — for any two-word name. A first word
-   ending in a short vowel doubles the next word's initial consonant: "Vire
-   Tuner" is said *viret-tuner*, "Sumu Tuner" *sumut-tuner*. The name then
-   fights its own pronunciation for the audience most likely to see it. Either
-   end the first word in a consonant or a long vowel, or use a single compound
-   word, which has no boundary for this to act on.
+10. **Finnish word-boundary gemination** — for any two-word name. Some Finnish
+   words double the next word's initial consonant across the boundary: "Vire
+   Tuner" is said *viret-tuner*, and the name then fights its own pronunciation
+   for the audience most likely to see it.
+
+   **This is a per-word property, not a spelling rule** — it depends on the
+   word's morphology (historically a final consonant that assimilated), so it
+   can't be predicted from the vowel ending. *Vire* triggers it; *sumu* does
+   not. **Ask a native speaker for each candidate**; don't infer it. A single
+   compound word sidesteps the question entirely, having no boundary.
 
 ### What the structure should be
 
@@ -49,13 +59,13 @@ in a nearby language (see #2). **Two-word or compound names are the realistic
 target**, in one of two shapes:
 
 - **Coined compound** (`Tonefork`) — a real name, more trademarkable, and no
-  word boundary for Finnish gemination to act on (checklist #9). **The preferred
+  word boundary for Finnish gemination to act on (checklist #10). **The preferred
   shape.**
 - **Distinctive + generic** (`… Tuner`) — the first word carries the trademark,
-  the second carries App Store search. The common pattern for music apps, but
-  largely closed off here: a Finnish-derived first word ending in a short vowel
-  mangles the second word's pronunciation. Viable only if the first word ends in
-  a consonant or a long vowel.
+  the second carries App Store search. The common pattern for music apps, and
+  still open: just check the first word for gemination (#10) before committing,
+  since some Finnish words mangle the second word's pronunciation and it can't
+  be predicted from spelling.
 
 ### Directions explored
 
@@ -66,8 +76,8 @@ target**, in one of two shapes:
 | Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
 | Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout* | Concrete and violin-native; risks being obscure to guitarists. |
 | Tine / tune wordplay | *Tine Up*, *Tine*, *Attine* | A tuning fork's **tines** are the part that actually vibrates, so this is the mechanism rather than a decorative pun — and *tine* is one letter from *tune*. `Tine Up` (from "tune up") is the strongest form: two words, names the activity. **Caveat:** *tine* is uncommon English vocabulary and unknown in Finnish/Japanese, so for most users it reads as an odd spelling rather than wordplay. Check Norwegian first — *tine* is a verb (to thaw) and a major dairy brand. |
-| Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is semantically exact and reads as a clean coined name in EN/JA — but **only works standalone or as a compound**, never as `Vire <Word>` (checklist #9). `Viritin` ends in a consonant, so it pairs cleanly. |
-| Japanese | *Oto* (音), *Sumu* (澄む, to clarify), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. Same gemination caveat: these all end in short vowels, so don't pair them with a second word. |
+| Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is semantically exact and reads as a clean coined name in EN/JA — but **only works standalone or as a compound**, never as `Vire <Word>` (checklist #10). `Viritin` ends in a consonant, so it pairs cleanly. |
+| Japanese | *Oto* (音), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. **Check the Finnish meaning too**: *sumu* was a candidate for 澄む ("to become clear") until the Finnish sense (fog — and the fog-horn association) turned out to say the opposite of what a tuner promises. |
 
 **Never screened, worth a look:** `Tonefork`, `FifthFork`, `Tine Up`.
 
@@ -75,18 +85,21 @@ target**, in one of two shapes:
 `Forklore` (existing Japanese company), `Pitchfork` (the publication owns music
 search), `Tinetone` (stationery/graphic-design products), `Fork440` (implies a
 fixed pitch to exactly the players who most want it adjustable), `Vire Tuner`
-and `Sumu Tuner` (Finnish gemination — *viret-tuner*, *sumut-tuner*).
+(Finnish gemination — *viret-tuner*), `Sumu` (Finnish "fog"/fog horn, opposite
+of what a tuner promises).
 
 ### A note on how to run this
 
-Five candidates have now been eliminated by facts — existing apps, companies,
-trademarks, and words in nearby languages — that are only discoverable by
-searching. Brainstorming without screening has a near-zero hit rate here and
-burns a real search per candidate to disprove.
+Six candidates have now been eliminated by facts — existing apps, companies,
+trademarks, words in nearby languages, and one phonological rule — none of which
+are guessable. Brainstorming without screening has a near-zero hit rate here and
+burns a real check per candidate to disprove.
 
-**Generate and screen in the same sitting**, with the store and TMview open.
-The checklist above is the useful artifact; the candidate lists are just raw
-material.
+**Generate and screen in the same sitting**, with the store and TMview open, and
+**a native Finnish and Japanese ear available** for items #4 and #10. Those two
+are judgement calls, not lookups: *sumu* is impeccable Japanese and a fog horn
+in Finnish, and gemination can't be read off the spelling. The checklist is the
+useful artifact; the candidate lists are just raw material.
 
 Once chosen, renaming touches: `project.yml` (name, bundle id, product names,
 entitlements paths), the scheme names in `Makefile` and `Scripts/*.sh`, the

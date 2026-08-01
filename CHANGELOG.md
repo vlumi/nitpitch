@@ -29,6 +29,13 @@ first `make release` will produce build 1.
   across the supported range, with octave-error and clarity guards.
 - Violin tuning as the primary case, with viola, cello, double bass, guitar, and
   bass guitar sharing the same detector, plus a chromatic mode.
-- Adjustable reference pitch (A=390…466), defaulting to A=440.
+- Reference pitch A=390…466, defaulting to A=440. Persisted and applied live,
+  but not yet adjustable from the UI — the control is the first v0.1 item.
+- Tuning dial: the error shows as a filled arc between a fixed needle at centre
+  and one at the reading, over a logarithmic scale. Below it, eleven lights at
+  ±2, 4, 8, 16, 32¢ with the centre lit when in tune. Colours shift brightness
+  along with hue, so the display still reads in greyscale.
+- Note names in English, German (H for B♮, B for B♭), Italian solfège, or the
+  Japanese iroha names, selectable and persisted.
 - Named the app **Nitpitch**, and renamed the sources, schemes, and bundle id
   (`fi.misaki.nitpitch`) from the `Tuner` placeholder to match.

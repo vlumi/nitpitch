@@ -12,6 +12,10 @@ has shipped is in [CHANGELOG.md](CHANGELOG.md).
   A UI gap over a finished model — bind a stepper or a tap-to-edit field to
   `settings.reference` and it's done. European orchestras at 442/443 are the
   case that makes this non-optional.
+
+  Where it goes is the open part. The controls row already holds the instrument
+  and notation pickers, and a third menu is past what it can carry on a phone —
+  so this is probably the change that forces a settings sheet.
 - **Decide what else v0.1 needs.** Everything in § 4 is currently unscheduled.
   The two worth weighing against a first release are the **tone generator** (the
   obvious companion to a tuner, and self-contained) and **string-specific mode**

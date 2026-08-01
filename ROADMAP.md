@@ -5,17 +5,6 @@ has shipped is in [CHANGELOG.md](CHANGELOG.md).
 
 ## 1. Features needed for v0.1
 
-- **Reference-pitch control — mandatory.** `ReferencePitch` is done in the core
-  (390–466 Hz, persisted, live-reconfiguring), but `NitpitchView` only *shows*
-  it: `Text(verbatim: "A=\(Int(settings.reference.hz))")`. There is no control
-  to change it, so the README's "adjustable reference pitch" is currently false.
-  A UI gap over a finished model — bind a stepper or a tap-to-edit field to
-  `settings.reference` and it's done. European orchestras at 442/443 are the
-  case that makes this non-optional.
-
-  Where it goes is the open part. The controls row already holds the instrument
-  and notation pickers, and a third menu is past what it can carry on a phone —
-  so this is probably the change that forces a settings sheet.
 - **Decide what else v0.1 needs.** Everything in § 4 is currently unscheduled.
   The two worth weighing against a first release are the **tone generator** (the
   obvious companion to a tuner, and self-contained) and **string-specific mode**
@@ -33,11 +22,26 @@ has shipped is in [CHANGELOG.md](CHANGELOG.md).
   git@github.com:vlumi/nitpitch.git && git push -u origin main`. CI runs on
   first push; without a `CODECOV_TOKEN` secret the coverage upload soft-fails
   but the build stays green.
-- **Verification against a real instrument — started, not finished.** A violin
-  through `make run-mac` worked cleanly on a brief try, so the detector holds up
-  outside synthesized waveforms. Still to check, on an iPhone: vibrato, the
-  clarity gate through quiet bowing and string crossings, and whether the
-  smoothing feels right to tune against.
+- **Verification against a real instrument — done.** A violin through
+  `make run-mac` read cleanly, and on a real iPhone Nitpitch was checked against
+  an independent tuner app twice, which also exercised the `#if os(iOS)` paths
+  (`.measurement` mode, the permission split) for the first time.
+
+  First against the other app at A=442 while Nitpitch was still fixed at 440:
+  a constant ~+7.85¢ offset, exactly `1200·log₂(442/440)`. Then with the
+  stepper in place and Nitpitch set to 442: the two matched.
+
+  The pair is worth more than either alone. The match confirms the absolute
+  reading; the offset confirms that changing the reference moves every reading
+  by precisely the amount it should — and rules out a shared bias, which a
+  same-reference comparison on its own could hide. That the offset held flat
+  across all four strings is itself the tell, since a detector fault would tend
+  to drift with frequency.
+
+  What's left is feel rather than correctness, and wants a longer session with
+  the instrument: behaviour through vibrato, whether the clarity gate holds
+  through quiet bowing and string crossings, and whether the smoothing is
+  comfortable to tune against.
 - **App Store Connect tooling.** Donpa's `Scripts/asc/` (listing and screenshot
   sync) is deliberately not copied yet — bring it over when a release is close,
   minus the achievements parts, which are game-specific.

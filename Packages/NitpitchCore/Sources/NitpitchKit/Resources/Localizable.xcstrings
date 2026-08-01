@@ -14,10 +14,13 @@
       "comment" : "Shown when the tuner is stopped"
     },
     "Notation" : {
-      "comment" : "Label for the note-naming convention picker (A B C / A H C / Do Re Mi / iroha)"
+      "comment" : "Label for the note-naming convention picker (A B C \/ A H C \/ Do Re Mi \/ iroha)"
     },
     "Play a note" : {
       "comment" : "Shown while listening but no pitch is confident enough to display"
+    },
+    "Reference pitch" : {
+      "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"
     }
   },
   "version" : "1.0"

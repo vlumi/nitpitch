@@ -14,10 +14,9 @@ ride.
 - **No octave errors.** Bowed and plucked strings put more energy into their
   harmonics than their fundamental, which is what makes naive tuners jump an
   octave; the detector is built to resolve that (see below).
-- **Adjustable reference pitch**, A=390 through 466. Defaults to A=440;
-  European orchestras commonly sit at 442 or 443. *(The range is implemented and
-  persisted; the control to change it is still to come — see
-  [ROADMAP.md](ROADMAP.md) § 1.)*
+- **Adjustable reference pitch**, A=390 through 466, a hertz at a time.
+  Defaults to A=440; European orchestras commonly sit at 442 or 443, and
+  baroque ensembles at 415.
 - **Nothing leaves the device.** Audio is analysed frame by frame in memory and
   discarded. No recording, no network — the macOS build doesn't even carry the
   network entitlement, so the sandbox enforces it rather than merely documenting

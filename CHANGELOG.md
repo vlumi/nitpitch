@@ -29,8 +29,8 @@ first `make release` will produce build 1.
   across the supported range, with octave-error and clarity guards.
 - Violin tuning as the primary case, with viola, cello, double bass, guitar, and
   bass guitar sharing the same detector, plus a chromatic mode.
-- Reference pitch A=390…466, defaulting to A=440. Persisted and applied live,
-  but not yet adjustable from the UI — the control is the first v0.1 item.
+- Adjustable reference pitch, A=390…466 in whole hertz, defaulting to A=440.
+  Stepped from the header readout and applied to the reading live.
 - Tuning dial: the error shows as a filled arc between a fixed needle at centre
   and one at the reading, over a logarithmic scale. Below it, eleven lights at
   ±2, 4, 8, 16, 32¢ with the centre lit when in tune. Colours shift brightness

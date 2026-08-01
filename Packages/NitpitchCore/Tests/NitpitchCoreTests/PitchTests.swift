@@ -76,6 +76,65 @@ final class PitchTests: XCTestCase {
         XCTAssertEqual(ReferencePitch(hz: 9000).hz, ReferencePitch.range.upperBound)
     }
 
+    // MARK: - Stepping
+
+    func testSteppingMovesOneHertz() {
+        let a440 = ReferencePitch(hz: 440)
+        XCTAssertEqual(a440.raised().hz, 441)
+        XCTAssertEqual(a440.lowered().hz, 439)
+    }
+
+    func testSteppingIsReversible() {
+        for hz in [415.0, 440, 442, 443] {
+            let pitch = ReferencePitch(hz: hz)
+            XCTAssertEqual(pitch.raised().lowered(), pitch)
+            XCTAssertEqual(pitch.lowered().raised(), pitch)
+        }
+    }
+
+    /// Stepping past an edge holds rather than wrapping or throwing — the
+    /// button is disabled there, but the model must not depend on the UI.
+    func testSteppingStopsAtTheBounds() {
+        let top = ReferencePitch(hz: ReferencePitch.range.upperBound)
+        let bottom = ReferencePitch(hz: ReferencePitch.range.lowerBound)
+        XCTAssertEqual(top.raised(), top)
+        XCTAssertEqual(bottom.lowered(), bottom)
+    }
+
+    func testCanStepReportsHeadroom() {
+        let top = ReferencePitch(hz: ReferencePitch.range.upperBound)
+        let bottom = ReferencePitch(hz: ReferencePitch.range.lowerBound)
+        XCTAssertFalse(top.canRaise)
+        XCTAssertTrue(top.canLower)
+        XCTAssertTrue(bottom.canRaise)
+        XCTAssertFalse(bottom.canLower)
+    }
+
+    /// Every step must land on a whole hertz, since the readout renders
+    /// `Int(hz)` — a fractional value would display as a lie.
+    func testSteppingStaysOnWholeHertz() {
+        var pitch = ReferencePitch(hz: ReferencePitch.range.lowerBound)
+        while pitch.canRaise {
+            pitch = pitch.raised()
+            XCTAssertEqual(pitch.hz, pitch.hz.rounded(), "landed on \(pitch.hz)")
+        }
+        XCTAssertEqual(pitch.hz, ReferencePitch.range.upperBound)
+    }
+
+    /// The common orchestral and baroque settings must all be reachable by
+    /// stepping from the default.
+    func testCommonPitchesAreReachable() {
+        for target in [415.0, 432, 442, 443, 466] {
+            var pitch = ReferencePitch.standard
+            var steps = 0
+            while pitch.hz != target && steps < 200 {
+                pitch = pitch.hz < target ? pitch.raised() : pitch.lowered()
+                steps += 1
+            }
+            XCTAssertEqual(pitch.hz, target, "could not reach A=\(target)")
+        }
+    }
+
     func testInstrumentBandCoversItsStrings() {
         for instrument in Instrument.all where !instrument.strings.isEmpty {
             let band = instrument.band()

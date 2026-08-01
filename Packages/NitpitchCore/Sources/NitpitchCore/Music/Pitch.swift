@@ -12,11 +12,26 @@ public struct ReferencePitch: Equatable, Hashable, Codable, Sendable {
     /// starts to mean something different to the player than "my A is flat".
     public static let range: ClosedRange<Double> = 390...466
 
+    /// Adjustment granularity. Orchestras work in whole hertz — 440, 442, 443,
+    /// baroque 415 — so finer steps would be false precision that only makes
+    /// the control slower to use.
+    public static let step: Double = 1
+
     public let hz: Double
 
     public init(hz: Double) {
         self.hz = hz.clamped(to: Self.range)
     }
+
+    /// One step sharper, or unchanged at the top of the range.
+    public func raised() -> ReferencePitch { ReferencePitch(hz: hz + Self.step) }
+
+    /// One step flatter, or unchanged at the bottom of the range.
+    public func lowered() -> ReferencePitch { ReferencePitch(hz: hz - Self.step) }
+
+    /// Whether there's room to step further, for disabling the buttons.
+    public var canRaise: Bool { hz < Self.range.upperBound }
+    public var canLower: Bool { hz > Self.range.lowerBound }
 }
 
 /// A pitch class plus octave, in scientific pitch notation (A4 = 440 Hz).

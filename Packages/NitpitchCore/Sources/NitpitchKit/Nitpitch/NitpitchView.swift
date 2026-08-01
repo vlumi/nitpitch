@@ -12,6 +12,10 @@ import SwiftUI
 public struct NitpitchView: View {
     @ObservedObject private var settings: Settings
     @StateObject private var model: NitpitchViewModel
+    @State private var isShowingSettings = false
+    /// Only consulted on iOS — `resolvedScheme` reads AppKit directly on the
+    /// Mac, where this ambient value is unreliable under a forced scheme.
+    @Environment(\.colorScheme) private var systemScheme
 
     public init(settings: Settings) {
         self.settings = settings
@@ -21,14 +25,18 @@ public struct NitpitchView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             header
-            ArcView(cents: displayCents, inTune: isInTune)
-                .frame(height: 120)
-            LightStrip(cents: displayCents, isReading: isReading)
-            readout
+            // Everything specific to one reading lives inside the dial, so the
+            // whole unit can be repeated — double-stop fifths (ROADMAP § 2)
+            // needs two of these on one iPhone screen, and an SE leaves about
+            // 195pt each. Reference and instrument stay outside: they apply to
+            // both dials, and duplicating them would be actively confusing.
+            TunerDial(
+                cents: displayCents, inTune: isInTune, isReading: isReading,
+                readout: { readout })
+            ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
             Spacer(minLength: 0)
-            controls
         }
         .padding(24)
         // Capped so the column stays a column on an iPad or a wide Mac window
@@ -38,6 +46,16 @@ public struct NitpitchView: View {
         // Top-aligned: with the column centred, any height change below the
         // dial would still shift it, even with the readout pinned.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Forced onto the whole hierarchy; nil means follow the system.
+        .preferredColorScheme(settings.appearance.colorScheme)
+        // The sheet needs a *concrete* scheme — see `appearanceSheet` for why
+        // passing the optional through would strand it on the last choice.
+        .appearanceSheet(
+            isPresented: $isShowingSettings,
+            scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
+        ) {
+            SettingsView(settings: settings)
+        }
         .task { await model.start() }
         .onDisappear { model.stop() }
         .onChangeCompat(of: settings.instrument) { _ in reconfigure() }
@@ -48,13 +66,42 @@ public struct NitpitchView: View {
         model.configure(reference: settings.reference, band: settings.instrument.band())
     }
 
+    /// The only chrome on the screen: what's being tuned, whether the app can
+    /// hear it, and the way into settings. Everything below this bar belongs
+    /// to the reading itself, which leaves the bottom free for the per-string
+    /// and tone-generator controls still to come.
     private var header: some View {
-        HStack {
-            ReferencePitchStepper(reference: $settings.reference)
-            Spacer()
+        ZStack {
+            // Centred independently of the items either side, so the meter
+            // sits on the dial's axis rather than wherever the row's spacing
+            // happens to put it.
             LevelMeter(level: model.level)
-                .frame(width: 60, height: 4)
+                .frame(width: 72, height: 4)
+            HStack {
+                instrumentPicker
+                Spacer()
+                // macOS reaches settings through the app menu (⌘,), so a gear
+                // in the window would be a second door to the same room.
+                #if !os(macOS)
+                settingsButton
+                #endif
+            }
         }
+    }
+
+    private var settingsButton: some View {
+        Button {
+            isShowingSettings = true
+        } label: {
+            Image(systemName: "gearshape")
+                .font(.body)
+                .frame(width: 44, height: 34)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityIdentifier("tuner.settings")
+        .accessibilityLabel(Text("Settings", bundle: .module))
     }
 
     /// The readout reserves a fixed height whatever it's showing.
@@ -69,19 +116,45 @@ public struct NitpitchView: View {
 
     /// Tall enough for the note name and the cent label together. Derived from
     /// the font sizes rather than hardcoded, so it holds if they change.
-    private static let readoutHeight: CGFloat = noteFontSize * 1.2 + 6 + 24
+    private static let readoutHeight: CGFloat = noteFontSize * 1.15 + 4 + 20
 
-    private static let noteFontSize: CGFloat = 76
+    /// Sized to sit inside the arc alongside the light strip, in a unit
+    /// compact enough to appear twice on an iPhone SE.
+    private static let noteFontSize: CGFloat = 46
+
+    /// The note: scientific designator, with the chosen convention's name
+    /// beside it when it differs. See `Note.readoutLabel(in:)` for why the two
+    /// are kept apart rather than combined into one spelling.
+    private func noteLabel(_ note: Note) -> some View {
+        let label = note.readoutLabel(in: settings.naming)
+        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // The octave is subscripted so the letter stays the thing you read
+            // at a glance — the number qualifies it rather than competing.
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text(verbatim: label.name)
+                    .font(.system(size: Self.noteFontSize, weight: .light, design: .rounded))
+                Text(verbatim: "\(label.octave)")
+                    .font(.system(size: Self.noteFontSize * 0.44, weight: .light, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .baselineOffset(-Self.noteFontSize * 0.06)
+            }
+            if let alternate = label.alternate {
+                Text(verbatim: "(\(alternate))")
+                    .font(.system(size: Self.noteFontSize * 0.40, weight: .light))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("tuner.note")
+        .accessibilityLabel(note.accessibleName(in: settings.naming))
+    }
 
     @ViewBuilder
     private var readoutContent: some View {
         switch model.state {
         case .reading(let reading, let cents, _):
             VStack(spacing: 6) {
-                Text(reading.note.name(in: settings.naming))
-                    .font(.system(size: Self.noteFontSize, weight: .light, design: .rounded))
-                    .accessibilityIdentifier("tuner.note")
-                    .accessibilityLabel(reading.note.accessibleName(in: settings.naming))
+                noteLabel(reading.note)
                 Text(centsLabel(cents))
                     .font(.title3.monospacedDigit())
                     .foregroundStyle(isInTune ? Color.green : .secondary)
@@ -103,30 +176,30 @@ public struct NitpitchView: View {
             .accessibilityIdentifier(id)
     }
 
-    private var controls: some View {
-        HStack(spacing: 16) {
-            Picker(selection: $settings.instrument) {
-                ForEach(Instrument.all) { instrument in
-                    Text(LocalizedStringKey(instrument.name), bundle: .module).tag(instrument)
+    /// Label-less in the header: the selected instrument's own name says what
+    /// the control is, and a "Instrument" prefix would just crowd the bar.
+    private var instrumentPicker: some View {
+        Picker(selection: $settings.instrument) {
+            // Sectioned so the ordering explains itself: bowed strings first
+            // (violin leads — the app's reason for existing), then fretted,
+            // each family running high to low. Ungrouped, that sequence reads
+            // as arbitrary.
+            ForEach(Instrument.grouped, id: \.family) { group in
+                Section {
+                    ForEach(group.instruments) { instrument in
+                        Text(LocalizedStringKey(instrument.name), bundle: .module)
+                            .tag(instrument)
+                    }
+                } header: {
+                    Text(LocalizedStringKey(group.family.name), bundle: .module)
                 }
-            } label: {
-                Text("Instrument", bundle: .module)
             }
-            .pickerStyle(.menu)
-            .accessibilityIdentifier("tuner.instrument")
-
-            Picker(selection: $settings.naming) {
-                // Each convention is labelled in its own terms ("A H C",
-                // "イロハ"), so the list doesn't need translating.
-                ForEach(NoteNaming.allCases, id: \.self) { naming in
-                    Text(verbatim: naming.label).tag(naming)
-                }
-            } label: {
-                Text("Notation", bundle: .module)
-            }
-            .pickerStyle(.menu)
-            .accessibilityIdentifier("tuner.naming")
+        } label: {
+            Text("Instrument", bundle: .module)
         }
+        .pickerStyle(.menu)
+        .labelsHidden()
+        .accessibilityIdentifier("tuner.instrument")
     }
 
     private func centsLabel(_ cents: Double) -> String {
@@ -199,16 +272,20 @@ struct LightStrip: View {
 /// how orchestras actually specify a pitch (442, 443, baroque 415).
 struct ReferencePitchStepper: View {
     @Binding var reference: ReferencePitch
+    /// The reference is "this note at this frequency", so its label follows the
+    /// notation setting — `A=442` beside a readout spelling notes `La` or `イ`
+    /// would name the same pitch two different ways on one screen.
+    let naming: NoteNaming
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 10) {
             button("minus", enabled: reference.canLower) { reference = reference.lowered() }
-            Text(verbatim: "A=\(Int(reference.hz))")
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(.secondary)
+            Text(verbatim: "\(naming.concertAName)=\(Int(reference.hz))")
+                .font(.body.monospacedDigit())
+                .foregroundStyle(.primary)
                 // Fixed width so the row doesn't shift when the value goes
                 // from three digits to two, or the glyph widths change.
-                .frame(minWidth: 46)
+                .frame(minWidth: 78)
                 .accessibilityIdentifier("tuner.reference")
                 .accessibilityLabel(Text("Reference pitch", bundle: .module))
                 .accessibilityValue(Text(verbatim: "\(Int(reference.hz)) Hz"))
@@ -231,29 +308,40 @@ struct ReferencePitchStepper: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.footnote)
-                .frame(width: 22, height: 22)
+                .font(.body.weight(.medium))
+                // 44pt is the minimum comfortable touch target, and the Mac
+                // needs the same visual weight even though a pointer is
+                // precise — this is a primary control, not a corner label.
+                .frame(width: 44, height: 34)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        .foregroundStyle(enabled ? Color.secondary : Color.secondary.opacity(0.3))
+        .foregroundStyle(enabled ? Color.primary : Color.secondary.opacity(0.35))
     }
 }
 
-/// Input level bar — shows the app is hearing something even when no pitch is
+/// Input level — shows the app is hearing something even when no pitch is
 /// confident enough to display.
+///
+/// Grows outward from the centre rather than filling left to right: a
+/// left-anchored bar reads as progress toward something, while a symmetric one
+/// reads as signal, the way a hardware input meter does. It also shares the
+/// dial's centre-out geometry, so the two agree.
 struct LevelMeter: View {
     let level: Double
 
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .leading) {
+            ZStack {
                 Capsule().fill(Color.secondary.opacity(0.2))
-                Capsule().fill(Color.secondary)
+                Capsule()
+                    .fill(Color.secondary)
                     .frame(width: geo.size.width * level)
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
+        .animation(.easeOut(duration: 0.1), value: level)
         .accessibilityHidden(true)
     }
 }

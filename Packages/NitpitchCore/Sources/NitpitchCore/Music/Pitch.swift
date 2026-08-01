@@ -67,6 +67,51 @@ public struct Note: Equatable, Hashable, Sendable {
         naming.accessibleName(pitchClass: pitchClass, octave: octave)
     }
 
+    /// How the readout labels this note: the scientific designator, plus the
+    /// chosen convention's name when that differs.
+    ///
+    /// Rendered as `A4 (イ)` rather than `イ₄`. Appending the octave to a
+    /// localized name produces a hybrid no native reader would write — German
+    /// marks octaves by case and primes (`c'`), Japanese by 一点 prefixes, and
+    /// both restructure the name rather than suffixing it. Kept apart, each
+    /// label is correct on its own terms.
+    ///
+    /// **The two halves are international to different degrees.** The octave
+    /// *number* is scientific pitch notation (C4 = middle C), which is used
+    /// worldwide — MIDI and audio software everywhere speak it. The *letter*
+    /// isn't part of that spec: SPN assumes A–G, so the primary label is
+    /// really "English letter + SPN octave". That matters most for German,
+    /// where a bare `B4` would read as B-flat; the parenthetical resolves it,
+    /// since B♮ shows as `B4 (H)` and B♭ as `A♯4 (B)`. (Accidentals are the
+    /// real glyph `♯`, U+266F, not the number sign.)
+    ///
+    /// The parenthetical is dropped when the convention agrees with English,
+    /// since `A4 (A)` is noise.
+    public func readoutLabel(in naming: NoteNaming) -> ReadoutLabel {
+        let english = name(in: .english)
+        let localized = name(in: naming)
+        return ReadoutLabel(
+            name: english, octave: octave,
+            alternate: localized == english ? nil : localized)
+    }
+
+    /// The parts of the readout's note label, kept separate so the view can
+    /// size and place each one.
+    public struct ReadoutLabel: Equatable, Sendable {
+        /// The English letter, which the octave number belongs to.
+        public let name: String
+        /// The scientific octave, rendered as a subscript.
+        public let octave: Int
+        /// The chosen convention's name, or nil when it matches English.
+        public let alternate: String?
+
+        public init(name: String, octave: Int, alternate: String?) {
+            self.name = name
+            self.octave = octave
+            self.alternate = alternate
+        }
+    }
+
     /// Sharp-spelled English name, e.g. "A", "C♯".
     public var name: String { name(in: .english) }
 

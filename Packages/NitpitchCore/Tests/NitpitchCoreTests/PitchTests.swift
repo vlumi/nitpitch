@@ -145,4 +145,37 @@ final class PitchTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - Picker grouping
+
+    /// The picker renders `grouped`, so anything missing from it is an
+    /// instrument the user simply cannot select.
+    func testGroupingCoversEveryInstrumentExactlyOnce() {
+        let grouped = Instrument.grouped.flatMap(\.instruments)
+        XCTAssertEqual(grouped.count, Instrument.all.count)
+        XCTAssertEqual(Set(grouped), Set(Instrument.all))
+    }
+
+    /// Within a family the order is high to low; that's the rule the section
+    /// headings exist to make visible, so it has to actually hold.
+    func testEachFamilyRunsHighToLow() {
+        for (family, instruments) in Instrument.grouped {
+            let tops = instruments.compactMap { $0.strings.max() }
+            guard tops.count == instruments.count else { continue }
+            XCTAssertEqual(
+                tops, tops.sorted(by: >),
+                "\(family.name) is not ordered high to low")
+        }
+    }
+
+    /// Violin leads — it's the default and the app's reason for existing.
+    func testViolinIsFirst() {
+        XCTAssertEqual(Instrument.all.first, .violin)
+        XCTAssertEqual(Instrument.grouped.first?.instruments.first, .violin)
+    }
+
+    func testChromaticIsTheOnlyStringlessInstrument() {
+        let stringless = Instrument.all.filter(\.strings.isEmpty)
+        XCTAssertEqual(stringless, [.chromatic])
+    }
 }

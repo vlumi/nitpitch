@@ -59,4 +59,14 @@ public enum NoteNaming: String, CaseIterable, Codable, Sendable {
         let spoken = base.replacingOccurrences(of: "♯", with: " sharp")
         return "\(spoken) \(octave)"
     }
+
+    /// What to call concert A in this convention.
+    ///
+    /// The reference pitch is defined as *this note* at some frequency, so the
+    /// label has to follow the notation setting — showing "A=442" beside a
+    /// readout spelling notes as `La` or `イ` names the same pitch two ways.
+    public var concertAName: String { names[Self.concertAPitchClass] }
+
+    /// A is pitch class 9; the naming tables start at C.
+    static let concertAPitchClass = 9
 }

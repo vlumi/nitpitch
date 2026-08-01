@@ -69,6 +69,70 @@ final class NoteNamingTests: XCTestCase {
         XCTAssertEqual(a4.name(in: .japanese), "イ")
     }
 
+    /// The reference-pitch label is built from this, so it must agree with
+    /// what the readout would call the same note — otherwise one screen names
+    /// concert A two different ways.
+    func testConcertANameMatchesTheReadout() {
+        let a4 = Note(pitchClass: 9, octave: 4)
+        for naming in NoteNaming.allCases {
+            XCTAssertEqual(
+                naming.concertAName, a4.name(in: naming),
+                "\(naming) labels the reference differently from the note")
+        }
+        XCTAssertEqual(NoteNaming.english.concertAName, "A")
+        XCTAssertEqual(NoteNaming.german.concertAName, "A")
+        XCTAssertEqual(NoteNaming.italian.concertAName, "La")
+        XCTAssertEqual(NoteNaming.japanese.concertAName, "イ")
+    }
+
+    // MARK: - Readout label
+
+    /// English needs no parenthetical — `A4 (A)` would be noise.
+    func testEnglishShowsNoAlternate() {
+        for pitchClass in 0..<12 {
+            let label = Note(pitchClass: pitchClass, octave: 4).readoutLabel(in: .english)
+            XCTAssertNil(label.alternate, "\(label.name) should not repeat itself")
+        }
+    }
+
+    func testPrimaryIsAlwaysScientific() {
+        let label = Note(pitchClass: 9, octave: 4).readoutLabel(in: .japanese)
+        XCTAssertEqual(label.name, "A")
+        XCTAssertEqual(label.octave, 4)
+        XCTAssertEqual(label.alternate, "イ")
+    }
+
+    /// German is the case where the scientific letter is actively ambiguous: a
+    /// bare `B4` reads as B-flat to a German musician. Both notes around that
+    /// clash must carry the parenthetical that disambiguates them.
+    func testGermanDisambiguatesBAndH() {
+        let bFlat = Note(pitchClass: 10, octave: 4).readoutLabel(in: .german)
+        let bNatural = Note(pitchClass: 11, octave: 4).readoutLabel(in: .german)
+        XCTAssertEqual(bFlat.name, "A♯")
+        XCTAssertEqual(bFlat.alternate, "B")
+        XCTAssertEqual(bNatural.name, "B")
+        XCTAssertEqual(bNatural.alternate, "H")
+    }
+
+    /// German naturals that match English (C, D, E, F, G, A) drop the
+    /// parenthetical; only the spellings that differ keep it.
+    func testGermanShowsAlternateOnlyWhereItDiffers() {
+        XCTAssertNil(Note(pitchClass: 0, octave: 4).readoutLabel(in: .german).alternate)
+        XCTAssertNil(Note(pitchClass: 9, octave: 4).readoutLabel(in: .german).alternate)
+        XCTAssertEqual(Note(pitchClass: 1, octave: 4).readoutLabel(in: .german).alternate, "Cis")
+    }
+
+    func testOctaveTravelsWithThePrimaryLabel() {
+        XCTAssertEqual(Note(midi: 69).readoutLabel(in: .italian).octave, 4)
+        XCTAssertEqual(Note(midi: 57).readoutLabel(in: .italian).octave, 3)
+        XCTAssertEqual(Note(midi: 81).readoutLabel(in: .italian).octave, 5)
+        // The localized name never carries an octave — that's the whole point
+        // of keeping the two labels apart.
+        for note in [Note(midi: 57), Note(midi: 69), Note(midi: 81)] {
+            XCTAssertEqual(note.readoutLabel(in: .italian).alternate, "La")
+        }
+    }
+
     func testFullNameAppendsTheOctave() {
         let note = Note(pitchClass: 1, octave: 5)
         XCTAssertEqual(note.fullName(in: .english), "C♯5")

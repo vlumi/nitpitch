@@ -6,11 +6,11 @@ instruments are supported because they cost almost nothing once the violin works
 (an array of MIDI numbers each), not because they're equal goals. This file is
 the canonical guidance for both humans and AI coding agents working in this repo.
 
-> **The name `Tuner` is a placeholder.** It is not final and is not
-> registrable — see [ROADMAP.md](ROADMAP.md). Renaming touches `project.yml`,
-> the bundle id, the scheme names in `Scripts/*.sh` and `Makefile`, the Swift
-> package/module names, and the `.xcstrings` display-name entries. Nothing else
-> depends on it.
+> **The app is named `Nitpitch`; the code still says `Tuner`.** The name was
+> settled after the scaffold was written, and **the rename has not been done
+> yet** — it's the first item in [ROADMAP.md](ROADMAP.md), which lists exactly
+> what it touches. Until then, `Tuner*` identifiers throughout are the old
+> placeholder, not a second concept.
 
 ## Project facts
 

@@ -30,3 +30,5 @@ first `make release` will produce build 1.
 - Violin tuning as the primary case, with viola, cello, double bass, guitar, and
   bass guitar sharing the same detector, plus a chromatic mode.
 - Adjustable reference pitch (A=390…466), defaulting to A=440.
+- Named the app **Nitpitch**. The sources still use the `Tuner` placeholder;
+  renaming them is tracked as the first roadmap item.

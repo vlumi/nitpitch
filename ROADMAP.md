@@ -3,138 +3,59 @@
 Open future work only. Settled decisions live in [AGENTS.md](AGENTS.md); what
 has shipped is in [CHANGELOG.md](CHANGELOG.md).
 
-## 1. Pick the real name — blocks everything outward-facing
+## 1. Rename the project to Nitpitch
 
-`Tuner` is a placeholder. It can't be trademarked, it's invisible in App Store
-search, and it collides with several hundred existing apps. **The GitHub repo
-and the App Store Connect records should not be created until this is settled**,
-because renaming either afterwards is disproportionately painful (ASC bundle IDs
-in particular are permanent).
+**The name is settled: `Nitpitch`** — *nitpick* with "pitch" substituted in.
+GitHub repo created at <https://github.com/vlumi/nitpitch>; `nitpitch.app` was
+free at the time of choosing.
 
-**Preferred register: tongue-in-cheek.** A wry name is wanted over an earnest
-one — but the joke has to be **about tuning**, not merely adjacent to it, and it
-has to land in one step. `Pitchfork` and the *tine*/*tune* pun worked because
-they sit on top of the subject; `Sumu`'s fog horn and `Fork Horn` failed because
-they're funny about something else, or ask the reader to assemble too many
-pieces.
+Why it won: the joke is **about tuning** (nitpicking about pitch is literally
+what a cent-accurate tuner does) and lands in one step; it's self-deprecating
+about the app rather than mocking the player; it's one word, so Finnish
+word-boundary gemination doesn't arise; it's pronounceable in English, Finnish,
+and Japanese (ニットピッチ); and being coined, it's more trademarkable than the
+dictionary words that kept colliding.
 
-### Screening checklist — run this BEFORE getting attached to a candidate
+### The rename itself — not yet done
 
-Brainstorming has repeatedly produced names that felt right and turned out to be
-taken. Screen first, fall in love second. Every candidate must clear all of:
+The code still says `Tuner` throughout. It's mechanical and confined to:
 
-1. **App Store search** — is there an existing app with this name, especially in
-   Music or Utilities? Check on the actual store, not from memory.
-2. **Nordic + Baltic word check** — Swedish, Norwegian, Danish, Estonian.
-   Finland's neighbours are close enough that a real word in one of them is a
-   collision, not a coincidence. *(Killed `ForkA`: a Swedish verb and an
-   existing Swedish service.)*
-3. **Japanese check** — both as a word and as an existing company/site. One of
-   the three target languages. *(Killed `Forklore`: an existing Japanese
-   company.)*
-4. **What does it mean in the OTHER two languages?** A word chosen for its sense
-   in one target language may say something unhelpful in another. Borrowing
-   across the three is the whole appeal of this shortlist, so check all three
-   every time — a name only has to be wrong in one of them to be wrong.
-   *(Killed `Sumu`: chosen for Japanese 澄む, "to become clear", but the Finnish
-   sense is "fog" — and evokes a fog horn, which is the opposite of in-tune.)*
-5. **Music-media trademarks** — the field is crowded and includes publications,
-   not just software. *(Killed `Pitchfork`: the publication dominates music
-   search regardless of app-listing availability.)*
-6. **TMview / EUIPO**, Nice class 9 (software) and 15 (musical instruments).
-7. **Domain** — a free `.app` or `.fi`.
-8. **Bundle id** — `fi.misaki.<name>` free on App Store Connect.
-9. **Pronounceable** by a Finnish, Japanese, and English speaker. Avoid
-   consonant clusters Japanese can't render and `ä`/`ö`, which are friction in a
-   bundle id and in search.
-10. **Finnish word-boundary gemination** — for any two-word name. Some Finnish
-   words double the next word's initial consonant across the boundary: "Vire
-   Tuner" is said *viret-tuner*, and the name then fights its own pronunciation
-   for the audience most likely to see it.
+- `project.yml` — project name, target names, `PRODUCT_NAME`, bundle id
+  (`fi.misaki.tuner` → `fi.misaki.nitpitch`), `CODE_SIGN_ENTITLEMENTS` paths.
+- The Swift package `Packages/TunerCore` and its modules `TunerCore` / `TunerKit`
+  → `NitpitchCore` / `NitpitchKit` (keeping donpa's `<Name>Core`/`<Name>Kit`
+  convention), plus every `import` and the test target names.
+- Scheme names in `Makefile` and `Scripts/*.sh` (`Tuner-iOS`, `Tuner-macOS`),
+  the `.xcodeproj` name, and the built product path in `run.sh` / `run-ios.sh`.
+- `Sources/{iOS,macOS}/TunerApp.swift` and `Tuner.entitlements` filenames;
+  the `TunerView` / `TunerViewModel` types.
+- Display names in the `.xcstrings` and both `Info.plist`s; `.gitignore`'s
+  `Tuner.xcodeproj` line; the `-uitest-clean` suite name in `LaunchStores`.
+- Docs: README, AGENTS.md, CHANGELOG, this file.
 
-   **This is a per-word property, not a spelling rule** — it depends on the
-   word's morphology (historically a final consonant that assimilated), so it
-   can't be predicted from the vowel ending. *Vire* triggers it; *sumu* does
-   not. **Ask a native speaker for each candidate**; don't infer it. A single
-   compound word sidesteps the question entirely, having no boundary.
+Verify afterwards with a full pass: `make test`, both linters from the repo
+root, and both `xcodebuild build` targets.
 
-### What the structure should be
+### If a name is ever needed again
 
-Single short words are exhausted — the space is picked over, and short
-`Fork`+syllable constructions are especially prone to colliding with a real word
-in a nearby language (see #2). **Two-word or compound names are the realistic
-target**, in one of two shapes:
+The screening rules below were expensive to learn — eight candidates died to
+them. Two checks need a **native ear, not a lookup**: Finnish word-boundary
+gemination is a per-word morphological property that **cannot be inferred from
+spelling** (*vire* triggers it, *sumu* does not), and a word can be perfect in
+one target language while meaning something unhelpful in another (*sumu* is
+Japanese for "become clear" and Finnish for "fog"). Generating candidates
+without screening them in the same sitting has a near-zero hit rate.
 
-- **Coined compound** (`Tonefork`) — a real name, more trademarkable, and no
-  word boundary for Finnish gemination to act on (checklist #10). **The preferred
-  shape.**
-- **Distinctive + generic** (`… Tuner`) — the first word carries the trademark,
-  the second carries App Store search. The common pattern for music apps, and
-  still open: just check the first word for gemination (#10) before committing,
-  since some Finnish words mangle the second word's pronunciation and it can't
-  be predicted from spelling.
+Screening checklist: App Store search · Nordic + Baltic word check · Japanese
+word/company check · what it means in the *other* two languages · music-media
+trademarks (publications, not just software) · TMview/EUIPO classes 9 and 15 ·
+domain · bundle id · pronounceable in all three · Finnish gemination.
 
-### Directions explored
-
-| Direction | Examples | Notes |
-|---|---|---|
-| Tuning-fork compounds | *Tonefork*, *FifthFork*, *BowFork* | The strongest direction: a tuning fork is concrete, specifically a tuning device, and gives the app icon for free. `Tonefork` is a calque of *Stimmgabel* / *äänirauta*, so it reads correctly to Europeans. **Avoid `Pitchfork`** — farm implement, and the publication owns music search. |
-| Reference-point metaphor | *Polaris …* | A fixed point everything is measured against — semantically apt, and unrelated to the Finland/north angle, which doesn't carry meaning here. Heavily used commercially, so availability is doubtful. |
-| Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
-| Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout* | Concrete and violin-native; risks being obscure to guitarists. |
-| Tongue-in-cheek, on-topic | **`Nitpitch`**, *Wolf* / *Wolftone*, *Sour*, *Peg Leg* | A wry name is wanted — but **the joke has to be about tuning**, not merely adjacent to it. (`Sumu` was briefly appealing for its accidental fog-horn image; a fog horn is funny but says nothing about pitch, so it reads as disconnected.) **`Nitpitch` is the current front-runner** — see below. `Wolf` is the other strong one: a *wolf tone* is the real term for a note that howls on a badly-resonating string — violin-native, technical, and dryly funny to the target audience while reading as a normal short name to everyone else. |
-| Tine / tune wordplay | *Tine Up*, *Tine*, *Attine* | A tuning fork's **tines** are the part that actually vibrates, so this is the mechanism rather than a decorative pun — and *tine* is one letter from *tune*. `Tine Up` (from "tune up") is the strongest form: two words, names the activity. **Caveat:** *tine* is uncommon English vocabulary and unknown in Finnish/Japanese, so for most users it reads as an odd spelling rather than wordplay. Check Norwegian first — *tine* is a verb (to thaw) and a major dairy brand. |
-| Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is semantically exact and reads as a clean coined name in EN/JA — but **only works standalone or as a compound**, never as `Vire <Word>` (checklist #10). `Viritin` ends in a consonant, so it pairs cleanly. |
-| Japanese | *Oto* (音), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. **Check the Finnish meaning too**: *sumu* was a candidate for 澄む ("to become clear") until the Finnish sense (fog — and the fog-horn association) turned out to say the opposite of what a tuner promises. |
-
-### Front-runner: `Nitpitch`
-
-*Nitpick* with **pitch** substituted in. The first candidate to clear every
-criterion above, at least on paper:
-
-- **The joke is on-topic and lands in one step.** Nitpicking about pitch is
-  literally what a cent-accurate tuner does — and it's self-deprecating about
-  the app rather than mocking the player, which is the warmer register.
-- **One word**, so the gemination question (#10) doesn't arise at all.
-- **Pronounceable in all three**: no clusters Finnish or Japanese struggle with;
-  renders as ニットピッチ.
-- **Coined**, so more trademarkable than a dictionary word, and unlikely to
-  collide the way single real words have.
-
-Still to check: everything in the checklist, plus two specific risks — the *tp*
-juncture is slightly more effortful to say than "nitpick", and some readers may
-skim it as the real word and miss the joke entirely. Also confirm `nit` carries
-nothing unfortunate in Finnish or Swedish.
-
-**Never screened, worth a look:** `Nitpitch`, `Wolftone`, `Tonefork`,
-`FifthFork`, `Tine Up`.
-
-**Already eliminated:** `ForkA` (Swedish verb + existing Swedish service),
-`Forklore` (existing Japanese company), `Pitchfork` (the publication owns music
-search), `Tinetone` (stationery/graphic-design products), `Fork440` (implies a
-fixed pitch to exactly the players who most want it adjustable), `Vire Tuner`
-(Finnish gemination — *viret-tuner*), `Sumu` (Finnish "fog"/fog horn — funny,
-but says nothing about pitch), `Fork Horn` (too many steps: spot the foghorn
-substitution, connect fork to tuning fork, and a tuner still isn't a horn).
-
-### A note on how to run this
-
-Seven candidates have now been eliminated. Most died to facts — existing apps,
-companies, trademarks, words in nearby languages, one phonological rule — none
-of them guessable without looking. The rest died to taste: the joke pointing at
-the wrong thing, or needing too much assembly. Brainstorming without screening
-has a near-zero hit rate here and burns a real check per candidate to disprove.
-
-**Generate and screen in the same sitting**, with the store and TMview open, and
-**a native Finnish and Japanese ear available** for items #4 and #10. Those two
-are judgement calls, not lookups: *sumu* is impeccable Japanese and a fog horn
-in Finnish, and gemination can't be read off the spelling. The checklist is the
-useful artifact; the candidate lists are just raw material.
-
-Once chosen, renaming touches: `project.yml` (name, bundle id, product names,
-entitlements paths), the scheme names in `Makefile` and `Scripts/*.sh`, the
-Swift package and module names, `Sources/{iOS,macOS}/` file and plist names, and
-the display-name entries in the `.xcstrings`. Nothing else depends on it.
+Eliminated along the way: `ForkA` (Swedish verb + existing service), `Forklore`
+(Japanese company), `Pitchfork` (the publication owns music search), `Tinetone`
+(stationery products), `Fork440` (implies a fixed pitch to exactly the players
+who want it adjustable), `Vire Tuner` (gemination — *viret-tuner*), `Sumu`
+(Finnish "fog"), `Fork Horn` (too many steps to get the joke).
 
 ## 2. Before a first release
 

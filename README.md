@@ -1,13 +1,14 @@
-# Tuner
+# Nitpitch
 
 An instrument tuner for iPhone, iPad, and Mac. Built for **violin** first —
 that's the reason it exists — with the other string instruments along for the
 ride.
 
-> **⚠️ The name is a placeholder.** "Tuner" is neither distinctive nor
-> registrable, and it's invisible in App Store search. Picking the real name is
-> the first open item in [ROADMAP.md](ROADMAP.md); nothing ships until it's
-> settled.
+*Nitpicking about pitch, which is the entire job.*
+
+> **Note:** the name was chosen after the code was written, so the sources still
+> say `Tuner` throughout. Renaming them is the first item in
+> [ROADMAP.md](ROADMAP.md).
 
 ## What it does
 

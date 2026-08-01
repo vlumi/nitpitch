@@ -87,6 +87,13 @@ tested against known-frequency signals precisely because plausible-looking pitch
 code can be wrong in ways that are invisible by inspection — three such bugs
 were caught by those tests during the initial build.
 
+## Privacy
+
+Nothing is recorded, nothing is transmitted, and there is no third-party code in
+the app. The macOS build runs sandboxed without the network entitlement, so that
+last point is enforced by the OS rather than merely promised. Full statement in
+[PRIVACY.md](PRIVACY.md).
+
 ## License
 
 [MIT](LICENSE).

@@ -44,8 +44,9 @@ remains below is release mechanics, not features.
 - **App Store Connect tooling.** Donpa's `Scripts/asc/` (listing and screenshot
   sync) is deliberately not copied yet — bring it over when a release is close,
   minus the achievements parts, which are game-specific.
-- **PRIVACY.md.** The privacy story is unusually simple (nothing is recorded,
-  nothing is transmitted) but the App Store requires it stated.
+- **Privacy policy URL.** [PRIVACY.md](PRIVACY.md) is written; App Store Connect
+  needs it at a public URL, which the GitHub link satisfies once the remote is
+  pushed.
 
 ## 2. Double-stop fifths — the differentiating feature (v0.2)
 

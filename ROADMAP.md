@@ -11,27 +11,59 @@ and the App Store Connect records should not be created until this is settled**,
 because renaming either afterwards is disproportionately painful (ASC bundle IDs
 in particular are permanent).
 
-What the name has to do:
+### Screening checklist — run this BEFORE getting attached to a candidate
 
-- Be findable in App Store search (so: not a generic dictionary word).
-- Be pronounceable and spellable by a Finnish, Japanese, and English speaker —
-  the localization plan targets those three.
-- Have a free `.app` or `.fi` domain and a free bundle id.
-- Not collide with an existing music-software trademark, which is a crowded
-  field.
+Brainstorming has repeatedly produced names that felt right and turned out to be
+taken. Screen first, fall in love second. Every candidate must clear all of:
 
-Directions worth exploring, roughly from most to least conservative:
+1. **App Store search** — is there an existing app with this name, especially in
+   Music or Utilities? Check on the actual store, not from memory.
+2. **Nordic + Baltic word check** — Swedish, Norwegian, Danish, Estonian.
+   Finland's neighbours are close enough that a real word in one of them is a
+   collision, not a coincidence. *(Killed `ForkA`: a Swedish verb and an
+   existing Swedish service.)*
+3. **Japanese check** — both as a word and as an existing company/site. One of
+   the three target languages. *(Killed `Forklore`: an existing Japanese
+   company.)*
+4. **Music-media trademarks** — the field is crowded and includes publications,
+   not just software. *(Killed `Pitchfork`: the publication dominates music
+   search regardless of app-listing availability.)*
+5. **TMview / EUIPO**, Nice class 9 (software) and 15 (musical instruments).
+6. **Domain** — a free `.app` or `.fi`.
+7. **Bundle id** — `fi.misaki.<name>` free on App Store Connect.
+8. **Pronounceable** by a Finnish, Japanese, and English speaker. Avoid
+   consonant clusters Japanese can't render and `ä`/`ö`, which are friction in a
+   bundle id and in search.
+
+### What the structure should be
+
+Single short words are exhausted — the space is picked over, and short
+`Fork`+syllable constructions are especially prone to colliding with a real word
+in a nearby language (see #2). **Two-word or compound names are the realistic
+target**, in one of two shapes:
+
+- **Distinctive + generic** (`Vire Tuner`) — the first word carries the
+  trademark, the second carries App Store search. Lower risk; the common pattern
+  for music apps.
+- **Coined compound** (`Tonefork`) — a real name, more trademarkable, but must
+  work as a unit in all three languages.
+
+### Directions explored
 
 | Direction | Examples | Notes |
 |---|---|---|
-| Pitch/tuning vocabulary, obliquely | *Cent*, *Detune*, *Concert A*, *A440* | Meaningful to musicians; several are taken, and `A440` is a common product name already. |
-| Violin-specific | *Peg*, *Fifths*, *Openstring*, *Scroll*, *Bout* | `Peg` and `Scroll` are the tuning peg and the head carving — short, concrete, violin-native. Risk: too obscure for guitarists. |
-| Finnish | *Viritin* (tuner), *Sävel* (tone/melody), *Puhdas* (pure/clean) | Distinctive and almost certainly free; `ä` in a bundle id and App Store search is a real friction point. |
-| Japanese | *Onkai* (音階, scale), *Choritsu* (調律, tuning) | *Choritsu* is literally "tuning" and reads as a coined name in English. |
-| Coined / abstract | — | Maximum registrability, zero built-in meaning. |
+| Tuning-fork compounds | *Tonefork*, *FifthFork*, *BowFork* | The strongest direction: a tuning fork is concrete, specifically a tuning device, and gives the app icon for free. `Tonefork` is a calque of *Stimmgabel* / *äänirauta*, so it reads correctly to Europeans. **Avoid `Pitchfork`** — farm implement, and the publication owns music search. |
+| Reference-point metaphor | *Polaris …* | A fixed point everything is measured against — semantically apt, and unrelated to the Finland/north angle, which doesn't carry meaning here. Heavily used commercially, so availability is doubtful. |
+| Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
+| Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout*, *Tine* | Concrete and violin-native; risks being obscure to guitarists. `Tine` (a fork's prong — the part that vibrates) keeps the fork idea while being technically precise. |
+| Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is the standout: semantically exact in Finnish, reads as a clean coined name in English and Japanese. Distinctive and likely free. |
+| Japanese | *Oto* (音), *Sumu* (澄む, to clarify), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. |
 
-A shortlist worth checking availability on: **Peg**, **Fifths**, **Cent**,
-**Choritsu**, **Viritin**.
+**Never screened, worth a look:** `Tonefork`, `FifthFork`, `Vire Tuner`,
+`Sumu Tuner`, `Tine`.
+
+**Already eliminated:** `ForkA` (Swedish), `Forklore` (Japanese company),
+`Pitchfork` (publication), `Fork440` (fixed-pitch implication).
 
 Once chosen, renaming touches: `project.yml` (name, bundle id, product names,
 entitlements paths), the scheme names in `Makefile` and `Scripts/*.sh`, the

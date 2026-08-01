@@ -10,6 +10,7 @@ public final class Settings: ObservableObject {
     private enum Key {
         static let referenceHz = "referenceHz"
         static let instrumentID = "instrumentID"
+        static let noteNaming = "noteNaming"
     }
 
     private let defaults: UserDefaults
@@ -22,6 +23,10 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(instrument.id, forKey: Key.instrumentID) }
     }
 
+    @Published public var naming: NoteNaming {
+        didSet { defaults.set(naming.rawValue, forKey: Key.noteNaming) }
+    }
+
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         // `double(forKey:)` returns 0 for a missing key, which ReferencePitch
@@ -30,5 +35,8 @@ public final class Settings: ObservableObject {
         self.reference = storedHz.map(ReferencePitch.init(hz:)) ?? .standard
         self.instrument =
             (defaults.string(forKey: Key.instrumentID).flatMap(Instrument.named)) ?? .violin
+        self.naming =
+            (defaults.string(forKey: Key.noteNaming).flatMap(NoteNaming.init(rawValue:)))
+            ?? .english
     }
 }

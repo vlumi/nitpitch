@@ -1,21 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Bass Guitar" : {
-      "comment" : "Instrument picker option"
-    },
-    "Cello" : {
-      "comment" : "Instrument picker option"
-    },
-    "Chromatic" : {
-      "comment" : "Instrument picker option: no fixed strings, detects any note"
-    },
-    "Double Bass" : {
-      "comment" : "Instrument picker option"
-    },
-    "Guitar" : {
-      "comment" : "Instrument picker option"
-    },
     "Instrument" : {
       "comment" : "Label for the instrument picker"
     },
@@ -23,19 +8,16 @@
       "comment" : "Shown when the user denied microphone permission"
     },
     "No audio input device is available." : {
-      "comment" : "Error when the audio engine reports no usable input device"
+      "comment" : "Shown when the engine reports no usable input"
     },
     "Not listening" : {
       "comment" : "Shown when the tuner is stopped"
     },
+    "Notation" : {
+      "comment" : "Label for the note-naming convention picker (A B C / A H C / Do Re Mi / iroha)"
+    },
     "Play a note" : {
       "comment" : "Shown while listening but no pitch is confident enough to display"
-    },
-    "Viola" : {
-      "comment" : "Instrument picker option"
-    },
-    "Violin" : {
-      "comment" : "Instrument picker option"
     }
   },
   "version" : "1.0"

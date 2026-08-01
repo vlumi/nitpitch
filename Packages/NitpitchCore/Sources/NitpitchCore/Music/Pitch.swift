@@ -41,11 +41,22 @@ public struct Note: Equatable, Hashable, Sendable {
         self.octave = Int((Double(midi) / 12.0).rounded(.down)) - 1
     }
 
-    /// Sharp-spelled name without the octave, e.g. "A", "C♯".
-    public var name: String { Self.sharpNames[pitchClass] }
+    /// Name without the octave in the given convention, e.g. "C♯", "Cis", "嬰ハ".
+    public func name(in naming: NoteNaming) -> String { naming.names[pitchClass] }
 
-    /// Name with octave, e.g. "A4", "C♯5".
-    public var fullName: String { "\(name)\(octave)" }
+    /// Name with octave, e.g. "A4", "Cis5".
+    public func fullName(in naming: NoteNaming) -> String { "\(name(in: naming))\(octave)" }
+
+    /// Spoken form for VoiceOver, e.g. "C sharp 5".
+    public func accessibleName(in naming: NoteNaming) -> String {
+        naming.accessibleName(pitchClass: pitchClass, octave: octave)
+    }
+
+    /// Sharp-spelled English name, e.g. "A", "C♯".
+    public var name: String { name(in: .english) }
+
+    /// English name with octave, e.g. "A4", "C♯5".
+    public var fullName: String { fullName(in: .english) }
 
     /// The note's own frequency under a given reference.
     public func frequency(reference: ReferencePitch = .standard) -> Double {
@@ -54,8 +65,8 @@ public struct Note: Equatable, Hashable, Sendable {
 
     /// Sharps rather than flats throughout: a tuner shows one spelling, and
     /// sharps are the convention on the instruments this targets. (Flat
-    /// spelling would need key context the app doesn't have.)
-    static let sharpNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"]
+    /// spelling would need key context the app doesn't have.) Per-convention
+    /// spellings live in `NoteNaming`.
 }
 
 /// A measured frequency resolved against the chromatic scale: which note it is,

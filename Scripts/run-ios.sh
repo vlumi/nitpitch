@@ -88,4 +88,7 @@ app="$derived/Build/Products/Debug-iphonesimulator/Nitpitch.app"
 
 echo "Installing and launching $bundle_id"
 xcrun simctl install "$udid" "$app"
-xcrun simctl launch "$udid" "$bundle_id"
+# ${LAUNCH_ARGS} lets `make demo-iphone` pass -demo through; the simulator has
+# no usable microphone, so that's the only way to see the reading layout there.
+# shellcheck disable=SC2086
+xcrun simctl launch "$udid" "$bundle_id" ${LAUNCH_ARGS:-}

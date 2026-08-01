@@ -22,4 +22,5 @@ app="$derived/Build/Products/Debug/Nitpitch.app"
 osascript -e 'quit app "Nitpitch"' 2>/dev/null || true
 sleep 0.3
 echo "Launching $app"
-open "$app"
+# shellcheck disable=SC2086
+open "$app" ${LAUNCH_ARGS:+--args $LAUNCH_ARGS}

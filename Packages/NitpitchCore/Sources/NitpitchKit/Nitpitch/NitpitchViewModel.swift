@@ -57,6 +57,10 @@ public final class NitpitchViewModel: ObservableObject {
     }
 
     public func start() async {
+        if LaunchStores.isDemo {
+            await runDemo()
+            return
+        }
         guard await AudioInput.requestPermission() else {
             state = .permissionDenied
             return
@@ -66,6 +70,37 @@ public final class NitpitchViewModel: ObservableObject {
             state = .listening
         } catch {
             state = .idle
+        }
+    }
+
+    /// Drives the display from a synthetic reading, for laying out the UI
+    /// where there's no usable microphone (see `LaunchStores.isDemo`).
+    ///
+    /// Oscillates rather than holding a fixed pitch: a static value would
+    /// leave the arc, the colour ramp and most of the light strip untested,
+    /// and those are what the layout has to accommodate at their extremes.
+    ///
+    /// Sinusoidal rather than a linear sweep — it eases at the turning points
+    /// and crosses the centre quickly, so the in-tune state is legible instead
+    /// of flashing past at the same rate as everything else. A slower second
+    /// term detunes the swing so it doesn't look mechanical.
+    private func runDemo() async {
+        state = .listening
+        let target = Note(midi: 69)  // A4, so the octave subscript shows
+        var tick = 0.0
+
+        while !Task.isCancelled {
+            let swing = sin(tick) * 0.75 + sin(tick * 0.31) * 0.25
+            let cents = swing * TuningDisplay.fullScaleCents
+            let hz = target.frequency(reference: reference) * pow(2, cents / 1200)
+
+            state = .reading(
+                PitchReading(frequency: hz, reference: reference),
+                cents: cents, clarity: 0.98)
+            level = 0.45 + 0.2 * sin(tick * 1.7)
+
+            tick += 0.055
+            try? await Task.sleep(nanoseconds: 50_000_000)
         }
     }
 

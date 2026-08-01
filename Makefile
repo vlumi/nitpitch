@@ -38,6 +38,14 @@ run-mac: Nitpitch.xcodeproj  ## Build + launch the macOS app
 run-iphone: Nitpitch.xcodeproj  ## Build + launch on an iPhone simulator (DEVICE="SE" / "17 Pro" to pick)
 	@Scripts/run-ios.sh iphone "$(DEVICE)"
 
+.PHONY: demo-iphone
+demo-iphone: Nitpitch.xcodeproj  ## Build + launch on a simulator with a synthetic reading (no mic needed)
+	@LAUNCH_ARGS=-demo Scripts/run-ios.sh iphone "$(DEVICE)"
+
+.PHONY: demo-mac
+demo-mac: Nitpitch.xcodeproj  ## Build + launch the Mac app with a synthetic reading
+	@LAUNCH_ARGS=-demo Scripts/run.sh
+
 .PHONY: run-ipad
 run-ipad: Nitpitch.xcodeproj  ## Build + launch on an iPad simulator (DEVICE="Air" / "13-inch" to pick)
 	@Scripts/run-ios.sh ipad "$(DEVICE)"

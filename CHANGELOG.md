@@ -22,6 +22,8 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+### build 1 — 2026-08-02
+
 - Initial project scaffold: XcodeGen spec for iOS 16+ / macOS 14+ app targets,
   the `NitpitchCore` / `NitpitchKit` package split, CI (lint, coverage-gated tests,
   both platform builds), and the four-step release lane.

@@ -55,15 +55,29 @@ target**, in one of two shapes:
 | Tuning-fork compounds | *Tonefork*, *FifthFork*, *BowFork* | The strongest direction: a tuning fork is concrete, specifically a tuning device, and gives the app icon for free. `Tonefork` is a calque of *Stimmgabel* / *äänirauta*, so it reads correctly to Europeans. **Avoid `Pitchfork`** — farm implement, and the publication owns music search. |
 | Reference-point metaphor | *Polaris …* | A fixed point everything is measured against — semantically apt, and unrelated to the Finland/north angle, which doesn't carry meaning here. Heavily used commercially, so availability is doubtful. |
 | Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
-| Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout*, *Tine* | Concrete and violin-native; risks being obscure to guitarists. `Tine` (a fork's prong — the part that vibrates) keeps the fork idea while being technically precise. |
+| Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout* | Concrete and violin-native; risks being obscure to guitarists. |
+| Tine / tune wordplay | *Tine Up*, *Tine*, *Attine* | A tuning fork's **tines** are the part that actually vibrates, so this is the mechanism rather than a decorative pun — and *tine* is one letter from *tune*. `Tine Up` (from "tune up") is the strongest form: two words, names the activity. **Caveat:** *tine* is uncommon English vocabulary and unknown in Finnish/Japanese, so for most users it reads as an odd spelling rather than wordplay. Check Norwegian first — *tine* is a verb (to thaw) and a major dairy brand. |
 | Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is the standout: semantically exact in Finnish, reads as a clean coined name in English and Japanese. Distinctive and likely free. |
 | Japanese | *Oto* (音), *Sumu* (澄む, to clarify), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. |
 
-**Never screened, worth a look:** `Tonefork`, `FifthFork`, `Vire Tuner`,
-`Sumu Tuner`, `Tine`.
+**Never screened, worth a look:** `Tonefork`, `FifthFork`, `Tine Up`,
+`Vire Tuner`, `Sumu Tuner`.
 
-**Already eliminated:** `ForkA` (Swedish), `Forklore` (Japanese company),
-`Pitchfork` (publication), `Fork440` (fixed-pitch implication).
+**Already eliminated:** `ForkA` (Swedish verb + existing Swedish service),
+`Forklore` (existing Japanese company), `Pitchfork` (the publication owns music
+search), `Tinetone` (stationery/graphic-design products), `Fork440` (implies a
+fixed pitch to exactly the players who most want it adjustable).
+
+### A note on how to run this
+
+Five candidates have now been eliminated by facts — existing apps, companies,
+trademarks, and words in nearby languages — that are only discoverable by
+searching. Brainstorming without screening has a near-zero hit rate here and
+burns a real search per candidate to disprove.
+
+**Generate and screen in the same sitting**, with the store and TMview open.
+The checklist above is the useful artifact; the candidate lists are just raw
+material.
 
 Once chosen, renaming touches: `project.yml` (name, bundle id, product names,
 entitlements paths), the scheme names in `Makefile` and `Scripts/*.sh`, the

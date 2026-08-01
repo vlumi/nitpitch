@@ -6,8 +6,8 @@ import XCTest
 /// The simulator has no usable microphone — it delivers silence — so these
 /// cover launch, layout, and the persistence of the picker. The needle
 /// responding to a real note is verified on device by hand; the DSP itself is
-/// covered headlessly by the TunerCore suite.
-final class TunerUITests: XCTestCase {
+/// covered headlessly by the NitpitchCore suite.
+final class NitpitchUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         // Wipe persisted settings so each run starts identical (see LaunchStores).

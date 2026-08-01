@@ -1,18 +1,18 @@
+import NitpitchCore
 import SwiftUI
-import TunerCore
 
 /// The tuner screen: note name, cent offset, and a needle.
 ///
 /// Accessibility identifiers are stable and kept in sync with `Tests/UITests`
 /// (`tuner.note`, `tuner.cents`, `tuner.status`, `tuner.instrument`).
-public struct TunerView: View {
+public struct NitpitchView: View {
     @ObservedObject private var settings: Settings
-    @StateObject private var model: TunerViewModel
+    @StateObject private var model: NitpitchViewModel
 
     public init(settings: Settings) {
         self.settings = settings
         _model = StateObject(
-            wrappedValue: TunerViewModel(
+            wrappedValue: NitpitchViewModel(
                 reference: settings.reference, band: settings.instrument.band()))
     }
 

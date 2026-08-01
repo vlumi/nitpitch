@@ -13,7 +13,7 @@ public enum LaunchStores {
 
     public static let defaults: UserDefaults = {
         guard isClean else { return .standard }
-        let suite = "fi.misaki.tuner.uitest"
+        let suite = "fi.misaki.nitpitch.uitest"
         let defaults = UserDefaults(suiteName: suite) ?? .standard
         defaults.removePersistentDomain(forName: suite)
         return defaults

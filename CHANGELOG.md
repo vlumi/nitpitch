@@ -23,12 +23,12 @@ first `make release` will produce build 1.
 ### Unreleased (next build)
 
 - Initial project scaffold: XcodeGen spec for iOS 16+ / macOS 14+ app targets,
-  the `TunerCore` / `TunerKit` package split, CI (lint, coverage-gated tests,
+  the `NitpitchCore` / `NitpitchKit` package split, CI (lint, coverage-gated tests,
   both platform builds), and the four-step release lane.
 - Pitch detection by the McLeod Pitch Method over vDSP — sub-cent accuracy
   across the supported range, with octave-error and clarity guards.
 - Violin tuning as the primary case, with viola, cello, double bass, guitar, and
   bass guitar sharing the same detector, plus a chromatic mode.
 - Adjustable reference pitch (A=390…466), defaulting to A=440.
-- Named the app **Nitpitch**. The sources still use the `Tuner` placeholder;
-  renaming them is tracked as the first roadmap item.
+- Named the app **Nitpitch**, and renamed the sources, schemes, and bundle id
+  (`fi.misaki.nitpitch`) from the `Tuner` placeholder to match.

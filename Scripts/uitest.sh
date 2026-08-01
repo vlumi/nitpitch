@@ -20,9 +20,9 @@ fi
 echo "Running UI tests on: ${destination}"
 if command -v xcbeautify >/dev/null; then
     set -o pipefail
-    xcodebuild -project Tuner.xcodeproj -scheme Tuner-iOS \
+    xcodebuild -project Nitpitch.xcodeproj -scheme Nitpitch-iOS \
         -destination "$destination" test | xcbeautify
 else
-    xcodebuild -project Tuner.xcodeproj -scheme Tuner-iOS \
+    xcodebuild -project Nitpitch.xcodeproj -scheme Nitpitch-iOS \
         -destination "$destination" test
 fi

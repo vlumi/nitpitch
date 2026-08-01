@@ -1,11 +1,11 @@
 import Combine
 import Foundation
-import TunerCore
+import NitpitchCore
 
 /// Drives the readout: owns the audio input, runs the detector on each window,
 /// and publishes a smoothed reading for the view.
 @MainActor
-public final class TunerViewModel: ObservableObject {
+public final class NitpitchViewModel: ObservableObject {
     /// What the display should currently show.
     public enum State: Equatable {
         /// Not started, or stopped.

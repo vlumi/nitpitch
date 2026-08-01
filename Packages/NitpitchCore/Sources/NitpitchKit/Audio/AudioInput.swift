@@ -1,6 +1,6 @@
 import AVFoundation
 import Foundation
-import TunerCore
+import NitpitchCore
 
 /// Microphone (or line-in) capture, converted to the detector's expected format
 /// and delivered one analysis window at a time.
@@ -20,7 +20,7 @@ public final class AudioInput {
 
     private let engine = AVAudioEngine()
     private let analysisQueue = DispatchQueue(
-        label: "fi.misaki.tuner.analysis", qos: .userInitiated)
+        label: "fi.misaki.nitpitch.analysis", qos: .userInitiated)
     private let targetFormat: AVAudioFormat
     private var converter: AVAudioConverter?
 

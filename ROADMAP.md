@@ -3,11 +3,17 @@
 Open future work only. Settled decisions live in [AGENTS.md](AGENTS.md); what
 has shipped is in [CHANGELOG.md](CHANGELOG.md).
 
-## 1. Rename the project to Nitpitch
+## 1. Naming — settled
 
-**The name is settled: `Nitpitch`** — *nitpick* with "pitch" substituted in.
-GitHub repo created at <https://github.com/vlumi/nitpitch>; `nitpitch.app` was
-free at the time of choosing.
+**The name is `Nitpitch`** — *nitpick* with "pitch" substituted in. The rename
+from the `Tuner` placeholder is done; the sources, schemes, and bundle id all
+carry it.
+
+Registered and therefore fixed: the GitHub repo at
+<https://github.com/vlumi/nitpitch>, the `nitpitch.app` domain, and the App
+Store Connect record under bundle id **`fi.misaki.nitpitch`**. That last one
+makes the name **irreversible in practice** — an ASC bundle id cannot be edited
+or reused once the record exists, only abandoned.
 
 Why it won: the joke is **about tuning** (nitpicking about pitch is literally
 what a cent-accurate tuner does) and lands in one step; it's self-deprecating
@@ -15,26 +21,6 @@ about the app rather than mocking the player; it's one word, so Finnish
 word-boundary gemination doesn't arise; it's pronounceable in English, Finnish,
 and Japanese (ニットピッチ); and being coined, it's more trademarkable than the
 dictionary words that kept colliding.
-
-### The rename itself — not yet done
-
-The code still says `Tuner` throughout. It's mechanical and confined to:
-
-- `project.yml` — project name, target names, `PRODUCT_NAME`, bundle id
-  (`fi.misaki.tuner` → `fi.misaki.nitpitch`), `CODE_SIGN_ENTITLEMENTS` paths.
-- The Swift package `Packages/TunerCore` and its modules `TunerCore` / `TunerKit`
-  → `NitpitchCore` / `NitpitchKit` (keeping donpa's `<Name>Core`/`<Name>Kit`
-  convention), plus every `import` and the test target names.
-- Scheme names in `Makefile` and `Scripts/*.sh` (`Tuner-iOS`, `Tuner-macOS`),
-  the `.xcodeproj` name, and the built product path in `run.sh` / `run-ios.sh`.
-- `Sources/{iOS,macOS}/TunerApp.swift` and `Tuner.entitlements` filenames;
-  the `TunerView` / `TunerViewModel` types.
-- Display names in the `.xcstrings` and both `Info.plist`s; `.gitignore`'s
-  `Tuner.xcodeproj` line; the `-uitest-clean` suite name in `LaunchStores`.
-- Docs: README, AGENTS.md, CHANGELOG, this file.
-
-Verify afterwards with a full pass: `make test`, both linters from the repo
-root, and both `xcodebuild build` targets.
 
 ### If a name is ever needed again
 

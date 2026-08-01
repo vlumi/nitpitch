@@ -3,5 +3,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "Running TunerCore tests..."
-swift test --package-path Packages/TunerCore
+echo "Running NitpitchCore tests..."
+swift test --package-path Packages/NitpitchCore

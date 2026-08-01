@@ -1,4 +1,4 @@
-# Contributing to Tuner
+# Contributing to Nitpitch
 
 Thanks for your interest! The full contributor guide — project layout, build &
 test commands, code style, and conventions — lives in **[AGENTS.md](AGENTS.md)**,
@@ -22,7 +22,7 @@ Pull requests:
   on CI; run `make test` and the linters locally before pushing.
 - **Changes to the pitch detector need tests.** Wrong DSP produces *plausible*
   answers — a reading that's a few cents off, or an octave low, looks like a
-  working tuner. `Packages/TunerCore/Tests` verifies against synthesized
+  working tuner. `Packages/NitpitchCore/Tests` verifies against synthesized
   waveforms of known frequency; add a case there for anything you change.
 - If your change is user-facing, add a bullet to `CHANGELOG.md` under
   `### Unreleased (next build)` in the same PR.

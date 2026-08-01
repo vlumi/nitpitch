@@ -42,7 +42,7 @@ release_one() {  # $1 = ios|macos
     if tag_exists "$plat" "$version" "$build"; then
         echo "  $tag already tagged; creating its GitHub release."
     else
-        git tag -a "$tag" "$merge_sha" -m "Tuner ${label} v${version} (build ${build})"
+        git tag -a "$tag" "$merge_sha" -m "Nitpitch ${label} v${version} (build ${build})"
         git push --quiet origin "$tag"
         echo "  tagged $tag → ${merge_sha:0:7}"
     fi
@@ -81,7 +81,7 @@ EOF
         [ "$(git tag --list 'ios/v*' --sort=-v:refname | head -1)" = "$tag" ] && latest=true
     fi
     gh release create "$tag" --verify-tag \
-        --title "${label} v${version} (build ${build}) — Tuner" \
+        --title "${label} v${version} (build ${build}) — Nitpitch" \
         --notes "$notes" --latest="$latest" >/dev/null
     echo "  published GitHub release for $tag (latest=$latest)"
 }

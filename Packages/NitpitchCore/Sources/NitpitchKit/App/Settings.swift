@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import TunerCore
+import NitpitchCore
 
 /// User-visible preferences, persisted to the injected defaults.
 ///

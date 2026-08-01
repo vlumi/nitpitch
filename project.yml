@@ -1,4 +1,4 @@
-name: Tuner
+name: Nitpitch
 
 options:
   bundleIdPrefix: fi.misaki
@@ -9,11 +9,11 @@ options:
   developmentLanguage: en
 
 packages:
-  TunerCore:
-    path: Packages/TunerCore
+  NitpitchCore:
+    path: Packages/NitpitchCore
 
 targets:
-  Tuner-iOS:
+  Nitpitch-iOS:
     type: application
     platform: iOS
     sources:
@@ -22,7 +22,7 @@ targets:
     info:
       path: Sources/iOS/Info.plist
       properties:
-        CFBundleDisplayName: Tuner
+        CFBundleDisplayName: Nitpitch
         # Track the version build settings so MARKETING_VERSION is the single
         # source of truth.
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -48,11 +48,11 @@ targets:
           - UIInterfaceOrientationLandscapeRight
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.tuner
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch
         # User-visible app/bundle name; without this it'd be the target name
-        # "Tuner-iOS". Module name stays Tuner_iOS (PRODUCT_MODULE_NAME).
-        PRODUCT_NAME: Tuner
-        CODE_SIGN_ENTITLEMENTS: Sources/iOS/Tuner.entitlements
+        # "Nitpitch-iOS". Module name stays Nitpitch_iOS (PRODUCT_MODULE_NAME).
+        PRODUCT_NAME: Nitpitch
+        CODE_SIGN_ENTITLEMENTS: Sources/iOS/Nitpitch.entitlements
         MARKETING_VERSION: "0.1.0"
         # Build number is shared across iOS + macOS (kept in lock-step by the
         # release lane, `make release`) — bumped together so the apps never diverge.
@@ -65,8 +65,8 @@ targets:
         DEVELOPMENT_TEAM: U84DT7P75P
         CODE_SIGN_STYLE: Automatic
     dependencies:
-      - package: TunerCore
-        product: TunerKit
+      - package: NitpitchCore
+        product: NitpitchKit
     # Stamp the git commit into the bundled Info.plist (GitCommitSHA) so every
     # build self-identifies its source. Runs last, after the plist is copied
     # into the product; fires on archive too. See Scripts/embed-commit-sha.sh.
@@ -76,26 +76,26 @@ targets:
         basedOnDependencyAnalysis: false
     scheme:
       # Wire the UI tests into the iOS app's scheme so `xcodebuild test
-      # -scheme Tuner-iOS` runs them (used by `make uitest`, locally only).
+      # -scheme Nitpitch-iOS` runs them (used by `make uitest`, locally only).
       testTargets:
-        - Tuner-iOSUITests
+        - Nitpitch-iOSUITests
 
   # Local-only UI regression tests. CI runs `swift test` (the package logic
   # suite) and `xcodebuild build` only — never `xcodebuild test` — so this
   # target is built but its tests run solely via `make uitest` on a dev machine.
-  Tuner-iOSUITests:
+  Nitpitch-iOSUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
       - path: Tests/UITests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.tuner.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch.uitests
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
-      - target: Tuner-iOS
+      - target: Nitpitch-iOS
 
-  Tuner-macOS:
+  Nitpitch-macOS:
     type: application
     platform: macOS
     sources:
@@ -104,8 +104,8 @@ targets:
     info:
       path: Sources/macOS/Info.plist
       properties:
-        CFBundleDisplayName: Tuner
-        CFBundleName: Tuner  # menu-bar app name (else PRODUCT_NAME)
+        CFBundleDisplayName: Nitpitch
+        CFBundleName: Nitpitch  # menu-bar app name (else PRODUCT_NAME)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
@@ -123,8 +123,8 @@ targets:
       base:
         # Shares the iOS bundle ID for Universal Purchase: one App Store record
         # spanning both platforms, sharing the name, Apple ID, and SKU.
-        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.tuner
-        PRODUCT_NAME: Tuner
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch
+        PRODUCT_NAME: Nitpitch
         MARKETING_VERSION: "0.1.0"
         # Build number is shared across iOS + macOS (kept in lock-step by the
         # release lane, `make release`) — bumped together so the apps never diverge.
@@ -134,7 +134,7 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         # Mac App Store requires App Sandbox; the entitlement enables it (and
         # declares the audio-input exception the tuner needs).
-        CODE_SIGN_ENTITLEMENTS: Sources/macOS/Tuner.entitlements
+        CODE_SIGN_ENTITLEMENTS: Sources/macOS/Nitpitch.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Signing: same personal paid-account team as iOS; automatic signing.
         DEVELOPMENT_TEAM: U84DT7P75P
@@ -145,11 +145,11 @@ targets:
         name: Embed git commit SHA
         basedOnDependencyAnalysis: false
     dependencies:
-      - package: TunerCore
-        product: TunerKit
+      - package: NitpitchCore
+        product: NitpitchKit
     # Explicit scheme so XcodeGen writes a SHARED scheme file for the macOS app.
     # Without it Xcode recreates it as a personal scheme on every open, and
-    # `xcodebuild -scheme Tuner-macOS` fails on a fresh checkout (the release
+    # `xcodebuild -scheme Nitpitch-macOS` fails on a fresh checkout (the release
     # lane's macOS archive).
     scheme:
       configVariants: []

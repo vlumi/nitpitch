@@ -6,10 +6,6 @@ ride.
 
 *Nitpicking about pitch, which is the entire job.*
 
-> **Note:** the name was chosen after the code was written, so the sources still
-> say `Tuner` throughout. Renaming them is the first item in
-> [ROADMAP.md](ROADMAP.md).
-
 ## What it does
 
 - Shows the note you're playing, how far off you are in cents, and a needle.
@@ -65,7 +61,7 @@ Requires Xcode 16+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
 ```sh
 make test          # logic tests — the fast inner loop, no Xcode project needed
-make generate      # regenerate Tuner.xcodeproj from project.yml
+make generate      # regenerate Nitpitch.xcodeproj from project.yml
 make run-iphone    # build + launch on a simulator (DEVICE="SE" to pick)
 make run-mac       # build + launch the Mac app
 make uitest        # local-only UI tests (CI never runs these)

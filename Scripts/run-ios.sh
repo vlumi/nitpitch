@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-bundle_id="fi.misaki.tuner"
+bundle_id="fi.misaki.nitpitch"
 derived=".build-xcode"
 family="${1:-iphone}"   # iphone | ipad
 device="${2:-}"         # optional name substring, e.g. "SE" or "17 Pro"
@@ -71,19 +71,19 @@ xcrun simctl bootstatus "$udid" -b >/dev/null 2>&1 || true
 
 # Build for the generic simulator destination (robust — no per-device matching),
 # then install the product to the chosen sim.
-echo "Building Tuner-iOS..."
-xcodebuild -project Tuner.xcodeproj -scheme Tuner-iOS \
+echo "Building Nitpitch-iOS..."
+xcodebuild -project Nitpitch.xcodeproj -scheme Nitpitch-iOS \
     -destination "generic/platform=iOS Simulator" \
     -derivedDataPath "$derived" -configuration Debug build \
     >/dev/null 2>&1 || {
     echo "build failed; re-running with full output:" >&2
-    xcodebuild -project Tuner.xcodeproj -scheme Tuner-iOS \
+    xcodebuild -project Nitpitch.xcodeproj -scheme Nitpitch-iOS \
         -destination "generic/platform=iOS Simulator" \
         -derivedDataPath "$derived" -configuration Debug build
     exit 1
 }
 
-app="$derived/Build/Products/Debug-iphonesimulator/Tuner.app"
+app="$derived/Build/Products/Debug-iphonesimulator/Nitpitch.app"
 [ -d "$app" ] || { echo "error: built app not found at $app" >&2; exit 1; }
 
 echo "Installing and launching $bundle_id"

@@ -1,16 +1,10 @@
-# Tuner — agent & contributor guide
+# Nitpitch — agent & contributor guide
 
 An instrument tuner for Apple platforms. **Violin is the point** — it's the
 reason the app exists and the case every default is chosen for. Other string
 instruments are supported because they cost almost nothing once the violin works
 (an array of MIDI numbers each), not because they're equal goals. This file is
 the canonical guidance for both humans and AI coding agents working in this repo.
-
-> **The app is named `Nitpitch`; the code still says `Tuner`.** The name was
-> settled after the scaffold was written, and **the rename has not been done
-> yet** — it's the first item in [ROADMAP.md](ROADMAP.md), which lists exactly
-> what it touches. Until then, `Tuner*` identifiers throughout are the old
-> placeholder, not a second concept.
 
 ## Project facts
 
@@ -20,8 +14,10 @@ the canonical guidance for both humans and AI coding agents working in this repo
     a guitar or bass through a DI or audio interface into line-in, rather than a
     microphone hearing an amp across the room.
 - **Toolchain:** Xcode 16+ / Swift 6, XcodeGen.
-- **Bundle id:** `fi.misaki.tuner` (shared by both platforms for Universal
-  Purchase). **License:** MIT. No monetization.
+- **Bundle id:** `fi.misaki.nitpitch`, shared by both platforms for Universal
+  Purchase, and matching the App Store Connect record. **Don't change it** — an
+  ASC bundle id can't be edited or reused once the record exists.
+  **License:** MIT. No monetization.
 - **No third-party runtime dependencies.** Everything needed ships with the OS:
   AVFoundation for capture, Accelerate/vDSP for the DSP, SwiftUI for the view.
   Dev tools (SwiftLint, XcodeGen) don't count and aren't SPM deps.
@@ -31,36 +27,36 @@ the canonical guidance for both humans and AI coding agents working in this repo
 ## Architecture: pure DSP below, platform glue above
 
 One seam carries the whole design: **everything that can be tested without a
-microphone lives in `TunerCore`, and everything that can't lives in `TunerKit`.**
+microphone lives in `NitpitchCore`, and everything that can't lives in `NitpitchKit`.**
 
-- **`TunerCore`** — note math (`Pitch.swift`), instrument definitions, the pitch
+- **`NitpitchCore`** — note math (`Pitch.swift`), instrument definitions, the pitch
   detector, and the display smoother. No AVFoundation, no SwiftUI. Every type
   here is a deterministic function over plain values, so it's tested against
   *synthesized* waveforms with no audio hardware. Coverage-gated at 80%.
-- **`TunerKit`** — `AudioInput` (AVAudioEngine), the view model, and the SwiftUI
+- **`NitpitchKit`** — `AudioInput` (AVAudioEngine), the view model, and the SwiftUI
   views. Needs a real microphone and a UI to exercise, so it's coverage-ignored
   wholesale and verified by hand (`make run-mac`, then on a device).
 
-**Keep logic in `TunerCore`.** That's what makes the gate meaningful — the
+**Keep logic in `NitpitchCore`.** That's what makes the gate meaningful — the
 detector bugs found during the initial build (see below) were all caught by
 `swift test` in under a tenth of a second, with no device involved.
 
 ### Structure
 
 ```text
-tuner/
-├── project.yml                  XcodeGen spec (iOS + macOS app targets)
-├── Scripts/generate.sh          Regenerates the .xcodeproj (refuses if THIS project is open in Xcode)
-├── Sources/{iOS,macOS}/         Thin @main app shells + Info.plist + entitlements
-├── Sources/Shared/              Assets shared by both targets (the AppIcon set)
-└── Packages/TunerCore/          Swift package — most of the code
-    ├── Sources/TunerCore/       Pure logic: DSP + music theory, tested + coverage-gated
-    │   ├── DSP/                 PitchDetector (MPM), Detection constants, ReadingSmoother
-    │   └── Music/               Pitch/Note/ReferencePitch, Instrument
-    └── Sources/TunerKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
+nitpitch/
+├── project.yml                     XcodeGen spec (iOS + macOS app targets)
+├── Scripts/generate.sh             Regenerates the .xcodeproj (refuses if THIS project is open in Xcode)
+├── Sources/{iOS,macOS}/            Thin @main app shells + Info.plist + entitlements
+├── Sources/Shared/                 Assets shared by both targets (the AppIcon set)
+└── Packages/NitpitchCore/          Swift package — most of the code
+    ├── Sources/NitpitchCore/       Pure logic: DSP + music theory, tested + coverage-gated
+    │   ├── DSP/                    PitchDetector (MPM), Detection constants, ReadingSmoother
+    │   └── Music/                  Pitch/Note/ReferencePitch, Instrument
+    └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
         ├── Audio/AudioInput.swift
-        ├── App/                 Settings, LaunchStores
-        └── Tuner/               TunerViewModel, TunerView
+        ├── App/                    Settings, LaunchStores
+        └── Nitpitch/               NitpitchViewModel, NitpitchView
 ```
 
 ### How detection works, and why
@@ -107,7 +103,7 @@ pitches.
 
 ```sh
 # Logic tests (no Xcode needed) — the fast inner loop
-make test          # or: cd Packages/TunerCore && swift test
+make test          # or: cd Packages/NitpitchCore && swift test
 
 # Generate the Xcode project, then build an app target
 make generate
@@ -149,12 +145,12 @@ Two things the Mac loop can't reach, which need an actual iPhone:
 ```sh
 swiftlint lint --strict                 # style + light correctness (.swiftlint.yml)
 swift format lint --strict --recursive --configuration .swift-format \
-  Packages/TunerCore/Sources Packages/TunerCore/Tests Sources
+  Packages/NitpitchCore/Sources Packages/NitpitchCore/Tests Sources
 swift format --in-place --recursive --configuration .swift-format <paths>
 ```
 
 **Run SwiftLint from the repo root.** Its `excluded:` paths resolve relative to
-the invocation directory, so running it from inside `Packages/TunerCore` lints
+the invocation directory, so running it from inside `Packages/NitpitchCore` lints
 the generated `.build` artifacts and reports dozens of false violations.
 
 CI runs both with `--strict` (warnings fail). **swift-format is the authority on
@@ -179,8 +175,8 @@ Branch off `main`, one focused change per PR (details in
 - **A user-facing PR writes its own CHANGELOG bullet** under
   `### Unreleased (next build)` — the release lane only stamps the build number,
   it never writes entries.
-- **The whole TunerKit target is coverage-ignored** (the capture + SwiftUI
-  layer). Keep testable logic OUT of it — it belongs in TunerCore, where it's
+- **The whole NitpitchKit target is coverage-ignored** (the capture + SwiftUI
+  layer). Keep testable logic OUT of it — it belongs in NitpitchCore, where it's
   tracked. Target is 80% on new, non-ignored code.
 
 ## Conventions
@@ -219,7 +215,7 @@ one language.
 
 ## Gotchas
 
-- SourceKit in-IDE diagnostics may report `No such module 'TunerCore'` for files
+- SourceKit in-IDE diagnostics may report `No such module 'NitpitchCore'` for files
   it hasn't indexed — these are **false**. The authoritative checks are
   `swift build` / `swift test` / `xcodebuild`.
 - `Scripts/embed-commit-sha.sh` writes `unknown` for a repo with no commits yet

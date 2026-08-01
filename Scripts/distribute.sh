@@ -36,16 +36,16 @@ done
     || { echo "error: --no-upload and --upload-only are mutually exclusive." >&2; exit 2; }
 
 case "$platform" in
-    ios)   scheme="Tuner-iOS";   destination="generic/platform=iOS";   ext="ipa" ;;
-    macos) scheme="Tuner-macOS"; destination="generic/platform=macOS"; ext="pkg" ;;
+    ios)   scheme="Nitpitch-iOS";   destination="generic/platform=iOS";   ext="ipa" ;;
+    macos) scheme="Nitpitch-macOS"; destination="generic/platform=macOS"; ext="pkg" ;;
     *) echo "usage: distribute.sh <ios|macos> [--no-upload|--upload-only]" >&2; exit 2 ;;
 esac
 
 out="dist/${platform}"
-archive="${out}/Tuner-${platform}.xcarchive"
+archive="${out}/Nitpitch-${platform}.xcarchive"
 
 if [ "$build" -eq 1 ]; then
-    project="Tuner.xcodeproj"
+    project="Nitpitch.xcodeproj"
     [ -d "$project" ] || { echo "error: $project missing — run Scripts/generate.sh first." >&2; exit 1; }
     rm -rf "$out"
     mkdir -p "$out"

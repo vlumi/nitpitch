@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "TunerCore",
+    name: "NitpitchCore",
     // Enables localized resources (String Catalogs) in this package's targets;
     // EN is the development/base language. Only English ships today — the
     // catalogs exist so adding a locale is a translation, not a refactor.
@@ -13,27 +13,27 @@ let package = Package(
     ],
     products: [
         // Pure DSP + music theory — no AVFoundation, no UI. Headlessly testable.
-        .library(name: "TunerCore", targets: ["TunerCore"]),
-        // Audio capture (AVAudioEngine) + SwiftUI. Depends on TunerCore.
-        .library(name: "TunerKit", targets: ["TunerKit"]),
+        .library(name: "NitpitchCore", targets: ["NitpitchCore"]),
+        // Audio capture (AVAudioEngine) + SwiftUI. Depends on NitpitchCore.
+        .library(name: "NitpitchKit", targets: ["NitpitchKit"]),
     ],
     targets: [
         .target(
-            name: "TunerCore",
+            name: "NitpitchCore",
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .target(
-            name: "TunerKit",
-            dependencies: ["TunerCore"],
+            name: "NitpitchKit",
+            dependencies: ["NitpitchCore"],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(
-            name: "TunerCoreTests",
-            dependencies: ["TunerCore"]
+            name: "NitpitchCoreTests",
+            dependencies: ["NitpitchCore"]
         ),
         .testTarget(
-            name: "TunerKitTests",
-            dependencies: ["TunerKit"]
+            name: "NitpitchKitTests",
+            dependencies: ["NitpitchKit"]
         ),
     ]
 )

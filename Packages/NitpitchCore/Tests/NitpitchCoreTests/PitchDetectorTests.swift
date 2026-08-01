@@ -1,10 +1,10 @@
 import XCTest
 
-@testable import TunerCore
+@testable import NitpitchCore
 
 /// The detector is a pure function over a Float buffer, so it can be verified
 /// against synthesized waveforms with no audio hardware — which is the whole
-/// reason the DSP lives in TunerCore rather than TunerKit.
+/// reason the DSP lives in NitpitchCore rather than NitpitchKit.
 final class PitchDetectorTests: XCTestCase {
     private let sampleRate = 44100.0
 

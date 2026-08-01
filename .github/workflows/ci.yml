@@ -44,7 +44,7 @@ jobs:
       - name: swift-format
         run: |
           swift format lint --strict --recursive --configuration .swift-format \
-            Packages/TunerCore/Sources Packages/TunerCore/Tests Sources
+            Packages/NitpitchCore/Sources Packages/NitpitchCore/Tests Sources
 
   test:
     name: Test core logic
@@ -57,32 +57,32 @@ jobs:
       - name: Cache SwiftPM
         uses: actions/cache@v6
         with:
-          path: Packages/TunerCore/.build
-          key: spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Packages/TunerCore/Package.swift') }}
+          path: Packages/NitpitchCore/.build
+          key: spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Packages/NitpitchCore/Package.swift') }}
           restore-keys: |
             spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-
       - name: Run logic tests with coverage
-        working-directory: Packages/TunerCore
+        working-directory: Packages/NitpitchCore
         run: swift test --enable-code-coverage
       - name: Export coverage report
-        working-directory: Packages/TunerCore
+        working-directory: Packages/NitpitchCore
         run: |
           PROF=$(find .build -name '*.profdata' | head -1)
-          BIN=$(find .build -name 'TunerCorePackageTests.xctest' -type d | head -1)/Contents/MacOS/TunerCorePackageTests
+          BIN=$(find .build -name 'NitpitchCorePackageTests.xctest' -type d | head -1)/Contents/MacOS/NitpitchCorePackageTests
           # Exclude build artifacts, tests, and the audio-capture/SwiftUI layer
           # (which needs a real microphone to exercise) so the figure reflects the
           # unit-tested DSP + note math.
           xcrun llvm-cov export "$BIN" -instr-profile "$PROF" -format=lcov \
-            -ignore-filename-regex='(\.build|Tests)/|Sources/TunerKit/' \
+            -ignore-filename-regex='(\.build|Tests)/|Sources/NitpitchKit/' \
             > coverage.lcov
           # Rewrite absolute SF: paths to repo-relative so Codecov maps files
           # correctly (its ignore globs and file tree are repo-relative). The
           # job runs on macOS, so this is BSD sed.
-          sed -i '' -E 's#^SF:.*/(Packages/TunerCore/)#SF:\1#' coverage.lcov
+          sed -i '' -E 's#^SF:.*/(Packages/NitpitchCore/)#SF:\1#' coverage.lcov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
-          files: Packages/TunerCore/coverage.lcov
+          files: Packages/NitpitchCore/coverage.lcov
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -98,8 +98,8 @@ jobs:
       - name: Cache SwiftPM
         uses: actions/cache@v6
         with:
-          path: Packages/TunerCore/.build
-          key: spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Packages/TunerCore/Package.swift') }}
+          path: Packages/NitpitchCore/.build
+          key: spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-${{ hashFiles('Packages/NitpitchCore/Package.swift') }}
           restore-keys: |
             spm-${{ runner.os }}-${{ env.XCODE_VERSION }}-
       - name: Install XcodeGen
@@ -109,14 +109,14 @@ jobs:
       - name: Build macOS (no signing)
         run: |
           xcodebuild build \
-            -project Tuner.xcodeproj \
-            -scheme Tuner-macOS \
+            -project Nitpitch.xcodeproj \
+            -scheme Nitpitch-macOS \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO
       - name: Build iOS (simulator)
         run: |
           xcodebuild build \
-            -project Tuner.xcodeproj \
-            -scheme Tuner-iOS \
+            -project Nitpitch.xcodeproj \
+            -scheme Nitpitch-iOS \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO

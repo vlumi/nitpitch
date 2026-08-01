@@ -1,4 +1,4 @@
-# Tuner — command-line build/run/test, so you never have to open Xcode.
+# Nitpitch — command-line build/run/test, so you never have to open Xcode.
 #
 # The Scripts/*.sh do the actual work (one job each); this Makefile wires up the
 # dependencies (e.g. the Xcode project is regenerated only when project.yml or
@@ -9,7 +9,7 @@
 
 .PHONY: help
 help:  ## List the available commands
-	@echo "Tuner — available make targets:"
+	@echo "Nitpitch — available make targets:"
 	@awk 'BEGIN {FS = ":.*## "} \
 		/^##@ / {printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next} \
 		/^##~ / {printf "  \033[2m%s\033[0m\n", substr($$0, 5); next} \
@@ -24,30 +24,30 @@ PROJECT_INPUTS := project.yml \
 
 # File target: the generated project depends on its inputs, so `make` skips the
 # regen when nothing changed (and reruns it when project.yml etc. are edited).
-Tuner.xcodeproj: $(PROJECT_INPUTS)
+Nitpitch.xcodeproj: $(PROJECT_INPUTS)
 	@Scripts/generate.sh
 
 .PHONY: generate
-generate: Tuner.xcodeproj  ## Regenerate Tuner.xcodeproj from project.yml (if stale)
+generate: Nitpitch.xcodeproj  ## Regenerate Nitpitch.xcodeproj from project.yml (if stale)
 
 .PHONY: run-mac
-run-mac: Tuner.xcodeproj  ## Build + launch the macOS app
+run-mac: Nitpitch.xcodeproj  ## Build + launch the macOS app
 	@Scripts/run.sh
 
 .PHONY: run-iphone
-run-iphone: Tuner.xcodeproj  ## Build + launch on an iPhone simulator (DEVICE="SE" / "17 Pro" to pick)
+run-iphone: Nitpitch.xcodeproj  ## Build + launch on an iPhone simulator (DEVICE="SE" / "17 Pro" to pick)
 	@Scripts/run-ios.sh iphone "$(DEVICE)"
 
 .PHONY: run-ipad
-run-ipad: Tuner.xcodeproj  ## Build + launch on an iPad simulator (DEVICE="Air" / "13-inch" to pick)
+run-ipad: Nitpitch.xcodeproj  ## Build + launch on an iPad simulator (DEVICE="Air" / "13-inch" to pick)
 	@Scripts/run-ios.sh ipad "$(DEVICE)"
 
 .PHONY: build-mac
-build-mac: Tuner.xcodeproj  ## Build the macOS app
+build-mac: Nitpitch.xcodeproj  ## Build the macOS app
 	@Scripts/build.sh macos
 
 .PHONY: build-ios
-build-ios: Tuner.xcodeproj  ## Build the iOS app (simulator)
+build-ios: Nitpitch.xcodeproj  ## Build the iOS app (simulator)
 	@Scripts/build.sh ios
 
 # Logic tests run straight from the Swift package — no Xcode project involved.
@@ -58,13 +58,13 @@ test:  ## Run the package logic tests (no Xcode project needed)
 # UI tests are local-only (CI never runs `xcodebuild test`); they drive the
 # built iOS app in a simulator.
 .PHONY: uitest
-uitest: Tuner.xcodeproj  ## Run the local-only iOS UI tests (simulator)
+uitest: Nitpitch.xcodeproj  ## Run the local-only iOS UI tests (simulator)
 	@Scripts/uitest.sh
 
 .PHONY: clean
 clean:  ## Remove the generated project + local build output
-	@rm -rf Tuner.xcodeproj .build-xcode
-	@echo "removed Tuner.xcodeproj and .build-xcode"
+	@rm -rf Nitpitch.xcodeproj .build-xcode
+	@echo "removed Nitpitch.xcodeproj and .build-xcode"
 
 ##@ Release lane
 ##~ Cut a build: make release (PLATFORM=all|ios|macos) — runs preflight → publish → tag → distribute

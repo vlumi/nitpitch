@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import TunerCore
+@testable import NitpitchCore
 
 final class ReadingSmootherTests: XCTestCase {
     func testConvergesToASteadyValue() {

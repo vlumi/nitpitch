@@ -1,14 +1,14 @@
-# SwiftLint configuration for Tuner.
+# SwiftLint configuration for Nitpitch.
 # See https://realm.github.io/SwiftLint/rule-directory.html
 
 included:
-  - Packages/TunerCore/Sources
-  - Packages/TunerCore/Tests
+  - Packages/NitpitchCore/Sources
+  - Packages/NitpitchCore/Tests
   - Sources
 
 excluded:
   - .build
-  - Packages/TunerCore/.build
+  - Packages/NitpitchCore/.build
 
 opt_in_rules:
   - empty_count

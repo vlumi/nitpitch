@@ -1,7 +1,7 @@
-import TunerCore
+import NitpitchCore
 import XCTest
 
-@testable import TunerKit
+@testable import NitpitchKit
 
 final class SettingsTests: XCTestCase {
     private var suiteName: String!
@@ -9,7 +9,7 @@ final class SettingsTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        suiteName = "fi.misaki.tuner.tests.\(UUID().uuidString)"
+        suiteName = "fi.misaki.nitpitch.tests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
     }
 

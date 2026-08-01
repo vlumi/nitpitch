@@ -82,12 +82,32 @@ target**, in one of two shapes:
 | Reference-point metaphor | *Polaris …* | A fixed point everything is measured against — semantically apt, and unrelated to the Finland/north angle, which doesn't carry meaning here. Heavily used commercially, so availability is doubtful. |
 | Pitch/tuning vocabulary | *Cent*, *Detune*, *Concert A* | Meaningful to musicians; most are taken. **Avoid a number** (`Fork440`, `A440`): the players who most want an adjustable reference (442/443 orchestral, 415 baroque) are exactly those who'd read a fixed number as a statement, and it's a mouthful aloud in all three languages. |
 | Violin-specific | *Peg*, *Fifths*, *Scroll*, *Bout* | Concrete and violin-native; risks being obscure to guitarists. |
-| Tongue-in-cheek, on-topic | *Wolf* / *Wolftone*, *Nitpick*, *Sour*, *Peg Leg* | A wry name is wanted — but **the joke has to be about tuning**, not merely adjacent to it. (`Sumu` was briefly appealing for its accidental fog-horn image; a fog horn is funny but says nothing about pitch, so it reads as disconnected.) `Wolf` is the strongest: a *wolf tone* is the real term for a note that howls on a badly-resonating string — violin-native, technical, and dryly funny to the target audience while reading as a normal short name to everyone else. `Nitpick` puts "pitch" in a word that describes what a cent-accurate tuner does. |
+| Tongue-in-cheek, on-topic | **`Nitpitch`**, *Wolf* / *Wolftone*, *Sour*, *Peg Leg* | A wry name is wanted — but **the joke has to be about tuning**, not merely adjacent to it. (`Sumu` was briefly appealing for its accidental fog-horn image; a fog horn is funny but says nothing about pitch, so it reads as disconnected.) **`Nitpitch` is the current front-runner** — see below. `Wolf` is the other strong one: a *wolf tone* is the real term for a note that howls on a badly-resonating string — violin-native, technical, and dryly funny to the target audience while reading as a normal short name to everyone else. |
 | Tine / tune wordplay | *Tine Up*, *Tine*, *Attine* | A tuning fork's **tines** are the part that actually vibrates, so this is the mechanism rather than a decorative pun — and *tine* is one letter from *tune*. `Tine Up` (from "tune up") is the strongest form: two words, names the activity. **Caveat:** *tine* is uncommon English vocabulary and unknown in Finnish/Japanese, so for most users it reads as an odd spelling rather than wordplay. Check Norwegian first — *tine* is a verb (to thaw) and a major dairy brand. |
 | Finnish | *Vire* (in tune), *Viritin* (tuner), *Sävel*, *Sointu* | `Vire` is semantically exact and reads as a clean coined name in EN/JA — but **only works standalone or as a compound**, never as `Vire <Word>` (checklist #10). `Viritin` ends in a consonant, so it pairs cleanly. |
 | Japanese | *Oto* (音), *Choritsu* (調律, tuning) | Strict CV syllables make these pronounceable in all three languages — the reverse is often not true. **Check the Finnish meaning too**: *sumu* was a candidate for 澄む ("to become clear") until the Finnish sense (fog — and the fog-horn association) turned out to say the opposite of what a tuner promises. |
 
-**Never screened, worth a look:** `Tonefork`, `FifthFork`, `Tine Up`.
+### Front-runner: `Nitpitch`
+
+*Nitpick* with **pitch** substituted in. The first candidate to clear every
+criterion above, at least on paper:
+
+- **The joke is on-topic and lands in one step.** Nitpicking about pitch is
+  literally what a cent-accurate tuner does — and it's self-deprecating about
+  the app rather than mocking the player, which is the warmer register.
+- **One word**, so the gemination question (#10) doesn't arise at all.
+- **Pronounceable in all three**: no clusters Finnish or Japanese struggle with;
+  renders as ニットピッチ.
+- **Coined**, so more trademarkable than a dictionary word, and unlikely to
+  collide the way single real words have.
+
+Still to check: everything in the checklist, plus two specific risks — the *tp*
+juncture is slightly more effortful to say than "nitpick", and some readers may
+skim it as the real word and miss the joke entirely. Also confirm `nit` carries
+nothing unfortunate in Finnish or Swedish.
+
+**Never screened, worth a look:** `Nitpitch`, `Wolftone`, `Tonefork`,
+`FifthFork`, `Tine Up`.
 
 **Already eliminated:** `ForkA` (Swedish verb + existing Swedish service),
 `Forklore` (existing Japanese company), `Pitchfork` (the publication owns music

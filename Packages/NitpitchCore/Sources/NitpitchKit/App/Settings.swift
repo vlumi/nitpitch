@@ -11,6 +11,7 @@ public final class Settings: ObservableObject {
         static let referenceHz = "referenceHz"
         static let instrumentID = "instrumentID"
         static let noteNaming = "noteNaming"
+        static let appearance = "appearance"
     }
 
     private let defaults: UserDefaults
@@ -27,6 +28,10 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(naming.rawValue, forKey: Key.noteNaming) }
     }
 
+    @Published public var appearance: AppearancePreference {
+        didSet { defaults.set(appearance.rawValue, forKey: Key.appearance) }
+    }
+
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         // `double(forKey:)` returns 0 for a missing key, which ReferencePitch
@@ -38,5 +43,8 @@ public final class Settings: ObservableObject {
         self.naming =
             (defaults.string(forKey: Key.noteNaming).flatMap(NoteNaming.init(rawValue:)))
             ?? .english
+        self.appearance =
+            (defaults.string(forKey: Key.appearance).flatMap(AppearancePreference.init(rawValue:)))
+            ?? .system
     }
 }

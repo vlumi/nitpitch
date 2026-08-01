@@ -39,7 +39,7 @@ microphone lives in `TunerCore`, and everything that can't lives in `TunerKit`.*
   *synthesized* waveforms with no audio hardware. Coverage-gated at 80%.
 - **`TunerKit`** — `AudioInput` (AVAudioEngine), the view model, and the SwiftUI
   views. Needs a real microphone and a UI to exercise, so it's coverage-ignored
-  wholesale.
+  wholesale and verified by hand (`make run-mac`, then on a device).
 
 **Keep logic in `TunerCore`.** That's what makes the gate meaningful — the
 detector bugs found during the initial build (see below) were all caught by
@@ -95,6 +95,14 @@ The detector's output is deliberately **unsmoothed** — it's the truth, and the
 tests assert against it. `ReadingSmoother` (median-then-exponential, in cents)
 stabilizes only the *display*.
 
+**`PitchDetector` is monophonic by construction and must stay that way.** MPM
+finds *the* period of a frame; on two simultaneous notes it returns one lag that
+flickers between them rather than reporting both. Detecting double-stop fifths
+(how violinists actually tune — see ROADMAP § 3) is a planned v0.2 feature, but
+it belongs in a **separate detector** using bandpass filters or a phase vocoder
+against known target frequencies. Do not try to make this one return two
+pitches.
+
 ## Commands
 
 ```sh
@@ -116,11 +124,25 @@ make uitest        # NOT run by CI
 `swift build` on macOS only compiles the `#if os(macOS)` branch of platform
 code — build the iOS target via `xcodebuild` to exercise the iOS branch.
 
-**The simulator has no usable microphone.** It reports an input device and
-delivers silence, so pitch detection cannot be evaluated there. Use the
-simulator for layout and navigation; verify detection on a real device. The UI
-tests are written to this constraint — they assert on the status/idle states,
-never on a live reading.
+**The iOS simulator has no usable microphone.** It reports an input device and
+delivers silence, so pitch detection cannot be evaluated there. Use it for
+layout and navigation only; the UI tests are written to this constraint and
+assert on status/idle states, never on a live reading.
+
+**To actually hear the detector work, use `make run-mac`.** The Mac app is real
+capture on real hardware — no simulator involved — so it exercises the whole
+audio path: permission, the engine, sample-rate conversion, the ring buffer, hop
+timing, and the detector against a real instrument. It's the fast manual loop.
+
+Two things the Mac loop can't reach, which need an actual iPhone:
+
+- The `#if os(iOS)` branches — `AVAudioSession` with `.measurement` mode, the
+  iOS 17 vs 16 permission split in `AudioInput.requestPermission()`, and
+  interruption handling. A Mac build never compiles them.
+- Representative input. The built-in Mac mic is voice-processed and macOS has no
+  equivalent of `.measurement` to opt out, so it's noisier than the detector
+  deserves. Don't tune the clarity threshold against it — use an external mic or
+  interface, and confirm on a phone.
 
 ### Lint & format
 

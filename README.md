@@ -71,9 +71,11 @@ make uitest        # local-only UI tests (CI never runs these)
 make               # list every target
 ```
 
-**Test detection on a real device.** The simulator reports a microphone but
-delivers silence, so it can't be used to evaluate pitch detection at all — only
-layout and navigation.
+**Use `make run-mac` to hear detection actually working** — it's real capture on
+real hardware, and the fastest way to check the app against an instrument. The
+iOS simulator reports a microphone but delivers silence, so it's good for layout
+and navigation only. Confirm on an iPhone before shipping: the iOS audio-session
+and permission code never compiles into a Mac build.
 
 The detector itself is verified headlessly against synthesized waveforms
 (`swift test`, ~0.1 s), which is why the pure DSP lives in its own module. See

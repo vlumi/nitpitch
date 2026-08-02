@@ -20,6 +20,12 @@ different acts. **Setting up** (what am I tuning?) happens once per session;
 is setup friction on a *repeated* setup, and that's exactly what a favourite
 is: a repeated setup converted into one tap.
 
+**The yardstick for every iteration of this flow:** a beginning violinist
+gets there with no vocabulary and no reading, and someone who knows the app
+never hears about it — guidance that only appears in the moment it's needed,
+through the gesture the user was already making. Expect a few rounds against
+real hands before it holds.
+
 #### The model: the synth patch and its edit buffer
 
 ```text
@@ -28,10 +34,11 @@ Tuning   = ordered [MIDI] + its canonical name when it has one
 Setup    = tuning + reference (+ temperament, later)
 Workbench = each instrument's ONE mutable setup — what plain "Guitar" opens,
            freely tweakable, autosaved, waiting when you come back.
-           A USER-FACING name, deliberately: distinct from "setup",
-           "tuning" and "preset", with the right connotation (a place
-           where things get adjusted), unusual enough to be learned once
-           as a proper noun. Presets are frozen; the Workbench is yours.
+           "Workbench" is the INTERNAL name (types, docs); on screen it
+           is simply "My Guitar" / "My Violin" — the possessive says
+           "yours to change" with no vocabulary to learn, which matters
+           because the app's stated audience includes a beginning
+           violinist. Presets are frozen; My Guitar is yours.
 Preset   = a frozen setup under the USER'S name ("Bach No. 1"); never
            edited in place, only saved over deliberately
 Favourite = a preset pinned to the launch screen
@@ -65,16 +72,16 @@ Chromatic launch  (unchanged: immediately usable, no setup)
         Bowed / Fretted / … lists    → that instrument's workbench
         Import preset…               (paste link / scan QR)
 
-Grid, on the workbench — header "Guitar · Drop D", everything editable
+Grid, on the workbench — header "My Guitar · Drop D", everything editable
 ├── tuning menu: known tunings · presets · Customize… · Save…
 ├── reference stepper
 └── tap a cell → String view
 
 Grid, on a preset — header "🔒 Bach No. 1", everything locked
-└── touching any control: "Presets don't change. Open the Guitar
-    Workbench?" → copies the values across, switches, and lands on the
-    SAME screen with that control now live;
-    header becomes "Guitar Workbench · from Bach No. 1"
+└── touching any control: "Presets don't change. Switch to My Guitar?"
+    → copies the values across, switches, and lands on the SAME screen
+    with that control now live;
+    header becomes "My Guitar · from Bach No. 1"
 
 String view (one string, full screen)
 ├── full dial, wide-band listening — tracks a slipped peg from anywhere
@@ -104,7 +111,7 @@ Decisions this draft takes, and why:
   Accidental edits aren't merely non-destructive; they're impossible.
 - **Locked controls are doors, not corpses.** They never mutate and never
   ignore a touch: touching one *is* the escape hatch ("Presets don't
-  change. Open the Guitar Workbench?"), and Cancel means nothing happened.
+  change. Switch to My Guitar?"), and Cancel means nothing happened.
   The novice discovers the way forward with the only gesture anyone tries
   first — tapping the thing they want to change — with nothing to have
   read beforehand. The expert's daily flow (open preset, tune, leave)
@@ -113,11 +120,13 @@ Decisions this draft takes, and why:
   boundary, and they land on the same screen with the same control live.
   A stray tap on a music stand hits the dialog and gets cancelled — the
   lock doubles as stray-tap protection.
-- **The word "Workbench" appears only at the boundary** — the dialog, the
-  tuning menu ("Open Workbench", "Save as preset…"), the post-switch
-  header — while the ambient distinction stays glyph-borne (the lock).
-  Naming avoids "edit" throughout: you never edit a preset; you continue
-  on your own Workbench, seeded from it.
+- **"My Guitar" appears only at the boundary** — the dialog, the tuning
+  menu ("Switch to My Guitar", "Save as preset…"), the post-switch header
+  — while the ambient distinction stays glyph-borne (the lock). Naming
+  avoids "edit" throughout: you never edit a preset; you continue on your
+  own instrument, seeded from it. A beginner never even meets the
+  vocabulary: tap Violin, land on My Violin, everything just works — the
+  lock enters their world only when presets do.
 - **Updating a preset is a save, not an edit.** From the workbench: Save →
   "New preset…" or "Replace 'Bach No. 1'", with a confirm. Deliberate
   intent, one dialog; accidents, zero paths.

@@ -106,7 +106,7 @@ public struct ChromaticTunerView: View {
     }
 
     /// Everything specific to one reading. Self-contained so the per-string
-    /// grid (ROADMAP § 2) can repeat it.
+    /// grid can repeat it.
     private var dial: some View {
         TunerDial(
             cents: displayCents, inTune: isInTune, isReading: isReading,

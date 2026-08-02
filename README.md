@@ -17,10 +17,13 @@ ride.
 - **No octave errors.** Bowed and plucked strings put more energy into their
   harmonics than their fundamental, which is what makes naive tuners jump an
   octave; the detector is built to resolve that (see below).
+- **A dial per string.** Choose an instrument and every string gets its own
+  dial, lit only by pitches near its own target — including **two strings
+  bowed at once**, which is how violinists actually tune.
 - **Adjustable reference pitch**, A=390 through 466, a hertz at a time.
   Defaults to A=440; European orchestras commonly sit at 442 or 443, and
   baroque ensembles at 415.
-- **Nothing leaves the device.** Audio is analysed frame by frame in memory and
+- **Nothing leaves the device.** Audio is analyzed frame by frame in memory and
   discarded. No recording, no network — the macOS build doesn't even carry the
   network entitlement, so the sandbox enforces it rather than merely documenting
   it.
@@ -53,6 +56,13 @@ samples, so a ~93 ms window is enough — no multi-second buffer, no laggy needl
 Frames that aren't confidently periodic — bow noise, room reflections, the gap
 between notes — are gated out by a clarity threshold rather than displayed, and
 the readout says "play a note" instead of flickering.
+
+The per-string dials add a second path: MPM is monophonic by construction, so
+an instrument's strings are measured **spectrally** — each string's frequency
+read from the phase advance of its own harmonics between analysis windows,
+which handles two strings at once and can't mistake one string's subharmonic
+for another. The two engines run as a hybrid: spectral wherever it has an
+answer, MPM to find a badly slack string it doesn't.
 
 Everything above is first-party: **Accelerate/vDSP** for the DSP,
 **AVFoundation** for capture, **SwiftUI** for the view. There are no third-party

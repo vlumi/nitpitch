@@ -167,13 +167,6 @@ public final class DetectorBank: @unchecked Sendable {
 
     // MARK: - MPM: N detectors, then arbitration
 
-    /// The chromatic screen's level curve: a short log-ish ramp, because RMS is
-    /// tiny for quiet playing and a linear meter would sit near zero for
-    /// everything but a loud bow.
-    private func displayLevel(rms: Double) -> Double {
-        min(1, sqrt(rms) * 3)
-    }
-
     private func analyzeMPM(_ window: [Float]) -> [DetectionResult] {
         let raw = detectors.map { $0.analyze(window) }
         // Which readings are shadows of another string's reading — the "play A,
@@ -199,7 +192,7 @@ public final class DetectorBank: @unchecked Sendable {
             // per-string strength on offer.
             return DetectionResult(
                 frequency: result.frequency, clarity: result.clarity, rms: result.rms,
-                level: displayLevel(rms: result.rms))
+                level: result.displayLevel)
         }
     }
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// One complete tuning display: the arc, then the readout and light strip
 /// stacked below it — everything specific to a single reading.
 ///
-/// Self-contained by design. Double-stop fifths (ROADMAP § 3) needs two of
+/// Self-contained by design. The interval display (ROADMAP § 2) needs two of
 /// these on one iPhone screen, so the whole unit targets `height`. Anything
 /// applying to *both* dials — reference pitch, instrument — belongs outside.
 struct TunerDial<Readout: View>: View {
@@ -28,7 +28,7 @@ struct TunerDial<Readout: View>: View {
     /// arc down until a pair fitted made it a small hump on a screen that was
     /// visibly half empty — the wrong trade for the layout that ships.
     ///
-    /// Showing several at once (ROADMAP § 2, a dial per string) wants a
+    /// Showing several at once (the per-string grid) wants a
     /// *compact* variant rather than copies of this one: colour and sweep
     /// carry in/out of tune at a much smaller size, while the ticks, strip and
     /// cent number are detail for the enlarged view.

@@ -48,7 +48,150 @@ remains below is release mechanics, not features.
   needs it at a public URL, which the GitHub link satisfies once the remote is
   pushed.
 
-## 2. Double-stop fifths — the differentiating feature (v0.2)
+## 2. A dial per string (v0.2)
+
+**One tuner per string, shown as a grid.** Instead of a single chromatic
+readout, an instrument becomes N dials — four for violin, six for guitar —
+each fixed to one string and lit only by notes near its own target. Tap one to
+enlarge it to the full dial, swipe between them, and go back to the grid.
+
+This is what makes the *instrument* mean something. Today, picking violin over
+chromatic only narrows the searched band; the display is identical either way.
+With per-string dials the difference becomes structural, and answers the
+question directly:
+
+- **An instrument has known targets** (`Instrument.strings`). It's measurement:
+  "how far is this string from where it should be".
+- **Chromatic has none.** It resolves freely to whatever note is nearest. One
+  dial, no targets — which is why it's what the app opens on, before you've
+  said what you're holding.
+
+### The instrument picker moves up a level
+
+It stops being a control on the tuning screen. Once an instrument is "a grid
+of strings in a chosen tuning", choosing one isn't an adjustment you make
+while tuning — it decides *which screen you're looking at*.
+
+**The launch screen becomes the chromatic tuner plus the instrument picker.**
+That way the first screen already does something: anyone who just wants to
+check a note is tuning within a second of opening the app, and choosing an
+instrument is the step into its grid rather than a gate in front of the
+useful part. It also gives chromatic a home of its own instead of an odd
+entry in the instrument list — it *is* the no-instrument case.
+
+So the shape is:
+
+```text
+chromatic tuner + instrument picker   ← launch, immediately usable
+        └── instrument grid           ← N compact per-string dials
+                └── one string        ← full screen, back / swipe
+```
+
+The reference pitch stays on the tuning screens. It genuinely is an
+adjustment made in the moment, and it applies to every string at once.
+
+### The enlarged view
+
+Full screen, showing one string. A back arrow returns to the grid; arrows on
+either side step to the neighbouring strings, and swiping does the same. The
+reference pitch stays available (it's a live adjustment), but nothing else
+is repeated here: this is a focused view of one string, not a second copy of
+the whole screen.
+
+**It shows only its own string.** If a different string sounds while you're
+zoomed in, the view stays blank rather than following the sound. Automatic
+switching would yank the screen away mid-turn on a peg, which is worse than
+showing nothing, and "nothing" is unambiguous once you know the rule. It also
+keeps the model simple: an enlarged view is bound to one string, full stop.
+
+### Routing: one detector per string, bands split at the midpoints
+
+Each string gets its own detector over its own narrow band, rather than one
+detector whose reading is routed to the nearest string.
+
+**Band boundaries sit at the midpoint between neighbouring strings**, with
+headroom beyond the outermost two. That's deliberately not a fixed ±N
+semitones: a fixed width leaves dead zones wherever strings sit further apart
+than 2N — on a guitar (4 semitones between the closest pair) ±2 semitones
+leaves a full semitone unreachable between most strings, so a badly slack
+string lights nothing, which is exactly when you need it most. Midpoints tile
+by construction: contiguous, no gaps, no overlap, whatever the tuning.
+
+What that yields in practice — the catch range each string gets:
+
+| instrument | closest neighbours | catch range per string |
+|---|---|---|
+| violin, viola, cello | 7 semitones | ±3.5 semitones |
+| double bass, bass | 5 semitones | ±2.5 semitones |
+| guitar | 4 semitones | ±2 to ±2.5 semitones |
+
+**Unmeasured:** N detectors on every hop, at 21 hops/second. Narrow bands mean
+shorter lag searches so each is cheaper than the current full-band one, but
+that's reasoning, not measurement. Profile before committing to the design.
+
+If it does prove expensive, the enlarged view is the easy win: since it shows
+only its own string, the other detectors can be suspended while it's open, so
+the N-detector cost is confined to the grid.
+
+### The grid dial can be much smaller than the full one
+
+In/out of tune survives shrinking: the arc's colour and sweep carry "how far,
+which way" at a size where nothing else would read, and a string's name is a
+short label. Everything else on the current dial — the scale ticks, the light
+strip, the cent number — is *detail*, and detail belongs to the enlarged view
+you tap through to.
+
+So the grid wants a compact variant rather than N copies of the shipping
+dial. That also retires the sizing bind recorded in `TunerDial`: the full dial
+was squeezed toward 160pt trying to fit two on an iPhone SE, which made it a
+hump on a half-empty screen. With a separate compact form, the full dial can
+stay generous and the grid can hold as many strings as it likes.
+
+### Density is the user's call, and the cell wants to be square-ish
+
+How small is a preference, not a constant: one, two, or three columns on a
+portrait phone, so "see all six at once" and "readable from the music stand"
+are both reachable. Default by string count — a violin's four wants fewer,
+wider cells than a guitar's six.
+
+That argues for a roughly **square cell**. The shipping dial is strongly
+landscape (a wide shallow arc over a stacked readout), which tiles badly:
+wasteful in one column, unreadably short in three. A squarer compact form
+works at any column count.
+
+A rotated device rotates the whole UI with it, so each dial stays upright
+relative to the player and sharp is always to the right — the cells never
+turn on their side. What changes is the viewport's shape, so the **grid**
+reflows: a wide, short landscape screen wants fewer rows and more columns,
+scrolling sideways where portrait scrolls down.
+
+### Arbitrary string counts
+
+Nothing may assume four or six. 7- and 8-string guitars are common, 5- and
+6-string basses likewise, and a custom tuning could describe a harp. The grid
+therefore **scrolls** — that's the normal case, not a small-phone
+accommodation, and with a 30-string instrument it's the only case. The
+midpoint scheme already survives it, since it derives from whatever array it's
+given.
+
+Scrolling and the column preference compose: the column count sets the cell
+size, the string count sets how many tracks result, and the grid scrolls
+along whichever axis overflows — down in portrait, sideways in landscape.
+
+### Tunings — deferred, but it shapes the model
+
+Drop D, DADGAD, open tunings and half-step-down are common enough that the
+instrument can't *be* one fixed array. An instrument needs a set of tunings
+with one selected, plus user-defined custom tunings — including their own
+string counts.
+
+Not designed yet. What's settled: the midpoint band scheme needs no
+per-tuning configuration, so an arbitrary custom tuning works without
+special-casing. And since instrument and tuning are really one choice made
+together, they belong in the same step — which is the other half of why the
+picker moves off the tuning screen.
+
+## 3. Double-stop fifths — the differentiating feature (v0.2)
 
 **How violinists actually tune:** set A from a reference, then tune each
 remaining string against its neighbour by bowing *both at once* and listening to
@@ -112,7 +255,7 @@ bowing skill. If the bow favours one string, the quieter note's estimate gets
 unreliable. Worth checking early whether this is a nuisance or a dealbreaker on
 a real instrument.
 
-## 3. Other features worth considering
+## 4. Other features worth considering
 
 Both of the first two were considered for v0.1 and deferred for the same
 reason: neither is hard to *build* — the DSP is trivial in both cases — but
@@ -146,7 +289,7 @@ inform.
 - **Watch app** — a tuner on the wrist is plausible but the microphone quality
   and screen size both work against it. Unclear; investigate before committing.
 
-## 4. Owed upstream to donpa
+## 5. Owed upstream to donpa
 
 Found while porting its scaffold; fixed here, still broken there:
 

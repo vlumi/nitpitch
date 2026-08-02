@@ -4,7 +4,7 @@ import SwiftUI
 /// One complete tuning display: the arc, then the readout and light strip
 /// stacked below it — everything specific to a single reading.
 ///
-/// Self-contained by design. Double-stop fifths (ROADMAP § 2) needs two of
+/// Self-contained by design. Double-stop fifths (ROADMAP § 3) needs two of
 /// these on one iPhone screen, so the whole unit targets `height`. Anything
 /// applying to *both* dials — reference pitch, instrument — belongs outside.
 struct TunerDial<Readout: View>: View {
@@ -24,11 +24,14 @@ struct TunerDial<Readout: View>: View {
 
     /// The whole unit: arc (less the slack pulled back), readout, light strip.
     ///
-    /// Two of these no longer fit an iPhone SE, and that's deliberate. Sizing
-    /// the arc down until a pair fitted made it a small hump on a screen that
-    /// was visibly half empty — the wrong trade for the layout that ships.
-    /// Double-stop fifths (ROADMAP § 2) will need its own answer: a shorter
-    /// arc in that mode, or a side-by-side pair on wider screens.
+    /// Two of these don't fit an iPhone SE, and that's deliberate. Sizing the
+    /// arc down until a pair fitted made it a small hump on a screen that was
+    /// visibly half empty — the wrong trade for the layout that ships.
+    ///
+    /// Showing several at once (ROADMAP § 2, a dial per string) wants a
+    /// *compact* variant rather than copies of this one: colour and sweep
+    /// carry in/out of tune at a much smaller size, while the ticks, strip and
+    /// cent number are detail for the enlarged view.
     static var height: CGFloat { arcHeight - apexSlack + 6 + 62 + 6 + 14 }
 
     var body: some View {

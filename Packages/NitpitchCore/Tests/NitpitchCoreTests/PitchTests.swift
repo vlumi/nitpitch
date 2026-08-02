@@ -146,6 +146,151 @@ final class PitchTests: XCTestCase {
         }
     }
 
+    // MARK: - Per-string bands
+
+    /// The whole point of splitting at midpoints rather than a fixed width:
+    /// a fixed ±N leaves dead zones wherever strings sit more than 2N apart,
+    /// and a string slack enough to land in one lights nothing at all.
+    func testStringBandsAreContiguousWithNoGapsOrOverlap() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            let bands = instrument.stringBands().sorted { $0.lowerBound < $1.lowerBound }
+            for i in 1..<bands.count {
+                XCTAssertEqual(
+                    bands[i - 1].upperBound, bands[i].lowerBound, accuracy: 1e-6,
+                    "\(instrument.name) has a gap or overlap between bands \(i - 1) and \(i)")
+            }
+        }
+    }
+
+    /// Each dial has to answer for its own string above all — if a string's
+    /// own pitch fell outside its band, tuning it would be impossible.
+    func testEachStringFallsInItsOwnBand() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            let bands = instrument.stringBands()
+            for (note, band) in zip(instrument.notes, bands) {
+                XCTAssertTrue(
+                    band.contains(note.frequency()),
+                    "\(instrument.name): \(note.fullName) is outside its own band")
+            }
+        }
+    }
+
+    /// Swept rather than spot-checked: anywhere in the instrument's range,
+    /// exactly one dial should light. Two would be ambiguous, none would be
+    /// a dead zone.
+    func testEveryPitchInRangeBelongsToExactlyOneBand() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            let bands = instrument.stringBands()
+            guard let low = bands.map(\.lowerBound).min(),
+                let high = bands.map(\.upperBound).max()
+            else { continue }
+            // A deliberately awkward step, so the sweep doesn't land on the
+            // boundaries it's meant to be probing between.
+            var hz = low + 0.37
+            while hz < high {
+                let matches = bands.filter { $0.contains(hz) }.count
+                XCTAssertEqual(
+                    matches, 1,
+                    "\(instrument.name): \(matches) bands claim \(hz) Hz")
+                hz += 0.37
+            }
+        }
+    }
+
+    /// A newly fitted string starts far below pitch, so the outermost bands
+    /// have to reach well past the strings themselves.
+    func testOutermostBandsExtendBeyondTheirStrings() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            let bands = instrument.stringBands()
+            let sorted = bands.sorted { $0.lowerBound < $1.lowerBound }
+            guard let lowestString = instrument.strings.min(),
+                let highestString = instrument.strings.max()
+            else { continue }
+            XCTAssertLessThan(
+                sorted[0].lowerBound, Note(midi: lowestString).frequency(),
+                "\(instrument.name) has no headroom below its lowest string")
+            XCTAssertGreaterThan(
+                sorted[sorted.count - 1].upperBound, Note(midi: highestString).frequency(),
+                "\(instrument.name) has no headroom above its highest string")
+        }
+    }
+
+    /// Bands come back parallel to `strings`, so a grid can zip them together.
+    func testStringBandsMatchTheStringOrder() {
+        for instrument in Instrument.all {
+            XCTAssertEqual(instrument.stringBands().count, instrument.strings.count)
+        }
+        XCTAssertTrue(Instrument.chromatic.stringBands().isEmpty)
+    }
+
+    /// Midpoints are taken in MIDI space: pitch is logarithmic, so the mean of
+    /// two frequencies sits sharp of the note halfway between them. Between
+    /// A4 (440) and A5 (880) the true midpoint is A♯4/B♭4 at ~622 Hz, not 660.
+    func testMidpointsAreMusicalNotArithmetic() {
+        let octave = Instrument(id: "octave", name: "Octave", strings: [69, 81])
+        // An octave apart, so the midpoint is 6 semitones out — past the
+        // default cap. Lift it to isolate the thing under test.
+        let bands = octave.stringBands(maxSemitones: 99)
+        let boundary = bands[0].upperBound
+        XCTAssertEqual(boundary, 440 * pow(2, 0.5), accuracy: 0.01)
+        XCTAssertLessThan(boundary, 660, "an arithmetic midpoint would sit here")
+    }
+
+    /// The reference shifts every boundary with it, or a band would drift off
+    /// the string it belongs to.
+    func testStringBandsFollowTheReference() {
+        let at440 = Instrument.violin.stringBands(reference: ReferencePitch(hz: 440))
+        let at442 = Instrument.violin.stringBands(reference: ReferencePitch(hz: 442))
+        for (a, b) in zip(at440, at442) {
+            XCTAssertLessThan(a.lowerBound, b.lowerBound)
+            XCTAssertLessThan(a.upperBound, b.upperBound)
+        }
+        for (note, band) in zip(Instrument.violin.notes, at442) {
+            XCTAssertTrue(band.contains(note.frequency(reference: ReferencePitch(hz: 442))))
+        }
+    }
+
+    /// The shipped default has to leave the midpoints alone, or the tiling
+    /// invariants above would be testing a narrower thing than the app runs.
+    func testDefaultCapDoesNotNarrowAnyBand() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            let capped = instrument.stringBands()
+            let uncapped = instrument.stringBands(maxSemitones: 99)
+            XCTAssertEqual(capped, uncapped, "\(instrument.name) is clipped at the default cap")
+        }
+    }
+
+    /// Narrowing may open gaps — that's the knob's whole purpose — but it must
+    /// never make two dials answer for the same pitch.
+    func testNarrowingNeverCreatesOverlap() {
+        for semitones in [0.5, 1.0, 2.0, 3.0] {
+            for instrument in Instrument.all where !instrument.strings.isEmpty {
+                let bands = instrument.stringBands(maxSemitones: semitones)
+                    .sorted { $0.lowerBound < $1.lowerBound }
+                for i in 1..<bands.count {
+                    XCTAssertLessThanOrEqual(
+                        bands[i - 1].upperBound, bands[i].lowerBound + 1e-9,
+                        "\(instrument.name) overlaps at ±\(semitones)")
+                }
+            }
+        }
+    }
+
+    /// However narrow, a string's own pitch stays in its own band — a cap that
+    /// clipped past the target would make that string untunable.
+    func testStringStaysInItsBandAtEveryCap() {
+        for semitones in [0.5, 1.0, 2.0, 3.0] {
+            for instrument in Instrument.all where !instrument.strings.isEmpty {
+                let bands = instrument.stringBands(maxSemitones: semitones)
+                for (note, band) in zip(instrument.notes, bands) {
+                    XCTAssertTrue(
+                        band.contains(note.frequency()),
+                        "\(instrument.name): \(note.fullName) falls outside its own ±\(semitones)")
+                }
+            }
+        }
+    }
+
     // MARK: - Picker grouping
 
     /// The picker renders `grouped`, so anything missing from it is an

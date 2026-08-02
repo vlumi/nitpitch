@@ -46,6 +46,14 @@ demo-iphone: Nitpitch.xcodeproj  ## Build + launch on a simulator with a synthet
 demo-mac: Nitpitch.xcodeproj  ## Build + launch the Mac app with a synthetic reading
 	@LAUNCH_ARGS=-demo Scripts/run.sh
 
+.PHONY: debug-iphone
+debug-iphone: Nitpitch.xcodeproj  ## Build + launch on a simulator with the detector diagnostics screen
+	@LAUNCH_ARGS=-debug Scripts/run-ios.sh iphone "$(DEVICE)"
+
+.PHONY: debug-mac
+debug-mac: Nitpitch.xcodeproj  ## Build + launch the Mac app with the detector diagnostics screen
+	@LAUNCH_ARGS=-debug Scripts/run.sh
+
 .PHONY: run-ipad
 run-ipad: Nitpitch.xcodeproj  ## Build + launch on an iPad simulator (DEVICE="Air" / "13-inch" to pick)
 	@Scripts/run-ios.sh ipad "$(DEVICE)"

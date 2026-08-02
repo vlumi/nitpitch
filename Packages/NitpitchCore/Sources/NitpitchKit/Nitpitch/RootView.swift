@@ -16,6 +16,10 @@ public struct RootView: View {
     @ObservedObject private var settings: Settings
     private let audio: AudioSessionController
     @State private var path: [TunerRoute] = []
+    /// Created here rather than passed in: it lives for the session, resets on
+    /// every launch, and nothing outside the tuner hierarchy has any business
+    /// reading it.
+    @StateObject private var detection = DetectionSettings()
 
     public init(settings: Settings, audio: AudioSessionController) {
         self.settings = settings
@@ -31,7 +35,9 @@ public struct RootView: View {
             .navigationDestination(for: TunerRoute.self) { route in
                 switch route {
                 case .instrument(let instrument):
-                    InstrumentGridView(instrument: instrument, naming: settings.naming)
+                    InstrumentGridView(
+                        instrument: instrument, audio: audio, settings: settings,
+                        detection: detection)
                 }
             }
             // The root has its own header; a system bar above it would be a

@@ -140,6 +140,31 @@ Two things the Mac loop can't reach, which need an actual iPhone:
   deserves. Don't tune the clarity threshold against it — use an external mic or
   interface, and confirm on a phone.
 
+### The detector diagnostics screen
+
+`make debug-mac` / `make debug-iphone` launch with `-debug`, which adds a
+**Detector…** entry to the menu on an instrument's screen. It shows what every
+string's detector is seeing — frequency, cents from that string, clarity, RMS,
+and the band it searched — above sliders for the clarity gate, the peak-pick
+threshold, the silence floor, and the band width.
+
+The two halves only work together. Moving a threshold blind tells you nothing;
+watching the numbers without being able to move anything tells you what's wrong
+but not what to do. Play one note and watch which rows light: a row that isn't
+the note you played is the bug worth chasing.
+
+A launch argument rather than `#if DEBUG` on purpose. The numbers only mean
+anything against a real instrument in a real room, which often means a
+TestFlight build rather than one run from Xcode — compiling it out of release
+would put it exactly where it can't be used. Nothing reaches it without the
+flag, and a UI test asserts that.
+
+Nothing is persisted: values reset to the shipped defaults on every launch, so a
+session of experimenting can't leave the app quietly detuned. A value worth
+keeping goes into `Detection` as the new constant. While anything is off its
+default the menu's icon turns orange, so a surprising reading is never mistaken
+for how the app really behaves.
+
 ### Lint & format
 
 ```sh

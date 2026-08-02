@@ -24,6 +24,13 @@ public final class PitchDetector {
     /// spurious peaks (DC drift at long lags, hiss at short ones).
     private let minLag: Int
     private let maxLag: Int
+    /// The band this detector was asked to search, kept so a result can be
+    /// checked against it — the lag bounds alone are wider, by design.
+    private let band: ClosedRange<Double>
+    /// Thresholds. A `var` because the debug screen retunes a live detector
+    /// rather than rebuilding it — rebuilding would drop the scratch buffers
+    /// and the smoothing on every slider tick.
+    public var tuning: DetectionTuning
 
     private var nsdf: [Double]
     private var windowed: [Double]
@@ -37,10 +44,13 @@ public final class PitchDetector {
     public init(
         sampleRate: Double,
         windowSize: Int = Detection.windowSize,
-        band: ClosedRange<Double> = Detection.fullBand
+        band: ClosedRange<Double> = Detection.fullBand,
+        tuning: DetectionTuning = .default
     ) {
         self.sampleRate = sampleRate
         self.windowSize = windowSize
+        self.band = band
+        self.tuning = tuning
         // Lag and frequency are inverse: the highest frequency is the shortest
         // lag. Two samples of headroom below the band's shortest lag, because
         // the scan below needs to see the peak's rising side to recognize it —
@@ -65,7 +75,7 @@ public final class PitchDetector {
         vDSP_rmsqv(samples, 1, &rms, vDSP_Length(windowSize))
         // Reject silence before doing any real work — most frames between notes
         // are this, and the NSDF of near-zero input is numerically meaningless.
-        guard rms > Detection.silenceRMS else {
+        guard rms > tuning.silenceRMS else {
             return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
         }
 
@@ -82,11 +92,19 @@ public final class PitchDetector {
         guard let (lag, value) = pickPeak() else {
             return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
         }
-        guard value >= Detection.clarityThreshold else {
+        guard value >= tuning.clarityThreshold else {
             return DetectionResult(frequency: nil, clarity: value, rms: Double(rms))
         }
-        return DetectionResult(
-            frequency: sampleRate / lag, clarity: value, rms: Double(rms))
+        let frequency = sampleRate / lag
+        // Report nothing rather than something outside the band we searched.
+        // `minLag`'s two samples of headroom, and interpolation on top, can
+        // walk the answer past the edge — harmless for one wide-band detector,
+        // but with a dial per string it means one played note lights a
+        // neighbour's dial with a pitch that neighbour never owned.
+        guard band.contains(frequency) else {
+            return DetectionResult(frequency: nil, clarity: value, rms: Double(rms))
+        }
+        return DetectionResult(frequency: frequency, clarity: value, rms: Double(rms))
     }
 
     /// The normalized square difference function, per McLeod & Wyvill:
@@ -173,7 +191,7 @@ public final class PitchDetector {
         }
         guard globalMax > 0 else { return nil }
 
-        let cutoff = globalMax * Detection.peakPickThreshold
+        let cutoff = globalMax * tuning.peakPickThreshold
         guard let chosen = candidates.first(where: { nsdf[$0] >= cutoff }) else { return nil }
         return interpolate(around: chosen)
     }
@@ -195,7 +213,15 @@ public final class PitchDetector {
         let denom = y0 - 2 * y1 + y2
         // Degenerate (flat or a perfectly symmetric plateau): keep the integer lag.
         guard abs(denom) > .ulpOfOne else { return (Double(tau), y1) }
-        let shift = 0.5 * (y0 - y2) / denom
-        return (Double(tau) + shift, y1 - 0.25 * (y0 - y2) * shift)
+        // Clamp to half a sample either side. The vertex of a parabola through
+        // three points around a true peak lies between them; a shift beyond
+        // that means the samples aren't peak-shaped — a near-flat denominator
+        // sends it arbitrarily far, and the reported frequency then lands
+        // outside the band that was searched.
+        let shift = min(0.5, max(-0.5, 0.5 * (y0 - y2) / denom))
+        // The NSDF is normalized to at most 1; interpolation can overshoot,
+        // and a "clarity" above 1 would sail past the confidence gate.
+        let value = min(1, y1 - 0.25 * (y0 - y2) * shift)
+        return (Double(tau) + shift, value)
     }
 }

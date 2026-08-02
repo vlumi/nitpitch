@@ -37,6 +37,13 @@ struct InstrumentGridView: View {
 
     var body: some View {
         ScrollView {
+            // Whether the app can hear anything at all — the same meter, size
+            // and axis as the chromatic screen's. The per-string bars can't
+            // answer this: they're zero both in a quiet room and when sound is
+            // coming in that isn't near any string's target.
+            LevelMeter(level: strings.inputLevel)
+                .frame(width: 72, height: 4)
+                .padding(.top, 6)
             // Lazy so cost tracks the viewport rather than the string count —
             // which is what makes "only track what's on screen" (ROADMAP § 2)
             // reachable later, and what lets an arbitrary tuning scale.
@@ -166,11 +173,21 @@ private struct StringCell: View {
 final class StringTuners: ObservableObject {
     let tuners: [StringTunerViewModel]
 
+    /// The frame's overall input level, 0...1 — whether the app can hear
+    /// *anything*, separate from whether any string registers. This is what
+    /// tells "quiet room" apart from "sound coming in, just not near any
+    /// string's target", which the per-string bars can't: they're zero in
+    /// both cases. Quantized to twentieths, like the per-string levels, so a
+    /// frame with no visible change publishes nothing.
+    @Published private(set) var inputLevel: Double = 0
+
     private let audio: AudioSessionController
     /// All the DSP, shared with the analysis queue — see `DetectorBank` for
     /// the locking story.
     private let bank: DetectorBank
     private var subscription: AudioSessionController.Subscription?
+    /// Drives `inputLevel` under `-demo`, where no audio flows.
+    private var demo: Task<Void, Never>?
 
     init(
         instrument: Instrument, audio: AudioSessionController, reference: ReferencePitch,
@@ -191,7 +208,12 @@ final class StringTuners: ObservableObject {
 
     func attachAll() {
         for tuner in tuners { tuner.begin() }
-        guard !LaunchStores.isDemo, subscription == nil else { return }
+        if LaunchStores.isDemo {
+            guard demo == nil else { return }
+            demo = Task { await runDemoLevel() }
+            return
+        }
+        guard subscription == nil else { return }
         subscription = audio.subscribe { [weak self, bank] window in
             // Runs on the analysis queue. All the DSP happens here; only the
             // finished results hop to main.
@@ -201,13 +223,33 @@ final class StringTuners: ObservableObject {
                 for (tuner, result) in zip(self.tuners, results) {
                     tuner.ingest(result)
                 }
+                // Every result carries the same frame's RMS; the meter shows
+                // the chromatic screen's curve of it.
+                if let rms = results.first?.rms {
+                    let level = (min(1, sqrt(rms) * 3) * 20).rounded() / 20
+                    if level != self.inputLevel { self.inputLevel = level }
+                }
             }
+        }
+    }
+
+    /// The demo's overall meter, so the top of the screen moves like the rest
+    /// of the synthetic layout.
+    private func runDemoLevel() async {
+        var tick = 0.0
+        while !Task.isCancelled {
+            inputLevel = ((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20
+            tick += 0.055
+            try? await Task.sleep(nanoseconds: 50_000_000)
         }
     }
 
     func detachAll() {
         subscription?.cancel()
         subscription = nil
+        demo?.cancel()
+        demo = nil
+        inputLevel = 0
         // The spectral engine's phase pair must not span the gap.
         bank.interrupted()
         for tuner in tuners { tuner.end() }

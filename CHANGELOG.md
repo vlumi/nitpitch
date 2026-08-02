@@ -22,6 +22,9 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- The strings screen shows the overall input level at the top, like the
+  chromatic tuner does — so "the app hears nothing" and "sound is coming in
+  but isn't near any string" stopped looking identical.
 - Each string's cell shows a signal bar above the dial: how much sound stands
   behind the reading, so a confident bow and something scraped off the room
   noise no longer look alike.

@@ -33,6 +33,23 @@ final class DetectionSettingsTests: XCTestCase {
         }
     }
 
+    /// Deliver a tone as the tap would: consecutive windows a hop apart from
+    /// one continuous signal. The spectral engine measures the phase advance
+    /// *between* windows, so repeating one identical window reads as garbage —
+    /// a trap this helper exists to make unrepeatable.
+    private func slide(
+        _ hz: Double, through input: AudioInput, sampleRate: Double, hops: Int = 3
+    ) async {
+        let signal = tone(
+            hz, sampleRate: sampleRate,
+            count: Detection.windowSize + Detection.hopSize * hops)
+        for hop in 0..<hops {
+            let start = hop * Detection.hopSize
+            await deliver(
+                Array(signal[start..<(start + Detection.windowSize)]), through: input)
+        }
+    }
+
     private func violinTuners(_ input: AudioInput) -> (StringTuners, AudioSessionController) {
         let controller = AudioSessionController(input: input)
         let strings = StringTuners(
@@ -116,6 +133,26 @@ final class DetectionSettingsTests: XCTestCase {
         }
     }
 
+    /// The overall meter answers "is anything coming in at all" — it must
+    /// move with sound even when no string registers, which is exactly the
+    /// case the per-string bars can't show.
+    func testInputLevelMovesEvenWhenNoStringReads() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        // A pitch between strings, far from every target: no dial reads under
+        // spectral, but the meter must still show the sound.
+        strings.retune(DetectionTuning(engine: .spectral))
+        await slide(510, through: input, sampleRate: controller.sampleRate)
+
+        XCTAssertGreaterThan(strings.inputLevel, 0)
+        for (index, tuner) in strings.tuners.enumerated() {
+            XCTAssertEqual(tuner.state, .waiting, "dial \(index) read a between-strings pitch")
+        }
+    }
+
     // MARK: - Reaching the detectors
 
     /// Retuning live dials has to change what they report, or the sliders are
@@ -150,17 +187,7 @@ final class DetectionSettingsTests: XCTestCase {
         defer { strings.detachAll() }
 
         strings.retune(DetectionTuning(engine: .spectral))
-        // Consecutive windows a hop apart, as the tap delivers them — the
-        // spectral engine measures the phase advance *between* windows, so
-        // repeating one identical window would measure nothing.
-        let signal = tone(
-            440, sampleRate: controller.sampleRate,
-            count: Detection.windowSize + Detection.hopSize * 3)
-        for hop in 0..<3 {
-            let start = hop * Detection.hopSize
-            await deliver(
-                Array(signal[start..<(start + Detection.windowSize)]), through: input)
-        }
+        await slide(440, through: input, sampleRate: controller.sampleRate)
 
         guard case .reading(let cents, _) = strings.tuners[2].state else {
             return XCTFail("the A dial should be reading under the spectral engine")

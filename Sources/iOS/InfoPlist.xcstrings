@@ -32,7 +32,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere."
+            "value" : "Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere."
           }
         }
       }

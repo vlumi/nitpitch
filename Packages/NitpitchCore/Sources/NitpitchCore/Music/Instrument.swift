@@ -87,8 +87,22 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     /// `all`, split into the picker's sections. Families keep the order they're
     /// declared in above rather than being sorted, so the list is stable.
     public static var grouped: [(family: InstrumentFamily, instruments: [Instrument])] {
+        grouped(from: all)
+    }
+
+    /// The instruments a chooser should offer, grouped.
+    ///
+    /// Excludes chromatic: it's the screen you arrive from, so offering it
+    /// would be offering to navigate to where you already are.
+    public static var choosable: [(family: InstrumentFamily, instruments: [Instrument])] {
+        grouped(from: all.filter { $0 != .chromatic })
+    }
+
+    private static func grouped(
+        from instruments: [Instrument]
+    ) -> [(family: InstrumentFamily, instruments: [Instrument])] {
         InstrumentFamily.allCases.compactMap { family in
-            let members = all.filter { $0.family == family }
+            let members = instruments.filter { $0.family == family }
             return members.isEmpty ? nil : (family, members)
         }
     }

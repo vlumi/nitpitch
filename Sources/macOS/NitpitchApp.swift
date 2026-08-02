@@ -27,7 +27,7 @@ struct NitpitchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NitpitchView(settings: settings, audio: audio)
+            RootView(settings: settings, audio: audio)
                 // The readout is a fixed-aspect instrument panel; a resizable
                 // window is fine but it should open at a sane size.
                 .frame(minWidth: 420, minHeight: 320)

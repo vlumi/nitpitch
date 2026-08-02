@@ -22,6 +22,13 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- The app now opens on a chromatic tuner, whatever was last tuned, so checking
+  a single note takes no setup. Choosing an instrument is a step into it rather
+  than a setting on the tuning screen — the button below the dial opens the
+  list, and the instrument's own screen follows.
+- The microphone permission text and the About screen say "analyzed" rather
+  than "analysed"; the app's English is US throughout.
+
 ### build 1 — 2026-08-02
 
 - Initial project scaffold: XcodeGen spec for iOS 16+ / macOS 14+ app targets,

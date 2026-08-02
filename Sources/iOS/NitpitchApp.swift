@@ -13,7 +13,7 @@ struct NitpitchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NitpitchView(settings: settings, audio: audio)
+            RootView(settings: settings, audio: audio)
                 .capturesWhileActive(audio)
         }
     }

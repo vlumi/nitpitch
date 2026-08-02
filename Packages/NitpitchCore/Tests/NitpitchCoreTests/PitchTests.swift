@@ -174,6 +174,17 @@ final class PitchTests: XCTestCase {
         XCTAssertEqual(Instrument.grouped.first?.instruments.first, .violin)
     }
 
+    /// The chooser is reached *from* the chromatic tuner, so offering
+    /// chromatic there would be offering to navigate to where you already are.
+    func testChoosableExcludesChromaticButKeepsEverythingElse() {
+        let choosable = Instrument.choosable.flatMap(\.instruments)
+        XCTAssertFalse(choosable.contains(.chromatic))
+        XCTAssertEqual(Set(choosable), Set(Instrument.all).subtracting([.chromatic]))
+        // Every instrument in it still has strings to show — that's what the
+        // screen it opens is for.
+        XCTAssertTrue(choosable.allSatisfy { !$0.strings.isEmpty })
+    }
+
     func testChromaticIsTheOnlyStringlessInstrument() {
         let stringless = Instrument.all.filter(\.strings.isEmpty)
         XCTAssertEqual(stringless, [.chromatic])

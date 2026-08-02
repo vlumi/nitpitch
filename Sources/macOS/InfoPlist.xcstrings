@@ -26,13 +26,13 @@
       }
     },
     "NSMicrophoneUsageDescription" : {
-      "comment" : "Privacy - Microphone Usage Description. Covers line-in / audio-interface capture too — macOS gates every input device behind this.",
+      "comment" : "Privacy - Microphone Usage Description. Covers line-in \/ audio-interface capture too — macOS gates every input device behind this.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere."
+            "value" : "Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere."
           }
         }
       }

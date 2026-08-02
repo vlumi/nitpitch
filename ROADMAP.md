@@ -26,143 +26,135 @@ never hears about it — guidance that only appears in the moment it's needed,
 through the gesture the user was already making. Expect a few rounds against
 real hands before it holds.
 
-#### The model: the synth patch and its edit buffer
+#### The model: your instruments, and presets as stamps
 
 ```text
-Tuning   = ordered [MIDI] + its canonical name when it has one
-           ("Standard", "Drop D", "DADGAD") — or none, for Custom
-Setup    = tuning + reference (+ temperament, later)
-Workbench = each instrument's ONE mutable setup — what plain "Guitar" opens,
-           freely tweakable, autosaved, waiting when you come back.
-           "Workbench" is the INTERNAL name (types, docs); on screen it
-           is simply "My Guitar" / "My Violin" — the possessive says
-           "yours to change" with no vocabulary to learn, which matters
-           because the app's stated audience includes a beginning
-           violinist. Presets are frozen; My Guitar is yours.
-Preset   = a frozen setup under the USER'S name ("Bach No. 1"); never
-           edited in place, only saved over deliberately
-Favourite = a preset pinned to the launch screen
+Tuning     = ordered [MIDI] + its canonical name when it has one
+             ("Standard", "Drop D", "DADGAD") — or none, for Custom
+Instrument = one YOU OWN: "Strat", "Acoustic", "My Violin" — a named
+             instance of a template (guitar, violin…), holding its own
+             mutable state (tuning + reference + lock), autosaved,
+             waiting as you left it. One is auto-created per template
+             ("My Guitar"), so nobody meets the plural until they own
+             a plural: "Add another guitar…" is where it appears.
+Preset     = a frozen setup under the USER'S name ("Bach No. 1").
+             Not a place you visit — a stamp you LOAD onto an
+             instrument, after which everything is freely tweakable.
+             Saving is the only way values flow back: Save → "New
+             preset…" / "Replace 'Bach No. 1'", with a confirm.
+Lock       = per-instrument, optional: a padlock in the header holds
+             the whole setup — the orchestral "keep my violin at 442",
+             and stray-tap protection on a music stand.
+Favourite  = an instrument pinned to the launch screen.
 ```
 
-This is the pattern every hardware synth and multi-FX pedal uses — patches
-are frozen, there's exactly one edit buffer, tweaks live in the buffer, and
-saving writes the buffer to a slot — so it's *more* familiar to musicians
-than editable-presets-with-duplicate, not less.
+Three earlier drafts converged here, each killing a concept:
 
-A favourite is not a separate feature — it's a pinned preset. Sharing is not
-a separate feature — it's a preset serialized into a URL. The built-in
-one-tap chips ("Violin") open that instrument's workbench, so the launch row
-works before presets exist at all. `Instrument` stays a template: name,
-family, its catalog of known tunings, a default. The midpoint band scheme
-already accepts any string array, so custom tunings — including odd string
-counts — need no special-casing downstream.
+- **Instances killed favourite-presets.** People own several guitars, and
+  each remembers its own state — so if your Violin sits at Bach No. 1,
+  tapping "Violin" *is* one-tap-to-Bach-No.-1. The instrument is the
+  memory. (A preset chip would also have had to guess *which* guitar to
+  load onto.)
+- **Load-semantics killed the locked preset session.** Presets stay frozen
+  (loading copies values out; saving is explicit and confirmed), but
+  there's no "being on a preset" — so there's only ever ONE kind of
+  screen: your instrument, mutable. The trade, taken knowingly: drift
+  after loading is *visible* rather than *impossible* — the header's
+  "Strat · Bach No. 1" becomes "Strat · Bach No. 1 (edited)" on the first
+  nudge.
+- **The per-instrument padlock resurrected what the locked session did
+  well, in its natural home.** "Hold this at A=442" is a property of
+  *your violin*, not of a preset's honor. Locked controls keep the doors
+  rule: they never mutate and never ignore a touch — touching one offers
+  "This instrument is locked. Unlock to make changes?", Cancel means
+  nothing happened, unlocking lands on the same screen with the control
+  live. Loading a preset counts as a change, so the lock guards it too.
 
-**The reference pitch belongs to the setup**, not to a global setting:
-"Bach No. 1 at A=442" only means something if 442 is part of it. Each
-workbench carries its own; chromatic keeps its own; a new workbench seeds
-from wherever you came from.
+The reference pitch belongs to the instrument's state (and to presets),
+not to a global setting: "Bach No. 1 at A=442" only means something if 442
+is part of it. Chromatic keeps its own. Sharing stays a preset in a URL.
+`Instrument` templates keep the catalog of known tunings; the midpoint band
+scheme already accepts any string array, so custom tunings — odd string
+counts included — need no special-casing downstream.
 
 #### The navigation
 
 ```text
 Chromatic launch  (unchanged: immediately usable, no setup)
-├── favourites row: [Violin] [Drop D] [Bach No.1] …   ← ONE tap to a grid
+├── favourites row: [My Violin] [Strat] [Acoustic] …   ← ONE tap, as you
+│                                                        left it
 └── "Instruments…" — pushed, not a sheet
-        Favourites (manage / reorder)
-        Bowed / Fretted / … lists    → that instrument's workbench
-        Import preset…               (paste link / scan QR)
+        Your instruments (manage / reorder / add another)
+        Bowed / Fretted / … templates → opens (creating if first time)
+                                        that template's default instance
+        Import preset…                 (paste link / scan QR)
 
-Grid, on the workbench — header "My Guitar · Drop D", everything editable
-├── tuning menu: known tunings · presets · Customize… · Save…
+Grid — header "Strat · Bach No. 1", or "· Drop D (edited)"; 🔒 if locked
+├── tuning menu: known tunings · load preset · Customize… · Save as preset…
 ├── reference stepper
 └── tap a cell → String view
-
-Grid, on a preset — header "🔒 Bach No. 1", everything locked
-└── touching any control: "Presets don't change. Switch to My Guitar?"
-    → copies the values across, switches, and lands on the SAME screen
-    with that control now live;
-    header becomes "My Guitar · from Bach No. 1"
 
 String view (one string, full screen)
 ├── full dial, wide-band listening — tracks a slipped peg from anywhere
 ├── ◀ ▶ / swipe between strings; back → grid
-└── the string's TARGET is a stepper here (workbench only; locked on a
-    preset): nudge D2 down to C2 and the tuning forks to "Custom"
+└── the string's TARGET is a stepper here: nudge D2 down to C2 and the
+    tuning label forks to "Custom"
 ```
 
 Decisions this draft takes, and why:
 
 - **Push the chooser; drop the accordion.** The accordion's one advantage —
-  choosing tuning at instrument-choice time — is served better by favourites
-  (the repeat case) and by the grid header's tuning menu (the
+  choosing tuning at instrument-choice time — is served better by
+  favourites (the repeat case) and by the grid header's tuning menu (the
   change-of-mind case). With those, the chooser can stay a dumb list, and
   back finally walks the path you came.
 - **Per-string editing lives in the string view.** "Choose individual
   tunings for each string" needs no new screen: you're already looking at
-  one string full screen, so its target is editable right there. Retuning a
-  string of "Drop D" forks the tuning to *Custom* — named tunings are never
-  edited in place — and "Save as preset…" is how Custom gets a name.
-  (Changing the string *count* — 7-string, 5-string bass — is the one thing
-  that doesn't fit a per-string stepper; that's Customize…, a plain list
-  editor, and can come later.)
-- **A preset session is read-only, visibly.** The lock in the header and on
-  the controls isn't decoration — it's the guarantee that "I'm on Bach No. 1"
-  means the reference *is* 442, not "was 442 until something got nudged".
-  Accidental edits aren't merely non-destructive; they're impossible.
-- **Locked controls are doors, not corpses.** They never mutate and never
-  ignore a touch: touching one *is* the escape hatch ("Presets don't
-  change. Switch to My Guitar?"), and Cancel means nothing happened.
-  The novice discovers the way forward with the only gesture anyone tries
-  first — tapping the thing they want to change — with nothing to have
-  read beforehand. The expert's daily flow (open preset, tune, leave)
-  never touches a control, so the lock stays *totally silent*; when they
-  do tweak, the cost is one confirm, which usefully marks the modal
-  boundary, and they land on the same screen with the same control live.
-  A stray tap on a music stand hits the dialog and gets cancelled — the
-  lock doubles as stray-tap protection.
-- **"My Guitar" appears only at the boundary** — the dialog, the tuning
-  menu ("Switch to My Guitar", "Save as preset…"), the post-switch header
-  — while the ambient distinction stays glyph-borne (the lock). Naming
-  avoids "edit" throughout: you never edit a preset; you continue on your
-  own instrument, seeded from it. A beginner never even meets the
-  vocabulary: tap Violin, land on My Violin, everything just works — the
-  lock enters their world only when presets do.
-- **Updating a preset is a save, not an edit.** From the workbench: Save →
-  "New preset…" or "Replace 'Bach No. 1'", with a confirm. Deliberate
-  intent, one dialog; accidents, zero paths.
+  one string full screen, so its target is editable right there. Retuning
+  a string of "Drop D" relabels the instrument's tuning *Custom* — named
+  tunings are never edited in place — and "Save as preset…" is how Custom
+  gets a name. (Changing the string *count* — 7-string, 5-string bass —
+  is the one thing that doesn't fit a per-string stepper; that's
+  Customize…, a plain list editor, and can come later.)
+- **Locked controls are doors, not corpses** — on a locked *instrument*,
+  since that's the only lock left. Never mutating, never ignoring: the
+  novice discovers the way forward with the only gesture anyone tries
+  first, the expert who leaves things unlocked never hears about any of
+  it, and a stray tap on a music stand dies at a dialog.
+- **"(edited)" is the drift alarm.** With no locked preset mode, noticing
+  replaces impossibility: the header names what was loaded and admits
+  what's changed. Anyone who wants impossibility back locks the
+  instrument — that's what the padlock is.
 - **Sharing is a URL, and the site is the library.** A preset serializes
-  into a link fragment (small enough; no server) and renders as a QR code.
-  Importing — from a link or the camera — shows a preview ("Guitar ·
-  Open G · A=442") with *Use once* and *Save*. nitpitch.app hosts the long
-  tail — scordatura, historical setups — as those same links, so the
-  collection grows without app updates or App Review, and the in-app picker
-  stays uncluttered.
-- **The user's name stays separate from the tuning's name.** Two presets can
-  hold identical strings and differ only in purpose; renaming on save is the
-  expected move, not an edge case. The purpose-name is also what makes a
-  favourite worth its launch-screen pixels.
-
-The settings-lock idea (§ 4) stops being a separate feature here: a preset
-session is already the locked state, so "lock my setup on the music stand"
-is just treating the workbench as a preset temporarily — same mechanism,
-same visual language, same escape hatch.
+  into a link fragment (small enough; no server) and renders as a QR
+  code. Importing — from a link or the camera — shows a preview
+  ("Guitar · Open G · A=442") with *Load once* and *Save*. nitpitch.app
+  hosts the long tail — scordatura, historical setups — as those same
+  links, so the collection grows without app updates or App Review, and
+  the in-app picker stays uncluttered.
+- **The user's name stays separate from the tuning's name.** Two presets
+  can hold identical strings and differ only in purpose; renaming on save
+  is the expected move, not an edge case. Instruments are named the same
+  way — "Strat" is what it means to you, not what the factory called it.
 
 Open, deliberately: favourites-row capacity (cap at ~4, overflow scrolls?),
-and whether presets sync via iCloud or stay per-device.
+whether presets and instruments sync via iCloud or stay per-device, and
+whether loading a preset whose string count differs from the instrument's
+current tuning deserves a note ("this preset has 7 strings") or just works.
 
 #### Build order
 
 Each step useful on its own, none blocked by the later ones:
 
 1. **Push the chooser** (small; fixes the back-stack today).
-2. **Favourites row of implicit presets** — a pinned instrument is just its
-   id; solves the two-tap pain with no new model.
+2. **Favourites row** — chips for the default instances; solves the
+   two-tap pain before instances are even a stored thing.
 3. **String view** (already owed — see below).
-4. **Per-instrument workbench + tuning catalog** (Drop D et al.; the
-   workbench replaces "last-used memory" — it *is* the memory).
-5. **Per-string target editing** in the string view; Custom forking.
-6. **Presets**: save, name, pin, the locked session; then URL/QR share +
-   import.
+4. **Instrument instances + tuning catalog** (one default per template;
+   Drop D et al.; the instance replaces "last-used memory" — it *is* the
+   memory). "Add another guitar…", rename, and the padlock ride along.
+5. **Per-string target editing** in the string view; Custom relabeling.
+6. **Presets**: save, load, name; then URL/QR share + import.
 
 ### The string view (enlarged single string)
 

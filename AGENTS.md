@@ -145,8 +145,15 @@ Two things the Mac loop can't reach, which need an actual iPhone:
 `make debug-mac` / `make debug-iphone` launch with `-debug`, which adds a
 **Detector…** entry to the menu on an instrument's screen. It shows what every
 string's detector is seeing — frequency, cents from that string, clarity, RMS,
-and the band it searched — above sliders for the clarity gate, the peak-pick
-threshold, the silence floor, and the band width.
+and the band it searched — above an engine switch and sliders for the clarity
+gate, the peak-pick threshold, the silence floor, and the band width.
+
+The engine switch is an A/B between the two detection paths (`DetectorBank`):
+**MPM** — one `PitchDetector` per string, `SubharmonicFilter` arbitrating, the
+shipped default — and **Spectral** — `HarmonicEstimator` measuring every string
+from one spectrum, which handles double stops and can't see subharmonics, but
+shows nothing for a string more than ±60¢ from target. Same instrument, same
+room, flip the switch mid-note.
 
 The two halves only work together. Moving a threshold blind tells you nothing;
 watching the numbers without being able to move anything tells you what's wrong

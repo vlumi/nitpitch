@@ -13,8 +13,25 @@ import Foundation
 /// they're a diagnostic. A value found here is meant to be read off and written
 /// into `Detection` as the new constant, not carried around per-user.
 public struct DetectionTuning: Equatable, Sendable {
+    /// Which algorithm drives the per-string dials.
+    public enum Engine: String, CaseIterable, Sendable {
+        /// One `PitchDetector` per string over its own band, with
+        /// `SubharmonicFilter` arbitrating between them. Monophonic: two
+        /// strings at once confuse it. The shipped default.
+        case mpm
+        /// One `HarmonicEstimator` measuring every string from a shared
+        /// spectrum. Handles double stops and is structurally immune to
+        /// subharmonics, but declines strings far from target — a badly slack
+        /// string shows nothing. Experimental until proven on instruments.
+        case spectral
+    }
+
+    /// Which algorithm drives the per-string dials.
+    public var engine: Engine
+
     /// Minimum NSDF peak height to accept an estimate. Raising it rejects more
     /// marginal frames; lowering it makes the dial livelier and twitchier.
+    /// MPM only.
     public var clarityThreshold: Double
 
     /// Fraction of the tallest peak a shorter-lag candidate must reach to win.
@@ -38,11 +55,13 @@ public struct DetectionTuning: Equatable, Sendable {
     public var maxSemitonesFromString: Double
 
     public init(
+        engine: Engine = .mpm,
         clarityThreshold: Double = Detection.clarityThreshold,
         peakPickThreshold: Double = Detection.peakPickThreshold,
         silenceRMS: Float = Detection.silenceRMS,
         maxSemitonesFromString: Double = Instrument.outerHeadroomSemitones
     ) {
+        self.engine = engine
         self.clarityThreshold = clarityThreshold
         self.peakPickThreshold = peakPickThreshold
         self.silenceRMS = silenceRMS

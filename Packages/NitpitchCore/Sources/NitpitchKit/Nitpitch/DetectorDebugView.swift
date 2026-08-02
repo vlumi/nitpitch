@@ -21,6 +21,7 @@ struct DetectorDebugView: View {
     var body: some View {
         NavigationStack {
             Form {
+                engineSection
                 liveSection
                 thresholdSection
                 bandSection
@@ -43,6 +44,28 @@ struct DetectorDebugView: View {
         // Raw results are only published while this screen is up.
         .onAppear { strings.setReportingRaw(true) }
         .onDisappear { strings.setReportingRaw(false) }
+    }
+
+    /// The A/B switch this screen exists for: the same instrument, the same
+    /// room, both algorithms.
+    private var engineSection: some View {
+        Section {
+            Picker(selection: $detection.tuning.engine) {
+                Text(verbatim: "MPM").tag(DetectionTuning.Engine.mpm)
+                Text(verbatim: "Spectral").tag(DetectionTuning.Engine.spectral)
+            } label: {
+                Text(verbatim: "Engine")
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text(verbatim: "Engine")
+        } footer: {
+            Text(
+                verbatim: "MPM: one detector per string, subharmonic shadows filtered out; "
+                    + "finds a badly slack string but can't do two at once. "
+                    + "Spectral: every string measured from one spectrum; handles double "
+                    + "stops, but a string more than a semitone off shows nothing.")
+        }
     }
 
     /// One row per string, updating live. This is where a subharmonic shows

@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Playing one string no longer lights other strings' dials. Each detector
+  genuinely finds the played note's subharmonic — half the frequency is half
+  the frequency — so the dials are now judged together and a reading that is
+  an exact octave-fraction of another string's goes dark instead of showing.
 - An instrument now shows a dial per string rather than a single dial: playing
   the G string moves the G dial. Each dial watches only the pitches nearest its
   own string, so it reads how far *that string* is from where it should be —

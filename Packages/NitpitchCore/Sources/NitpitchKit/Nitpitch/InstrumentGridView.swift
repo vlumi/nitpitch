@@ -151,7 +151,13 @@ private struct StringCell: View {
     }
 }
 
-/// Owns one view model per string for as long as the grid is on screen.
+/// One instrument's live tuning: the view models the cells observe, and the
+/// single audio subscription that feeds all of them.
+///
+/// One subscription rather than one per dial, because the strings can't be
+/// judged independently: every detector hears the whole signal, so one played
+/// note shows up in several and something has to see all the results together
+/// to arbitrate (`DetectorBank`). Per-dial subscriptions structurally can't.
 ///
 /// A single `@StateObject` rather than one per cell: the cells are produced by
 /// a `ForEach` over lazily-created rows, and models that came and went with
@@ -160,24 +166,51 @@ private struct StringCell: View {
 final class StringTuners: ObservableObject {
     let tuners: [StringTunerViewModel]
 
+    private let audio: AudioSessionController
+    /// All the DSP, shared with the analysis queue — see `DetectorBank` for
+    /// the locking story.
+    private let bank: DetectorBank
+    private var subscription: AudioSessionController.Subscription?
+
     init(
         instrument: Instrument, audio: AudioSessionController, reference: ReferencePitch,
         tuning: DetectionTuning = .default
     ) {
+        self.audio = audio
         let bands = instrument.stringBands(
             reference: reference, maxSemitones: tuning.maxSemitonesFromString)
         tuners = zip(instrument.notes, bands).map { note, band in
-            StringTunerViewModel(
-                audio: audio, target: note, band: band, reference: reference, tuning: tuning)
+            StringTunerViewModel(audio: audio, target: note, band: band, reference: reference)
         }
+        bank = DetectorBank(
+            sampleRate: audio.sampleRate,
+            targets: instrument.notes.map { $0.frequency(reference: reference) },
+            bands: bands,
+            tuning: tuning)
     }
 
     func attachAll() {
-        for tuner in tuners { tuner.attach() }
+        for tuner in tuners { tuner.begin() }
+        guard !LaunchStores.isDemo, subscription == nil else { return }
+        subscription = audio.subscribe { [weak self, bank] window in
+            // Runs on the analysis queue. All the DSP happens here; only the
+            // finished results hop to main.
+            let results = bank.analyze(window)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                for (tuner, result) in zip(self.tuners, results) {
+                    tuner.ingest(result)
+                }
+            }
+        }
     }
 
     func detachAll() {
-        for tuner in tuners { tuner.detach() }
+        subscription?.cancel()
+        subscription = nil
+        // The spectral engine's phase pair must not span the gap.
+        bank.interrupted()
+        for tuner in tuners { tuner.end() }
     }
 
     /// Re-tune every band when the reference or the band width moves — they all
@@ -187,16 +220,19 @@ final class StringTuners: ObservableObject {
     ) {
         let bands = instrument.stringBands(
             reference: reference, maxSemitones: tuning.maxSemitonesFromString)
+        bank.configure(
+            targets: instrument.notes.map { $0.frequency(reference: reference) },
+            bands: bands,
+            tuning: tuning)
         for (tuner, band) in zip(tuners, bands) {
             tuner.configure(band: band, reference: reference)
-            tuner.retune(tuning)
         }
     }
 
-    /// Thresholds only — no band change, so the detectors keep their buffers
-    /// and their smoothing while a slider is being dragged.
+    /// Thresholds or engine only — no band change, so the detectors keep their
+    /// buffers and their smoothing while a slider is being dragged.
     func retune(_ tuning: DetectionTuning) {
-        for tuner in tuners { tuner.retune(tuning) }
+        bank.retune(tuning)
     }
 
     /// Publish raw detector output, for as long as the diagnostics screen is up.

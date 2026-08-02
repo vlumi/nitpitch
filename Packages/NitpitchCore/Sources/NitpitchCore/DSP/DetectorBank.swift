@@ -93,6 +93,13 @@ public final class DetectorBank: @unchecked Sendable {
 
     // MARK: - MPM: N detectors, then arbitration
 
+    /// The chromatic screen's level curve: a short log-ish ramp, because RMS is
+    /// tiny for quiet playing and a linear meter would sit near zero for
+    /// everything but a loud bow.
+    private func displayLevel(rms: Double) -> Double {
+        min(1, sqrt(rms) * 3)
+    }
+
     private func analyzeMPM(_ window: [Float]) -> [DetectionResult] {
         let raw = detectors.map { $0.analyze(window) }
         // Which readings are shadows of another string's reading — the "play A,
@@ -102,16 +109,38 @@ public final class DetectorBank: @unchecked Sendable {
         }
         let real = Set(SubharmonicFilter.real(among: candidates).map(\.id))
         return raw.enumerated().map { index, result in
-            guard result.frequency != nil, !real.contains(index) else { return result }
-            // Suppressed: keep the clarity and level so the diagnostics screen
-            // can still show *why* the dial is dark.
-            return DetectionResult(frequency: nil, clarity: result.clarity, rms: result.rms)
+            guard result.frequency != nil else { return result }
+            guard real.contains(index) else {
+                // Suppressed: keep the clarity so the diagnostics screen can
+                // still show *why* the dial is dark.
+                return DetectionResult(frequency: nil, clarity: result.clarity, rms: result.rms)
+            }
+            // MPM analyses the whole frame, so the frame's level is the best
+            // per-string strength on offer.
+            return DetectionResult(
+                frequency: result.frequency, clarity: result.clarity, rms: result.rms,
+                level: displayLevel(rms: result.rms))
         }
     }
 
     // MARK: - Spectral: one FFT, every string measured from it
 
     private func analyzeSpectral(_ window: [Float]) -> [DetectionResult] {
+        var rms: Float = 0
+        vDSP_rmsqv(window, 1, &rms, vDSP_Length(window.count))
+        // The same silence gate MPM applies before any work: without it, a
+        // quiet room's background is "measured" and every dial twitches at
+        // noise. This is also what makes the debug screen's silence slider
+        // mean the same thing on both engines.
+        guard rms > tuning.silenceRMS else {
+            // A skipped frame still breaks the phase pair — the next loud
+            // window must not be compared against a window from before the
+            // quiet spell.
+            estimator?.reset()
+            return targets.map { _ in DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
+            }
+        }
+
         let estimator =
             self.estimator
             ?? {
@@ -121,9 +150,6 @@ public final class DetectorBank: @unchecked Sendable {
             }()
         estimator.ingest(window)
 
-        var rms: Float = 0
-        vDSP_rmsqv(window, 1, &rms, vDSP_Length(window.count))
-
         return targets.indices.map { index in
             let others = targets.indices.filter { $0 != index }.map { targets[$0] }
             guard
@@ -132,7 +158,8 @@ public final class DetectorBank: @unchecked Sendable {
                 return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
             }
             return DetectionResult(
-                frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms))
+                frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms),
+                level: reading.strength)
         }
     }
 }

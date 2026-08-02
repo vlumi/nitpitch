@@ -40,6 +40,11 @@ public final class HarmonicEstimator {
         public let agreement: Double
         /// How many partials the estimate used.
         public let partials: Int
+        /// How far the strongest partial stands above the presence gate, 0...1
+        /// on a log scale (0 = barely admitted, 1 = 40 dB above the gate).
+        /// This is per *string*, not per frame: with two strings sounding, each
+        /// reading reports its own string's strength.
+        public let strength: Double
     }
 
     /// How many harmonics of each target to measure. Beyond the 6th there's
@@ -179,10 +184,17 @@ public final class HarmonicEstimator {
         let spread = estimates.map { abs(1200 * log2($0 / mean)) }.max() ?? 0
         guard spread <= Self.agreementCents else { return nil }
 
+        // Strength: decades above the presence gate, so a reading that barely
+        // scraped in shows weak and a bowed string shows strong. Two decades
+        // (40 dB) of headroom is full.
+        let gate = floor * Self.presenceFloor
+        let strength = min(1, max(0, log10((weights.max() ?? gate) / gate) / 2))
+
         return Reading(
             frequency: mean,
             agreement: max(0, 1 - spread / Self.agreementCents),
-            partials: estimates.count)
+            partials: estimates.count,
+            strength: strength)
     }
 
     /// Whether a partial at `hz` sits on any harmonic of any other target.

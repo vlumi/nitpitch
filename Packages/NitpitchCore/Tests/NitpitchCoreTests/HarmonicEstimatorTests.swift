@@ -95,6 +95,23 @@ final class HarmonicEstimatorTests: XCTestCase {
         XCTAssertEqual(cents(read.frequency, violin[0]), -12, accuracy: 1)
     }
 
+    /// Strength has to mean something: louder in, more of it, within 0...1.
+    func testStrengthTracksLoudness() {
+        let others = Array(violin[1...])
+        var strengths: [Double] = []
+        for amp in [0.05, 0.3, 0.8] {
+            let signal = mix([tone(violin[0], count: signalLength)]).map { $0 * Float(amp) }
+            let estimator = primed(with: signal)
+            guard let read = estimator.measure(target: violin[0], others: others) else {
+                XCTFail("not measured at amplitude \(amp)")
+                continue
+            }
+            XCTAssertTrue((0...1).contains(read.strength), "strength out of range at \(amp)")
+            strengths.append(read.strength)
+        }
+        XCTAssertEqual(strengths, strengths.sorted(), "strength should grow with loudness")
+    }
+
     // MARK: - Presence: absent strings must go dark
 
     /// The estimator answers "what frequency is here" even at an empty bin, so

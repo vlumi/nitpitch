@@ -113,6 +113,38 @@ final class DetectorBankTests: XCTestCase {
         XCTAssertEqual(1200 * log2((results[3].frequency ?? 1) / violin[3]), 5, accuracy: 1)
     }
 
+    /// The spectral path must skip quiet frames like MPM does — without the
+    /// gate it "measures" the background of a quiet room and every dial
+    /// twitches at noise (observed on a real microphone).
+    func testSpectralIgnoresQuietFrames() {
+        let bank = violinBank(engine: .spectral)
+        let quiet = mix([tone(440, count: signalLength)]).map { $0 * 0.0005 }
+        XCTAssertEqual(lit(analyze(bank, signal: quiet)), [])
+    }
+
+    /// And sound resuming after a quiet spell reads again — the gate breaks
+    /// the phase pair, so this checks the re-priming too.
+    func testSpectralRecoversAfterAQuietSpell() {
+        let bank = violinBank(engine: .spectral)
+        let signal = mix([tone(440, count: signalLength)])
+        let quiet = signal.map { $0 * 0.0005 }
+        _ = analyze(bank, signal: quiet)
+        XCTAssertEqual(lit(analyze(bank, signal: signal)), [2])
+    }
+
+    /// A sounding string reports the strength behind its reading; the silent
+    /// strings report none. This is what the cells' signal bars show.
+    func testReadingsCarryPerStringLevel() {
+        for engine in DetectionTuning.Engine.allCases {
+            let bank = violinBank(engine: engine)
+            let results = analyze(bank, signal: mix([tone(440, count: signalLength)]))
+            XCTAssertGreaterThan(results[2].level, 0, "\(engine): sounding string has no level")
+            for index in [0, 1, 3] {
+                XCTAssertEqual(results[index].level, 0, "\(engine): silent string has level")
+            }
+        }
+    }
+
     // MARK: - Reconfiguration
 
     /// Switching engines mid-stream must work — it's a segmented control on

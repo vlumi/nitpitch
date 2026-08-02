@@ -22,6 +22,9 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Each string's cell shows a signal bar above the dial: how much sound stands
+  behind the reading, so a confident bow and something scraped off the room
+  noise no longer look alike.
 - Playing one string no longer lights other strings' dials. Each detector
   genuinely finds the played note's subharmonic — half the frequency is half
   the frequency — so the dials are now judged together and a reading that is

@@ -142,7 +142,7 @@ private struct StringCell: View {
     let naming: NoteNaming
 
     var body: some View {
-        CompactDial(name: tuner.target.name(in: naming), cents: cents)
+        CompactDial(name: tuner.target.name(in: naming), cents: cents, level: tuner.level)
     }
 
     private var cents: Double? {

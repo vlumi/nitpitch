@@ -16,9 +16,12 @@ struct CompactDial: View {
     /// Cents from *this string's* target, or nil when it isn't sounding.
     /// Unbounded: −340 is a legitimate reading for a very slack string.
     let cents: Double?
+    /// Signal strength behind the reading, 0...1. Zero when nothing reads.
+    var level: Double = 0
 
     var body: some View {
         VStack(spacing: 4) {
+            SignalBar(level: cents == nil ? 0 : level)
             CompactArc(cents: cents, inTune: isInTune)
                 .frame(height: Self.arcHeight)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -62,6 +65,31 @@ struct CompactDial: View {
         if isInTune { return "in tune" }
         let rounded = abs(Int(cents.rounded()))
         return cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
+    }
+}
+
+/// How much signal stands behind the reading — the difference between a bowed
+/// string and something the detector scraped off the room. Deliberately
+/// neutral in colour: the hue ramp below means "how in tune", and a second
+/// meaning on the same palette would read as contradiction.
+private struct SignalBar: View {
+    /// 0...1; the bar is empty at zero.
+    let level: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.15))
+                Capsule()
+                    .fill(Color.secondary.opacity(0.6))
+                    .frame(width: max(0, geometry.size.width * min(1, level)))
+                    .animation(.easeOut(duration: 0.15), value: level)
+            }
+        }
+        .frame(height: 3)
+        .padding(.horizontal, 22)
+        .accessibilityHidden(true)
     }
 }
 

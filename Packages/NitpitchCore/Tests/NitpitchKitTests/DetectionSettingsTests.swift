@@ -99,6 +99,23 @@ final class DetectionSettingsTests: XCTestCase {
         }
     }
 
+    /// The signal bar's number: a sounding string publishes its level, silent
+    /// neighbours stay at zero.
+    func testLevelFollowsTheReading() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        let window = tone(440, sampleRate: controller.sampleRate)
+        for _ in 0..<3 { await deliver(window, through: input) }
+
+        XCTAssertGreaterThan(strings.tuners[2].level, 0)
+        for index in [0, 1, 3] {
+            XCTAssertEqual(strings.tuners[index].level, 0, "silent string \(index) has level")
+        }
+    }
+
     // MARK: - Reaching the detectors
 
     /// Retuning live dials has to change what they report, or the sliders are

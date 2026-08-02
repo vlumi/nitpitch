@@ -32,6 +32,14 @@ public final class StringTunerViewModel: ObservableObject {
 
     @Published public private(set) var state: State = .idle
 
+    /// Signal strength behind the current reading, 0...1, for the cell's
+    /// signal bar. Zero while nothing reads: no reading, no authority.
+    ///
+    /// Quantized to twentieths before publishing — it arrives ~21×/second per
+    /// string, and re-rendering every cell for an invisible change is the kind
+    /// of cost a grid of N dials can't afford.
+    @Published public private(set) var level: Double = 0
+
     /// The string this dial answers for.
     public let target: Note
 
@@ -100,12 +108,15 @@ public final class StringTunerViewModel: ObservableObject {
         demo = nil
         smoother.reset()
         state = .idle
+        level = 0
     }
 
     /// This string's slice of a frame's analysis, from `StringTuners`.
     func ingest(_ result: DetectionResult) {
         guard state != .idle else { return }
         if isReportingRaw { lastResult = result }
+        let quantized = (result.level * 20).rounded() / 20
+        if quantized != level { level = quantized }
         guard let hz = result.frequency else {
             quietFrames += 1
             if quietFrames >= Self.quietFramesBeforeIdle, audio.status == .running {
@@ -145,6 +156,7 @@ public final class StringTunerViewModel: ObservableObject {
             let swing = sin(tick) * 0.75 + sin(tick * 0.31) * 0.25
             let cents = swing * TuningDisplay.fullScaleCents
             state = .reading(cents: cents, clarity: 0.98)
+            level = ((0.55 + 0.25 * sin(tick * 1.7)) * 20).rounded() / 20
             // A plausible raw result too, so the diagnostics screen shows
             // moving numbers rather than a column of dashes.
             if isReportingRaw {

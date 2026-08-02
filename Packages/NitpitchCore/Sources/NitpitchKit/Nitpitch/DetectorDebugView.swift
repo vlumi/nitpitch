@@ -188,8 +188,9 @@ private struct DetectorRow: View {
     private var detail: String {
         let result = tuner.lastResult
         return String(
-            format: "clarity %.2f · rms %.4f · band %.0f–%.0f",
-            result.clarity, result.rms, tuner.band.lowerBound, tuner.band.upperBound)
+            format: "clarity %.2f · rms %.4f · level %.2f · band %.0f–%.0f",
+            result.clarity, result.rms, result.level, tuner.band.lowerBound,
+            tuner.band.upperBound)
     }
 }
 

@@ -27,7 +27,11 @@ Tuning   = ordered [MIDI] + its canonical name when it has one
            ("Standard", "Drop D", "DADGAD") — or none, for Custom
 Setup    = tuning + reference (+ temperament, later)
 Workbench = each instrument's ONE mutable setup — what plain "Guitar" opens,
-           freely tweakable, autosaved, waiting when you come back
+           freely tweakable, autosaved, waiting when you come back.
+           A USER-FACING name, deliberately: distinct from "setup",
+           "tuning" and "preset", with the right connotation (a place
+           where things get adjusted), unusual enough to be learned once
+           as a proper noun. Presets are frozen; the Workbench is yours.
 Preset   = a frozen setup under the USER'S name ("Bach No. 1"); never
            edited in place, only saved over deliberately
 Favourite = a preset pinned to the launch screen
@@ -67,9 +71,10 @@ Grid, on the workbench — header "Guitar · Drop D", everything editable
 └── tap a cell → String view
 
 Grid, on a preset — header "🔒 Bach No. 1", everything locked
-└── touching any control: "Presets don't change. Continue on your
-    Guitar setup?" → copies the values to the workbench and switches;
-    header becomes "Guitar · from Bach No. 1"
+└── touching any control: "Presets don't change. Open the Guitar
+    Workbench?" → copies the values across, switches, and lands on the
+    SAME screen with that control now live;
+    header becomes "Guitar Workbench · from Bach No. 1"
 
 String view (one string, full screen)
 ├── full dial, wide-band listening — tracks a slipped peg from anywhere
@@ -96,11 +101,23 @@ Decisions this draft takes, and why:
 - **A preset session is read-only, visibly.** The lock in the header and on
   the controls isn't decoration — it's the guarantee that "I'm on Bach No. 1"
   means the reference *is* 442, not "was 442 until something got nudged".
-  Accidental edits aren't merely non-destructive; they're impossible. The
-  one escape hatch — continue on the workbench, seeded from the preset —
-  is deliberate, worded to avoid "edit" (you never edit a preset; you
-  continue on your own setup, starting from it), and leaves the preset
-  untouched.
+  Accidental edits aren't merely non-destructive; they're impossible.
+- **Locked controls are doors, not corpses.** They never mutate and never
+  ignore a touch: touching one *is* the escape hatch ("Presets don't
+  change. Open the Guitar Workbench?"), and Cancel means nothing happened.
+  The novice discovers the way forward with the only gesture anyone tries
+  first — tapping the thing they want to change — with nothing to have
+  read beforehand. The expert's daily flow (open preset, tune, leave)
+  never touches a control, so the lock stays *totally silent*; when they
+  do tweak, the cost is one confirm, which usefully marks the modal
+  boundary, and they land on the same screen with the same control live.
+  A stray tap on a music stand hits the dialog and gets cancelled — the
+  lock doubles as stray-tap protection.
+- **The word "Workbench" appears only at the boundary** — the dialog, the
+  tuning menu ("Open Workbench", "Save as preset…"), the post-switch
+  header — while the ambient distinction stays glyph-borne (the lock).
+  Naming avoids "edit" throughout: you never edit a preset; you continue
+  on your own Workbench, seeded from it.
 - **Updating a preset is a save, not an edit.** From the workbench: Save →
   "New preset…" or "Replace 'Bach No. 1'", with a confirm. Deliberate
   intent, one dialog; accidents, zero paths.

@@ -23,6 +23,17 @@ public final class DetectorBank: @unchecked Sendable {
     private var bands: [ClosedRange<Double>]
     private var tuning: DetectionTuning
     private var detectors: [PitchDetector]
+    /// Watches the range *above* the top string's band, and is never shown.
+    ///
+    /// It exists to make the subharmonic filter work for notes no dial owns.
+    /// A pitch above every band — a stopped note, a wild sharp top string —
+    /// is invisible to the string detectors, but its periodicity shows up in
+    /// their bands at ÷2 and ÷3, and those shadows sit in a 3:2 ratio the
+    /// filter can't fault: neither divides the other. A5 is the vicious case:
+    /// its shadows land at A −0¢ and D −2¢, two dials reading plausibly in
+    /// tune for strings that aren't sounding. The sentinel hands the filter
+    /// the true fundamental, which divides both shadows and kills them.
+    private var sentinel: PitchDetector?
     /// Created on first spectral use, then kept — the FFT setup and buffers
     /// are worth reusing, and an idle estimator costs nothing.
     private var estimator: HarmonicEstimator?
@@ -47,7 +58,22 @@ public final class DetectorBank: @unchecked Sendable {
         self.detectors = bands.map {
             PitchDetector(sampleRate: sampleRate, band: $0, tuning: tuning)
         }
+        self.sentinel = Self.makeSentinel(sampleRate: sampleRate, bands: bands, tuning: tuning)
         self.streaks = Array(repeating: 0, count: targets.count)
+    }
+
+    /// The sentinel's band: from the top of the highest string's band to the
+    /// top of everything searchable. Nil when there's no room left above.
+    private static func makeSentinel(
+        sampleRate: Double, bands: [ClosedRange<Double>], tuning: DetectionTuning
+    ) -> PitchDetector? {
+        guard let top = bands.map(\.upperBound).max(),
+            top < Detection.fullBand.upperBound * 0.95
+        else { return nil }
+        return PitchDetector(
+            sampleRate: sampleRate,
+            band: top...Detection.fullBand.upperBound,
+            tuning: tuning)
     }
 
     /// One analysis window in, one result per string out, in string order.
@@ -93,6 +119,7 @@ public final class DetectorBank: @unchecked Sendable {
         defer { lock.unlock() }
         self.tuning = tuning
         for detector in detectors { detector.tuning = tuning }
+        sentinel?.tuning = tuning
     }
 
     /// New targets or bands — the reference moved, or the band width did.
@@ -108,6 +135,7 @@ public final class DetectorBank: @unchecked Sendable {
         self.detectors = bands.map {
             PitchDetector(sampleRate: sampleRate, band: $0, tuning: tuning)
         }
+        self.sentinel = Self.makeSentinel(sampleRate: sampleRate, bands: bands, tuning: tuning)
         self.streaks = Array(repeating: 0, count: targets.count)
         estimator?.reset()
     }
@@ -150,8 +178,14 @@ public final class DetectorBank: @unchecked Sendable {
         let raw = detectors.map { $0.analyze(window) }
         // Which readings are shadows of another string's reading — the "play A,
         // G lights up" bug. The filter keeps the highest of any octave chain.
-        let candidates = raw.enumerated().compactMap { index, result in
+        var candidates = raw.enumerated().compactMap { index, result in
             result.frequency.map { SubharmonicFilter.Candidate(id: index, frequency: $0) }
+        }
+        // The sentinel joins the comparison — so a note above every band still
+        // kills the shadows it casts into them — but is never itself shown;
+        // its id maps to no string.
+        if let above = sentinel?.analyze(window).frequency {
+            candidates.append(SubharmonicFilter.Candidate(id: -1, frequency: above))
         }
         let real = Set(SubharmonicFilter.real(among: candidates).map(\.id))
         return raw.enumerated().map { index, result in

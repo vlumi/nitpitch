@@ -22,6 +22,12 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Pin instruments with the star in the instrument list, and they appear as
+  one-tap chips on the launch screen — the violin starts pinned. Straight to
+  its strings, no list in between.
+- The instrument list is part of the navigation now: going back from an
+  instrument's strings returns to the list, then to the tuner, instead of the
+  list vanishing behind you.
 - Two strings bowed at once now read on both dials, each with its own
   deviation — tuning by fifths the way violinists actually do. A string that's
   far out of tune is still found from semitones away, as before.

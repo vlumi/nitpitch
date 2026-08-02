@@ -24,14 +24,19 @@ public struct ChromaticTunerView: View {
     /// Mac, where this ambient value is unreliable under a forced scheme.
     @Environment(\.colorScheme) private var systemScheme
 
-    /// Chooses an instrument, which is a navigation rather than a setting.
+    /// Opens the pushed instrument list.
+    private let onOpenChooser: () -> Void
+    /// Goes straight to one instrument's grid — the favourite chips' path,
+    /// skipping the chooser the way a favourite should.
     private let onChooseInstrument: (Instrument) -> Void
 
     public init(
         settings: Settings, audio: AudioSessionController,
+        onOpenChooser: @escaping () -> Void,
         onChooseInstrument: @escaping (Instrument) -> Void
     ) {
         self.settings = settings
+        self.onOpenChooser = onOpenChooser
         self.onChooseInstrument = onChooseInstrument
         // Full band, not the saved instrument's: this screen is chromatic by
         // definition, and an instrument is somewhere you navigate to.
@@ -114,12 +119,24 @@ public struct ChromaticTunerView: View {
     }
 
     /// Applies to the reading rather than being part of it: the reference the
-    /// dial is measured against, and the way into an instrument.
+    /// dial is measured against, and the ways into an instrument — pinned
+    /// chips for one tap, the full list for everything else.
     private var controls: some View {
         VStack(spacing: 16) {
             ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
-            InstrumentButton(onChoose: onChooseInstrument)
+            VStack(spacing: 10) {
+                if !pinnedInstruments.isEmpty {
+                    FavoritesRow(favorites: pinnedInstruments, onChoose: onChooseInstrument)
+                }
+                InstrumentButton(onOpen: onOpenChooser)
+            }
         }
+    }
+
+    /// Pinned ids resolved to instruments, in pin order; ids that no longer
+    /// resolve are skipped rather than crashing a launch screen.
+    private var pinnedInstruments: [Instrument] {
+        settings.favorites.compactMap(Instrument.named)
     }
 
     private func reconfigure() {

@@ -12,6 +12,7 @@ public final class Settings: ObservableObject {
         static let instrumentID = "instrumentID"
         static let noteNaming = "noteNaming"
         static let appearance = "appearance"
+        static let favorites = "favoriteInstruments"
     }
 
     private let defaults: UserDefaults
@@ -32,6 +33,21 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(appearance.rawValue, forKey: Key.appearance) }
     }
 
+    /// Instruments pinned to the launch screen, in pin order. Stored as ids so
+    /// the list survives instruments gaining state of their own later
+    /// (ROADMAP § 1: favourites become pinned instrument *instances*).
+    @Published public var favorites: [String] {
+        didSet { defaults.set(favorites, forKey: Key.favorites) }
+    }
+
+    public func toggleFavorite(_ id: String) {
+        if let index = favorites.firstIndex(of: id) {
+            favorites.remove(at: index)
+        } else {
+            favorites.append(id)
+        }
+    }
+
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         // `double(forKey:)` returns 0 for a missing key, which ReferencePitch
@@ -46,5 +62,9 @@ public final class Settings: ObservableObject {
         self.appearance =
             (defaults.string(forKey: Key.appearance).flatMap(AppearancePreference.init(rawValue:)))
             ?? .system
+        // Violin starts pinned: it's the app's reason for existing, and the
+        // one-tap chip is the whole point of the row. An empty default would
+        // hide the feature exactly from the person it was built for.
+        self.favorites = defaults.stringArray(forKey: Key.favorites) ?? [Instrument.violin.id]
     }
 }

@@ -10,6 +10,9 @@
     "About Nitpitch" : {
       "comment" : "Row that opens the about screen"
     },
+    "Add to favorites" : {
+      "comment" : "Star on an instrument row: pin it to the launch screen"
+    },
     "Appearance" : {
       "comment" : "Setting: follow the system appearance, or force light\/dark"
     },
@@ -18,9 +21,6 @@
     },
     "Bowed" : {
       "comment" : "Instrument picker section: bowed string instruments"
-    },
-    "Cancel" : {
-      "comment" : "Dismisses the instrument chooser without choosing"
     },
     "Columns" : {
       "comment" : "Label for the control setting how many string dials fit across the grid"
@@ -69,6 +69,9 @@
     },
     "Reference pitch" : {
       "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"
+    },
+    "Remove from favorites" : {
+      "comment" : "Star on an instrument row: unpin it from the launch screen"
     },
     "Settings" : {
       "comment" : "Title of the settings sheet, and the gear button's VoiceOver label"

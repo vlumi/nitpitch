@@ -2,8 +2,12 @@ import Combine
 import Foundation
 import NitpitchCore
 
-/// Drives the readout: owns the audio input, runs the detector on each window,
-/// and publishes a smoothed reading for the view.
+/// Drives the readout: subscribes to the shared microphone, runs the detector
+/// on each window, and publishes a smoothed reading for the view.
+///
+/// It does *not* own the capture. `AudioSessionController` does, so that
+/// several of these can be live at once — one per string, once the grid lands
+/// (ROADMAP § 2) — all reading the same stream.
 @MainActor
 public final class NitpitchViewModel: ObservableObject {
     /// What the display should currently show.
@@ -23,7 +27,8 @@ public final class NitpitchViewModel: ObservableObject {
     /// so the meter stays live while the readout says "listening".
     @Published public private(set) var level: Double = 0
 
-    private let audio: AudioInput
+    private let audio: AudioSessionController
+    private var subscription: AudioSessionController.Subscription?
     private var detector: PitchDetector
     private var smoother = ReadingSmoother()
     private var reference: ReferencePitch
@@ -33,19 +38,12 @@ public final class NitpitchViewModel: ObservableObject {
     private static let quietFramesBeforeIdle = 8
 
     public init(
+        audio: AudioSessionController,
         reference: ReferencePitch = .standard, band: ClosedRange<Double> = Detection.fullBand
     ) {
         self.reference = reference
-        self.audio = AudioInput()
+        self.audio = audio
         self.detector = PitchDetector(sampleRate: audio.sampleRate, band: band)
-
-        audio.onWindow = { [weak self] window in
-            // Runs on the analysis queue. Do the DSP here, then hop to main
-            // with only the result.
-            guard let self else { return }
-            let result = self.detector.analyze(window)
-            Task { @MainActor in self.consume(result) }
-        }
     }
 
     /// Re-tune the detector when the instrument changes: narrowing the searched
@@ -56,21 +54,21 @@ public final class NitpitchViewModel: ObservableObject {
         smoother.reset()
     }
 
-    public func start() async {
+    /// Begin receiving windows. The engine itself is the controller's business
+    /// — this only starts listening to it.
+    public func attach() async {
         if LaunchStores.isDemo {
             await runDemo()
             return
         }
-        guard await AudioInput.requestPermission() else {
-            state = .permissionDenied
-            return
+        subscription = audio.subscribe { [weak self] window in
+            // Runs on the analysis queue. Do the DSP here, then hop to main
+            // with only the result.
+            guard let self else { return }
+            let result = self.detector.analyze(window)
+            Task { @MainActor in self.consume(result) }
         }
-        do {
-            try audio.start()
-            state = .listening
-        } catch {
-            state = .idle
-        }
+        state = audio.status == .permissionDenied ? .permissionDenied : .listening
     }
 
     /// Drives the display from a synthetic reading, for laying out the UI
@@ -104,8 +102,12 @@ public final class NitpitchViewModel: ObservableObject {
         }
     }
 
-    public func stop() {
-        audio.stop()
+    /// Stop receiving windows. Deliberately leaves the engine running: it's
+    /// shared, and tearing it down on every navigation would churn the audio
+    /// session for whoever else is listening.
+    public func detach() {
+        subscription?.cancel()
+        subscription = nil
         smoother.reset()
         state = .idle
         level = 0
@@ -118,7 +120,7 @@ public final class NitpitchViewModel: ObservableObject {
 
         guard let hz = result.frequency else {
             quietFrames += 1
-            if quietFrames >= Self.quietFramesBeforeIdle, audio.isRunning {
+            if quietFrames >= Self.quietFramesBeforeIdle, audio.status == .running {
                 smoother.reset()
                 state = .listening
             }

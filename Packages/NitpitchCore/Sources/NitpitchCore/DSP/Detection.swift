@@ -46,11 +46,17 @@ public struct DetectionResult: Equatable, Sendable {
     public let clarity: Double
     /// Root-mean-square level of the frame, for a signal-strength meter.
     public let rms: Double
+    /// Display-ready strength of *this* reading, 0...1: how much signal stands
+    /// behind the number. Zero whenever `frequency` is nil — no reading, no
+    /// authority. The spectral engine fills it per string from that string's
+    /// own partials; MPM has only the whole frame to go on.
+    public let level: Double
 
-    public init(frequency: Double?, clarity: Double, rms: Double) {
+    public init(frequency: Double?, clarity: Double, rms: Double, level: Double = 0) {
         self.frequency = frequency
         self.clarity = clarity
         self.rms = rms
+        self.level = level
     }
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)

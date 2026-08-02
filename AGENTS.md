@@ -93,11 +93,16 @@ stabilizes only the *display*.
 
 **`PitchDetector` is monophonic by construction and must stay that way.** MPM
 finds *the* period of a frame; on two simultaneous notes it returns one lag that
-flickers between them rather than reporting both. Detecting double-stop fifths
-(how violinists actually tune — see ROADMAP § 3) is a planned v0.2 feature, but
-it belongs in a **separate detector** using bandpass filters or a phase vocoder
-against known target frequencies. Do not try to make this one return two
-pitches.
+flickers between them rather than reporting both. Do not try to make it return
+two pitches — that job already has its own type: **`HarmonicEstimator`**, the
+phase-vocoder path that measures every string of an instrument from one
+spectrum against its known target, double stops included. `DetectorBank`
+combines them: the shipped default is the frame-level hybrid — spectral wins
+any frame it reads, MPM takes the frames spectral leaves silent (slack
+strings, missing fundamentals). Frame-level, never per string: on a double
+stop MPM invents subharmonic ghosts, so mixing engines within one frame would
+reinsert exactly what spectral prevents. The debug screen's Engine switch
+exposes the pure modes for diagnosis.
 
 ## Commands
 
@@ -145,8 +150,21 @@ Two things the Mac loop can't reach, which need an actual iPhone:
 `make debug-mac` / `make debug-iphone` launch with `-debug`, which adds a
 **Detector…** entry to the menu on an instrument's screen. It shows what every
 string's detector is seeing — frequency, cents from that string, clarity, RMS,
-and the band it searched — above sliders for the clarity gate, the peak-pick
-threshold, the silence floor, and the band width.
+and the band it searched — above an engine switch and sliders for the clarity
+gate, the peak-pick threshold, the spectral strength gate, the confirmation
+frame count, the silence floor, and the band width.
+
+Two gates matter for noise, and they cover different ground. The **silence
+floor** judges the whole frame, so it only rejects actual quiet — while
+anything plays, the frame is loud and it passes. The **strength gate**
+(spectral only) is per reading, in the same 0...1 units as the cells' signal
+bars: a bowed string reads at or near full, junk scraped off a loud frame sits
+below half, and readings under the gate are dropped.
+
+The engine switch exposes `DetectorBank`'s three modes: **Hybrid** — the
+shipped default, spectral winning any frame it reads and MPM taking the frames
+spectral leaves silent — plus pure **MPM** and pure **Spectral** for
+diagnosis. Same instrument, same room, flip the switch mid-note.
 
 The two halves only work together. Moving a threshold blind tells you nothing;
 watching the numbers without being able to move anything tells you what's wrong

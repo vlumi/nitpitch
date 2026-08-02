@@ -126,6 +126,14 @@ switching would yank the screen away mid-turn on a peg, which is worse than
 showing nothing, and "nothing" is unambiguous once you know the rule. It also
 keeps the model simple: an enlarged view is bound to one string, full stop.
 
+**And being bound to one string means it can hear everything.** With no other
+dials to disambiguate against, the enlarged view can run a wide MPM band —
+the whole instrument's range, even — and track a slipped peg from semitones
+away. (The grid's engine question is settled — the frame-level hybrid in § 3
+already finds a slack string — but the zoomed view remains the better *UX*
+for coarse tuning: one big dial following one peg, no other cells competing
+for the eye.)
+
 ### Routing: one detector per string, bands split at the midpoints
 
 Each string gets its own detector over its own narrow band, rather than one
@@ -160,14 +168,16 @@ A4 into violin's four per-string detectors and looking at what each reported:
   measured against: a value above the threshold by construction can't be
   rejected by raising the threshold. Interpolation is now clamped.
 
-**Still open — the subharmonic.** Playing A4, the G3 detector finds 220 Hz at
-clarity 1.000. That's a real, perfectly periodic subharmonic, legitimately
-inside G's band, 200¢ from G. No threshold and no band width can reject it,
-because nothing about it is wrong except that it isn't what was played. The
-options are arbitration (collect all N results per window, show only the one
-nearest its target) or dropping back to a single wide-band detector. Deferred
-until a real instrument says whether it happens outside a synthesized tone —
-textbook-perfect subharmonics are an artifact of synthesis as much as anything.
+**Resolved — the subharmonic** (confirmed on a real violin: playing A lit G,
+playing E lit both G and D, all ~200¢ off). Every spurious reading was an exact
+octave-fraction of the played note — that's what a subharmonic is — so
+`SubharmonicFilter` compares the N detectors' results against each other and
+drops any reading that integer-divides a higher one. Distance-from-target was
+the tempting rule and would have been wrong: guitar's high E4 makes the E2
+detector read a *perfect* E2 (two octaves down, −0¢). The ratio between
+readings catches that; nearness to target can't. `DetectorBank` owns the whole
+frame now — one audio subscription per grid, not one per dial — because
+arbitration needs all N results together.
 
 **Unmeasured:** N detectors on every hop, at 21 hops/second. Narrow bands mean
 shorter lag searches so each is cheaper than the current full-band one, but
@@ -242,7 +252,43 @@ special-casing. And since instrument and tuning are really one choice made
 together, they belong in the same step — which is the other half of why the
 picker moves off the tuning screen.
 
-## 3. Double-stop fifths — the differentiating feature (v0.2)
+## 3. Double stops — the differentiating feature (v0.2)
+
+**Status: the DSP works; the product surface doesn't exist yet.**
+`HarmonicEstimator` (in Core, behind the debug screen's engine toggle)
+measures every string from one spectrum — phase-vocoder frequency at each
+string's expected harmonics, skipping partials shared between targets — and
+handles two strings at once to sub-cent accuracy, verified headlessly down to
+a 4:1 bow imbalance. It also makes subharmonics structurally impossible: G's
+estimator only looks at G's harmonic locations, and a played A has no energy
+there. Its known limitation is the flip side of anchoring on targets: a string
+more than `searchCents` (±60¢) from its target shows nothing, where MPM's wide
+bands find a badly slack string 400¢ out.
+
+**Decided: the shipped default is the frame-level hybrid.** Spectral wins any
+frame where it reads anything; MPM (with the subharmonic filter) takes only
+the frames spectral leaves silent — which are precisely the slack-string and
+missing-fundamental frames MPM is right for. Frame-level rather than
+per-string on purpose: during a double stop MPM invents subharmonic ghosts on
+the unplayed strings, and a per-string mix would reinsert exactly the readings
+spectral exists to prevent. Confirmed on a real violin (through the Mac's
+mic, no less): double stops read on both dials, ghosts gone, general tuning
+solid. The pure engines stay in the debug screen for diagnosis.
+
+**Spectral's second structural limit: it needs the string's own bottom.** The
+anchor rule (a reading must include the 1st or 2nd harmonic with real energy —
+the guard that stopped a neighbour's 11th harmonic masquerading as A's 5th)
+means a source whose low partials don't reach the microphone can't read at
+all. Bass E is the worst case: 41 and 82 Hz, right under a voice-processed
+mic's rolloff — observed with an unamplified bass into the Mac mic, which
+barely read. MPM has no such need (see the missing-fundamental test), so
+mic'd bass is MPM territory; through a DI/line-in or the phone's
+`.measurement` mode, 82 Hz should survive and spectral should recover.
+Untested prediction as of 2026-08-02 — the amp/phone session decides.
+
+What remains of the original sketch below: the beat-rate display and pure
+(just-intonation) fifths as the reference for interval tuning. Both are UI and
+music-theory work on top of the estimator, not DSP.
 
 **How violinists actually tune:** set A from a reference, then tune each
 remaining string against its neighbour by bowing *both at once* and listening to

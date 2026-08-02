@@ -3,13 +3,15 @@ import XCTest
 
 @testable import NitpitchKit
 
-/// The debug screen is only worth having if the knobs reach the detector and
-/// nothing reaches it without them. Both halves are tested here: the sliders
-/// take effect on live dials, and a shipped build behaves exactly as before.
+/// The debug screen is only worth having if the knobs reach the detectors and
+/// nothing reaches them without it. Both halves are tested here through
+/// `StringTuners` — the coordinator the grid actually runs — plus the
+/// end-to-end regression for the bug that started all of this: play one note,
+/// only that note's dial may light.
 @MainActor
 final class DetectionSettingsTests: XCTestCase {
-    /// Feed a window in as the tap would, then let the model's hop back to the
-    /// main actor land. The DSP runs off-main and posts its result with
+    /// Feed a window in as the tap would, then let the coordinator's hop back
+    /// to the main actor land. The DSP runs off-main and posts results with
     /// `Task { @MainActor }`, so a synchronous read after delivering sees the
     /// previous frame.
     private func deliver(_ window: [Float], through input: AudioInput) async {
@@ -31,17 +33,44 @@ final class DetectionSettingsTests: XCTestCase {
         }
     }
 
+    /// Deliver a tone as the tap would: consecutive windows a hop apart from
+    /// one continuous signal. The spectral engine measures the phase advance
+    /// *between* windows, so repeating one identical window reads as garbage —
+    /// a trap this helper exists to make unrepeatable.
+    private func slide(
+        _ hz: Double, through input: AudioInput, sampleRate: Double, hops: Int = 3
+    ) async {
+        let signal = tone(
+            hz, sampleRate: sampleRate,
+            count: Detection.windowSize + Detection.hopSize * hops)
+        for hop in 0..<hops {
+            let start = hop * Detection.hopSize
+            await deliver(
+                Array(signal[start..<(start + Detection.windowSize)]), through: input)
+        }
+    }
+
+    private func violinTuners(_ input: AudioInput) -> (StringTuners, AudioSessionController) {
+        let controller = AudioSessionController(input: input)
+        let strings = StringTuners(
+            instrument: .violin, audio: controller, reference: .standard)
+        return (strings, controller)
+    }
+
     func testStartsAtTheShippedDefaults() {
         let detection = DetectionSettings()
         XCTAssertEqual(detection.tuning, .default)
         XCTAssertFalse(detection.isModified)
+        XCTAssertEqual(detection.tuning.engine, .hybrid)
     }
 
     /// The badge on the grid's menu depends on this, and it's the only signal
-    /// that a surprising reading isn't how the app really behaves.
+    /// that a surprising reading isn't how the app really behaves. The engine
+    /// counts: spectral is experimental, and forgetting it's on would make
+    /// every observation suspect.
     func testReportsWhenModifiedAndAfterReset() {
         let detection = DetectionSettings()
-        detection.tuning.clarityThreshold = 0.6
+        detection.tuning.engine = .spectral
         XCTAssertTrue(detection.isModified)
         detection.reset()
         XCTAssertFalse(detection.isModified)
@@ -57,48 +86,144 @@ final class DetectionSettingsTests: XCTestCase {
         XCTAssertEqual(DetectionSettings().tuning, .default, "a fresh session must start clean")
     }
 
+    // MARK: - The reported bug, end to end
+
+    /// "I feel like the 'other' meters are unnecessarily sensitive. For each
+    /// found tone, shouldn't only one tuner light up with its value?" — the
+    /// grid's whole pipeline, microphone tap to view model: play A, and G
+    /// (whose detector genuinely finds A's subharmonic at perfect clarity)
+    /// must stay waiting.
+    func testPlayingAMovesOnlyTheADial() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+
+        for (index, tuner) in strings.tuners.enumerated() {
+            if index == 2 {
+                guard case .reading(let cents, _) = tuner.state else {
+                    return XCTFail("the A dial should be reading")
+                }
+                XCTAssertEqual(cents, 0, accuracy: 2)
+            } else {
+                XCTAssertEqual(
+                    tuner.state, .waiting,
+                    "dial \(index) lit while only A was sounding")
+            }
+        }
+    }
+
+    /// The signal bar's number: a sounding string publishes its level, silent
+    /// neighbours stay at zero.
+    func testLevelFollowsTheReading() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+
+        XCTAssertGreaterThan(strings.tuners[2].level, 0)
+        for index in [0, 1, 3] {
+            XCTAssertEqual(strings.tuners[index].level, 0, "silent string \(index) has level")
+        }
+    }
+
+    /// The overall meter answers "is anything coming in at all" — it must
+    /// move with sound even when no string registers, which is exactly the
+    /// case the per-string bars can't show.
+    func testInputLevelMovesEvenWhenNoStringReads() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        // A pitch between strings, far from every target: no dial reads under
+        // spectral, but the meter must still show the sound.
+        strings.retune(DetectionTuning(engine: .spectral))
+        await slide(510, through: input, sampleRate: controller.sampleRate)
+
+        XCTAssertGreaterThan(strings.inputLevel, 0)
+        for (index, tuner) in strings.tuners.enumerated() {
+            XCTAssertEqual(tuner.state, .waiting, "dial \(index) read a between-strings pitch")
+        }
+    }
+
     // MARK: - Reaching the detectors
 
-    /// Retuning a live dial has to change what it reports, or the sliders are
+    /// Retuning live dials has to change what they report, or the sliders are
     /// decoration.
-    func testRetuningChangesWhatALiveDialReports() async {
+    func testRetuningChangesWhatLiveDialsReport() async {
         let input = AudioInput()
-        let controller = AudioSessionController(input: input)
-        let bands = Instrument.violin.stringBands()
-        let tuner = StringTunerViewModel(
-            audio: controller, target: Instrument.violin.notes[2], band: bands[2])
-        tuner.attach()
-        defer { tuner.detach() }
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+        strings.setReportingRaw(true)
 
         // Quiet enough to fall under a raised silence gate but not the default.
+        // Two frames: the first is real but unconfirmed.
         let quiet = tone(440, sampleRate: controller.sampleRate).map { $0 * 0.002 }
-        tuner.isReportingRaw = true
-
         await deliver(quiet, through: input)
-        XCTAssertNotNil(tuner.lastResult.frequency, "should be found at the default gate")
-
-        tuner.retune(DetectionTuning(silenceRMS: 0.05))
         await deliver(quiet, through: input)
-        XCTAssertNil(tuner.lastResult.frequency, "a raised gate should reject it")
+        XCTAssertNotNil(
+            strings.tuners[2].lastResult.frequency, "should be found at the default gate")
+
+        strings.retune(DetectionTuning(silenceRMS: 0.05))
+        await deliver(quiet, through: input)
+        XCTAssertNil(
+            strings.tuners[2].lastResult.frequency, "a raised gate should reject it")
+    }
+
+    /// Flipping the engine mid-session must keep the dials working — it's a
+    /// segmented control on the debug screen.
+    func testEngineSwitchKeepsDialsWorking() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        strings.retune(DetectionTuning(engine: .spectral))
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+
+        guard case .reading(let cents, _) = strings.tuners[2].state else {
+            return XCTFail("the A dial should be reading under the spectral engine")
+        }
+        XCTAssertEqual(cents, 0, accuracy: 2)
+        XCTAssertEqual(strings.tuners[0].state, .waiting, "G must stay dark under spectral too")
     }
 
     /// Raw results cost a publish per string per frame, ~21×/second, so they're
     /// off unless the diagnostics screen is actually up.
     func testRawResultsArePublishedOnlyWhileReporting() async {
         let input = AudioInput()
-        let controller = AudioSessionController(input: input)
-        let bands = Instrument.violin.stringBands()
-        let tuner = StringTunerViewModel(
-            audio: controller, target: Instrument.violin.notes[2], band: bands[2])
-        tuner.attach()
-        defer { tuner.detach() }
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+
+        let window = tone(440, sampleRate: controller.sampleRate)
+        await deliver(window, through: input)
+        XCTAssertEqual(
+            strings.tuners[2].lastResult, .silent, "should not publish while not reporting")
+
+        strings.setReportingRaw(true)
+        await deliver(window, through: input)
+        XCTAssertNotNil(strings.tuners[2].lastResult.frequency)
+    }
+
+    /// The confirmation slider reaches the pipeline: at 1, the very first
+    /// frame lights the dial.
+    func testConfirmationOfOneReachesTheBank() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+        strings.retune(DetectionTuning(confirmationFrames: 1))
+        strings.setReportingRaw(true)
 
         await deliver(tone(440, sampleRate: controller.sampleRate), through: input)
-        XCTAssertEqual(tuner.lastResult, .silent, "should not publish while not reporting")
-
-        tuner.isReportingRaw = true
-        await deliver(tone(440, sampleRate: controller.sampleRate), through: input)
-        XCTAssertNotNil(tuner.lastResult.frequency)
+        XCTAssertNotNil(strings.tuners[2].lastResult.frequency)
     }
 
     /// The band knob only means anything if a narrower band actually refuses

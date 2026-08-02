@@ -22,6 +22,19 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Two strings bowed at once now read on both dials, each with its own
+  deviation — tuning by fifths the way violinists actually do. A string that's
+  far out of tune is still found from semitones away, as before.
+- The strings screen shows the overall input level at the top, like the
+  chromatic tuner does — so "the app hears nothing" and "sound is coming in
+  but isn't near any string" stopped looking identical.
+- Each string's cell shows a signal bar above the dial: how much sound stands
+  behind the reading, so a confident bow and something scraped off the room
+  noise no longer look alike.
+- Playing one string no longer lights other strings' dials. Each detector
+  genuinely finds the played note's subharmonic — half the frequency is half
+  the frequency — so the dials are now judged together and a reading that is
+  an exact octave-fraction of another string's goes dark instead of showing.
 - An instrument now shows a dial per string rather than a single dial: playing
   the G string moves the G dial. Each dial watches only the pitches nearest its
   own string, so it reads how far *that string* is from where it should be —

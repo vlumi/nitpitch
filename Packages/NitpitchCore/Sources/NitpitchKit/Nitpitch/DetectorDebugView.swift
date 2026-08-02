@@ -21,6 +21,7 @@ struct DetectorDebugView: View {
     var body: some View {
         NavigationStack {
             Form {
+                engineSection
                 liveSection
                 thresholdSection
                 bandSection
@@ -43,6 +44,30 @@ struct DetectorDebugView: View {
         // Raw results are only published while this screen is up.
         .onAppear { strings.setReportingRaw(true) }
         .onDisappear { strings.setReportingRaw(false) }
+    }
+
+    /// The A/B switch this screen exists for: the same instrument, the same
+    /// room, both algorithms.
+    private var engineSection: some View {
+        Section {
+            Picker(selection: $detection.tuning.engine) {
+                Text(verbatim: "Hybrid").tag(DetectionTuning.Engine.hybrid)
+                Text(verbatim: "MPM").tag(DetectionTuning.Engine.mpm)
+                Text(verbatim: "Spectral").tag(DetectionTuning.Engine.spectral)
+            } label: {
+                Text(verbatim: "Engine")
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text(verbatim: "Engine")
+        } footer: {
+            Text(
+                verbatim: "Hybrid (default): spectral wins any frame it reads; MPM takes "
+                    + "the frames spectral leaves silent. MPM: one detector per string, "
+                    + "shadows filtered; finds a badly slack string but can't do two at "
+                    + "once. Spectral: every string measured from one spectrum; handles "
+                    + "double stops, but half a semitone off target shows nothing.")
+        }
     }
 
     /// One row per string, updating live. This is where a subharmonic shows
@@ -79,6 +104,23 @@ struct DetectorDebugView: View {
                 range: DetectionTuning.Limits.peakPick,
                 format: { String(format: "%.2f", $0) },
                 note: "Octave guard. Lower favours the fundamental over its harmonics.")
+
+            Knob(
+                title: "Min strength",
+                value: $detection.tuning.spectralStrengthGate,
+                range: DetectionTuning.Limits.strength,
+                format: { String(format: "%.2f", $0) },
+                note: "Spectral only. Readings whose signal bar falls short of this are dropped.")
+
+            Knob(
+                title: "Confirm",
+                value: Binding(
+                    get: { Double(detection.tuning.confirmationFrames) },
+                    set: { detection.tuning.confirmationFrames = Int($0) }),
+                range: DetectionTuning.Limits.confirmation,
+                step: 1,
+                format: { String(format: "%.0f frames", $0) },
+                note: "A dial lights only after this many frames agree. 1 disables.")
 
             Knob(
                 title: "Silence",
@@ -165,8 +207,9 @@ private struct DetectorRow: View {
     private var detail: String {
         let result = tuner.lastResult
         return String(
-            format: "clarity %.2f · rms %.4f · band %.0f–%.0f",
-            result.clarity, result.rms, tuner.band.lowerBound, tuner.band.upperBound)
+            format: "clarity %.2f · rms %.4f · level %.2f · band %.0f–%.0f",
+            result.clarity, result.rms, result.level, tuner.band.lowerBound,
+            tuner.band.upperBound)
     }
 }
 
@@ -179,6 +222,7 @@ private struct Knob: View {
     let title: String
     @Binding var value: Double
     let range: ClosedRange<Double>
+    var step: Double?
     let format: (Double) -> String
     let note: String
 
@@ -191,7 +235,11 @@ private struct Knob: View {
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            Slider(value: $value, in: range)
+            if let step {
+                Slider(value: $value, in: range, step: step)
+            } else {
+                Slider(value: $value, in: range)
+            }
             Text(verbatim: note)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)

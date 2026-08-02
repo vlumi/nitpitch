@@ -16,9 +16,17 @@ struct CompactDial: View {
     /// Cents from *this string's* target, or nil when it isn't sounding.
     /// Unbounded: −340 is a legitimate reading for a very slack string.
     let cents: Double?
+    /// Signal strength behind the reading, 0...1. Zero when nothing reads.
+    var level: Double = 0
 
     var body: some View {
         VStack(spacing: 4) {
+            // The chromatic screen's meter, scaled to the cell: centre-out,
+            // because a symmetric bar reads as signal the way a hardware input
+            // meter does, and it shares the dial's centre-out geometry.
+            LevelMeter(level: cents == nil ? 0 : level)
+                .frame(height: 3)
+                .padding(.horizontal, 22)
             CompactArc(cents: cents, inTune: isInTune)
                 .frame(height: Self.arcHeight)
             HStack(alignment: .firstTextBaseline, spacing: 6) {

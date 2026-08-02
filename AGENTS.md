@@ -147,8 +147,8 @@ Two things the Mac loop can't reach, which need an actual iPhone:
 **Detector…** entry to the menu on an instrument's screen. It shows what every
 string's detector is seeing — frequency, cents from that string, clarity, RMS,
 and the band it searched — above an engine switch and sliders for the clarity
-gate, the peak-pick threshold, the spectral strength gate, the silence floor,
-and the band width.
+gate, the peak-pick threshold, the spectral strength gate, the confirmation
+frame count, the silence floor, and the band width.
 
 Two gates matter for noise, and they cover different ground. The **silence
 floor** judges the whole frame, so it only rejects actual quiet — while

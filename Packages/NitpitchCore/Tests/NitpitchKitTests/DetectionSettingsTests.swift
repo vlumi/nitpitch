@@ -128,7 +128,9 @@ final class DetectionSettingsTests: XCTestCase {
         strings.setReportingRaw(true)
 
         // Quiet enough to fall under a raised silence gate but not the default.
+        // Two frames: the first is real but unconfirmed.
         let quiet = tone(440, sampleRate: controller.sampleRate).map { $0 * 0.002 }
+        await deliver(quiet, through: input)
         await deliver(quiet, through: input)
         XCTAssertNotNil(
             strings.tuners[2].lastResult.frequency, "should be found at the default gate")
@@ -182,6 +184,20 @@ final class DetectionSettingsTests: XCTestCase {
 
         strings.setReportingRaw(true)
         await deliver(window, through: input)
+        XCTAssertNotNil(strings.tuners[2].lastResult.frequency)
+    }
+
+    /// The confirmation slider reaches the pipeline: at 1, the very first
+    /// frame lights the dial.
+    func testConfirmationOfOneReachesTheBank() async {
+        let input = AudioInput()
+        let (strings, controller) = violinTuners(input)
+        strings.attachAll()
+        defer { strings.detachAll() }
+        strings.retune(DetectionTuning(confirmationFrames: 1))
+        strings.setReportingRaw(true)
+
+        await deliver(tone(440, sampleRate: controller.sampleRate), through: input)
         XCTAssertNotNil(strings.tuners[2].lastResult.frequency)
     }
 

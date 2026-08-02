@@ -111,6 +111,16 @@ struct DetectorDebugView: View {
                 note: "Spectral only. Readings whose signal bar falls short of this are dropped.")
 
             Knob(
+                title: "Confirm",
+                value: Binding(
+                    get: { Double(detection.tuning.confirmationFrames) },
+                    set: { detection.tuning.confirmationFrames = Int($0) }),
+                range: DetectionTuning.Limits.confirmation,
+                step: 1,
+                format: { String(format: "%.0f frames", $0) },
+                note: "A dial lights only after this many frames agree. 1 disables.")
+
+            Knob(
                 title: "Silence",
                 value: Binding(
                     get: { Double(detection.tuning.silenceRMS) },
@@ -210,6 +220,7 @@ private struct Knob: View {
     let title: String
     @Binding var value: Double
     let range: ClosedRange<Double>
+    var step: Double?
     let format: (Double) -> String
     let note: String
 
@@ -222,7 +233,11 @@ private struct Knob: View {
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            Slider(value: $value, in: range)
+            if let step {
+                Slider(value: $value, in: range, step: step)
+            } else {
+                Slider(value: $value, in: range)
+            }
             Text(verbatim: note)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)

@@ -26,6 +26,11 @@ public final class DetectorBank: @unchecked Sendable {
     /// Created on first spectral use, then kept — the FFT setup and buffers
     /// are worth reusing, and an idle estimator costs nothing.
     private var estimator: HarmonicEstimator?
+    /// Consecutive reading frames per string, for the confirmation rule: a
+    /// dial that wasn't lit needs `tuning.confirmationFrames` agreeing frames
+    /// before it lights, so a single-frame coincidence never reaches the
+    /// screen.
+    private var streaks: [Int]
 
     /// `targets` and `bands` are parallel: one frequency and one band per
     /// string, as `Instrument.notes` and `Instrument.stringBands` hand out.
@@ -42,6 +47,7 @@ public final class DetectorBank: @unchecked Sendable {
         self.detectors = bands.map {
             PitchDetector(sampleRate: sampleRate, band: $0, tuning: tuning)
         }
+        self.streaks = Array(repeating: 0, count: targets.count)
     }
 
     /// One analysis window in, one result per string out, in string order.
@@ -52,9 +58,30 @@ public final class DetectorBank: @unchecked Sendable {
     public func analyze(_ window: [Float]) -> [DetectionResult] {
         lock.lock()
         defer { lock.unlock() }
+        let results: [DetectionResult]
         switch tuning.engine {
-        case .mpm: return analyzeMPM(window)
-        case .spectral: return analyzeSpectral(window)
+        case .mpm: results = analyzeMPM(window)
+        case .spectral: results = analyzeSpectral(window)
+        }
+        return confirmed(results)
+    }
+
+    /// The confirmation rule. A reading only reaches the screen once it has
+    /// held for `confirmationFrames` consecutive frames; until then it's
+    /// reported dark, keeping its clarity and level for the diagnostics
+    /// screen. One hop of lag at first light-up, none while tracking.
+    private func confirmed(_ results: [DetectionResult]) -> [DetectionResult] {
+        results.enumerated().map { index, result in
+            if result.frequency != nil {
+                streaks[index] += 1
+            } else {
+                streaks[index] = 0
+            }
+            guard streaks[index] < tuning.confirmationFrames, result.frequency != nil else {
+                return result
+            }
+            return DetectionResult(
+                frequency: nil, clarity: result.clarity, rms: result.rms, level: result.level)
         }
     }
 
@@ -80,6 +107,7 @@ public final class DetectorBank: @unchecked Sendable {
         self.detectors = bands.map {
             PitchDetector(sampleRate: sampleRate, band: $0, tuning: tuning)
         }
+        self.streaks = Array(repeating: 0, count: targets.count)
         estimator?.reset()
     }
 
@@ -89,6 +117,8 @@ public final class DetectorBank: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         estimator?.reset()
+        // A gap is a fresh start for confirmation too.
+        streaks = Array(repeating: 0, count: targets.count)
     }
 
     // MARK: - MPM: N detectors, then arbitration

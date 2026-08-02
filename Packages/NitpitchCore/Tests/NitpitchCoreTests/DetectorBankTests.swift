@@ -237,9 +237,39 @@ final class DetectorBankTests: XCTestCase {
         // One window after the gap: no pair yet, so nothing may read.
         let first = bank.analyze(Array(signal[0..<Detection.windowSize]))
         XCTAssertEqual(lit(first), [])
-        // The next window re-primes it.
+        // The next window re-primes the pair (one reading frame), and the one
+        // after clears confirmation.
+        let second = bank.analyze(
+            Array(signal[Detection.hopSize..<(Detection.hopSize + Detection.windowSize)]))
+        XCTAssertEqual(lit(second), [])
+        let third = bank.analyze(
+            Array(signal[(Detection.hopSize * 2)..<(Detection.hopSize * 2 + Detection.windowSize)]))
+        XCTAssertEqual(lit(third), [2])
+    }
+
+    /// The observed stray: one frame of coincidence, gone the next. The
+    /// confirmation rule keeps single frames off the screen entirely — at the
+    /// cost of one hop (~46 ms) at first light-up, which the next test bounds.
+    func testSingleFrameBlipNeverLights() {
+        let bank = violinBank(engine: .mpm)
+        let signal = mix([tone(440, count: signalLength)])
+        // Exactly one loud frame on a fresh bank: real signal, but unconfirmed.
+        let first = bank.analyze(Array(signal[0..<Detection.windowSize]))
+        XCTAssertEqual(lit(first), [], "a single frame must not light a dial")
+        // Its level still reaches the diagnostics screen.
+        XCTAssertGreaterThan(first[2].level, 0)
+        // The second consecutive frame confirms.
         let second = bank.analyze(
             Array(signal[Detection.hopSize..<(Detection.hopSize + Detection.windowSize)]))
         XCTAssertEqual(lit(second), [2])
+    }
+
+    /// Confirmation set to 1 is "off": the first frame lights, as before.
+    func testConfirmationOfOneLightsImmediately() {
+        let bank = violinBank(engine: .mpm)
+        bank.retune(DetectionTuning(confirmationFrames: 1))
+        let signal = mix([tone(440, count: signalLength)])
+        let first = bank.analyze(Array(signal[0..<Detection.windowSize]))
+        XCTAssertEqual(lit(first), [2])
     }
 }

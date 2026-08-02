@@ -59,6 +59,14 @@ public struct DetectionTuning: Equatable, Sendable {
     /// keeps it.
     public var spectralStrengthGate: Double
 
+    /// A dial that wasn't reading lights only after this many consecutive
+    /// frames agree — single-frame coincidences (a bow-attack transient landing
+    /// right, one lucky frame of noise) never reach the screen. Costs one hop
+    /// (~46 ms) at first light-up only: an already-lit dial tracks instantly,
+    /// and the dropout side is separate (and slower) by design. Applies to
+    /// both engines. 1 disables it.
+    public var confirmationFrames: Int
+
     /// How far either side of a string's target its dial still answers, in
     /// semitones — but only as a *cap*. The real boundary is the midpoint to
     /// the neighbouring string, which is what guarantees the bands tile with no
@@ -76,6 +84,7 @@ public struct DetectionTuning: Equatable, Sendable {
         peakPickThreshold: Double = Detection.peakPickThreshold,
         silenceRMS: Float = Detection.silenceRMS,
         spectralStrengthGate: Double = 0.75,
+        confirmationFrames: Int = 2,
         maxSemitonesFromString: Double = Instrument.outerHeadroomSemitones
     ) {
         self.engine = engine
@@ -83,6 +92,7 @@ public struct DetectionTuning: Equatable, Sendable {
         self.peakPickThreshold = peakPickThreshold
         self.silenceRMS = silenceRMS
         self.spectralStrengthGate = spectralStrengthGate
+        self.confirmationFrames = confirmationFrames
         self.maxSemitonesFromString = maxSemitonesFromString
     }
 
@@ -97,6 +107,7 @@ public struct DetectionTuning: Equatable, Sendable {
         public static let peakPick: ClosedRange<Double> = 0.5...1.0
         public static let silence: ClosedRange<Double> = 0.0001...0.02
         public static let strength: ClosedRange<Double> = 0.0...0.9
+        public static let confirmation: ClosedRange<Double> = 1...4
         public static let semitones: ClosedRange<Double> =
             0.5...Instrument.outerHeadroomSemitones
     }

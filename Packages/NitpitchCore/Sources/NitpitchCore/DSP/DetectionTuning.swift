@@ -52,6 +52,11 @@ public struct DetectionTuning: Equatable, Sendable {
     /// the cells' signal bars, so "junk shows below half, a bowed string near
     /// max" translates directly into a setting between the two. Spectral only;
     /// MPM has its clarity gate.
+    ///
+    /// The default was calibrated on a violin through a Mac microphone: junk
+    /// sat below half, single bowed strings at or near full, and in a sloppy
+    /// double stop the weaker string dipped intermittently below 0.9 — 0.75
+    /// keeps it.
     public var spectralStrengthGate: Double
 
     /// How far either side of a string's target its dial still answers, in
@@ -70,7 +75,7 @@ public struct DetectionTuning: Equatable, Sendable {
         clarityThreshold: Double = Detection.clarityThreshold,
         peakPickThreshold: Double = Detection.peakPickThreshold,
         silenceRMS: Float = Detection.silenceRMS,
-        spectralStrengthGate: Double = 0.5,
+        spectralStrengthGate: Double = 0.75,
         maxSemitonesFromString: Double = Instrument.outerHeadroomSemitones
     ) {
         self.engine = engine

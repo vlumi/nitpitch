@@ -68,7 +68,20 @@ public final class HarmonicEstimator {
     /// The most the used partials may disagree, in cents, before the "note" is
     /// judged to be leakage rather than a sounding string. Real partials of one
     /// string agree to a couple of cents; junk scatters.
-    public static let agreementCents = 15.0
+    public static let agreementCents = 10.0
+
+    /// A reading must include a partial at or below this harmonic order. This
+    /// is the guard against a neighbour's *high* harmonic masquerading in one
+    /// of this string's upper slots — on a violin, G's 11th harmonic (2156 Hz)
+    /// sits 35¢ from A's 5th (2200 Hz), inside the search window — because a
+    /// foreign harmonic never brings a fundamental with it. A real string
+    /// always sounds its own bottom.
+    public static let maxAnchorHarmonic = 2
+
+    /// Partials weaker than this fraction of the string's strongest partial
+    /// are treated as absent. A partial that "corroborates" at a thousandth of
+    /// the energy is a noise peak that happened to land right, not evidence.
+    public static let minPartialShare = 0.05
 
     private let sampleRate: Double
     private let windowSize: Int
@@ -164,6 +177,7 @@ public final class HarmonicEstimator {
     public func measure(target: Double, others: [Double]) -> Reading? {
         guard windowsIngested >= 2, floor > 0, target > 0 else { return nil }
 
+        var orders: [Int] = []
         var estimates: [Double] = []
         var weights: [Double] = []
         for k in 1...Self.harmonics {
@@ -171,11 +185,26 @@ public final class HarmonicEstimator {
             guard expected < sampleRate / 2 * 0.9 else { break }
             if collides(expected, with: others) { continue }
             guard let (hz, mag) = partial(near: expected) else { continue }
+            orders.append(k)
             estimates.append(hz / Double(k))
             weights.append(mag)
         }
-        // One partial can't corroborate itself; anything real has at least two.
-        guard estimates.count >= 2 else { return nil }
+        // Partials far weaker than the string's strongest aren't corroboration
+        // — they're noise peaks that happened to land right.
+        if let maxWeight = weights.max() {
+            let cutoff = maxWeight * Self.minPartialShare
+            let kept = weights.indices.filter { weights[$0] >= cutoff }
+            orders = kept.map { orders[$0] }
+            estimates = kept.map { estimates[$0] }
+            weights = kept.map { weights[$0] }
+        }
+        // One partial can't corroborate itself; anything real has at least
+        // two. And a reading must be anchored low: a real string sounds its
+        // own bottom, while a neighbour's high harmonic masquerading in an
+        // upper slot brings no fundamental with it.
+        guard estimates.count >= 2, let lowest = orders.min(),
+            lowest <= Self.maxAnchorHarmonic
+        else { return nil }
 
         let total = weights.reduce(0, +)
         let mean = zip(estimates, weights).map(*).reduce(0, +) / total
@@ -185,10 +214,14 @@ public final class HarmonicEstimator {
         guard spread <= Self.agreementCents else { return nil }
 
         // Strength: decades above the presence gate, so a reading that barely
-        // scraped in shows weak and a bowed string shows strong. Two decades
-        // (40 dB) of headroom is full.
+        // scraped in shows weak and a bowed string shows strong. The *sum* of
+        // the used partials rather than the tallest one: a low string spreads
+        // its energy across several moderate partials (violin G especially),
+        // and judging it by its best single partial made its bar flicker at
+        // the gate while a real note was sounding. Two decades (40 dB) of
+        // headroom is full.
         let gate = floor * Self.presenceFloor
-        let strength = min(1, max(0, log10((weights.max() ?? gate) / gate) / 2))
+        let strength = min(1, max(0, log10(total / gate) / 2))
 
         return Reading(
             frequency: mean,

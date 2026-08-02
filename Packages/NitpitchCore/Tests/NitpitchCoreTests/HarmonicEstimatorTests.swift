@@ -12,9 +12,9 @@ final class HarmonicEstimatorTests: XCTestCase {
     /// A harmonically rich tone the way a bowed string is: fundamental quieter
     /// than the 2nd partial.
     private func tone(
-        _ hz: Double, count: Int, amp: Double = 1, phase0: Double = 0
+        _ hz: Double, count: Int, amp: Double = 1, phase0: Double = 0,
+        harmonics: [Double] = [0.3, 1.0, 0.8, 0.5, 0.3, 0.2]
     ) -> [Double] {
-        let harmonics = [0.3, 1.0, 0.8, 0.5, 0.3, 0.2]
         return (0..<count).map { i in
             let t = Double(i) / sampleRate
             var s = 0.0
@@ -199,6 +199,29 @@ final class HarmonicEstimatorTests: XCTestCase {
                     "string \(index) at \(err)¢")
             }
         }
+    }
+
+    /// The stray observed on a real violin: G's 11th harmonic (2156 Hz) sits
+    /// 35¢ from A's 5th (2200 Hz) — inside A's search window — so a bowed G
+    /// with realistic high partials could light the A dial. The anchor rule is
+    /// what stops it: a foreign harmonic in an upper slot brings no fundamental
+    /// with it, and noise at A's own bottom is too weak to count as one.
+    func testGWithHighHarmonicsDoesNotLightA() {
+        // A bowed G3 with 12 partials, plus a little room noise so A's
+        // fundamental slot isn't conveniently empty.
+        let rich = [0.3, 1.0, 0.8, 0.5, 0.3, 0.2, 0.15, 0.12, 0.1, 0.1, 0.12, 0.08]
+        let signal = mix([
+            tone(violin[0], count: signalLength, harmonics: rich),
+            noise(0.01, count: signalLength),
+        ])
+        let estimator = primed(with: signal)
+        let others = violin.enumerated().filter { $0.offset != 2 }.map(\.element)
+        XCTAssertNil(
+            estimator.measure(target: violin[2], others: others),
+            "A reported a reading while only G sounded")
+        // And G itself still reads.
+        let gOthers = Array(violin[1...])
+        XCTAssertNotNil(estimator.measure(target: violin[0], others: gOthers))
     }
 
     /// Guitar's low E2 and high E4 are two octaves apart — the case where the

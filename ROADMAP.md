@@ -20,24 +20,36 @@ different acts. **Setting up** (what am I tuning?) happens once per session;
 is setup friction on a *repeated* setup, and that's exactly what a favourite
 is: a repeated setup converted into one tap.
 
-#### The model: one concept, not three
+#### The model: the synth patch and its edit buffer
 
 ```text
 Tuning   = ordered [MIDI] + its canonical name when it has one
            ("Standard", "Drop D", "DADGAD") — or none, for Custom
-Preset   = instrument + tuning + reference (+ temperament, later),
-           saved under the USER'S name ("Bach No. 1", "Tomorrow's gig")
+Setup    = tuning + reference (+ temperament, later)
+Workbench = each instrument's ONE mutable setup — what plain "Guitar" opens,
+           freely tweakable, autosaved, waiting when you come back
+Preset   = a frozen setup under the USER'S name ("Bach No. 1"); never
+           edited in place, only saved over deliberately
 Favourite = a preset pinned to the launch screen
 ```
 
+This is the pattern every hardware synth and multi-FX pedal uses — patches
+are frozen, there's exactly one edit buffer, tweaks live in the buffer, and
+saving writes the buffer to a slot — so it's *more* familiar to musicians
+than editable-presets-with-duplicate, not less.
+
 A favourite is not a separate feature — it's a pinned preset. Sharing is not
 a separate feature — it's a preset serialized into a URL. The built-in
-one-tap chips ("Violin") are implicit presets (instrument + its standard
-tuning + current reference), so the launch row works before the preset
-editor even exists. `Instrument` stays a template: name, family, its catalog
-of known tunings, a default. The midpoint band scheme already accepts any
-string array, so custom tunings — including odd string counts — need no
-special-casing downstream.
+one-tap chips ("Violin") open that instrument's workbench, so the launch row
+works before presets exist at all. `Instrument` stays a template: name,
+family, its catalog of known tunings, a default. The midpoint band scheme
+already accepts any string array, so custom tunings — including odd string
+counts — need no special-casing downstream.
+
+**The reference pitch belongs to the setup**, not to a global setting:
+"Bach No. 1 at A=442" only means something if 442 is part of it. Each
+workbench carries its own; chromatic keeps its own; a new workbench seeds
+from wherever you came from.
 
 #### The navigation
 
@@ -46,20 +58,24 @@ Chromatic launch  (unchanged: immediately usable, no setup)
 ├── favourites row: [Violin] [Drop D] [Bach No.1] …   ← ONE tap to a grid
 └── "Instruments…" — pushed, not a sheet
         Favourites (manage / reorder)
-        Bowed / Fretted / … lists    → grid, last-used tuning
+        Bowed / Fretted / … lists    → that instrument's workbench
         Import preset…               (paste link / scan QR)
 
-Grid — header shows "Guitar · Drop D"; the tuning name is the control
-├── tuning menu: known tunings · saved presets for this instrument
-│                · Customize… · Save as preset…
-├── reference stepper (session-local, as today)
+Grid, on the workbench — header "Guitar · Drop D", everything editable
+├── tuning menu: known tunings · presets · Customize… · Save…
+├── reference stepper
 └── tap a cell → String view
+
+Grid, on a preset — header "🔒 Bach No. 1", everything locked
+└── touching any control: "Presets don't change. Continue on your
+    Guitar setup?" → copies the values to the workbench and switches;
+    header becomes "Guitar · from Bach No. 1"
 
 String view (one string, full screen)
 ├── full dial, wide-band listening — tracks a slipped peg from anywhere
 ├── ◀ ▶ / swipe between strings; back → grid
-└── the string's TARGET is a stepper here: nudge D2 down to C2 and the
-    tuning forks to "Custom", non-destructively
+└── the string's TARGET is a stepper here (workbench only; locked on a
+    preset): nudge D2 down to C2 and the tuning forks to "Custom"
 ```
 
 Decisions this draft takes, and why:
@@ -77,10 +93,17 @@ Decisions this draft takes, and why:
   (Changing the string *count* — 7-string, 5-string bass — is the one thing
   that doesn't fit a per-string stepper; that's Customize…, a plain list
   editor, and can come later.)
-- **A preset pins the reference but doesn't track it.** Opening "Bach No. 1"
-  sets A=442; nudging the stepper mid-session is session-local and marks the
-  preset as modified rather than rewriting it. Same non-destructive rule as
-  string edits.
+- **A preset session is read-only, visibly.** The lock in the header and on
+  the controls isn't decoration — it's the guarantee that "I'm on Bach No. 1"
+  means the reference *is* 442, not "was 442 until something got nudged".
+  Accidental edits aren't merely non-destructive; they're impossible. The
+  one escape hatch — continue on the workbench, seeded from the preset —
+  is deliberate, worded to avoid "edit" (you never edit a preset; you
+  continue on your own setup, starting from it), and leaves the preset
+  untouched.
+- **Updating a preset is a save, not an edit.** From the workbench: Save →
+  "New preset…" or "Replace 'Bach No. 1'", with a confirm. Deliberate
+  intent, one dialog; accidents, zero paths.
 - **Sharing is a URL, and the site is the library.** A preset serializes
   into a link fragment (small enough; no server) and renders as a QR code.
   Importing — from a link or the camera — shows a preview ("Guitar ·
@@ -93,10 +116,13 @@ Decisions this draft takes, and why:
   expected move, not an edge case. The purpose-name is also what makes a
   favourite worth its launch-screen pixels.
 
+The settings-lock idea (§ 4) stops being a separate feature here: a preset
+session is already the locked state, so "lock my setup on the music stand"
+is just treating the workbench as a preset temporarily — same mechanism,
+same visual language, same escape hatch.
+
 Open, deliberately: favourites-row capacity (cap at ~4, overflow scrolls?),
-whether presets sync via iCloud or stay per-device, and how the settings
-lock (§ 4) interacts — locking probably freezes the active preset and
-reference together.
+and whether presets sync via iCloud or stay per-device.
 
 #### Build order
 
@@ -106,9 +132,11 @@ Each step useful on its own, none blocked by the later ones:
 2. **Favourites row of implicit presets** — a pinned instrument is just its
    id; solves the two-tap pain with no new model.
 3. **String view** (already owed — see below).
-4. **Tuning catalog + grid-header menu** (Drop D et al., last-used memory).
+4. **Per-instrument workbench + tuning catalog** (Drop D et al.; the
+   workbench replaces "last-used memory" — it *is* the memory).
 5. **Per-string target editing** in the string view; Custom forking.
-6. **Presets**: save, name, pin; then the URL/QR share + import.
+6. **Presets**: save, name, pin, the locked session; then URL/QR share +
+   import.
 
 ### The string view (enlarged single string)
 

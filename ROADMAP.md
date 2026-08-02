@@ -129,9 +129,16 @@ What that yields in practice — the catch range each string gets:
 shorter lag searches so each is cheaper than the current full-band one, but
 that's reasoning, not measurement. Profile before committing to the design.
 
-If it does prove expensive, the enlarged view is the easy win: since it shows
-only its own string, the other detectors can be suspended while it's open, so
-the N-detector cost is confined to the grid.
+Two levers if it does prove expensive, both falling out of the design rather
+than needing new machinery:
+
+- **Only track what's on screen.** A scrolling grid already knows which cells
+  are visible, so cost is bounded by the viewport rather than the string
+  count. That matters most on a Mac or iPad, where a big window could show
+  dozens at once — and for something like a piano, where "all of them" is
+  never going to be the answer.
+- **Suspend the rest while one is enlarged.** The enlarged view shows only its
+  own string, so the others have nothing to display and needn't run.
 
 ### The grid dial can be much smaller than the full one
 
@@ -255,7 +262,56 @@ bowing skill. If the bow favours one string, the quieter note's estimate gets
 unreliable. Worth checking early whether this is a nuisance or a dealbreaker on
 a real instrument.
 
-## 4. Other features worth considering
+## 4. Piano — and why the target isn't always 2^(n/12)
+
+Wanting to tune a piano with this breaks an assumption the app rests on
+everywhere: that a note's correct frequency is `reference × 2^(semitones/12)`.
+
+**Real pianos are tuned stretched.** String stiffness makes their partials
+sharper than exact integer multiples of the fundamental — *inharmonicity* —
+so a tuner matching octaves by ear ends up progressively sharp toward the
+treble and flat toward the bass. That's the Railsback curve, and it's roughly
+±30 cents at the extremes. It isn't sloppiness to be corrected: a piano tuned
+to exact equal temperament sounds wrong, because its own overtones disagree
+with it.
+
+Inharmonicity also varies **per instrument** — with string length, gauge and
+scale design — so a good stretch curve is measured from the piano in front of
+you rather than taken from a table. A published average curve is a reasonable
+starting point; measuring is what a professional tuner's software does.
+
+### The seam is small
+
+The equal-temperament assumption lives in exactly two places, both in
+`Pitch.swift`:
+
+- `Note.frequency(reference:)` — `reference.hz * pow(2, (midi - 69) / 12)`
+- `PitchReading.init(frequency:reference:)` — `12 * log2(frequency / reference.hz)`
+
+Everything else is downstream of those. So a **temperament** becomes a
+function from note to expected frequency, with equal temperament as the
+identity case, and both call sites route through it.
+
+That one abstraction covers three items on this roadmap at once: piano
+stretch, the just-intonation reference that double-stop fifths needs (§ 3),
+and the temperaments entry below. Worth building once, deliberately, rather
+than three times.
+
+### What a piano mode needs beyond that
+
+- **88 notes, not N strings.** The per-string grid (§ 2) doesn't scale to a
+  keyboard; a piano wants a different navigation — a keyboard strip, or
+  note-by-note with next/previous.
+- **Unison tuning.** Most piano notes have two or three strings tuned to each
+  other, and hearing the beats between them is most of the job. Closer to
+  double-stop fifths (§ 3) than to the ordinary tuner.
+- **Measuring inharmonicity** to build the curve, if it goes beyond a
+  published average.
+
+That's a large feature and clearly not v0.2. But the temperament seam is
+worth putting in early, since it's the part everything else depends on.
+
+## 5. Other features worth considering
 
 Both of the first two were considered for v0.1 and deferred for the same
 reason: neither is hard to *build* — the DSP is trivial in both cases — but
@@ -281,15 +337,16 @@ inform.
   beat detection above.
 - **Temperaments** — just intonation and Pythagorean, for ensembles that want
   fifths tuned pure rather than equal-tempered. A genuine violin concern, and a
-  **prerequisite for double-stop fifths** (see above) rather than an independent
-  feature.
+  **prerequisite for double-stop fifths** (§ 3) rather than an independent
+  feature. Shares its one abstraction with piano stretch — see § 4, which is
+  where that seam is described.
 - **Localization** — Finnish and Japanese. The string catalogs and
   `defaultLocalization` are already in place, so this is a translation task
   rather than a refactor. Deliberately deferred until the UI text settles.
 - **Watch app** — a tuner on the wrist is plausible but the microphone quality
   and screen size both work against it. Unclear; investigate before committing.
 
-## 5. Owed upstream to donpa
+## 6. Owed upstream to donpa
 
 Found while porting its scaffold; fixed here, still broken there:
 

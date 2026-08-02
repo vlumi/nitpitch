@@ -12,9 +12,12 @@ import SwiftUI
 struct LightStrip: View {
     let cents: Double
     let isReading: Bool
+    /// Shrinks the whole strip for a grid cell, so both sizes stay one type
+    /// rather than drifting apart as two.
+    var scale: CGFloat = 1
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 6 * scale) {
             ForEach(0..<TuningDisplay.lightCount, id: \.self) { index in
                 Circle()
                     .fill(color(for: index))
@@ -28,7 +31,7 @@ struct LightStrip: View {
     /// The centre light is drawn larger — it's the target, so it should be the
     /// easiest thing on the strip to find without looking directly at it.
     private func diameter(for index: Int) -> CGFloat {
-        index == TuningDisplay.centerLightIndex ? 14 : 10
+        (index == TuningDisplay.centerLightIndex ? 14 : 10) * scale
     }
 
     private func color(for index: Int) -> Color {

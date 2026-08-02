@@ -8,12 +8,35 @@ import XCTest
 /// is verified on device by hand; the DSP itself is covered headlessly by the
 /// NitpitchCore suite.
 final class NitpitchUITests: XCTestCase {
-    private func launch() -> XCUIApplication {
+    private func launch(extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         // Wipe persisted settings so each run starts identical (see LaunchStores).
-        app.launchArguments = ["-uitest-clean"]
+        app.launchArguments = ["-uitest-clean"] + extraArguments
         app.launch()
         return app
+    }
+
+    /// The toolbar menu. Its identifier lands on descendants too, so match the
+    /// button rather than "any" — the broad query finds several elements and
+    /// XCTest refuses to guess which one to tap.
+    private func openLayoutMenu(_ app: XCUIApplication) {
+        let menu = app.buttons["grid.columns"].firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: 5))
+        menu.tap()
+    }
+
+    /// Root → chooser → violin's grid, which several tests need to reach.
+    private func openViolinGrid(_ app: XCUIApplication) {
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+
+        let violin = app.descendants(matching: .any)["chooser.violin"]
+        XCTAssertTrue(violin.waitForExistence(timeout: 5))
+        violin.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.strings"].waitForExistence(timeout: 5))
     }
 
     override func setUp() {
@@ -37,22 +60,54 @@ final class NitpitchUITests: XCTestCase {
         let button = app.descendants(matching: .any)["tuner.instrument"]
         XCTAssertTrue(button.waitForExistence(timeout: 10))
         XCTAssertFalse(
-            app.descendants(matching: .any)["grid.placeholder"].exists,
+            app.descendants(matching: .any)["grid.strings"].exists,
             "the app should not open on an instrument")
     }
 
     func testChoosingAnInstrumentOpensItsStrings() {
         let app = launch()
-        let button = app.descendants(matching: .any)["tuner.instrument"]
-        XCTAssertTrue(button.waitForExistence(timeout: 10))
-        button.tap()
+        openViolinGrid(app)
+    }
 
-        let violin = app.descendants(matching: .any)["chooser.violin"]
-        XCTAssertTrue(violin.waitForExistence(timeout: 5))
-        violin.tap()
+    // MARK: - Detector diagnostics
 
-        let grid = app.descendants(matching: .any)["grid.placeholder"]
-        XCTAssertTrue(grid.waitForExistence(timeout: 5))
+    /// The diagnostics screen is gated on `-debug`, and the gate is the only
+    /// thing keeping it out of a shipped build — so it's worth a test that it
+    /// really is shut by default.
+    func testDetectorScreenIsHiddenWithoutTheDebugFlag() {
+        let app = launch()
+        openViolinGrid(app)
+
+        openLayoutMenu(app)
+        XCTAssertFalse(
+            app.descendants(matching: .any)["grid.debug"].waitForExistence(timeout: 2),
+            "the detector screen must not be reachable in a normal launch")
+    }
+
+    func testDetectorScreenOpensUnderTheDebugFlag() {
+        let app = launch(extraArguments: ["-debug"])
+        openViolinGrid(app)
+
+        openLayoutMenu(app)
+        let entry = app.descendants(matching: .any)["grid.debug"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+        entry.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["debug.detector"].waitForExistence(timeout: 5))
+        // Every string gets a row, so a subharmonic on a neighbour is visible.
+        for name in ["G3", "D4", "A4", "E5"] {
+            XCTAssertTrue(
+                app.staticTexts[name].waitForExistence(timeout: 2),
+                "no diagnostics row for \(name)")
+        }
+
+        // Attached for the screenshot in the test report — this screen is judged
+        // by eye as much as by assertion.
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "detector-diagnostics"
+        shot.lifetime = .keepAlways
+        add(shot)
     }
 
     /// Chromatic is the screen you arrive from, so offering it in the chooser

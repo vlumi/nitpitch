@@ -127,4 +127,99 @@ final class PitchDetectorTests: XCTestCase {
         XCTAssertEqual(reading.note.fullName, "A4")
         XCTAssertEqual(reading.cents, -12, accuracy: 1.0)
     }
+
+    // MARK: - Narrow bands, one detector per string
+
+    /// With a dial per string each detector searches a narrow band, and a
+    /// result outside it means one string's dial showing a pitch that string
+    /// never owned. Found in practice: playing A4 into violin's four detectors,
+    /// the D4 detector reported 197 Hz and the E5 detector 315 Hz — both far
+    /// below their own bands. `minLag`'s deliberate headroom, plus parabolic
+    /// interpolation on top, can walk a peak past the edge.
+    func testNeverReportsAPitchOutsideTheSearchedBand() {
+        let bands = Instrument.violin.stringBands()
+        // Sweep well past the bands themselves, so every detector is offered
+        // plenty it must refuse.
+        for band in bands {
+            var hz = 60.0
+            while hz < 1400 {
+                let result = detect(tone(hz, harmonics: [0.3, 1.0, 0.8, 0.5, 0.3]), band: band)
+                if let found = result.frequency {
+                    XCTAssertTrue(
+                        band.contains(found),
+                        "band \(band) reported \(found) Hz for a \(hz) Hz tone")
+                }
+                hz *= 1.03
+            }
+        }
+    }
+
+    /// The NSDF is bounded by ±1, so clarity above 1 is meaningless — and worse
+    /// than meaningless, since a value above the threshold *by construction*
+    /// sails through the gate that exists to reject junk. The E5 detector was
+    /// returning 1.286. Slightly negative is fine and expected: a frame with no
+    /// periodicity in band anticorrelates, and the gate rejects it anyway.
+    func testClarityNeverExceedsOne() {
+        for band in Instrument.violin.stringBands() {
+            var hz = 60.0
+            while hz < 1400 {
+                let clarity = detect(
+                    tone(hz, harmonics: [0.3, 1.0, 0.8, 0.5, 0.3]), band: band
+                ).clarity
+                XCTAssertLessThanOrEqual(
+                    clarity, 1, "clarity \(clarity) above 1 for \(hz) Hz in \(band)")
+                hz *= 1.03
+            }
+        }
+    }
+
+    /// Each string's own note must survive its own narrow band — the fixes
+    /// above reject results, so they need a test that they don't reject the
+    /// right ones.
+    func testEachStringIsStillFoundInItsOwnNarrowBand() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            for (note, band) in zip(instrument.notes, instrument.stringBands()) {
+                let hz = note.frequency()
+                let result = detect(tone(hz, harmonics: [0.3, 1.0, 0.8, 0.5, 0.3]), band: band)
+                guard let found = result.frequency else {
+                    XCTFail("\(instrument.name) \(note.fullName): not found in its own band")
+                    continue
+                }
+                XCTAssertEqual(
+                    1200 * log2(found / hz), 0, accuracy: 5,
+                    "\(instrument.name) \(note.fullName) read \(found) Hz")
+            }
+        }
+    }
+
+    // MARK: - Tunable thresholds
+
+    /// The debug screen's knobs have to actually reach the detector, or it
+    /// measures nothing.
+    func testTuningThresholdsTakeEffect() {
+        // A signal too noisy to clear the shipped clarity gate.
+        var samples = tone(220, harmonics: [1.0, 0.5])
+        var seed = UInt64(12345)
+        for i in samples.indices {
+            seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            samples[i] += Float(Double(seed >> 40) / Double(1 << 24) - 0.5) * 1.2
+        }
+
+        let strict = PitchDetector(
+            sampleRate: sampleRate, tuning: DetectionTuning(clarityThreshold: 0.99))
+        let lax = PitchDetector(
+            sampleRate: sampleRate, tuning: DetectionTuning(clarityThreshold: 0.5))
+        XCTAssertNil(strict.analyze(samples).frequency, "0.99 should reject a noisy frame")
+        XCTAssertNotNil(lax.analyze(samples).frequency, "0.5 should accept it")
+    }
+
+    /// Retuning a live detector is how the sliders work — the grid keeps its
+    /// detectors and their smoothing rather than rebuilding on every tick.
+    func testTuningCanBeChangedOnALiveDetector() {
+        let detector = PitchDetector(sampleRate: sampleRate)
+        let quiet = tone(440).map { $0 * 0.002 }
+        XCTAssertNotNil(detector.analyze(quiet).frequency)
+        detector.tuning.silenceRMS = 0.01
+        XCTAssertNil(detector.analyze(quiet).frequency, "raised silence gate should reject it")
+    }
 }

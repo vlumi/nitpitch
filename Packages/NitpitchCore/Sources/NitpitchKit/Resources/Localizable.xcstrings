@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld across" : {
+      "comment" : "Menu option for how many string dials fit across the grid"
+    },
     "About" : {
       "comment" : "Title of the about screen"
     },
@@ -18,6 +21,9 @@
     },
     "Cancel" : {
       "comment" : "Dismisses the instrument chooser without choosing"
+    },
+    "Columns" : {
+      "comment" : "Label for the control setting how many string dials fit across the grid"
     },
     "Dark" : {
       "comment" : "Appearance option: always dark"

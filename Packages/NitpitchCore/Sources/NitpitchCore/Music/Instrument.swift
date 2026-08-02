@@ -56,6 +56,75 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
         return low...high
     }
 
+    /// One band per string, in the same order as `strings`, each owning the
+    /// pitches nearest to its own.
+    ///
+    /// Boundaries sit at the **midpoint between neighbouring strings**, with
+    /// headroom beyond the outermost two. Deliberately not a fixed ±N
+    /// semitones: a fixed width leaves dead zones wherever strings sit further
+    /// apart than 2N. On a guitar — 4 semitones between the closest pair —
+    /// ±2 semitones leaves a full semitone unreachable between most strings,
+    /// so a string slack enough to fall in the gap lights nothing at all,
+    /// which is exactly when you most need to find it. Midpoints tile by
+    /// construction: contiguous, no gaps, no overlap, for any tuning.
+    ///
+    /// Midpoints are taken in **MIDI space, not hertz** — pitch is
+    /// logarithmic, so the arithmetic mean of two frequencies sits sharp of
+    /// the note halfway between them.
+    ///
+    /// `maxSemitones` caps how far a band reaches from its string. It can only
+    /// narrow, never widen, so the no-overlap guarantee holds at any value —
+    /// but below the widest midpoint gap it *does* open gaps, and pitches in
+    /// them light no dial at all. That's a deliberate diagnostic knob (see
+    /// `DetectionTuning`), not a mode to ship in: at the default it binds on
+    /// nothing and the midpoints stand.
+    ///
+    /// Empty for an instrument with no strings (chromatic), which has no
+    /// targets to divide.
+    public func stringBands(
+        reference: ReferencePitch = .standard,
+        maxSemitones: Double = DetectionTuning.default.maxSemitonesFromString
+    ) -> [ClosedRange<Double>] {
+        guard !strings.isEmpty else { return [] }
+        let sorted = strings.sorted()
+
+        return strings.map { midi in
+            // `strings` is documented low-to-high but not enforced, so find
+            // this string's neighbours in a sorted copy rather than by index.
+            let position = sorted.firstIndex(of: midi) ?? 0
+            let lowerMidi =
+                position == 0
+                ? Double(midi) - Self.outerHeadroomSemitones
+                : (Double(sorted[position - 1]) + Double(midi)) / 2
+            let upperMidi =
+                position == sorted.count - 1
+                ? Double(midi) + Self.outerHeadroomSemitones
+                : (Double(midi) + Double(sorted[position + 1])) / 2
+            // The midpoint is the boundary that matters — it's what makes the
+            // bands tile with no gaps. `maxSemitones` only ever narrows, so a
+            // band never grows into its neighbour's; at the default it binds on
+            // nothing and every instrument keeps its midpoints.
+            let low = Self.frequency(
+                atMidi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference)
+            let high = Self.frequency(
+                atMidi: min(upperMidi, Double(midi) + maxSemitones), reference: reference)
+            return low...high
+        }
+    }
+
+    /// How far past the outermost strings their bands reach.
+    ///
+    /// A major third, matching `band(reference:)`'s headroom below the lowest
+    /// string: a newly fitted string can start far below pitch and still needs
+    /// to be found.
+    public static let outerHeadroomSemitones = 4.0
+
+    /// A fractional MIDI number's frequency — the boundaries fall between
+    /// notes, so `Note.frequency` (which takes an integer) can't serve.
+    private static func frequency(atMidi midi: Double, reference: ReferencePitch) -> Double {
+        reference.hz * pow(2, (midi - 69) / 12)
+    }
+
     // Standard tunings. MIDI: C4 = 60, A4 = 69.
     public static let violin = Instrument(
         id: "violin", name: "Violin", strings: [55, 62, 69, 76], family: .bowed)  // G3 D4 A4 E5

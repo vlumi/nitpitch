@@ -20,6 +20,16 @@ public enum LaunchStores {
     /// light strip without an instrument in hand.
     public static let isDemo = ProcessInfo.processInfo.arguments.contains("-demo")
 
+    /// Show the detector diagnostics screen.
+    ///
+    /// A launch argument rather than `#if DEBUG` on purpose: the numbers only
+    /// mean something against a real instrument in a real room, which means a
+    /// device, and often a TestFlight build rather than one run from Xcode.
+    /// Gating it out of release builds would put it exactly where it can't be
+    /// used. Nothing reaches it without the flag, so a shipped build is
+    /// unchanged.
+    public static let isDebug = ProcessInfo.processInfo.arguments.contains("-debug")
+
     public static let defaults: UserDefaults = {
         guard isClean else { return .standard }
         let suite = "fi.misaki.nitpitch.uitest"

@@ -147,6 +147,28 @@ What that yields in practice — the catch range each string gets:
 | double bass, bass | 5 semitones | ±2.5 semitones |
 | guitar | 4 semitones | ±2 to ±2.5 semitones |
 
+**Narrow bands broke two assumptions in the detector**, both found by feeding
+A4 into violin's four per-string detectors and looking at what each reported:
+
+- Results could land **outside the band that was searched**. `minLag` carries
+  two samples of deliberate headroom, and parabolic interpolation adds more, so
+  a peak near the edge walks past it — the D4 detector reported 197 Hz and the
+  E5 detector 315 Hz. Harmless with one wide-band detector, but with a dial per
+  string it means a played note lighting a neighbour's dial with a pitch that
+  neighbour never owned. Now rejected outright.
+- **Clarity could exceed 1.0** (E5 returned 1.286), which defeats the gate it's
+  measured against: a value above the threshold by construction can't be
+  rejected by raising the threshold. Interpolation is now clamped.
+
+**Still open — the subharmonic.** Playing A4, the G3 detector finds 220 Hz at
+clarity 1.000. That's a real, perfectly periodic subharmonic, legitimately
+inside G's band, 200¢ from G. No threshold and no band width can reject it,
+because nothing about it is wrong except that it isn't what was played. The
+options are arbitration (collect all N results per window, show only the one
+nearest its target) or dropping back to a single wide-band detector. Deferred
+until a real instrument says whether it happens outside a synthesized tone —
+textbook-perfect subharmonics are an artifact of synthesis as much as anything.
+
 **Unmeasured:** N detectors on every hop, at 21 hops/second. Narrow bands mean
 shorter lag searches so each is cheaper than the current full-band one, but
 that's reasoning, not measurement. Profile before committing to the design.

@@ -22,6 +22,11 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- An instrument now shows a dial per string rather than a single dial: playing
+  the G string moves the G dial. Each dial watches only the pitches nearest its
+  own string, so it reads how far *that string* is from where it should be —
+  a whole tone flat reads −200¢ instead of resolving to some other note. How
+  many fit across is yours to set, from the menu on the instrument's screen.
 - The app now opens on a chromatic tuner, whatever was last tuned, so checking
   a single note takes no setup. Choosing an instrument is a step into it rather
   than a setting on the tuning screen — the button below the dial opens the

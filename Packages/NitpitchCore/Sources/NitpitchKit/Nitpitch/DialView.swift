@@ -109,12 +109,12 @@ struct ArcView: View {
 }
 
 /// The fixed needle at top dead centre: the target, always in the same place.
-private struct CentreNeedle: Shape {
+struct CentreNeedle: Shape {
     func path(in rect: CGRect) -> Path {
         let centre = Dial.centre(in: rect)
         let radius = Dial.radius(in: rect)
         let half = Dial.maxHalfThickness(in: rect)
-        let width = Dial.needleHalfWidth
+        let width = Dial.needleHalfWidth(in: rect)
         return Path(
             CGRect(
                 x: centre.x - width, y: centre.y - radius - half,
@@ -141,7 +141,7 @@ private struct ReadingNeedle: Shape {
         let radius = Dial.radius(in: rect)
         let half = Dial.maxHalfThickness(in: rect)
         let overhang = half * 0.35
-        let width = Dial.needleHalfWidth
+        let width = Dial.needleHalfWidth(in: rect)
 
         // Hidden while in tune, where it would sit on top of the centre needle
         // and just thicken it.
@@ -172,7 +172,7 @@ private struct ReadingNeedle: Shape {
 }
 
 /// Scale marks along the track, at the same cent thresholds as the lights.
-private struct DialTicks: Shape {
+struct DialTicks: Shape {
     func path(in rect: CGRect) -> Path {
         let centre = Dial.centre(in: rect)
         let radius = Dial.radius(in: rect)
@@ -198,7 +198,9 @@ private struct DialTicks: Shape {
 
 /// Geometry shared by the arc band and its backdrop, so the band always sits
 /// exactly on the track.
-private enum Dial {
+/// Shared by both dial sizes, so the compact variant in `CompactDial.swift`
+/// draws on exactly the same geometry as the full one.
+enum Dial {
     /// The dial's centre sits well below the box, so the drawn arc is a broad
     /// shallow cap of a large circle rather than a small hump.
     ///
@@ -253,7 +255,14 @@ private enum Dial {
 
     /// The needle is deliberately narrow: it marks the target, and shouldn't
     /// compete with the fill for attention.
-    static let needleHalfWidth: CGFloat = 1.5
+    /// Proportional, with a floor so it stays visible.
+    ///
+    /// Everything else here scales with the box, so a fixed width would make
+    /// the needle dominate a small cell — at grid size the band thins to a few
+    /// points while a 3pt needle stays 3pt.
+    static func needleHalfWidth(in rect: CGRect) -> CGFloat {
+        max(0.75, rect.height * 0.014)
+    }
 
     /// Maps a reading's sweep onto the drawn track.
     ///
@@ -267,7 +276,7 @@ private enum Dial {
 }
 
 /// The faint track the band sweeps along.
-private struct DialTrack: Shape {
+struct DialTrack: Shape {
     func path(in rect: CGRect) -> Path {
         let centre = Dial.centre(in: rect)
         let radius = Dial.radius(in: rect)

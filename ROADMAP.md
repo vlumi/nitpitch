@@ -373,6 +373,22 @@ inform.
   first, since a preset is a tuning plus its context; a QR code is then just
   an encoding of that. Nothing here needs a server — the payload is small
   enough to live in the URL.
+
+  **Ship only the obvious ones; host the long tail on nitpitch.app.** Standard
+  tunings and Drop D belong in the app. Scordatura, open tunings, historical
+  and regional setups are a long tail that would bloat the picker for everyone
+  who wants standard — and putting them on the site means the collection can
+  grow without an app update, and without App Review.
+
+  **The user's name for a preset is not the tuning's name.** Downloaded
+  presets arrive with generic labels ("Open G"), but what a player wants on
+  the button is *why they saved it*: "Bach Sonata No. 1", "Tomorrow's gig",
+  "Rehearsal pitch". So the label has to be independent of the tuning's own
+  identity — two presets can hold the same strings and differ only in
+  purpose, and renaming on save is the expected move rather than an edge case.
+  That also makes presets the natural home for the favourites idea: a
+  practice-piece name is exactly the shortcut worth one tap on the launch
+  screen.
 - **Lock the settings** — a way to freeze the reference pitch and tuning so a
   stray tap mid-session can't move them. Most valuable exactly where the app
   is most exposed: on a stand, in a case, being handled with one hand while

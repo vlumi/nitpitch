@@ -22,6 +22,9 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Two strings bowed at once now read on both dials, each with its own
+  deviation — tuning by fifths the way violinists actually do. A string that's
+  far out of tune is still found from semitones away, as before.
 - The strings screen shows the overall input level at the top, like the
   chromatic tuner does — so "the app hears nothing" and "sound is coming in
   but isn't near any string" stopped looking identical.

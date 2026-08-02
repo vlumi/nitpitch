@@ -17,13 +17,24 @@ public struct DetectionTuning: Equatable, Sendable {
     public enum Engine: String, CaseIterable, Sendable {
         /// One `PitchDetector` per string over its own band, with
         /// `SubharmonicFilter` arbitrating between them. Monophonic: two
-        /// strings at once confuse it. The shipped default.
+        /// strings at once confuse it — but it finds a string from anywhere
+        /// in its band, semitones off target, and needs no fundamental.
         case mpm
         /// One `HarmonicEstimator` measuring every string from a shared
         /// spectrum. Handles double stops and is structurally immune to
-        /// subharmonics, but declines strings far from target — a badly slack
-        /// string shows nothing. Experimental until proven on instruments.
+        /// subharmonics, but declines a string more than `searchCents` from
+        /// target, and needs the string's own low harmonics to reach the
+        /// microphone (see the anchor rule).
         case spectral
+        /// The shipped default: spectral wins any frame where it reads
+        /// anything; MPM takes only the frames where spectral is silent.
+        /// Whole frames, not per string — during a double stop MPM invents
+        /// subharmonic ghosts on the unplayed strings, and a per-string
+        /// fallback would reinsert exactly the readings spectral exists to
+        /// prevent. Frame-level keeps every spectral win and still finds a
+        /// badly slack string (or a mic'd bass with no audible fundamental),
+        /// because those are precisely the frames spectral declines.
+        case hybrid
     }
 
     /// Which algorithm drives the per-string dials.
@@ -79,7 +90,7 @@ public struct DetectionTuning: Equatable, Sendable {
     public var maxSemitonesFromString: Double
 
     public init(
-        engine: Engine = .mpm,
+        engine: Engine = .hybrid,
         clarityThreshold: Double = Detection.clarityThreshold,
         peakPickThreshold: Double = Detection.peakPickThreshold,
         silenceRMS: Float = Detection.silenceRMS,

@@ -96,9 +96,13 @@ finds *the* period of a frame; on two simultaneous notes it returns one lag that
 flickers between them rather than reporting both. Do not try to make it return
 two pitches — that job already has its own type: **`HarmonicEstimator`**, the
 phase-vocoder path that measures every string of an instrument from one
-spectrum against its known target, double stops included. `DetectorBank` runs
-one engine or the other per frame; the debug screen's Engine switch is the A/B
-(see ROADMAP § 3 for where this is heading).
+spectrum against its known target, double stops included. `DetectorBank`
+combines them: the shipped default is the frame-level hybrid — spectral wins
+any frame it reads, MPM takes the frames spectral leaves silent (slack
+strings, missing fundamentals). Frame-level, never per string: on a double
+stop MPM invents subharmonic ghosts, so mixing engines within one frame would
+reinsert exactly what spectral prevents. The debug screen's Engine switch
+exposes the pure modes for diagnosis.
 
 ## Commands
 
@@ -157,12 +161,10 @@ anything plays, the frame is loud and it passes. The **strength gate**
 bars: a bowed string reads at or near full, junk scraped off a loud frame sits
 below half, and readings under the gate are dropped.
 
-The engine switch is an A/B between the two detection paths (`DetectorBank`):
-**MPM** — one `PitchDetector` per string, `SubharmonicFilter` arbitrating, the
-shipped default — and **Spectral** — `HarmonicEstimator` measuring every string
-from one spectrum, which handles double stops and can't see subharmonics, but
-shows nothing for a string more than ±60¢ from target. Same instrument, same
-room, flip the switch mid-note.
+The engine switch exposes `DetectorBank`'s three modes: **Hybrid** — the
+shipped default, spectral winning any frame it reads and MPM taking the frames
+spectral leaves silent — plus pure **MPM** and pure **Spectral** for
+diagnosis. Same instrument, same room, flip the switch mid-note.
 
 The two halves only work together. Moving a threshold blind tells you nothing;
 watching the numbers without being able to move anything tells you what's wrong

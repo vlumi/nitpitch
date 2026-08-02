@@ -200,6 +200,37 @@ final class DetectorBankTests: XCTestCase {
             "an honest tone should sit well above the default gate")
     }
 
+    // MARK: - The hybrid, which is the shipped default
+
+    /// The reason pure spectral couldn't be the default: a string 300¢ flat is
+    /// outside its search window and would show nothing. Under the hybrid,
+    /// spectral declines the frame and MPM reads it.
+    func testHybridReadsASlackString() {
+        let g = Instrument.violin.notes[0].frequency() * pow(2, -300.0 / 1200)
+        let bank = violinBank(engine: .hybrid)
+        let results = analyze(bank, signal: mix([tone(g, count: signalLength)]))
+        XCTAssertEqual(lit(results), [0])
+        XCTAssertEqual(
+            1200 * log2((results[0].frequency ?? 1) / Instrument.violin.notes[0].frequency()),
+            -300, accuracy: 5)
+    }
+
+    /// The reason the fallback is frame-level, not per-string: during a double
+    /// stop MPM invents a subharmonic ghost on an unplayed string, with
+    /// nothing higher in its own results for the filter to kill it with. A
+    /// per-string mix would show it; spectral winning the whole frame must not.
+    func testHybridDoubleStopReadsBothAndNoGhost() {
+        let violin = Instrument.violin.notes.map { $0.frequency() }
+        let bank = violinBank(engine: .hybrid)
+        let results = analyze(
+            bank,
+            signal: mix([
+                tone(violin[2], count: signalLength),
+                tone(violin[3], count: signalLength, phase0: 1.1),
+            ]))
+        XCTAssertEqual(lit(results), [2, 3], "A and E must read, G and D must stay dark")
+    }
+
     // MARK: - Reconfiguration
 
     /// Switching engines mid-stream must work — it's a segmented control on

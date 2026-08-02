@@ -51,6 +51,7 @@ struct DetectorDebugView: View {
     private var engineSection: some View {
         Section {
             Picker(selection: $detection.tuning.engine) {
+                Text(verbatim: "Hybrid").tag(DetectionTuning.Engine.hybrid)
                 Text(verbatim: "MPM").tag(DetectionTuning.Engine.mpm)
                 Text(verbatim: "Spectral").tag(DetectionTuning.Engine.spectral)
             } label: {
@@ -61,10 +62,11 @@ struct DetectorDebugView: View {
             Text(verbatim: "Engine")
         } footer: {
             Text(
-                verbatim: "MPM: one detector per string, subharmonic shadows filtered out; "
-                    + "finds a badly slack string but can't do two at once. "
-                    + "Spectral: every string measured from one spectrum; handles double "
-                    + "stops, but a string more than a semitone off shows nothing.")
+                verbatim: "Hybrid (default): spectral wins any frame it reads; MPM takes "
+                    + "the frames spectral leaves silent. MPM: one detector per string, "
+                    + "shadows filtered; finds a badly slack string but can't do two at "
+                    + "once. Spectral: every string measured from one spectrum; handles "
+                    + "double stops, but half a semitone off target shows nothing.")
         }
     }
 

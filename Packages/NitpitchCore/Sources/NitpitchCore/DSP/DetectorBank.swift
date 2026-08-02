@@ -62,6 +62,7 @@ public final class DetectorBank: @unchecked Sendable {
         switch tuning.engine {
         case .mpm: results = analyzeMPM(window)
         case .spectral: results = analyzeSpectral(window)
+        case .hybrid: results = analyzeHybrid(window)
         }
         return confirmed(results)
     }
@@ -119,6 +120,21 @@ public final class DetectorBank: @unchecked Sendable {
         estimator?.reset()
         // A gap is a fresh start for confirmation too.
         streaks = Array(repeating: 0, count: targets.count)
+    }
+
+    // MARK: - Hybrid: spectral wins the frame; MPM only when it's silent
+
+    /// Frame-level, not per string: during a double stop MPM invents ghosts on
+    /// the unplayed strings (both real notes defeat it and only a subharmonic
+    /// remains, with nothing higher for the filter to kill it with), so mixing
+    /// the two engines within one frame would reinsert exactly the readings
+    /// spectral exists to prevent. If spectral heard *anything*, its frame
+    /// stands; MPM speaks only when spectral was silent — the slack-string and
+    /// missing-fundamental territory where MPM is the right tool.
+    private func analyzeHybrid(_ window: [Float]) -> [DetectionResult] {
+        let spectral = analyzeSpectral(window)
+        if spectral.contains(where: { $0.frequency != nil }) { return spectral }
+        return analyzeMPM(window)
     }
 
     // MARK: - MPM: N detectors, then arbitration

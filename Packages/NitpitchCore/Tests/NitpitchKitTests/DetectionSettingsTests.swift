@@ -61,7 +61,7 @@ final class DetectionSettingsTests: XCTestCase {
         let detection = DetectionSettings()
         XCTAssertEqual(detection.tuning, .default)
         XCTAssertFalse(detection.isModified)
-        XCTAssertEqual(detection.tuning.engine, .mpm)
+        XCTAssertEqual(detection.tuning.engine, .hybrid)
     }
 
     /// The badge on the grid's menu depends on this, and it's the only signal
@@ -99,8 +99,7 @@ final class DetectionSettingsTests: XCTestCase {
         strings.attachAll()
         defer { strings.detachAll() }
 
-        let window = tone(440, sampleRate: controller.sampleRate)
-        for _ in 0..<3 { await deliver(window, through: input) }
+        await slide(440, through: input, sampleRate: controller.sampleRate)
 
         for (index, tuner) in strings.tuners.enumerated() {
             if index == 2 {
@@ -124,8 +123,7 @@ final class DetectionSettingsTests: XCTestCase {
         strings.attachAll()
         defer { strings.detachAll() }
 
-        let window = tone(440, sampleRate: controller.sampleRate)
-        for _ in 0..<3 { await deliver(window, through: input) }
+        await slide(440, through: input, sampleRate: controller.sampleRate)
 
         XCTAssertGreaterThan(strings.tuners[2].level, 0)
         for index in [0, 1, 3] {

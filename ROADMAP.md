@@ -129,11 +129,10 @@ keeps the model simple: an enlarged view is bound to one string, full stop.
 **And being bound to one string means it can hear everything.** With no other
 dials to disambiguate against, the enlarged view can run a wide MPM band —
 the whole instrument's range, even — and track a slipped peg from semitones
-away. That gives each screen its own job, and may settle the engine question
-without a hybrid: the *grid* runs spectral (ghost-free, double stops, precise
-near target, dark beyond ±60¢), and the string you're coarse-tuning is exactly
-the one you'd zoom into anyway. Get on the right page in the enlarged view,
-fine-tune in the grid.
+away. (The grid's engine question is settled — the frame-level hybrid in § 3
+already finds a slack string — but the zoomed view remains the better *UX*
+for coarse tuning: one big dial following one peg, no other cells competing
+for the eye.)
 
 ### Routing: one detector per string, bands split at the midpoints
 
@@ -264,14 +263,17 @@ a 4:1 bow imbalance. It also makes subharmonics structurally impossible: G's
 estimator only looks at G's harmonic locations, and a played A has no energy
 there. Its known limitation is the flip side of anchoring on targets: a string
 more than `searchCents` (±60¢) from its target shows nothing, where MPM's wide
-bands find a badly slack string 400¢ out. So MPM stays the shipped engine for
-now. Confirmed on a real violin (through the Mac's mic, no less): double stops
-read on both dials, ghosts gone, general tuning solid. Two candidate end
-states: a hybrid (spectral when a string is near target, MPM when it's far),
-or the cleaner division described under "The enlarged view" in § 2 — spectral
-grid for fine work, wide-band single-string view for coarse. The out-of-tune
-behaviour still needs a deliberate test: detune a string past 60¢ and confirm
-going dark reads as "zoom in", not "broken".
+bands find a badly slack string 400¢ out.
+
+**Decided: the shipped default is the frame-level hybrid.** Spectral wins any
+frame where it reads anything; MPM (with the subharmonic filter) takes only
+the frames spectral leaves silent — which are precisely the slack-string and
+missing-fundamental frames MPM is right for. Frame-level rather than
+per-string on purpose: during a double stop MPM invents subharmonic ghosts on
+the unplayed strings, and a per-string mix would reinsert exactly the readings
+spectral exists to prevent. Confirmed on a real violin (through the Mac's
+mic, no less): double stops read on both dials, ghosts gone, general tuning
+solid. The pure engines stay in the debug screen for diagnosis.
 
 **Spectral's second structural limit: it needs the string's own bottom.** The
 anchor rule (a reading must include the 1st or 2nd harmonic with real energy —

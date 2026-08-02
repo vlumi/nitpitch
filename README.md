@@ -1,5 +1,8 @@
 # Nitpitch
 
+[![CI](https://github.com/vlumi/nitpitch/actions/workflows/ci.yml/badge.svg)](https://github.com/vlumi/nitpitch/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/vlumi/nitpitch/branch/main/graph/badge.svg)](https://codecov.io/gh/vlumi/nitpitch)
+
 An instrument tuner for iPhone, iPad, and Mac. Built for **violin** first —
 that's the reason it exists — with the other string instruments along for the
 ride.

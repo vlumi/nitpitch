@@ -153,36 +153,25 @@ kind can wait for a real itch.
 
 #### Build order
 
-Steps 1–2 (pushed chooser, favourites chips) have shipped. Each remaining
-step is useful on its own, none blocked by the later ones:
+The pushed chooser, the favourites chips and the string view have shipped.
+Each remaining step is useful on its own, none blocked by the later ones:
 
-1. **String view** (already owed — see below).
-2. **Instrument instances + tuning catalog** (one default per template;
+1. **Instrument instances + tuning catalog** (one default per template;
    Drop D et al.; the instance replaces "last-used memory" — it *is* the
    memory). "Add another guitar…", rename, and the padlock ride along.
-3. **Per-string target editing** in the string view; Custom relabeling.
-   String counts ride with instrument creation/editing (step 2), so no
+2. **Per-string target editing** in the string view; Custom relabeling.
+   String counts ride with instrument creation/editing (step 1), so no
    separate tuning editor exists at all.
-4. **Presets**: save, load, name; then URL/QR share + import.
+3. **Presets**: save, load, name; then URL/QR share + import.
 
-### The string view (enlarged single string)
+### The string view: what remains
 
-Tap a cell in the grid to get one string full screen: the full dial, a back
-arrow to the grid, arrows/swipe to the neighbouring strings.
+The view itself shipped (full dial, whole-instrument band, arrows/swipe,
+never follows the sound). Still to come there:
 
-- **It shows only its own string.** If a different string sounds, the view
-  stays blank rather than following the sound — automatic switching would
-  yank the screen away mid-turn on a peg, and "nothing" is unambiguous once
-  you know the rule.
-- **Being bound to one string, it can hear everything.** With no other dials
-  to disambiguate against, it can run a wide MPM band — the whole
-  instrument's range — and track a slipped peg from semitones away. The
-  hybrid already *finds* a slack string in the grid; this is the better UX
-  for actually cranking it in: one big dial, no other cells competing.
-- **It edits its own target** (see the design draft above): the same screen
-  answers "how far is this string from D2" and "make this string's target
-  C2".
-- Natural future home for the intonation feature (§ 4).
+- **Target editing** (build order step 2): the same screen answers "how far
+  is this string from D2" and "make this string's target C2".
+- The intonation feature (§ 4), eventually.
 
 ### Landscape reflow
 

@@ -48,8 +48,14 @@ struct InstrumentGridView: View {
             // which keeps "only track what's on screen" reachable later, and
             // lets an arbitrary tuning scale.
             LazyVGrid(columns: gridColumns, spacing: 12) {
-                ForEach(Array(strings.tuners.enumerated()), id: \.offset) { _, tuner in
-                    StringCell(tuner: tuner, naming: settings.naming)
+                ForEach(Array(strings.tuners.enumerated()), id: \.offset) { index, tuner in
+                    // A cell is a link into its string's full-screen view —
+                    // the grid shows all of them, the string view holds one.
+                    NavigationLink(value: TunerRoute.string(instrument, index)) {
+                        StringCell(tuner: tuner, naming: settings.naming)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("grid.cell.\(index)")
                 }
             }
             .padding(.horizontal, 16)

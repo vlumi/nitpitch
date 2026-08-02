@@ -11,6 +11,8 @@ public enum TunerRoute: Hashable {
     /// here, on the list you chose from, the way the mental model expects.
     case chooser
     case instrument(Instrument)
+    /// One string of an instrument, full screen — the coarse-tuning home.
+    case string(Instrument, Int)
 }
 
 /// The app's navigation. The chromatic tuner is the root; an instrument is a
@@ -50,6 +52,10 @@ public struct RootView: View {
                     InstrumentGridView(
                         instrument: instrument, audio: audio, settings: settings,
                         detection: detection)
+                case .string(let instrument, let index):
+                    StringView(
+                        instrument: instrument, index: index, audio: audio,
+                        settings: settings, detection: detection)
                 }
             }
             // The root has its own header; a system bar above it would be a

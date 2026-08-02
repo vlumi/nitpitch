@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Tap a string in the grid to get it full screen: the big dial aimed at that
+  one string, hearing the instrument's whole range — a badly slipped peg
+  reads "−300¢, keep going" instead of nothing. Arrows or a swipe move
+  between strings; the view never follows the sound on its own.
 - Pin instruments with the star in the instrument list, and they appear as
   one-tap chips on the launch screen — the violin starts pinned. Straight to
   its strings, no list in between.

@@ -49,6 +49,9 @@
     "MIT licensed." : {
       "comment" : "License note on the about screen"
     },
+    "Next string" : {
+      "comment" : "Arrow in the single-string view: go to the higher neighbouring string"
+    },
     "Nitpicking about pitch." : {
       "comment" : "Tagline on the about screen — the app's name is a pun on 'nitpick'"
     },
@@ -66,6 +69,9 @@
     },
     "Play a note" : {
       "comment" : "Shown while listening but no pitch is confident enough to display"
+    },
+    "Previous string" : {
+      "comment" : "Arrow in the single-string view: go to the lower neighbouring string"
     },
     "Reference pitch" : {
       "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"

@@ -123,3 +123,34 @@ struct LevelMeter: View {
         .accessibilityHidden(true)
     }
 }
+
+/// A note's name with subscripted octave and the chosen convention's spelling
+/// beside it — the readout's centrepiece, shared by the chromatic tuner and
+/// the string view. See `Note.readoutLabel(in:)` for why the scientific name
+/// and the localized one are kept apart rather than combined.
+struct NoteNameLabel: View {
+    let note: Note
+    let naming: NoteNaming
+    let fontSize: CGFloat
+
+    var body: some View {
+        let label = note.readoutLabel(in: naming)
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // The octave is subscripted so the letter stays the thing you read
+            // at a glance — the number qualifies it rather than competing.
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text(verbatim: label.name)
+                    .font(.system(size: fontSize, weight: .light, design: .rounded))
+                Text(verbatim: "\(label.octave)")
+                    .font(.system(size: fontSize * 0.44, weight: .light, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .baselineOffset(-fontSize * 0.06)
+            }
+            if let alternate = label.alternate {
+                Text(verbatim: "(\(alternate))")
+                    .font(.system(size: fontSize * 0.40, weight: .light))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}

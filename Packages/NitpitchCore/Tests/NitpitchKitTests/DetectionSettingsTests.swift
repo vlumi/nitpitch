@@ -151,6 +151,52 @@ final class DetectionSettingsTests: XCTestCase {
         }
     }
 
+    // MARK: - The string view's coordinator
+
+    /// The string view's defining property: bound to one string, it hears the
+    /// WHOLE instrument — a pitch far outside the string's grid band still
+    /// reads, measured against this string's target. This is the slipped-peg
+    /// case the grid structurally can't show.
+    func testSingleStringHearsTheWholeInstrument() async {
+        let input = AudioInput()
+        let controller = AudioSessionController(input: input)
+        // Aim at E5 (659 Hz) but play A4 (440 Hz) — 300¢ below E's grid band.
+        let single = SingleStringTuner(
+            instrument: .violin, index: 3, audio: controller, reference: .standard)
+        single.attach()
+        defer { single.detach() }
+
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+        guard case .reading(let cents, _) = single.tuner.state else {
+            return XCTFail("the string view should read a far-off pitch")
+        }
+        XCTAssertEqual(cents, -700, accuracy: 8, "440 Hz against E5 is ~-700¢")
+    }
+
+    /// Swiping retargets: the same sound reads against the new string.
+    func testRetargetingMeasuresAgainstTheNewString() async {
+        let input = AudioInput()
+        let controller = AudioSessionController(input: input)
+        let single = SingleStringTuner(
+            instrument: .violin, index: 2, audio: controller, reference: .standard)
+        single.attach()
+        defer { single.detach() }
+
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+        guard case .reading(let atA, _) = single.tuner.state else {
+            return XCTFail("A should read against A")
+        }
+        XCTAssertEqual(atA, 0, accuracy: 3)
+
+        single.retarget(index: 1)  // D4
+        XCTAssertEqual(single.tuner.target.fullName, "D4")
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+        guard case .reading(let atD, _) = single.tuner.state else {
+            return XCTFail("A should read against D after retargeting")
+        }
+        XCTAssertEqual(atD, 700, accuracy: 8, "440 Hz against D4 is ~+700¢")
+    }
+
     // MARK: - Reaching the detectors
 
     /// Retuning live dials has to change what they report, or the sliders are

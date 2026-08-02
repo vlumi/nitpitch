@@ -21,7 +21,12 @@ struct CompactDial: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            SignalBar(level: cents == nil ? 0 : level)
+            // The chromatic screen's meter, scaled to the cell: centre-out,
+            // because a symmetric bar reads as signal the way a hardware input
+            // meter does, and it shares the dial's centre-out geometry.
+            LevelMeter(level: cents == nil ? 0 : level)
+                .frame(height: 3)
+                .padding(.horizontal, 22)
             CompactArc(cents: cents, inTune: isInTune)
                 .frame(height: Self.arcHeight)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -65,31 +70,6 @@ struct CompactDial: View {
         if isInTune { return "in tune" }
         let rounded = abs(Int(cents.rounded()))
         return cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
-    }
-}
-
-/// How much signal stands behind the reading — the difference between a bowed
-/// string and something the detector scraped off the room. Deliberately
-/// neutral in colour: the hue ramp below means "how in tune", and a second
-/// meaning on the same palette would read as contradiction.
-private struct SignalBar: View {
-    /// 0...1; the bar is empty at zero.
-    let level: Double
-
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.15))
-                Capsule()
-                    .fill(Color.secondary.opacity(0.6))
-                    .frame(width: max(0, geometry.size.width * min(1, level)))
-                    .animation(.easeOut(duration: 0.15), value: level)
-            }
-        }
-        .frame(height: 3)
-        .padding(.horizontal, 22)
-        .accessibilityHidden(true)
     }
 }
 

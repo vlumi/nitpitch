@@ -157,6 +157,17 @@ public final class DetectorBank: @unchecked Sendable {
             else {
                 return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
             }
+            // The strength gate: a bowed string reads at or near full on the
+            // signal bar; what the estimator scrapes off a loud frame's noise
+            // sits below half. The silence gate can't separate those — while
+            // anything plays, the frame is loud — but per-string strength can.
+            // The dropped reading keeps its level so the diagnostics screen
+            // shows the near miss.
+            guard reading.strength >= tuning.spectralStrengthGate else {
+                return DetectionResult(
+                    frequency: nil, clarity: reading.agreement, rms: Double(rms),
+                    level: reading.strength)
+            }
             return DetectionResult(
                 frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms),
                 level: reading.strength)

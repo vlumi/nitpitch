@@ -93,11 +93,12 @@ stabilizes only the *display*.
 
 **`PitchDetector` is monophonic by construction and must stay that way.** MPM
 finds *the* period of a frame; on two simultaneous notes it returns one lag that
-flickers between them rather than reporting both. Detecting double-stop fifths
-(how violinists actually tune — see ROADMAP § 3) is a planned v0.2 feature, but
-it belongs in a **separate detector** using bandpass filters or a phase vocoder
-against known target frequencies. Do not try to make this one return two
-pitches.
+flickers between them rather than reporting both. Do not try to make it return
+two pitches — that job already has its own type: **`HarmonicEstimator`**, the
+phase-vocoder path that measures every string of an instrument from one
+spectrum against its known target, double stops included. `DetectorBank` runs
+one engine or the other per frame; the debug screen's Engine switch is the A/B
+(see ROADMAP § 3 for where this is heading).
 
 ## Commands
 
@@ -146,7 +147,15 @@ Two things the Mac loop can't reach, which need an actual iPhone:
 **Detector…** entry to the menu on an instrument's screen. It shows what every
 string's detector is seeing — frequency, cents from that string, clarity, RMS,
 and the band it searched — above an engine switch and sliders for the clarity
-gate, the peak-pick threshold, the silence floor, and the band width.
+gate, the peak-pick threshold, the spectral strength gate, the silence floor,
+and the band width.
+
+Two gates matter for noise, and they cover different ground. The **silence
+floor** judges the whole frame, so it only rejects actual quiet — while
+anything plays, the frame is loud and it passes. The **strength gate**
+(spectral only) is per reading, in the same 0...1 units as the cells' signal
+bars: a bowed string reads at or near full, junk scraped off a loud frame sits
+below half, and readings under the gate are dropped.
 
 The engine switch is an A/B between the two detection paths (`DetectorBank`):
 **MPM** — one `PitchDetector` per string, `SubharmonicFilter` arbitrating, the

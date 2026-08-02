@@ -21,6 +21,19 @@ final class DetectorBankTests: XCTestCase {
         }
     }
 
+    /// Deterministic gaussian-ish noise: strength is signal-over-floor, and a
+    /// synthetic signal with no noise floor reads full strength at any volume.
+    private func noise(_ amount: Double, count: Int, seed: UInt64 = 7) -> [Double] {
+        var state = seed
+        return (0..<count).map { _ in
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            let u1 = Double(state >> 11) / Double(1 << 53)
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            let u2 = Double(state >> 11) / Double(1 << 53)
+            return sqrt(-2 * log(max(u1, 1e-12))) * cos(2 * .pi * u2) * amount
+        }
+    }
+
     private func mix(_ parts: [[Double]]) -> [Float] {
         guard let first = parts.first else { return [] }
         var out = [Double](repeating: 0, count: first.count)
@@ -143,6 +156,48 @@ final class DetectorBankTests: XCTestCase {
                 XCTAssertEqual(results[index].level, 0, "\(engine): silent string has level")
             }
         }
+    }
+
+    /// The strength gate speaks the signal bar's language: a reading whose bar
+    /// falls short of the setting is dropped. Observed need: while one string
+    /// plays, the frame is loud — the silence gate passes — and the estimator
+    /// scrapes weak junk off other strings' bins. Real string near max, junk
+    /// below half.
+    ///
+    /// Self-calibrating: measure the noisy tone's strength with the gate open,
+    /// then close the gate just above it and require the reading to vanish.
+    func testStrengthGateDropsWeakSpectralReadings() {
+        // A tone with enough noise that its strength sits well below full
+        // (measured: ~0.3 at this ratio) but still reads.
+        let signal = mix([
+            tone(440, count: signalLength, amp: 0.4),
+            noise(0.05, count: signalLength),
+        ])
+        let bank = violinBank(engine: .spectral)
+        bank.retune(DetectionTuning(engine: .spectral, spectralStrengthGate: 0))
+        let open = analyze(bank, signal: signal)
+        guard let strength = open.first(where: { $0.frequency != nil })?.level else {
+            return XCTFail("the noisy tone should still read with the gate open")
+        }
+        XCTAssertLessThan(strength, 0.9, "noise should keep strength below full")
+
+        bank.retune(
+            DetectionTuning(engine: .spectral, spectralStrengthGate: min(0.9, strength + 0.02)))
+        let gated = analyze(bank, signal: signal)
+        XCTAssertEqual(lit(gated), [])
+        // The near miss stays visible to the diagnostics screen.
+        XCTAssertGreaterThan(gated.map(\.level).max() ?? 0, 0)
+    }
+
+    /// At the shipped default a solid tone must clear the gate comfortably —
+    /// the gate exists to drop scraped junk, not honest playing.
+    func testDefaultStrengthGatePassesAnHonestTone() {
+        let bank = violinBank(engine: .spectral)
+        let results = analyze(bank, signal: mix([tone(440, count: signalLength)]))
+        XCTAssertEqual(lit(results), [2])
+        XCTAssertGreaterThan(
+            results[2].level, DetectionTuning.default.spectralStrengthGate,
+            "an honest tone should sit well above the default gate")
     }
 
     // MARK: - Reconfiguration

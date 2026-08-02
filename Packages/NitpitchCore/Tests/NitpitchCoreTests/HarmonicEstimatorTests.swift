@@ -95,21 +95,41 @@ final class HarmonicEstimatorTests: XCTestCase {
         XCTAssertEqual(cents(read.frequency, violin[0]), -12, accuracy: 1)
     }
 
-    /// Strength has to mean something: louder in, more of it, within 0...1.
-    func testStrengthTracksLoudness() {
+    /// Strength is signal-over-floor, not loudness: a clean tone reads full at
+    /// any volume (the floor scales with it), and burying the same tone in
+    /// noise is what drags it down. That's the property that separates a bowed
+    /// string from junk scraped off a loud frame.
+    func testStrengthFallsAsNoiseRises() {
         let others = Array(violin[1...])
         var strengths: [Double] = []
-        for amp in [0.05, 0.3, 0.8] {
-            let signal = mix([tone(violin[0], count: signalLength)]).map { $0 * Float(amp) }
+        for noiseAmount in [0.0, 0.02, 0.08] {
+            let signal = mix([
+                tone(violin[0], count: signalLength, amp: 0.4),
+                noise(noiseAmount, count: signalLength),
+            ])
             let estimator = primed(with: signal)
             guard let read = estimator.measure(target: violin[0], others: others) else {
-                XCTFail("not measured at amplitude \(amp)")
+                XCTFail("not measured at noise \(noiseAmount)")
                 continue
             }
-            XCTAssertTrue((0...1).contains(read.strength), "strength out of range at \(amp)")
+            XCTAssertTrue(
+                (0...1).contains(read.strength), "strength out of range at \(noiseAmount)")
             strengths.append(read.strength)
         }
-        XCTAssertEqual(strengths, strengths.sorted(), "strength should grow with loudness")
+        XCTAssertEqual(
+            strengths, strengths.sorted(by: >), "strength should fall as noise rises")
+    }
+
+    /// Deterministic gaussian-ish noise, matching the bank tests' helper.
+    private func noise(_ amount: Double, count: Int, seed: UInt64 = 7) -> [Double] {
+        var state = seed
+        return (0..<count).map { _ in
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            let u1 = Double(state >> 11) / Double(1 << 53)
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            let u2 = Double(state >> 11) / Double(1 << 53)
+            return sqrt(-2 * log(max(u1, 1e-12))) * cos(2 * .pi * u2) * amount
+        }
     }
 
     // MARK: - Presence: absent strings must go dark

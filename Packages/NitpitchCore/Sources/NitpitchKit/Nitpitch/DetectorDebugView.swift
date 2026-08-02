@@ -104,6 +104,13 @@ struct DetectorDebugView: View {
                 note: "Octave guard. Lower favours the fundamental over its harmonics.")
 
             Knob(
+                title: "Min strength",
+                value: $detection.tuning.spectralStrengthGate,
+                range: DetectionTuning.Limits.strength,
+                format: { String(format: "%.2f", $0) },
+                note: "Spectral only. Readings whose signal bar falls short of this are dropped.")
+
+            Knob(
                 title: "Silence",
                 value: Binding(
                     get: { Double(detection.tuning.silenceRMS) },

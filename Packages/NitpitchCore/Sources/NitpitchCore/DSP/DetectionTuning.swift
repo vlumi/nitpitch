@@ -41,7 +41,18 @@ public struct DetectionTuning: Equatable, Sendable {
     public var peakPickThreshold: Double
 
     /// Frames quieter than this are skipped before any DSP.
+    ///
+    /// Note what this can and cannot do: it judges the *whole frame*, so it
+    /// only rejects actual silence. While anything is being played the frame
+    /// is loud, the gate passes, and per-string junk has to be caught by
+    /// `spectralStrengthGate` instead.
     public var silenceRMS: Float
+
+    /// Spectral readings weaker than this are dropped — same 0...1 units as
+    /// the cells' signal bars, so "junk shows below half, a bowed string near
+    /// max" translates directly into a setting between the two. Spectral only;
+    /// MPM has its clarity gate.
+    public var spectralStrengthGate: Double
 
     /// How far either side of a string's target its dial still answers, in
     /// semitones — but only as a *cap*. The real boundary is the midpoint to
@@ -59,12 +70,14 @@ public struct DetectionTuning: Equatable, Sendable {
         clarityThreshold: Double = Detection.clarityThreshold,
         peakPickThreshold: Double = Detection.peakPickThreshold,
         silenceRMS: Float = Detection.silenceRMS,
+        spectralStrengthGate: Double = 0.5,
         maxSemitonesFromString: Double = Instrument.outerHeadroomSemitones
     ) {
         self.engine = engine
         self.clarityThreshold = clarityThreshold
         self.peakPickThreshold = peakPickThreshold
         self.silenceRMS = silenceRMS
+        self.spectralStrengthGate = spectralStrengthGate
         self.maxSemitonesFromString = maxSemitonesFromString
     }
 
@@ -78,6 +91,7 @@ public struct DetectionTuning: Equatable, Sendable {
         public static let clarity: ClosedRange<Double> = 0.5...0.99
         public static let peakPick: ClosedRange<Double> = 0.5...1.0
         public static let silence: ClosedRange<Double> = 0.0001...0.02
+        public static let strength: ClosedRange<Double> = 0.0...0.9
         public static let semitones: ClosedRange<Double> =
             0.5...Instrument.outerHeadroomSemitones
     }

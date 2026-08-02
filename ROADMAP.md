@@ -239,6 +239,36 @@ Scrolling and the column preference compose: the column count sets the cell
 size, the string count sets how many tracks result, and the grid scrolls
 along whichever axis overflows — down in portrait, sideways in landscape.
 
+### Verifying instruments nobody here owns
+
+On hand: violin, electric guitar, electric bass, digital piano. Not on hand:
+viola, cello, double bass. Should the unverified ones ship marked
+"experimental"? **No — verify them with the piano instead.**
+
+Three observations make that sound rather than reckless:
+
+- **An instrument definition is a MIDI array.** The detector doesn't know
+  names; it knows frequencies. The failure modes worth fearing are *range*
+  (does detection work at these pitches?) and *timbre* (do the gates hold for
+  this kind of sound?), not which label the picker shows.
+- **Range is already covered by owned instruments.** Violin, electric guitar
+  and electric bass together span 41–659 Hz of open strings; every string of
+  every shipped instrument falls inside that. Double bass is literally the
+  same MIDI array as bass guitar.
+- **A digital piano is a calibrated reference oscillator.** Equal-tempered,
+  drift-free, every pitch on demand. The functional check for an unowned
+  instrument takes five minutes: select it, play each of its open-string
+  pitches on the piano, confirm the right dial lights near 0¢ and its
+  neighbours stay dark. (Piano stretch is negligible mid-range; don't use it
+  to judge cents at the extremes.)
+
+What the piano can't verify is timbre — a bowed cello's noise floor and
+harmonic balance against the gates. That's what the TestFlight beta is for:
+say in "What to Test" which instruments are verified by their own kind and
+ask cellists/violists to report. An in-app "experimental" badge would
+communicate risk the math doesn't have, and would not catch the risk that
+does exist — a badge never bowed a cello.
+
 ### Tunings — deferred, but it shapes the model
 
 Drop D, DADGAD, open tunings and half-step-down are common enough that the

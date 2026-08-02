@@ -231,6 +231,30 @@ final class DetectorBankTests: XCTestCase {
         XCTAssertEqual(lit(results), [2, 3], "A and E must read, G and D must stay dark")
     }
 
+    /// The property behind "won't it pick all over the place when a string is
+    /// far out?": swept across and *past* the violin's whole range at the
+    /// shipped defaults, any single pitch lights at most one dial. Which dial
+    /// changes at the band midpoints — a D more than ~350¢ flat *is* a sharp G
+    /// as far as physics can say — but it is never two at once, whichever
+    /// engine the hybrid picked for the frame.
+    ///
+    /// The sweep runs well above the top string on purpose: that's where this
+    /// found a real hole. A note above every band (a stopped A5, say) casts
+    /// shadows at ÷2 and ÷3 — landing at A −0¢ and D −2¢, two dials reading
+    /// plausibly in tune — and their 3:2 ratio is invisible to the octave
+    /// filter. The sentinel detector exists because of this test.
+    func testAnySinglePitchLightsAtMostOneDial() {
+        var hz = 130.0
+        while hz < 2000 {
+            let bank = violinBank(engine: .hybrid)
+            let results = analyze(bank, signal: mix([tone(hz, count: signalLength)]))
+            let dials = lit(results)
+            XCTAssertLessThanOrEqual(
+                dials.count, 1, "\(hz) Hz lit dials \(dials.sorted())")
+            hz *= pow(2, 1.0 / 12)  // one semitone per step
+        }
+    }
+
     // MARK: - Reconfiguration
 
     /// Switching engines mid-stream must work — it's a segmented control on

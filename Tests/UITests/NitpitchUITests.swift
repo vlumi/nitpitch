@@ -86,6 +86,45 @@ final class NitpitchUITests: XCTestCase {
             "back from the chooser should land on the tuner")
     }
 
+    // MARK: - The string view
+
+    /// A grid cell opens its string full screen; the arrows walk the strings;
+    /// back returns to the grid.
+    func testCellOpensStringViewAndArrowsWalkStrings() {
+        let app = launch()
+        openViolinGrid(app)
+
+        let cell = app.descendants(matching: .any)["grid.cell.0"].firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        cell.tap()
+
+        let target = app.descendants(matching: .any)["string.target"]
+        XCTAssertTrue(target.waitForExistence(timeout: 5))
+        XCTAssertTrue(target.label.hasPrefix("G"), "first violin string is G3")
+
+        let next = app.descendants(matching: .any)["string.next"]
+        next.tap()
+        XCTAssertTrue(target.label.hasPrefix("D"), "next string up is D4")
+
+        // The first string has no previous; walking back down re-enables it.
+        let previous = app.descendants(matching: .any)["string.prev"]
+        previous.tap()
+        XCTAssertTrue(target.label.hasPrefix("G"))
+        XCTAssertFalse(previous.isEnabled, "no string below G3")
+
+        // For the eye as much as the assertions — the layout is judged from
+        // the report.
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "string-view"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.strings"].waitForExistence(timeout: 5),
+            "back from a string should land on the grid")
+    }
+
     // MARK: - Favourites
 
     /// The point of the row: one tap from launch to the violin's strings,

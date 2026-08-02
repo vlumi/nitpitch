@@ -40,8 +40,9 @@ public final class StringTunerViewModel: ObservableObject {
     /// of cost a grid of N dials can't afford.
     @Published public private(set) var level: Double = 0
 
-    /// The string this dial answers for.
-    public let target: Note
+    /// The string this dial answers for. Grid cells never change it; the
+    /// string view retargets when swiping between strings.
+    public private(set) var target: Note
 
     /// The last frame's raw detector output, before smoothing and before the
     /// state machine decides whether to show anything — the difference between
@@ -89,6 +90,15 @@ public final class StringTunerViewModel: ObservableObject {
         self.reference = reference
         self.band = band
         smoother.reset()
+    }
+
+    /// Aim at a different string — the string view swiping to a neighbour.
+    /// The smoothing resets: a filter primed on the old target would blend
+    /// two strings into one glide.
+    public func retarget(_ note: Note) {
+        target = note
+        smoother.reset()
+        if state != .idle { state = .waiting }
     }
 
     /// Start showing readings. Under `-demo` this runs the synthetic swing;

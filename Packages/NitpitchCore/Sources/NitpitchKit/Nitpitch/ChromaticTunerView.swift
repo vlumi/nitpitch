@@ -197,31 +197,12 @@ public struct ChromaticTunerView: View {
     /// compact enough to appear twice on an iPhone SE.
     private static let noteFontSize: CGFloat = 46
 
-    /// The note: scientific designator, with the chosen convention's name
-    /// beside it when it differs. See `Note.readoutLabel(in:)` for why the two
-    /// are kept apart rather than combined into one spelling.
+    /// The note being heard, via the shared label.
     private func noteLabel(_ note: Note) -> some View {
-        let label = note.readoutLabel(in: settings.naming)
-        return HStack(alignment: .firstTextBaseline, spacing: 6) {
-            // The octave is subscripted so the letter stays the thing you read
-            // at a glance — the number qualifies it rather than competing.
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(verbatim: label.name)
-                    .font(.system(size: Self.noteFontSize, weight: .light, design: .rounded))
-                Text(verbatim: "\(label.octave)")
-                    .font(.system(size: Self.noteFontSize * 0.44, weight: .light, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .baselineOffset(-Self.noteFontSize * 0.06)
-            }
-            if let alternate = label.alternate {
-                Text(verbatim: "(\(alternate))")
-                    .font(.system(size: Self.noteFontSize * 0.40, weight: .light))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityIdentifier("tuner.note")
-        .accessibilityLabel(note.accessibleName(in: settings.naming))
+        NoteNameLabel(note: note, naming: settings.naming, fontSize: Self.noteFontSize)
+            .accessibilityElement(children: .ignore)
+            .accessibilityIdentifier("tuner.note")
+            .accessibilityLabel(note.accessibleName(in: settings.naming))
     }
 
     @ViewBuilder

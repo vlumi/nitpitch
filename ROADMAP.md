@@ -273,6 +273,17 @@ grid for fine work, wide-band single-string view for coarse. The out-of-tune
 behaviour still needs a deliberate test: detune a string past 60¢ and confirm
 going dark reads as "zoom in", not "broken".
 
+**Spectral's second structural limit: it needs the string's own bottom.** The
+anchor rule (a reading must include the 1st or 2nd harmonic with real energy —
+the guard that stopped a neighbour's 11th harmonic masquerading as A's 5th)
+means a source whose low partials don't reach the microphone can't read at
+all. Bass E is the worst case: 41 and 82 Hz, right under a voice-processed
+mic's rolloff — observed with an unamplified bass into the Mac mic, which
+barely read. MPM has no such need (see the missing-fundamental test), so
+mic'd bass is MPM territory; through a DI/line-in or the phone's
+`.measurement` mode, 82 Hz should survive and spectral should recover.
+Untested prediction as of 2026-08-02 — the amp/phone session decides.
+
 What remains of the original sketch below: the beat-rate display and pure
 (just-intonation) fifths as the reference for interval tuning. Both are UI and
 music-theory work on top of the estimator, not DSP.

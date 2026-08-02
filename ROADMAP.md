@@ -37,6 +37,10 @@ Instrument = one YOU OWN: "Strat", "Acoustic", "My Violin" — a named
              waiting as you left it. One is auto-created per template
              ("My Guitar"), so nobody meets the plural until they own
              a plural: "Add another guitar…" is where it appears.
+             THE STRING COUNT IS PART OF THE INSTRUMENT — it's a
+             physical fact, set when you add one (a 7-string guitar is
+             added as one), changed by editing the instrument, never by
+             a tuning.
 Preset     = a frozen setup under the USER'S name ("Bach No. 1").
              Not a place you visit — a stamp you LOAD onto an
              instrument, after which everything is freely tweakable.
@@ -84,13 +88,13 @@ Chromatic launch  (unchanged: immediately usable, no setup)
 ├── favourites row: [My Violin] [Strat] [Acoustic] …   ← ONE tap, as you
 │                                                        left it
 └── "Instruments…" — pushed, not a sheet
-        Your instruments (manage / reorder / add another)
+        Your instruments (rename / string count / reorder / add another)
         Bowed / Fretted / … templates → opens (creating if first time)
                                         that template's default instance
         Import preset…                 (paste link / scan QR)
 
 Grid — header "Strat · Bach No. 1", or "· Drop D (edited)"; 🔒 if locked
-├── tuning menu: known tunings · load preset · Customize… · Save as preset…
+├── tuning menu: known tunings · load preset · Save as preset…
 ├── reference stepper
 └── tap a cell → String view
 
@@ -113,9 +117,13 @@ Decisions this draft takes, and why:
   one string full screen, so its target is editable right there. Retuning
   a string of "Drop D" relabels the instrument's tuning *Custom* — named
   tunings are never edited in place — and "Save as preset…" is how Custom
-  gets a name. (Changing the string *count* — 7-string, 5-string bass —
-  is the one thing that doesn't fit a per-string stepper; that's
-  Customize…, a plain list editor, and can come later.)
+  gets a name. Tunings are purely about *pitches*: the string count
+  belongs to the instrument, so the once-awkward "Customize…" list editor
+  disappears from the tuning menu entirely.
+- **Presets that don't fit your instrument don't offer themselves.** A
+  7-string preset on a 6-string Strat is a type error, not a runtime
+  surprise: it lists disabled, with the reason ("7 strings"). This closes
+  what an earlier draft left open.
 - **Locked controls are doors, not corpses** — on a locked *instrument*,
   since that's the only lock left. Never mutating, never ignoring: the
   novice discovers the way forward with the only gesture anyone tries
@@ -138,9 +146,7 @@ Decisions this draft takes, and why:
   way — "Strat" is what it means to you, not what the factory called it.
 
 Open, deliberately: favourites-row capacity (cap at ~4, overflow scrolls?),
-whether presets and instruments sync via iCloud or stay per-device, and
-whether loading a preset whose string count differs from the instrument's
-current tuning deserves a note ("this preset has 7 strings") or just works.
+and whether presets and instruments sync via iCloud or stay per-device.
 
 #### Build order
 
@@ -154,6 +160,8 @@ Each step useful on its own, none blocked by the later ones:
    Drop D et al.; the instance replaces "last-used memory" — it *is* the
    memory). "Add another guitar…", rename, and the padlock ride along.
 5. **Per-string target editing** in the string view; Custom relabeling.
+   String counts ride with instrument creation/editing (step 4), so no
+   separate tuning editor exists at all.
 6. **Presets**: save, load, name; then URL/QR share + import.
 
 ### The string view (enlarged single string)

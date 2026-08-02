@@ -146,23 +146,24 @@ Decisions this draft takes, and why:
   way — "Strat" is what it means to you, not what the factory called it.
 
 Open, deliberately: favourites-row capacity (cap at ~4, overflow scrolls?),
-and whether presets and instruments sync via iCloud or stay per-device.
+whether presets and instruments sync via iCloud or stay per-device, and
+whether favourite *presets* return one day — a chip that loads a preset onto
+a remembered instrument. Instruments cover the one-tap need first; the chip
+kind can wait for a real itch.
 
 #### Build order
 
-Each step useful on its own, none blocked by the later ones:
+Steps 1–2 (pushed chooser, favourites chips) have shipped. Each remaining
+step is useful on its own, none blocked by the later ones:
 
-1. **Push the chooser** (small; fixes the back-stack today).
-2. **Favourites row** — chips for the default instances; solves the
-   two-tap pain before instances are even a stored thing.
-3. **String view** (already owed — see below).
-4. **Instrument instances + tuning catalog** (one default per template;
+1. **String view** (already owed — see below).
+2. **Instrument instances + tuning catalog** (one default per template;
    Drop D et al.; the instance replaces "last-used memory" — it *is* the
    memory). "Add another guitar…", rename, and the padlock ride along.
-5. **Per-string target editing** in the string view; Custom relabeling.
-   String counts ride with instrument creation/editing (step 4), so no
+3. **Per-string target editing** in the string view; Custom relabeling.
+   String counts ride with instrument creation/editing (step 2), so no
    separate tuning editor exists at all.
-6. **Presets**: save, load, name; then URL/QR share + import.
+4. **Presets**: save, load, name; then URL/QR share + import.
 
 ### The string view (enlarged single string)
 

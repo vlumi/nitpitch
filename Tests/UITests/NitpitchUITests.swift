@@ -69,6 +69,68 @@ final class NitpitchUITests: XCTestCase {
         openViolinGrid(app)
     }
 
+    /// The chooser is pushed, not presented: back from a grid lands on the
+    /// list you chose from, then on the tuner — the stack you walked.
+    func testBackFromGridReturnsToTheChooser() {
+        let app = launch()
+        openViolinGrid(app)
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["chooser.violin"].waitForExistence(timeout: 5),
+            "back from the grid should land on the chooser")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuner.instrument"].waitForExistence(timeout: 5),
+            "back from the chooser should land on the tuner")
+    }
+
+    // MARK: - Favourites
+
+    /// The point of the row: one tap from launch to the violin's strings,
+    /// no list in between. Violin starts pinned.
+    func testFavoriteChipGoesStraightToTheGrid() {
+        let app = launch()
+        let chip = app.descendants(matching: .any)["favorite.violin"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        chip.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.strings"].waitForExistence(timeout: 5))
+        // And back is ONE step to the tuner — the chip skipped the chooser,
+        // so the stack must have too.
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuner.instrument"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["chooser.violin"].exists)
+    }
+
+    /// Pinning in the chooser puts a chip on the launch screen; unpinning
+    /// removes it.
+    func testPinningFromTheChooser() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+
+        let pin = app.descendants(matching: .any)["chooser.pin.guitar"]
+        XCTAssertTrue(pin.waitForExistence(timeout: 5))
+        pin.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["favorite.guitar"].waitForExistence(timeout: 5),
+            "pinning should add a chip")
+
+        button.tap()
+        pin.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertFalse(
+            app.descendants(matching: .any)["favorite.guitar"].exists,
+            "unpinning should remove the chip")
+    }
+
     // MARK: - Detector diagnostics
 
     /// The diagnostics screen is gated on `-debug`, and the gate is the only

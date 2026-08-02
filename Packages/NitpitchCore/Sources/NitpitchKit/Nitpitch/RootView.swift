@@ -3,10 +3,13 @@ import SwiftUI
 
 /// Where the app can navigate to.
 ///
-/// One case today. The enlarged single-string view (ROADMAP § 1) becomes the
-/// second, which is why this is a typed path rather than a `NavigationPath` —
-/// popping to a known point stays a one-liner.
+/// The enlarged single-string view (ROADMAP § 1) joins later, which is why
+/// this is a typed path rather than a `NavigationPath` — popping to a known
+/// point stays a one-liner.
 public enum TunerRoute: Hashable {
+    /// The instrument list. Pushed, not presented: back from a grid lands
+    /// here, on the list you chose from, the way the mental model expects.
+    case chooser
     case instrument(Instrument)
 }
 
@@ -28,12 +31,21 @@ public struct RootView: View {
 
     public var body: some View {
         NavigationStack(path: $path) {
-            ChromaticTunerView(settings: settings, audio: audio) { instrument in
-                settings.instrument = instrument
-                path.append(.instrument(instrument))
-            }
+            ChromaticTunerView(
+                settings: settings, audio: audio,
+                onOpenChooser: { path.append(.chooser) },
+                onChooseInstrument: { instrument in
+                    settings.instrument = instrument
+                    path.append(.instrument(instrument))
+                }
+            )
             .navigationDestination(for: TunerRoute.self) { route in
                 switch route {
+                case .chooser:
+                    InstrumentChooser(settings: settings) { instrument in
+                        settings.instrument = instrument
+                        path.append(.instrument(instrument))
+                    }
                 case .instrument(let instrument):
                     InstrumentGridView(
                         instrument: instrument, audio: audio, settings: settings,

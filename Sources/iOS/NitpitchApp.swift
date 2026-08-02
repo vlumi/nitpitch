@@ -7,10 +7,14 @@ struct NitpitchApp: App {
     // LaunchStores is the single isolation gate: under -uitest-clean these
     // swap to a wiped ephemeral suite (see LaunchStores).
     @StateObject private var settings = Settings(defaults: LaunchStores.defaults)
+    /// One microphone for the whole app — see `AudioSessionController` for why
+    /// screens subscribe to it rather than each starting their own engine.
+    @StateObject private var audio = AudioSessionController()
 
     var body: some Scene {
         WindowGroup {
-            NitpitchView(settings: settings)
+            NitpitchView(settings: settings, audio: audio)
+                .capturesWhileActive(audio)
         }
     }
 }

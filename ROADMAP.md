@@ -325,13 +325,37 @@ inform.
   a buffer does the rest. The design question is playback against capture —
   either detection suspends while a tone sounds, or the detector hears the
   app's own output and locks onto it.
-- **String-specific mode** — lock to one open string and show only distance to
-  it, instead of resolving chromatically. A slack string reads as a different
-  note entirely: a new E can sound nearer C♯, and "C♯ +12¢" is true but useless
-  when what you need is "E, 340 cents flat, keep going". A natural stepping
-  stone toward the double-stop mode above, since it establishes per-string
-  targeting in the UI — which is the same selection problem a fifth needs
-  solved twice.
+- **String-specific mode** — largely absorbed by § 2, which gives every string
+  its own dial. What remains distinct is the *slack string* case: a new E can
+  sound nearer C♯, and "C♯ +12¢" is true but useless when what you need is
+  "E, 340 cents flat, keep going". § 2's midpoint bands catch a string within
+  ±2 to ±3.5 semitones; anything slacker still needs an explicit "I am tuning
+  *this* string, whatever it currently sounds like" mode.
+- **Intonation, for fretted instruments** — whether a string plays in tune
+  *along its length*, not just open. If the bridge saddle sits wrong, the open
+  E can be perfect while the 12th fret is sharp: the frets assume a scale
+  length the string isn't matching. Setting it is a standard guitar and bass
+  adjustment — compare the open string against the 12th-fret note or harmonic,
+  move the saddle, repeat.
+
+  The natural home is the enlarged single-string view (§ 2), showing **two
+  readings for one string**: its open target and whatever is being played on
+  it now, with the difference between them being the thing you're correcting.
+  That's a display question rather than a DSP one — the detector already
+  reports any note it hears; what's missing is the second reference to compare
+  against. Fretted-only, so it belongs to the instrument, not to every dial.
+- **Shareable presets** — a named tuning (instrument, strings, reference
+  pitch, temperament) exported as a link or QR code, so a teacher can hand a
+  class the same setup, or a band can agree on A=442 and an open tuning
+  without dictating it string by string. Wants the tunings model from § 2
+  first, since a preset is a tuning plus its context; a QR code is then just
+  an encoding of that. Nothing here needs a server — the payload is small
+  enough to live in the URL.
+- **Lock the settings** — a way to freeze the reference pitch and tuning so a
+  stray tap mid-session can't move them. Most valuable exactly where the app
+  is most exposed: on a stand, in a case, being handled with one hand while
+  the other holds a bow. Small to build; the design question is how you get
+  *out* of it without that being just as easy to trigger accidentally.
 - **Fine-tuning display** — a strobe or a beat-frequency view, which is how
   professionals actually tune to a fraction of a cent. Shares machinery with the
   beat detection above.

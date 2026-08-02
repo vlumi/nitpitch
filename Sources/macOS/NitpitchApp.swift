@@ -18,16 +18,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct NitpitchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var settings = Settings(defaults: LaunchStores.defaults)
+    /// One microphone for the whole app — see `AudioSessionController` for why
+    /// screens subscribe to it rather than each starting their own engine.
+    @StateObject private var audio = AudioSessionController()
     @Environment(\.openWindow) private var openWindow
 
     private static let aboutWindowID = "about"
 
     var body: some Scene {
         WindowGroup {
-            NitpitchView(settings: settings)
+            NitpitchView(settings: settings, audio: audio)
                 // The readout is a fixed-aspect instrument panel; a resizable
                 // window is fine but it should open at a sane size.
                 .frame(minWidth: 420, minHeight: 320)
+                .capturesWhileActive(audio)
         }
         .windowResizability(.contentMinSize)
         .commands {

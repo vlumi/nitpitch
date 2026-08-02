@@ -51,12 +51,17 @@ nitpitch/
 ├── Sources/Shared/                 Assets shared by both targets (the AppIcon set)
 └── Packages/NitpitchCore/          Swift package — most of the code
     ├── Sources/NitpitchCore/       Pure logic: DSP + music theory, tested + coverage-gated
-    │   ├── DSP/                    PitchDetector (MPM), Detection constants, ReadingSmoother
-    │   └── Music/                  Pitch/Note/ReferencePitch, Instrument
+    │   ├── DSP/                    PitchDetector (MPM), HarmonicEstimator (spectral),
+    │   │                           DetectorBank (engines + arbitration), SubharmonicFilter,
+    │   │                           Detection constants, DetectionTuning, ReadingSmoother
+    │   └── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
     └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
-        ├── Audio/AudioInput.swift
-        ├── App/                    Settings, LaunchStores
-        └── Nitpitch/               NitpitchViewModel, NitpitchView
+        ├── Audio/                  AudioInput, AudioSessionController (one engine, fan-out)
+        ├── App/                    Settings + SettingsView, DetectionSettings, LaunchStores,
+        │                           AppearancePreference
+        └── Nitpitch/               RootView, ChromaticTunerView, InstrumentGridView,
+                                    StringTuners + StringTunerViewModel, DialView + CompactDial,
+                                    DetectorDebugView
 ```
 
 ### How detection works, and why
@@ -104,6 +109,42 @@ stop MPM invents subharmonic ghosts, so mixing engines within one frame would
 reinsert exactly what spectral prevents. The debug screen's Engine switch
 exposes the pure modes for diagnosis.
 
+### Per-string detection: the settled decisions
+
+Each one below was a real observed failure, has a regression test, and reads
+as removable to fresh eyes. **It isn't.**
+
+- **Bands split at the midpoint between neighbouring strings**, in MIDI space
+  (pitch is logarithmic), with 4 semitones of headroom past the outermost.
+  Not a fixed ±N: fixed widths leave dead zones wherever strings sit further
+  apart than 2N, and a string slack enough to fall in one lights nothing —
+  exactly when it most needs finding. Midpoints tile for any tuning,
+  including custom ones. In practice each string catches ±200–400¢ depending
+  on the instrument.
+- **A detector never reports outside its band, and clarity is clamped to 1.**
+  `minLag` headroom plus interpolation can walk a peak past the band edge
+  (D4 reported 197 Hz for a played A4), and uncapped interpolated clarity
+  (1.286, observed) defeats the very gate it's measured against.
+- **`SubharmonicFilter`: a reading that integer-divides a higher reading is a
+  shadow and goes dark.** Playing A lit G at its exact half. The tempting
+  rule — distance from target — is wrong: guitar's high E4 makes the E2
+  detector read a *perfect* E2 two octaves down.
+- **A sentinel detector watches above the top string's band.** A note above
+  every band (a stopped A5) casts ÷2 and ÷3 shadows in a 3:2 ratio the
+  octave filter can't fault — landing at A −0¢ and D −2¢, plausibly in tune.
+  The sentinel hands the filter the true fundamental and is never displayed.
+- **Spectral readings must be anchored by the string's own 1st or 2nd
+  harmonic** with real energy. G's 11th harmonic sits 35¢ inside A's
+  5th-harmonic window; a foreign harmonic masquerading in an upper slot
+  never brings a fundamental with it.
+- **Dials light only after 2 consecutive frames agree** (one hop ≈ 46 ms at
+  first light-up, instant tracking after) — single-frame coincidences never
+  reach the screen. All thresholds live in `DetectionTuning`; the debug
+  screen's sliders are their calibration rig.
+
+The swept guarantee tying it together: **one pitch, at most one dial**, at
+every semitone from 130 to 2000 Hz (`testAnySinglePitchLightsAtMostOneDial`).
+
 ## Commands
 
 ```sh
@@ -144,6 +185,15 @@ Two things the Mac loop can't reach, which need an actual iPhone:
   equivalent of `.measurement` to opt out, so it's noisier than the detector
   deserves. Don't tune the clarity threshold against it — use an external mic or
   interface, and confirm on a phone.
+
+**Cross-checking absolute accuracy** (how v0.1 was verified): compare against an
+independent tuner twice — once at *different* references (Nitpitch at 440, the
+other at 442 gave the constant +7.85¢ = `1200·log₂(442/440)` offset), once at
+the same. The match confirms the absolute reading; the offset confirms the
+reference moves every reading by exactly what it should, and rules out a shared
+bias that a same-reference comparison alone could hide. An offset that holds
+flat across all strings is the tell — a detector fault would drift with
+frequency.
 
 ### The detector diagnostics screen
 

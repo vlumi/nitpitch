@@ -60,4 +60,12 @@ public struct DetectionResult: Equatable, Sendable {
     }
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)
+
+    /// The frame's RMS as a 0...1 meter value: a short log-ish curve, because
+    /// RMS is tiny for quiet playing and a linear meter would sit near zero
+    /// for everything but a loud bow. The one curve every meter in the app
+    /// uses, so they all agree about how loud "loud" looks.
+    public var displayLevel: Double {
+        min(1, sqrt(rms) * 3)
+    }
 }

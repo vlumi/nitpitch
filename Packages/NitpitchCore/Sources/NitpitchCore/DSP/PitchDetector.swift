@@ -9,7 +9,7 @@ import Foundation
 /// harmonics than in the fundamental, so the tallest FFT bin is routinely the
 /// 2nd or 3rd harmonic — an octave error, the classic tuner bug. The NSDF is
 /// normalized so the *fundamental* period gives the highest peak regardless of
-/// harmonic content, and `Detection.peakPickThreshold` biases ties toward the
+/// harmonic content, and the peak-pick threshold biases ties toward the
 /// lower frequency. Cent-level resolution comes from interpolating the peak,
 /// not from FFT bin width, so a 4096-sample window resolves well under a cent
 /// without a multi-second buffer.

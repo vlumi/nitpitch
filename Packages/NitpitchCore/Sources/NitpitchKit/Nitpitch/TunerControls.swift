@@ -2,7 +2,7 @@ import NitpitchCore
 import SwiftUI
 
 // Controls shared by every tuning screen. They live apart from any one
-// screen because the per-string grid (ROADMAP § 2) reuses all three.
+// screen because the per-string grid reuses all three.
 
 /// The light strip: logarithmically spaced dots, centre lit when in tune.
 ///

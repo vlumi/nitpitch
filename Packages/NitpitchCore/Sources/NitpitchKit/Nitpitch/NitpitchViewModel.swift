@@ -7,7 +7,7 @@ import NitpitchCore
 ///
 /// It does *not* own the capture. `AudioSessionController` does, so that
 /// several of these can be live at once — one per string, once the grid lands
-/// (ROADMAP § 2) — all reading the same stream.
+/// — all reading the same stream.
 @MainActor
 public final class NitpitchViewModel: ObservableObject {
     /// What the display should currently show.
@@ -114,9 +114,7 @@ public final class NitpitchViewModel: ObservableObject {
     }
 
     private func consume(_ result: DetectionResult) {
-        // A short log-ish curve: RMS is tiny for quiet playing, and a linear
-        // meter would sit near zero for everything but a loud bow.
-        level = min(1, sqrt(result.rms) * 3)
+        level = result.displayLevel
 
         guard let hz = result.frequency else {
             quietFrames += 1

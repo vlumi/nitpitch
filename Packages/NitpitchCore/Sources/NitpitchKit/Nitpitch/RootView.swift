@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Where the app can navigate to.
 ///
-/// One case today. The enlarged single-string view (ROADMAP § 2) becomes the
+/// One case today. The enlarged single-string view (ROADMAP § 1) becomes the
 /// second, which is why this is a typed path rather than a `NavigationPath` —
 /// popping to a known point stays a one-liner.
 public enum TunerRoute: Hashable {

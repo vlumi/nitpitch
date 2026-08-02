@@ -28,7 +28,7 @@ public struct NitpitchView: View {
         VStack(spacing: 16) {
             header
             // Everything specific to one reading lives inside the dial, so the
-            // whole unit can be repeated — double-stop fifths (ROADMAP § 2)
+            // whole unit can be repeated — a dial per string (ROADMAP § 2)
             // needs two of these on one iPhone screen, and an SE leaves about
             // 195pt each. Reference and instrument stay outside: they apply to
             // both dials, and duplicating them would be actively confusing.

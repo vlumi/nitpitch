@@ -11,11 +11,109 @@ larger ideas.
 
 ## 1. Finishing v0.2
 
-### The enlarged single-string view
+### Design draft: from launch to one string
+
+The whole flow — instruments, tunings, presets, favourites — designed as one
+thing, because it is one thing. The organizing observation: the app hosts two
+different acts. **Setting up** (what am I tuning?) happens once per session;
+**tuning** happens constantly. Today's pain — two taps to reach the violin —
+is setup friction on a *repeated* setup, and that's exactly what a favourite
+is: a repeated setup converted into one tap.
+
+#### The model: one concept, not three
+
+```text
+Tuning   = ordered [MIDI] + its canonical name when it has one
+           ("Standard", "Drop D", "DADGAD") — or none, for Custom
+Preset   = instrument + tuning + reference (+ temperament, later),
+           saved under the USER'S name ("Bach No. 1", "Tomorrow's gig")
+Favourite = a preset pinned to the launch screen
+```
+
+A favourite is not a separate feature — it's a pinned preset. Sharing is not
+a separate feature — it's a preset serialized into a URL. The built-in
+one-tap chips ("Violin") are implicit presets (instrument + its standard
+tuning + current reference), so the launch row works before the preset
+editor even exists. `Instrument` stays a template: name, family, its catalog
+of known tunings, a default. The midpoint band scheme already accepts any
+string array, so custom tunings — including odd string counts — need no
+special-casing downstream.
+
+#### The navigation
+
+```text
+Chromatic launch  (unchanged: immediately usable, no setup)
+├── favourites row: [Violin] [Drop D] [Bach No.1] …   ← ONE tap to a grid
+└── "Instruments…" — pushed, not a sheet
+        Favourites (manage / reorder)
+        Bowed / Fretted / … lists    → grid, last-used tuning
+        Import preset…               (paste link / scan QR)
+
+Grid — header shows "Guitar · Drop D"; the tuning name is the control
+├── tuning menu: known tunings · saved presets for this instrument
+│                · Customize… · Save as preset…
+├── reference stepper (session-local, as today)
+└── tap a cell → String view
+
+String view (one string, full screen)
+├── full dial, wide-band listening — tracks a slipped peg from anywhere
+├── ◀ ▶ / swipe between strings; back → grid
+└── the string's TARGET is a stepper here: nudge D2 down to C2 and the
+    tuning forks to "Custom", non-destructively
+```
+
+Decisions this draft takes, and why:
+
+- **Push the chooser; drop the accordion.** The accordion's one advantage —
+  choosing tuning at instrument-choice time — is served better by favourites
+  (the repeat case) and by the grid header's tuning menu (the
+  change-of-mind case). With those, the chooser can stay a dumb list, and
+  back finally walks the path you came.
+- **Per-string editing lives in the string view.** "Choose individual
+  tunings for each string" needs no new screen: you're already looking at
+  one string full screen, so its target is editable right there. Retuning a
+  string of "Drop D" forks the tuning to *Custom* — named tunings are never
+  edited in place — and "Save as preset…" is how Custom gets a name.
+  (Changing the string *count* — 7-string, 5-string bass — is the one thing
+  that doesn't fit a per-string stepper; that's Customize…, a plain list
+  editor, and can come later.)
+- **A preset pins the reference but doesn't track it.** Opening "Bach No. 1"
+  sets A=442; nudging the stepper mid-session is session-local and marks the
+  preset as modified rather than rewriting it. Same non-destructive rule as
+  string edits.
+- **Sharing is a URL, and the site is the library.** A preset serializes
+  into a link fragment (small enough; no server) and renders as a QR code.
+  Importing — from a link or the camera — shows a preview ("Guitar ·
+  Open G · A=442") with *Use once* and *Save*. nitpitch.app hosts the long
+  tail — scordatura, historical setups — as those same links, so the
+  collection grows without app updates or App Review, and the in-app picker
+  stays uncluttered.
+- **The user's name stays separate from the tuning's name.** Two presets can
+  hold identical strings and differ only in purpose; renaming on save is the
+  expected move, not an edge case. The purpose-name is also what makes a
+  favourite worth its launch-screen pixels.
+
+Open, deliberately: favourites-row capacity (cap at ~4, overflow scrolls?),
+whether presets sync via iCloud or stay per-device, and how the settings
+lock (§ 4) interacts — locking probably freezes the active preset and
+reference together.
+
+#### Build order
+
+Each step useful on its own, none blocked by the later ones:
+
+1. **Push the chooser** (small; fixes the back-stack today).
+2. **Favourites row of implicit presets** — a pinned instrument is just its
+   id; solves the two-tap pain with no new model.
+3. **String view** (already owed — see below).
+4. **Tuning catalog + grid-header menu** (Drop D et al., last-used memory).
+5. **Per-string target editing** in the string view; Custom forking.
+6. **Presets**: save, name, pin; then the URL/QR share + import.
+
+### The string view (enlarged single string)
 
 Tap a cell in the grid to get one string full screen: the full dial, a back
-arrow to the grid, arrows/swipe to the neighbouring strings. The reference
-pitch stays available (it's a live adjustment); nothing else is repeated.
+arrow to the grid, arrows/swipe to the neighbouring strings.
 
 - **It shows only its own string.** If a different string sounds, the view
   stays blank rather than following the sound — automatic switching would
@@ -25,38 +123,11 @@ pitch stays available (it's a live adjustment); nothing else is repeated.
   to disambiguate against, it can run a wide MPM band — the whole
   instrument's range — and track a slipped peg from semitones away. The
   hybrid already *finds* a slack string in the grid; this is the better UX
-  for actually cranking it in: one big dial, no other cells competing for
-  the eye.
+  for actually cranking it in: one big dial, no other cells competing.
+- **It edits its own target** (see the design draft above): the same screen
+  answers "how far is this string from D2" and "make this string's target
+  C2".
 - Natural future home for the intonation feature (§ 4).
-
-### Unsettled: how the chooser and the grid relate
-
-The chooser presents as a **sheet**, so it dismisses before the grid appears
-and going back from the grid lands on the tuner, not on the chooser you came
-from. The presentation and the mental model disagree. Two ways out:
-
-- **Push the chooser instead of presenting it.** Tuner → chooser → grid, and
-  back walks that path in reverse.
-- **Fold the grid into the chooser as an accordion.** One list of
-  instruments, the selected one expanded to show its strings. Two levels
-  collapse into one, and there's a natural place for the tuning selector,
-  since instrument and tuning are one choice made together.
-
-The accordion is the more interesting and probably the better fit once
-tunings land — but it's the bigger change, so the sheet stands until the
-picture clarifies.
-
-### Tunings
-
-Drop D, DADGAD, open tunings and half-step-down are common enough that an
-instrument can't *be* one fixed array. An instrument needs a set of tunings
-with one selected, plus user-defined custom tunings — including their own
-string counts (7/8-string guitars, 5/6-string basses).
-
-Not designed yet. What's settled: the midpoint band scheme needs no
-per-tuning configuration, so an arbitrary custom tuning works without
-special-casing. And since instrument and tuning are one choice made together,
-they belong in the same step — see the chooser question above.
 
 ### Landscape reflow
 
@@ -185,26 +256,11 @@ everything else depends on, and worth putting in early.
   the existing targets). The design question is playback against capture:
   either detection suspends while a tone sounds, or the detector hears the
   app's own output and locks onto it.
-- **"I am tuning THIS string"** — the grid finds a slack string anywhere in
-  its own band (±200–400¢ depending on the instrument), but a string slacker
-  than that reads as its neighbour, because from pitch alone it *is* the
-  neighbour. The enlarged view (§ 1) is the answer: bound to one string,
-  whatever it currently sounds like.
 - **Intonation, for fretted instruments** — whether a string plays in tune
   *along its length*, not just open: compare the open string against the
   12th-fret note or harmonic, move the saddle, repeat. A display question,
   not DSP — the missing piece is showing two readings for one string (open
-  target and what's being played now). Belongs in the enlarged view.
-- **Shareable presets** — a named tuning (instrument, strings, reference,
-  temperament) as a link or QR code; a teacher hands a class the same setup.
-  Wants the tunings model first; the payload is small enough to live in the
-  URL, no server. **Ship only the obvious tunings in the app; host the long
-  tail on nitpitch.app** — scordatura and historical setups can grow without
-  an app update or App Review. **The user's name for a preset is not the
-  tuning's name**: what a player wants on the button is why they saved it —
-  "Bach Sonata No. 1", "Tomorrow's gig" — so the label is independent of the
-  tuning's identity, and renaming on save is the expected move. That also
-  makes presets the natural home for favourites.
+  target and what's being played now). Belongs in the string view (§ 1).
 - **Lock the settings** — freeze the reference and tuning so a stray tap
   mid-session can't move them. Most valuable exactly where the app is most
   exposed: on a stand, handled one-handed. Small to build; the design

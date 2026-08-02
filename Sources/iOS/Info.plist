@@ -25,7 +25,7 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere.</string>
+	<string>Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

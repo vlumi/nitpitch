@@ -10,11 +10,14 @@
     "Appearance" : {
       "comment" : "Setting: follow the system appearance, or force light\/dark"
     },
-    "Audio is analysed on your device and never recorded or sent anywhere." : {
+    "Audio is analyzed on your device and never recorded or sent anywhere." : {
       "comment" : "Privacy summary on the about screen"
     },
     "Bowed" : {
       "comment" : "Instrument picker section: bowed string instruments"
+    },
+    "Cancel" : {
+      "comment" : "Dismisses the instrument chooser without choosing"
     },
     "Dark" : {
       "comment" : "Appearance option: always dark"
@@ -29,7 +32,7 @@
       "comment" : "Footnote under the notation picker"
     },
     "Instrument" : {
-      "comment" : "Label for the instrument picker"
+      "comment" : "Title of the instrument chooser"
     },
     "Light" : {
       "comment" : "Appearance option: always light"
@@ -38,7 +41,7 @@
       "comment" : "Shown when the user denied microphone permission"
     },
     "MIT licensed." : {
-      "comment" : "Licence note on the about screen"
+      "comment" : "License note on the about screen"
     },
     "Nitpicking about pitch." : {
       "comment" : "Tagline on the about screen — the app's name is a pun on 'nitpick'"
@@ -66,6 +69,9 @@
     },
     "System" : {
       "comment" : "Appearance option: follow the system setting"
+    },
+    "Tune an instrument" : {
+      "comment" : "The button below the chromatic dial that opens the instrument chooser"
     },
     "Version %@" : {
       "comment" : "Version pill on the about screen; %@ is like '0.1.0 (12)'"

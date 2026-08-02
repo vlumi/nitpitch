@@ -90,6 +90,28 @@ chromatic tuner + instrument picker   ← launch, immediately usable
 The reference pitch stays on the tuning screens. It genuinely is an
 adjustment made in the moment, and it applies to every string at once.
 
+### Unsettled: how the chooser and the grid relate
+
+The chooser currently presents as a **sheet**, so it dismisses before the grid
+appears and going back from the grid lands on the tuner, not on the chooser
+you just came from. The presentation and the mental model disagree.
+
+Two ways out, both better than the current arrangement, and worth deciding
+once the grid is real rather than a placeholder:
+
+- **Push the chooser instead of presenting it.** Tuner → chooser → grid, and
+  back walks that path in reverse. One more screen in the stack, but every
+  step is where you'd expect.
+- **Fold the grid into the chooser as an accordion.** One list of instruments,
+  the selected one expanded to show its strings, only one open at a time. Two
+  levels collapse into one, and which instrument you're on is always visible.
+  This also has somewhere natural to put the tuning selector, since instrument
+  and tuning are one choice made together.
+
+The accordion is the more interesting of the two and probably the better fit
+once tunings and favourites land — but it's a bigger change to a screen that
+doesn't exist yet, so the sheet stands until the picture clarifies.
+
 ### The enlarged view
 
 Full screen, showing one string. A back arrow returns to the grid; arrows on

@@ -31,9 +31,9 @@ targets:
         # the export-compliance prompt.
         ITSAppUsesNonExemptEncryption: false
         # The microphone IS the instrument input — the app cannot function
-        # without it. Audio is analysed in-process frame by frame and never
+        # without it. Audio is analyzed in-process frame by frame and never
         # recorded, buffered to disk, or sent anywhere.
-        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere.
+        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.
         LSApplicationCategoryType: public.app-category.music
         UILaunchScreen:
           UIImageRespectsSafeAreaInsets: true
@@ -118,7 +118,7 @@ targets:
         # On the Mac the input is typically a line-in / audio interface rather
         # than the built-in mic (electric guitar and bass via a DI or preamp),
         # but macOS gates every input device behind the same microphone consent.
-        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analysed on-device and never recorded or sent anywhere.
+        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.
     settings:
       base:
         # Shares the iOS bundle ID for Universal Purchase: one App Store record

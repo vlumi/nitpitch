@@ -1,15 +1,22 @@
 import NitpitchCore
 import SwiftUI
 
-/// The tuner screen: the dial, the light strip, and the note readout.
+/// The launch screen: a chromatic tuner, and the way into an instrument.
 ///
-/// The dial's shapes live in `DialView.swift`; this file is the screen and its
-/// controls.
+/// Always chromatic, whatever instrument was last chosen. That makes the first
+/// screen immediately useful — anyone checking a single note is tuning within
+/// a second of opening the app — and it gives chromatic a home of its own
+/// rather than an odd entry in the instrument list. It *is* the
+/// no-instrument case: no known targets, resolving freely to whatever it
+/// hears.
 ///
-/// Accessibility identifiers are stable and kept in sync with `Tests/UITests`
-/// (`tuner.note`, `tuner.cents`, `tuner.status`, `tuner.instrument`,
-/// `tuner.naming`, `tuner.reference`).
-public struct NitpitchView: View {
+/// The dial's shapes live in `DialView.swift`, the shared controls in
+/// `TunerControls.swift`.
+///
+/// Accessibility identifiers are stable and kept in sync with `Tests/UITests`:
+/// `tuner.note`, `tuner.cents`, `tuner.status`, `tuner.instrument`,
+/// `tuner.reference`, `tuner.settings`.
+public struct ChromaticTunerView: View {
     @ObservedObject private var settings: Settings
     @StateObject private var model: NitpitchViewModel
     @State private var isShowingSettings = false
@@ -17,38 +24,40 @@ public struct NitpitchView: View {
     /// Mac, where this ambient value is unreliable under a forced scheme.
     @Environment(\.colorScheme) private var systemScheme
 
-    public init(settings: Settings, audio: AudioSessionController) {
+    /// Chooses an instrument, which is a navigation rather than a setting.
+    private let onChooseInstrument: (Instrument) -> Void
+
+    public init(
+        settings: Settings, audio: AudioSessionController,
+        onChooseInstrument: @escaping (Instrument) -> Void
+    ) {
         self.settings = settings
+        self.onChooseInstrument = onChooseInstrument
+        // Full band, not the saved instrument's: this screen is chromatic by
+        // definition, and an instrument is somewhere you navigate to.
         _model = StateObject(
             wrappedValue: NitpitchViewModel(
                 audio: audio,
-                reference: settings.reference, band: settings.instrument.band()))
+                reference: settings.reference, band: Detection.fullBand))
     }
 
     public var body: some View {
-        VStack(spacing: 16) {
-            header
-            // Everything specific to one reading lives inside the dial, so the
-            // whole unit can be repeated — a dial per string (ROADMAP § 2)
-            // needs two of these on one iPhone screen, and an SE leaves about
-            // 195pt each. Reference and instrument stay outside: they apply to
-            // both dials, and duplicating them would be actively confusing.
-            TunerDial(
-                cents: displayCents, inTune: isInTune, isReading: isReading,
-                readout: { readout })
-            ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
-            Spacer(minLength: 0)
+        GeometryReader { geo in
+            // One rule for both platforms rather than size classes, which
+            // macOS doesn't have and which lie under iPad Split View: a wide,
+            // short viewport puts the controls beside the dial instead of
+            // under it.
+            let isWide = geo.size.width > geo.size.height * 1.3
+            Group {
+                if isWide {
+                    sideBySideLayout
+                } else {
+                    stackedLayout
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
         .padding(24)
-        // Capped so the column stays a column on an iPad or a wide Mac window
-        // rather than stretching to the full width; all four orientations are
-        // supported, so this has to hold in landscape too.
-        .frame(maxWidth: 520)
-        // Top-aligned: with the column centred, any height change below the
-        // dial would still shift it, even with the readout pinned.
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // Forced onto the whole hierarchy; nil means follow the system.
-        .preferredColorScheme(settings.appearance.colorScheme)
         // The sheet needs a *concrete* scheme — see `appearanceSheet` for why
         // passing the optional through would strand it on the last choice.
         .appearanceSheet(
@@ -59,18 +68,67 @@ public struct NitpitchView: View {
         }
         .task { await model.attach() }
         .onDisappear { model.detach() }
-        .onChangeCompat(of: settings.instrument) { _ in reconfigure() }
+        // Only the reference matters here — the instrument doesn't change this
+        // screen's band, which is always full.
         .onChangeCompat(of: settings.reference) { _ in reconfigure() }
     }
 
-    private func reconfigure() {
-        model.configure(reference: settings.reference, band: settings.instrument.band())
+    /// Portrait: everything in one column.
+    private var stackedLayout: some View {
+        VStack(spacing: 16) {
+            header
+            dial
+            controls
+            Spacer(minLength: 0)
+        }
+        // Capped so the column stays a column on an iPad or a wide Mac window
+        // rather than stretching to the full width.
+        .frame(maxWidth: 520)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    /// The only chrome on the screen: what's being tuned, whether the app can
-    /// hear it, and the way into settings. Everything below this bar belongs
-    /// to the reading itself, which leaves the bottom free for the per-string
-    /// and tone-generator controls still to come.
+    /// Landscape: controls beside the dial, since vertical room is what's
+    /// scarce. The dial keeps the larger share — its radius is bounded by
+    /// width, so an even split would shrink the arc (see `DialView`).
+    private var sideBySideLayout: some View {
+        VStack(spacing: 12) {
+            header
+            HStack(alignment: .center, spacing: 24) {
+                dial
+                    .frame(maxWidth: .infinity)
+                controls
+                    .frame(maxWidth: 260)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: 900)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    /// Everything specific to one reading. Self-contained so the per-string
+    /// grid (ROADMAP § 2) can repeat it.
+    private var dial: some View {
+        TunerDial(
+            cents: displayCents, inTune: isInTune, isReading: isReading,
+            readout: { readout })
+    }
+
+    /// Applies to the reading rather than being part of it: the reference the
+    /// dial is measured against, and the way into an instrument.
+    private var controls: some View {
+        VStack(spacing: 16) {
+            ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
+            InstrumentButton(onChoose: onChooseInstrument)
+        }
+    }
+
+    private func reconfigure() {
+        model.configure(reference: settings.reference, band: Detection.fullBand)
+    }
+
+    /// Whether the app can hear anything, and the way into settings. The
+    /// instrument moved out of here and below the dial: choosing one is a
+    /// navigation, not a control, so it wants weight rather than a corner.
     private var header: some View {
         ZStack {
             // Centred independently of the items either side, so the meter
@@ -79,7 +137,6 @@ public struct NitpitchView: View {
             LevelMeter(level: model.level)
                 .frame(width: 72, height: 4)
             HStack {
-                instrumentPicker
                 Spacer()
                 // macOS reaches settings through the app menu (⌘,), so a gear
                 // in the window would be a second door to the same room.
@@ -175,32 +232,6 @@ public struct NitpitchView: View {
             .font(.title3)
             .foregroundStyle(.secondary)
             .accessibilityIdentifier(id)
-    }
-
-    /// Label-less in the header: the selected instrument's own name says what
-    /// the control is, and a "Instrument" prefix would just crowd the bar.
-    private var instrumentPicker: some View {
-        Picker(selection: $settings.instrument) {
-            // Sectioned so the ordering explains itself: bowed strings first
-            // (violin leads — the app's reason for existing), then fretted,
-            // each family running high to low. Ungrouped, that sequence reads
-            // as arbitrary.
-            ForEach(Instrument.grouped, id: \.family) { group in
-                Section {
-                    ForEach(group.instruments) { instrument in
-                        Text(LocalizedStringKey(instrument.name), bundle: .module)
-                            .tag(instrument)
-                    }
-                } header: {
-                    Text(LocalizedStringKey(group.family.name), bundle: .module)
-                }
-            }
-        } label: {
-            Text("Instrument", bundle: .module)
-        }
-        .pickerStyle(.menu)
-        .labelsHidden()
-        .accessibilityIdentifier("tuner.instrument")
     }
 
     private func centsLabel(_ cents: Double) -> String {

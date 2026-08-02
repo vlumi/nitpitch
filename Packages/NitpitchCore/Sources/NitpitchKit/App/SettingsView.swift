@@ -220,7 +220,7 @@ public struct AboutView: View {
             Divider().frame(maxWidth: 220)
 
             Text(
-                "Audio is analysed on your device and never recorded or sent anywhere.",
+                "Audio is analyzed on your device and never recorded or sent anywhere.",
                 bundle: .module
             )
             .font(.footnote)

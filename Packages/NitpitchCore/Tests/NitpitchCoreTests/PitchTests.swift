@@ -376,6 +376,35 @@ final class PitchTests: XCTestCase {
         }
     }
 
+    /// The extension rule: continue the template's interval pattern low-side,
+    /// flipping high when the floor is reached. Not a compromise — it derives
+    /// the real-world tunings.
+    func testStringCountExtensionDerivesRealTunings() {
+        // 5-string bass: low B0.
+        XCTAssertEqual(Instrument.bassGuitar.strings(count: 5), [23, 28, 33, 38, 43])
+        // 6-string bass: F#0 would be below the floor, so the sixth string
+        // goes HIGH — B0 E A D G + C3, the actual 6-string tuning, derived.
+        XCTAssertEqual(Instrument.bassGuitar.strings(count: 6), [23, 28, 33, 38, 43, 48])
+        // 7-string guitar: low B1. Matches the shipped template.
+        XCTAssertEqual(Instrument.guitar.strings(count: 7), Instrument.guitar7.strings)
+        // 8-string: low F#1. Matches the shipped template.
+        XCTAssertEqual(Instrument.guitar.strings(count: 8), Instrument.guitar8.strings)
+        // 9-string guitar: low C#1, the real extended-range convention.
+        XCTAssertEqual(Instrument.guitar.strings(count: 9).first, 25)
+    }
+
+    /// Trimming keeps the highest strings — the treble side is the melodic
+    /// one — and degenerate inputs pass through unharmed.
+    func testStringCountTrimAndEdges() {
+        XCTAssertEqual(Instrument.guitar.strings(count: 4), [50, 55, 59, 64])
+        XCTAssertEqual(Instrument.guitar.strings(count: 6), Instrument.guitar.strings)
+        XCTAssertEqual(Instrument.chromatic.strings(count: 5), [])
+        // Growth stops rather than violating the floor or ceiling: however
+        // many are asked for, every string stays in the target range.
+        let many = Instrument.bassGuitar.strings(count: 30)
+        XCTAssertTrue(many.allSatisfy { Detection.targetMIDIRange.contains($0) })
+    }
+
     /// Violin leads — it's the default and the app's reason for existing.
     func testViolinIsFirst() {
         XCTAssertEqual(Instrument.all.first, .violin)

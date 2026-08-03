@@ -22,6 +22,11 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Adding an instrument now asks how many strings — a 6-string bass or a
+  9-string guitar is a choice in the + menu, not a missing feature. Uncommon
+  counts follow the instrument's own tuning pattern, adding low strings
+  first and switching to the high side where low would fall below what the
+  app can hear (which is exactly how real 6-string basses are strung).
 - 7- and 8-string guitars and the 5-string bass join the instrument list —
   common variants offered directly rather than hidden behind configuration.
   The 8-string's F#1 and the 5-string's B0 are exactly the notes the

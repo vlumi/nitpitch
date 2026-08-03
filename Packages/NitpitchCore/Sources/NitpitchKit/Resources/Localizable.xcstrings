@@ -10,6 +10,12 @@
     "%lld across" : {
       "comment" : "Menu option for how many string dials fit across the grid"
     },
+    "%lld strings" : {
+      "comment" : "String-count choice when adding an instrument"
+    },
+    "%lld strings (standard)" : {
+      "comment" : "The template's own string count in the add menu"
+    },
     "5-string Bass" : {
       "comment" : "Instrument name"
     },

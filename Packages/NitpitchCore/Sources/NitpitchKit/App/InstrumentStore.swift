@@ -112,17 +112,20 @@ public final class InstrumentStore: ObservableObject {
     }
 
     /// "Add another guitar…" — a second instance of a template, named after
-    /// it ("Guitar 2") until renamed to what it really is ("Strat").
+    /// it ("Guitar 2") until renamed to what it really is ("Strat"). A
+    /// custom `stringCount` extends the template's tuning along its own
+    /// interval pattern (see `Instrument.strings(count:)`), so a 6-string
+    /// bass or a 9-string guitar is a creation choice, not a blocked shape.
     @discardableResult
-    public func add(of template: Instrument) -> InstrumentInstance {
+    public func add(of template: Instrument, stringCount: Int? = nil) -> InstrumentInstance {
         // Make sure the default exists first, so numbering reads naturally.
         _ = defaultInstance(for: template)
-        let count = instances.filter { $0.templateID == template.id }.count
+        let siblings = instances.filter { $0.templateID == template.id }.count
         let created = InstrumentInstance(
             id: UUID().uuidString,
             templateID: template.id,
-            name: "\(template.name) \(count + 1)",
-            strings: template.strings,
+            name: "\(template.name) \(siblings + 1)",
+            strings: stringCount.map(template.strings(count:)) ?? template.strings,
             referenceHz: seedReference().hz,
             isLocked: false,
             loadedPresetID: nil)
@@ -201,14 +204,10 @@ public final class InstrumentStore: ObservableObject {
         update(id: id) { $0.strings[index] = clamped }
     }
 
-    /// MIDI notes whose frequency at any offered reference stays inside
-    /// `Detection.fullBand`. The floor is B0 (23 ≈ 30.9 Hz at A=440) — a
-    /// 5-string bass's low string, and comfortably below bass drop D — the
-    /// same line the catalog's own tunings respect. Found the hard way: the
-    /// first floor was derived from an older, higher `fullBand`, and the
-    /// stepper refused D1 one semitone before the most common bass drop
-    /// tuning while the tuning menu happily set it.
-    public static let editableMIDIRange = 23...95
+    /// The shared target range (see `Detection.targetMIDIRange` for the
+    /// rationale) — kept as the store's own name because the clamp is this
+    /// type's contract with the stepper.
+    public static let editableMIDIRange = Detection.targetMIDIRange
 
     public func setReference(id: String, _ reference: ReferencePitch) {
         // Keeps the preset claim: drift shows as "(edited)", scope-aware —

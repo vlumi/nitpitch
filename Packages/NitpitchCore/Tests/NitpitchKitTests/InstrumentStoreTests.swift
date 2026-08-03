@@ -204,6 +204,16 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertEqual(store.instance(id: guitar.id)?.strings, dropD.strings)
     }
 
+    /// A custom count at creation: the 6-string bass exists the moment it's
+    /// asked for, bands and all.
+    func testAddWithCustomStringCount() {
+        let store = makeStore()
+        let six = store.add(of: .bassGuitar, stringCount: 6)
+        XCTAssertEqual(six.strings, [23, 28, 33, 38, 43, 48])
+        XCTAssertEqual(six.instrument.stringBands().count, 6)
+        XCTAssertEqual(six.tuningName, "Custom")
+    }
+
     func testRemoveDeletesAnAddedInstance() {
         let store = makeStore()
         let second = store.add(of: .guitar)

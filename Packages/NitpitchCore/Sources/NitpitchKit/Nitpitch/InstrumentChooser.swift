@@ -257,16 +257,29 @@ struct InstrumentChooser: View {
         .accessibilityIdentifier("chooser.more.\(entry.id)")
     }
 
-    /// The + in the toolbar: pick a type, get a fresh numbered instrument and
-    /// the rename dialog ready to name it what it really is.
+    /// The + in the toolbar: pick a type — and, for anything strung, how
+    /// many strings — then get a fresh numbered instrument and the rename
+    /// dialog ready to name it what it really is. Uncommon counts extend the
+    /// template's own interval pattern (see `Instrument.strings(count:)`),
+    /// so a 6-string bass is a creation choice, not a blocked shape.
     private var addMenu: some View {
         Menu {
             ForEach(Instrument.choosable, id: \.family) { group in
                 ForEach(group.instruments) { template in
-                    Button {
-                        let added = store.add(of: template)
-                        renameText = added.name
-                        renamingID = added.id
+                    Menu {
+                        ForEach(countOptions(for: template), id: \.self) { count in
+                            Button {
+                                let added = store.add(of: template, stringCount: count)
+                                renameText = added.name
+                                renamingID = added.id
+                            } label: {
+                                if count == template.strings.count {
+                                    Text("\(count) strings (standard)", bundle: .module)
+                                } else {
+                                    Text("\(count) strings", bundle: .module)
+                                }
+                            }
+                        }
                     } label: {
                         Text(LocalizedStringKey(template.name), bundle: .module)
                     }
@@ -277,6 +290,15 @@ struct InstrumentChooser: View {
         }
         .accessibilityIdentifier("chooser.add")
         .accessibilityLabel(Text("Add instrument", bundle: .module))
+    }
+
+    /// The counts worth offering: around the template's own, and only where
+    /// the extension rule can actually produce that many strings.
+    private func countOptions(for template: Instrument) -> [Int] {
+        let base = template.strings.count
+        return (max(2, base - 1)...(base + 4)).filter {
+            template.strings(count: $0).count == $0
+        }
     }
 
     private func beginRename(_ entry: InstrumentInstance, template: Instrument) {

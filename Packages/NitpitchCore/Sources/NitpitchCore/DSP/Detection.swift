@@ -3,9 +3,12 @@ import Foundation
 /// Tuning constants for the detector, in one place so they can be reasoned
 /// about together rather than scattered as literals.
 public enum Detection {
-    /// The widest band any instrument searches: E1 (41 Hz, bass low string, with
-    /// headroom below) up to well past a violin's stopped high notes.
-    public static let fullBand: ClosedRange<Double> = 38...2100
+    /// The widest band any instrument searches: from below a 5-string bass's
+    /// B0 (30.9 Hz) — which also covers bass drop D at 36.7 Hz — up to well
+    /// past a violin's stopped high notes. The floor is a detection-quality
+    /// line, not a hard one: the 4096-sample window holds ~2.8 periods of
+    /// 30 Hz, which MPM still resolves, but not much below that.
+    public static let fullBand: ClosedRange<Double> = 30...2100
 
     /// Analysis window, in samples, at 44.1 kHz.
     ///

@@ -20,7 +20,6 @@ struct StringView: View {
 
     @StateObject private var single: SingleStringTuner
     @State private var index: Int
-    @State private var isShowingLockDialog = false
 
     private let initial: InstrumentInstance
 
@@ -54,7 +53,6 @@ struct StringView: View {
                 tuner: single.tuner,
                 naming: settings.naming,
                 isLocked: instance.isLocked,
-                isShowingLockDialog: $isShowingLockDialog,
                 canStepTarget: { delta in canStepTarget(delta) },
                 stepTarget: { delta in stepTarget(delta) })
             stringSwitcher
@@ -64,22 +62,22 @@ struct StringView: View {
                     set: { store.setReference(id: instance.id, $0) }),
                 naming: settings.naming
             )
-            .lockedDoor(instance.isLocked, isPresenting: $isShowingLockDialog)
+            .disabled(instance.isLocked)
             Spacer(minLength: 0)
         }
         .padding(24)
         .frame(maxWidth: 520)
         .frame(maxWidth: .infinity, alignment: .center)
         .navigationTitle(instance.nameText)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) { lockButton }
+        }
         // No identifier on the container: applied here it stamps every child
         // element and clobbers their own ids (string.target went missing).
         .task { single.attach() }
         .onDisappear { single.detach() }
         .onChangeCompat(of: instance) { _ in
             single.apply(instance: instance, index: index, tuning: detection.tuning)
-        }
-        .lockDoorDialog(isPresented: $isShowingLockDialog) {
-            store.setLocked(id: instance.id, false)
         }
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
@@ -93,6 +91,22 @@ struct StringView: View {
                 step(value.translation.width < 0 ? 1 : -1)
             }
         )
+    }
+
+    /// The same ambient padlock as the grid's — the lock follows the
+    /// instrument, so it should look the same wherever the instrument is.
+    private var lockButton: some View {
+        Button {
+            store.setLocked(id: instance.id, !instance.isLocked)
+        } label: {
+            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
+                .foregroundStyle(
+                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityIdentifier("string.lock")
+        .accessibilityLabel(
+            instance.isLocked
+                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
     }
 
     /// ◀ dots ▶ — where you are among the strings, and the way sideways.
@@ -162,7 +176,6 @@ private struct StringDialPane: View {
     @ObservedObject var tuner: StringTunerViewModel
     let naming: NoteNaming
     let isLocked: Bool
-    @Binding var isShowingLockDialog: Bool
     let canStepTarget: (Int) -> Bool
     let stepTarget: (Int) -> Void
 
@@ -210,8 +223,7 @@ private struct StringDialPane: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .disabled(!canStepTarget(delta))
-        .lockedDoor(isLocked, isPresenting: $isShowingLockDialog)
+        .disabled(!canStepTarget(delta) || isLocked)
         .accessibilityIdentifier(id)
         .accessibilityLabel(
             delta < 0

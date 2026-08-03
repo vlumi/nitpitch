@@ -4,7 +4,7 @@ import NitpitchCore
 
 /// An instrument you own: "Strat", "Acoustic", "Violin" — a named instance of
 /// a template, holding its own mutable state, autosaved, waiting as you left
-/// it (ROADMAP § 1).
+/// it (AGENTS.md, "The tuning flow").
 ///
 /// The string array is the *current tuning*; its count is a physical fact of
 /// this instrument, set when it's added and changed only by editing the

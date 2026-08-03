@@ -62,7 +62,7 @@ struct InstrumentGridView: View {
     }
 
     var body: some View {
-        // The shape chooses the presentation (ROADMAP § 1): a wide viewport
+        // The shape chooses the presentation (AGENTS.md): a wide viewport
         // shows the strings as strings — horizontal strips, the light dots
         // carrying the tuning — because that's what wide dial cells were
         // already degenerating into, with a vestigial arc rattling inside.
@@ -121,7 +121,7 @@ struct InstrumentGridView: View {
         }
         .alert(Text("Save preset", bundle: .module), isPresented: $isSavingPreset) {
             TextField(text: $presetName) { Text("Name", bundle: .module) }
-            // The payload choice IS the save button (ROADMAP § 1): a preset
+            // The payload choice IS the save button (AGENTS.md): a preset
             // carries only what it was saved with, decided right here.
             Button {
                 attemptSave(includeReference: false)
@@ -240,8 +240,7 @@ struct InstrumentGridView: View {
         #endif
     }
 
-    /// Tuner order as displayed — ready to reverse when the instance is a
-    /// left-handed instrument (flipped string order, a coming feature).
+    /// Tuner order as displayed: low string first.
     var displayedTuners: [(index: Int, tuner: StringTunerViewModel)] {
         strings.tuners.enumerated().map { ($0.offset, $0.element) }
     }
@@ -376,12 +375,26 @@ struct InstrumentGridView: View {
     private var layoutMenu: some View {
         Menu {
             Picker(selection: $columns) {
+                // Auto is the default and must stay reachable — without this
+                // row, picking a fixed count was a one-way door.
+                Text("Auto", bundle: .module).tag(0)
                 ForEach(1...3, id: \.self) { count in
                     Text("\(count) across", bundle: .module).tag(count)
                 }
             } label: {
                 Text("Columns", bundle: .module)
             }
+
+            // The Mac's way into the strips: its window doesn't rotate, so
+            // the metaphor is a deliberate choice here, not a shape. A view
+            // switch, not a preference — which is why it lives in the layout
+            // menu while the strip *order* lives in Settings.
+            #if os(macOS)
+            Divider()
+            Toggle(isOn: $settings.stripsOnMac) {
+                Text("Strings as strips", bundle: .module)
+            }
+            #endif
 
             if LaunchStores.isDebug {
                 Divider()

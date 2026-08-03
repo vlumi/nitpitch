@@ -94,12 +94,11 @@ extension InstrumentGridView {
     /// The strings as strings: one horizontal strip each, stacked like the
     /// instrument's own strings across the display.
     func strips(for size: CGSize) -> some View {
-        // Direction is the viewer's call: low string on top ("as you look
-        // down, fat closest") or reversed ("as you play it" / tab order).
-        // Distinct from left-handedness, which will be the instrument's
-        // property and affect every view.
+        // Low string at the bottom by default — pitch intuition and tab
+        // order agree, and a violin has no view in which its strings stack
+        // vertically (see `Settings.stripsLowOnTop`).
         let ordered =
-            settings.stripsReversed ? displayedTuners.reversed() : displayedTuners
+            settings.stripsLowOnTop ? displayedTuners : displayedTuners.reversed()
         // Sized to FIT: a phone in landscape holds all four strips without
         // scrolling — around nine before the floor forces a scroll — and a
         // huge Mac window grows them. The chrome reservation is the shared

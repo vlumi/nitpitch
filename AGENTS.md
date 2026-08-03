@@ -145,6 +145,57 @@ as removable to fresh eyes. **It isn't.**
 The swept guarantee tying it together: **one pitch, at most one dial**, at
 every semitone from 130 to 2000 Hz (`testAnySinglePitchLightsAtMostOneDial`).
 
+### The tuning flow: the settled model
+
+The product model around the detection — converged over three design drafts
+and several field rounds. The changelog carries what shipped when; what's
+below is *why it is the way it is*, so fresh eyes don't redesign it back into
+one of the drafts that lost.
+
+- **An instrument is one you own**: a named instance of a template
+  ("Strat"), holding its own mutable state — tuning, reference, lock —
+  autosaved, waiting as you left it. The default instance per template is
+  created on first use, so a beginner never meets the concept; "add
+  another guitar" is where the plural appears. **The string count is part
+  of the instrument** — a physical fact, set when it's added (uncommon
+  counts extend the template's own interval pattern), never changed by a
+  tuning.
+- **A preset is a stamp, not a place**: it carries **only the fields it was
+  saved with** (tuning alone, or tuning + reference), decided at save time.
+  A catalog tuning is exactly a built-in preset that carries pitches and
+  nothing else, so "a tuning never moves the reference" holds by
+  construction. Loading copies values out; saving — with a replace confirm —
+  is the only way values flow back. Presets that don't fit the instrument
+  (template or string count) are never offered.
+- **Provenance, not protection**: the header pill names the loaded preset;
+  granular edits keep the claim and show "(edited)"; only an explicit menu
+  pick replaces it. Drift-clears-the-claim was tried first and made the
+  pill announce catalog tunings nobody picked. The tuning menu's checkmark
+  is identity — the row you picked — and an equals sign marks rows that
+  would change nothing if loaded.
+- **The padlock is ambient and silent**: a fixed toolbar toggle (grid and
+  string view alike) freezing the instrument's whole setup. Locked controls
+  simply dim — the closed lock over dimmed controls IS the explanation.
+  Dialog-per-touch ("unlock to make changes?") was designed and rejected:
+  popups on a music stand are exactly the wrong thing.
+- **Navigation is a pushed path; favorites are instruments.** Chromatic
+  root → instrument list → grid → string view, and back walks the same
+  path. Pinned chips jump straight to an instance; the instance
+  remembering its state is what makes one tap enough — a favorite-preset
+  chip would also have had to guess which guitar to load onto.
+- **Strips run low-at-bottom by default.** Pitch intuition and tab notation
+  agree, and a violin has no view in which its strings stack vertically at
+  all; "low string on top" (real only as the looking-down-a-fretted-neck
+  view) is a Settings preference. iOS enters the strips by device shape,
+  the Mac by a layout-menu toggle — a window edge-drag is not a request to
+  change metaphors. Handedness needs nothing anywhere: a lefty's mirrored
+  stringing and mirrored hold cancel, so string order is identical.
+- **The user's name is never the tuning's name.** Instruments and presets
+  carry the user's words verbatim ("Strat", "Bach No. 1"), never localized;
+  catalog names localize. A tuning's displayed name is derived by matching
+  pitches against the catalog — identity follows the values, so it can't
+  drift from what's strung.
+
 ## Commands
 
 ```sh

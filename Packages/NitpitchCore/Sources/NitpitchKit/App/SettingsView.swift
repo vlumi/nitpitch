@@ -1,7 +1,8 @@
 import NitpitchCore
 import SwiftUI
 
-/// Preferences you set once and forget: appearance and note notation.
+/// Preferences you set once and forget: appearance, note notation, and the
+/// string order in the strips view.
 ///
 /// Deliberately *not* the instrument or the reference pitch — those change
 /// between sessions and belong on the tuner screen where they're visible
@@ -51,6 +52,12 @@ public struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("settings.naming")
+
+            // Off by default: low at the bottom, as tabs are written.
+            Toggle(isOn: $settings.stripsLowOnTop) {
+                Text("Low string on top", bundle: .module)
+            }
+            .accessibilityIdentifier("settings.stripsLowOnTop")
         }
         .padding(20)
     }
@@ -94,6 +101,17 @@ public struct SettingsView: View {
                     }
                 } footer: {
                     Text("How note names are spelled.", bundle: .module)
+                }
+
+                Section {
+                    Toggle(isOn: $settings.stripsLowOnTop) {
+                        Text("Low string on top", bundle: .module)
+                    }
+                    .accessibilityIdentifier("settings.stripsLowOnTop")
+                } footer: {
+                    Text(
+                        "String order in the strips view. Off: lowest at the bottom, as tabs are written.",
+                        bundle: .module)
                 }
 
                 Section {

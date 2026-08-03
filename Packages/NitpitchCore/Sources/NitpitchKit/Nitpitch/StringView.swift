@@ -4,7 +4,7 @@ import SwiftUI
 /// One string, full screen: the full dial, the string's target as the
 /// readout, and everything the microphone hears measured against that target.
 ///
-/// This is the coarse-tuning home (ROADMAP § 1). Being bound to one string,
+/// This is the coarse-tuning home. Being bound to one string,
 /// it has no "which dial" ambiguity — so unlike a grid cell it listens to the
 /// *whole instrument's range*, and a peg slipped three semitones reads as
 /// "−300¢, keep going" instead of nothing. The flip side is intentional too:

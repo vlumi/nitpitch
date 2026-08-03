@@ -62,8 +62,13 @@ public struct ChromaticTunerView: View {
             // rather than thresholded — a squarish window gets one big
             // stacked tuner, a wide one gets the side-by-side as large as
             // the height allows.
-            let stacked = CGSize(width: 400, height: 580)
-            let wide = CGSize(width: 860, height: 400)
+            // Heights are the measured content — dial 168 (TunerDial.height)
+            // plus, stacked, 16pt spacing and ~140pt of controls — not
+            // padded guesses: overstating them is exactly what left a third
+            // of the window empty below the tuner (the dial-grid's cell had
+            // the same disease). Margins live outside, in the 24pt padding.
+            let stacked = CGSize(width: 400, height: 330)
+            let wide = CGSize(width: 860, height: 172)
             let stackedScale = min(
                 geo.size.width / stacked.width, geo.size.height / stacked.height)
             let wideScale = min(geo.size.width / wide.width, geo.size.height / wide.height)
@@ -77,11 +82,35 @@ public struct ChromaticTunerView: View {
                     stackedLayout
                 }
             }
-            .frame(width: design.width, height: design.height, alignment: .top)
-            .scaleEffect(scale, anchor: .top)
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            // On the Mac the slack frames the content — same rule as the
+            // dial grid: unfilled height is split around the tuner, not
+            // pooled below it. Phones keep reading from the top.
+            .frame(
+                width: design.width, height: design.height,
+                alignment: Self.canvasAlignment
+            )
+            .scaleEffect(scale, anchor: Self.canvasAnchor)
+            .frame(
+                width: geo.size.width, height: geo.size.height,
+                alignment: Self.canvasAlignment)
         }
         .padding(24)
+        // The header IS the toolbar now, rather than a hand-drawn imitation
+        // of one — the gear gets the system's size, position and tint for
+        // free, identical to the chooser's +. The meter rides the principal
+        // slot: whether the app can hear anything applies to the whole
+        // screen, so it belongs in the chrome, on the dial's axis.
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                LevelMeter(level: model.level)
+                    .frame(width: 72, height: 4)
+            }
+            // macOS reaches settings through the app menu (⌘,), so a gear
+            // in the window would be a second door to the same room.
+            #if !os(macOS)
+            ToolbarItem(placement: .primaryAction) { settingsButton }
+            #endif
+        }
         // The sheet needs a *concrete* scheme — see `appearanceSheet` for why
         // passing the optional through would strand it on the last choice.
         .appearanceSheet(
@@ -107,13 +136,30 @@ public struct ChromaticTunerView: View {
         #endif
     }
 
+    /// Where the canvas sits in the viewport, and the content in the canvas:
+    /// centred on the Mac (a window's unfilled height frames the tuner),
+    /// top-read on phones.
+    private static var canvasAlignment: Alignment {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
+        #endif
+    }
+
+    private static var canvasAnchor: UnitPoint {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
+        #endif
+    }
+
     /// Portrait: everything in one column.
     private var stackedLayout: some View {
         VStack(spacing: 16) {
-            header
             dial
             controls
-            Spacer(minLength: 0)
         }
         // Capped so the column stays a column on an iPad or a wide Mac window
         // rather than stretching to the full width.
@@ -125,15 +171,11 @@ public struct ChromaticTunerView: View {
     /// scarce. The dial keeps the larger share — its radius is bounded by
     /// width, so an even split would shrink the arc (see `DialView`).
     private var sideBySideLayout: some View {
-        VStack(spacing: 12) {
-            header
-            HStack(alignment: .center, spacing: 24) {
-                dial
-                    .frame(maxWidth: .infinity)
-                controls
-                    .frame(maxWidth: 260)
-            }
-            Spacer(minLength: 0)
+        HStack(alignment: .center, spacing: 24) {
+            dial
+                .frame(maxWidth: .infinity)
+            controls
+                .frame(maxWidth: 260)
         }
         .frame(maxWidth: 900)
         .frame(maxWidth: .infinity, alignment: .center)
@@ -183,41 +225,12 @@ public struct ChromaticTunerView: View {
         model.configure(reference: settings.reference, band: Detection.fullBand)
     }
 
-    /// Whether the app can hear anything, and the way into settings. The
-    /// instrument moved out of here and below the dial: choosing one is a
-    /// navigation, not a control, so it wants weight rather than a corner.
-    private var header: some View {
-        ZStack {
-            // Centred independently of the items either side, so the meter
-            // sits on the dial's axis rather than wherever the row's spacing
-            // happens to put it.
-            LevelMeter(level: model.level)
-                .frame(width: 72, height: 4)
-            HStack {
-                Spacer()
-                // macOS reaches settings through the app menu (⌘,), so a gear
-                // in the window would be a second door to the same room.
-                #if !os(macOS)
-                settingsButton
-                #endif
-            }
-        }
-    }
-
     private var settingsButton: some View {
         Button {
             isShowingSettings = true
         } label: {
             Image(systemName: "gearshape")
-                .font(.body)
-                .frame(width: 44, height: 34)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        // The root hides the system bar (its header IS the bar), so this is
-        // a hand-drawn toolbar button — it should look like the species it
-        // is, tinted like the chooser's +, not a grey ornament.
-        .foregroundStyle(.tint)
         .accessibilityIdentifier("tuner.settings")
         .accessibilityLabel(Text("Settings", bundle: .module))
     }

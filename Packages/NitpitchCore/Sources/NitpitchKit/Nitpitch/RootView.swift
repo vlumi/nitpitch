@@ -71,12 +71,18 @@ public struct RootView: View {
                     }
                 }
             }
-            // The root has its own header; a system bar above it would be a
-            // second, empty row of chrome. Destinations keep theirs, which is
-            // where the back button lives.
-            #if os(iOS)
-            .toolbar(.hidden, for: .navigationBar)
-            #endif
+            // The root's header IS the system bar now — the meter rides its
+            // principal slot and the gear is a real toolbar item (see
+            // `ChromaticTunerView`), so hiding it would hide the header.
+        }
+        // The demo route (`-demo-open violin`): straight onto the screen
+        // whose layout is being judged. Pushed a beat after launch — seeding
+        // the path any earlier (init, even `onAppear`) reliably left the
+        // macOS window unmade.
+        .task {
+            guard let route = LaunchStores.demoRoute, path.isEmpty else { return }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            path = [.instrument(route)]
         }
         // Forced onto the whole hierarchy, destinations included; nil follows
         // the system.

@@ -20,6 +20,19 @@ public enum LaunchStores {
     /// light strip without an instrument in hand.
     public static let isDemo = ProcessInfo.processInfo.arguments.contains("-demo")
 
+    /// Under `-demo`, start on an instrument's grid instead of the chromatic
+    /// root: `-demo -demo-open violin`. Demo mode exists for judging layout
+    /// without an instrument in hand; this puts the screen being judged on
+    /// screen at launch, without scripting clicks to get there.
+    public static let demoRoute: String? = {
+        guard isDemo else { return nil }
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-demo-open"),
+            arguments.indices.contains(index + 1)
+        else { return nil }
+        return arguments[index + 1]
+    }()
+
     /// Show the detector diagnostics screen.
     ///
     /// A launch argument rather than `#if DEBUG` on purpose: the numbers only

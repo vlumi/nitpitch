@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Bass drop D is reachable again: the target stepper stopped one semitone
+  short of D1, even though the tuning menu offered it. Targets now step down
+  to B0 (a 5-string bass's low string), and the chromatic tuner hears that
+  far down too.
 - A string's target can be nudged right where you tune it: the − and +
   flanking the note on the single-string screen move that string's target by
   semitones. Edit a named tuning and it relabels itself Custom — the name

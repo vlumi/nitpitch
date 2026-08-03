@@ -320,6 +320,22 @@ final class PitchTests: XCTestCase {
             "Standard")
     }
 
+    /// A tuning the catalog offers but the app couldn't hear or the stepper
+    /// couldn't reach would be a standing contradiction — the bass drop D
+    /// was exactly that until the floors were unified.
+    func testEveryCatalogTuningIsDetectableEverywhere() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            for tuning in instrument.knownTunings {
+                for midi in tuning.strings {
+                    XCTAssertTrue(
+                        Detection.fullBand.contains(Note(midi: midi).frequency()),
+                        "\(instrument.name) \(tuning.name ?? "?"): MIDI \(midi) is outside the chromatic band"
+                    )
+                }
+            }
+        }
+    }
+
     /// Half-step down is exactly that, string for string.
     func testHalfStepDownIsAUniformShift() {
         let halfStep = Instrument.guitar.knownTunings.first { $0.name == "Half-step down" }!

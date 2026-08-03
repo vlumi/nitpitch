@@ -31,8 +31,9 @@ final class PitchDetectorTests: XCTestCase {
     }
 
     func testDetectsPureSineAcrossTheFullRange() {
-        // Every frequency the app claims to support, pure tone.
-        for hz in [41.2, 55.0, 98.0, 196.0, 293.66, 440.0, 659.26, 1200.0, 2000.0] {
+        // Every frequency the app claims to support, pure tone — including
+        // 5-string bass B0 (30.9) and bass drop D (36.7) at the bottom.
+        for hz in [30.87, 36.71, 41.2, 55.0, 98.0, 196.0, 293.66, 440.0, 659.26, 1200.0, 2000.0] {
             let result = detect(tone(hz))
             let found = try? XCTUnwrap(result.frequency)
             XCTAssertNotNil(found, "no detection at \(hz) Hz")

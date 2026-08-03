@@ -137,6 +137,33 @@ final class InstrumentStoreTests: XCTestCase {
             InstrumentStore.editableMIDIRange.upperBound)
     }
 
+    /// The reported bug: stepping a bass's E1 down twice must land on D1 —
+    /// drop D — not stall a semitone short at the clamp.
+    func testBassStepsDownToDropD() {
+        let store = makeStore()
+        let bass = store.defaultInstance(for: .bassGuitar)
+        store.setString(id: bass.id, index: 0, midi: 27)  // E1 -> D#1
+        store.setString(id: bass.id, index: 0, midi: 26)  // D#1 -> D1
+        let edited = store.instance(id: bass.id)!
+        XCTAssertEqual(edited.strings[0], 26)
+        XCTAssertEqual(edited.tuningName, "Drop D")
+    }
+
+    /// The stepper's clamp and the catalog must agree: every catalog tuning
+    /// is reachable one semitone at a time.
+    func testCatalogTuningsAreWithinTheEditableRange() {
+        for template in Instrument.all where !template.strings.isEmpty {
+            for tuning in template.knownTunings {
+                for midi in tuning.strings {
+                    XCTAssertTrue(
+                        InstrumentStore.editableMIDIRange.contains(midi),
+                        "\(template.name) \(tuning.name ?? "?"): MIDI \(midi) is outside the stepper's range"
+                    )
+                }
+            }
+        }
+    }
+
     func testSetStringIgnoresBadIndices() {
         let store = makeStore()
         let violin = store.defaultInstance(for: .violin)

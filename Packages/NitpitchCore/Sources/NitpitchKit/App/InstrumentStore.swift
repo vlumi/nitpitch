@@ -161,8 +161,13 @@ public final class InstrumentStore: ObservableObject {
     }
 
     /// MIDI notes whose frequency at any offered reference stays inside
-    /// `Detection.fullBand` (27 ≈ 38.9 Hz, 95 ≈ 1976 Hz at A=440).
-    public static let editableMIDIRange = 27...95
+    /// `Detection.fullBand`. The floor is B0 (23 ≈ 30.9 Hz at A=440) — a
+    /// 5-string bass's low string, and comfortably below bass drop D — the
+    /// same line the catalog's own tunings respect. Found the hard way: the
+    /// first floor was derived from an older, higher `fullBand`, and the
+    /// stepper refused D1 one semitone before the most common bass drop
+    /// tuning while the tuning menu happily set it.
+    public static let editableMIDIRange = 23...95
 
     public func setReference(id: String, _ reference: ReferencePitch) {
         update(id: id) { $0.referenceHz = reference.hz }

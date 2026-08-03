@@ -211,19 +211,24 @@ struct InstrumentGridView: View {
     /// count is a type error, not a runtime surprise.
     private var tuningMenu: some View {
         Menu {
+            // Two marks with two meanings. The CHECK is identity: the row you
+            // picked — the loaded preset, or the tuning when nothing loaded.
+            // The EQUALS asserts an action, not object equality: "loading
+            // this would change nothing". For a tuning-only preset that stays
+            // exactly true whatever the reference is — it says nothing about
+            // the reference, and its label (no "· A=442" suffix) already
+            // declares that scope. Without the split, a preset saved from
+            // Standard and Standard itself both showed checked — true, but
+            // reading as a contradiction.
             ForEach(fittingTunings, id: \.self) { tuning in
+                let matches = tuning.strings == instance.strings
                 Button {
                     store.setTuning(id: instance.id, strings: tuning.strings)
                 } label: {
-                    if tuning.strings == instance.strings {
-                        Label {
-                            tuningText(tuning.name ?? "Custom")
-                        } icon: {
-                            Image(systemName: "checkmark")
-                        }
-                    } else {
-                        tuningText(tuning.name ?? "Custom")
-                    }
+                    menuRow(
+                        tuningText(tuning.name ?? "Custom"),
+                        checked: matches && loadedPreset == nil,
+                        matching: matches)
                 }
             }
 
@@ -234,15 +239,10 @@ struct InstrumentGridView: View {
                     Button {
                         presets.load(preset, onto: instance, in: store)
                     } label: {
-                        if isCurrent(preset) {
-                            Label {
-                                presetLabel(preset)
-                            } icon: {
-                                Image(systemName: "checkmark")
-                            }
-                        } else {
-                            presetLabel(preset)
-                        }
+                        menuRow(
+                            presetLabel(preset),
+                            checked: loadedPreset?.id == preset.id,
+                            matching: valuesMatch(preset))
                     }
                 }
             }
@@ -315,11 +315,36 @@ struct InstrumentGridView: View {
         return Text(verbatim: preset.name)
     }
 
-    /// Whether the instance currently matches what loading this preset would
-    /// produce — the checkmark's meaning.
-    private func isCurrent(_ preset: Preset) -> Bool {
+    /// The preset the instance is *on*: last loaded, values still intact, and
+    /// still existing — a dangling id after a deletion counts as none.
+    private var loadedPreset: Preset? {
+        guard let id = instance.loadedPresetID else { return nil }
+        return presets.presets(fitting: instance).first { $0.id == id }
+    }
+
+    /// Whether loading this preset would change nothing — the equals mark.
+    private func valuesMatch(_ preset: Preset) -> Bool {
         instance.strings == preset.strings
             && (preset.referenceHz == nil || preset.referenceHz == instance.referenceHz)
+    }
+
+    @ViewBuilder
+    private func menuRow(_ label: Text, checked: Bool, matching: Bool) -> some View {
+        if checked {
+            Label {
+                label
+            } icon: {
+                Image(systemName: "checkmark")
+            }
+        } else if matching {
+            Label {
+                label
+            } icon: {
+                Image(systemName: "equal")
+            }
+        } else {
+            label
+        }
     }
 
     private var fittingTunings: [Tuning] {

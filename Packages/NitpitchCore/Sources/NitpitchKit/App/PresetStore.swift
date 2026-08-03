@@ -110,6 +110,7 @@ public final class PresetStore: ObservableObject {
         if let reference = preset.reference {
             store.setReference(id: instance.id, reference)
         }
+        store.presetApplied(id: instance.id, presetID: preset.id)
     }
 
     private func save() {

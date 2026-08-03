@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- The tuning menu's checkmark now means "the one you picked": load a preset
+  and the check is on the preset, not also on the tuning that happens to
+  hold the same notes. Rows that merely match the current setup — loading
+  them would change nothing — show an equals sign instead.
 - Save the current setup as a preset, under your own name for it — "Gig",
   "Bach No. 1" — from the tuning menu. A preset carries only what you chose
   at save time: the tuning alone, or the tuning with the reference pitch, so

@@ -231,13 +231,15 @@ relative to the player either way, so sharp is always to the right.
   Two levers if it proves expensive, both already latent in the design: only
   track visible cells (the grid is lazy), and suspend the rest while one
   string is enlarged.
-- **Bass through an amp and through the phone.** Prediction on record: the
-  spectral engine needs the string's own 1st/2nd harmonic (the anchor rule),
-  and an unamplified bass through the Mac's voice-processed mic barely
-  reads — 41/82 Hz sit under its rolloff. Through a DI or the phone's
-  `.measurement` mode, 82 Hz should survive and spectral should recover;
-  under the hybrid, MPM covers it meanwhile. The amp/phone session confirms
-  or corrects this.
+- **Bass through an amp — measured, prediction confirmed in the nuance.**
+  Through an amp into the Mac mic, single strings read nicely, drop D
+  included (the B0 floor fix earning its keep at 36.7 Hz). Double stops
+  worked only for D+G — exactly the pair whose anchor harmonics (73–196 Hz)
+  all clear the voice-processed mic's rolloff; E+A's anchors at 41–110 Hz
+  get eaten, spectral declines, and the hybrid degrades to single-string
+  tracking, which is the designed behaviour. Not a problem in use. Still
+  untested: the phone's `.measurement` mode, which should extend the
+  double-stop range downward.
 
 ### Verifying instruments nobody here owns
 

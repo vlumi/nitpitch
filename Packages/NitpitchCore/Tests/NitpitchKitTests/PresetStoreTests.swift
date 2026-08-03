@@ -120,6 +120,42 @@ final class PresetStoreTests: XCTestCase {
         XCTAssertTrue(presets.presets.isEmpty)
     }
 
+    /// The menu's checkmark is identity, not value: loading records WHICH
+    /// preset the instance is on, and any manual change ends that claim.
+    func testLoadingRecordsIdentityAndEditsClearIt() {
+        let (presets, instruments) = makeStores()
+        let guitar = instruments.defaultInstance(for: .guitar)
+        let saved = presets.save(guitar, named: "Gig", includeReference: false)!
+
+        presets.load(saved, onto: guitar, in: instruments)
+        XCTAssertEqual(instruments.instance(id: guitar.id)?.loadedPresetID, saved.id)
+
+        // A reference step is a manual change — the setup is no longer
+        // "Gig, untouched".
+        instruments.setReference(id: guitar.id, ReferencePitch(hz: 443))
+        XCTAssertNil(instruments.instance(id: guitar.id)?.loadedPresetID)
+
+        presets.load(saved, onto: instruments.instance(id: guitar.id)!, in: instruments)
+        XCTAssertEqual(instruments.instance(id: guitar.id)?.loadedPresetID, saved.id)
+        instruments.setString(id: guitar.id, index: 0, midi: 38)
+        XCTAssertNil(instruments.instance(id: guitar.id)?.loadedPresetID)
+
+        presets.load(saved, onto: instruments.instance(id: guitar.id)!, in: instruments)
+        instruments.setTuning(id: guitar.id, strings: Instrument.guitar.strings)
+        XCTAssertNil(instruments.instance(id: guitar.id)?.loadedPresetID)
+    }
+
+    /// The lock is not a setup change — locking must not un-claim the preset.
+    func testLockingKeepsTheLoadedIdentity() {
+        let (presets, instruments) = makeStores()
+        let guitar = instruments.defaultInstance(for: .guitar)
+        let saved = presets.save(guitar, named: "Gig", includeReference: false)!
+        presets.load(saved, onto: guitar, in: instruments)
+
+        instruments.setLocked(id: guitar.id, true)
+        XCTAssertEqual(instruments.instance(id: guitar.id)?.loadedPresetID, saved.id)
+    }
+
     /// A preset never mutates by loading — frozen means frozen.
     func testLoadingDoesNotChangeThePreset() {
         let (presets, instruments) = makeStores()

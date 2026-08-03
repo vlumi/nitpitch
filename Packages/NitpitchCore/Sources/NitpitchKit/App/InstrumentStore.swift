@@ -22,9 +22,15 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// Open strings, low to high — the current tuning.
     public var strings: [Int]
     public var referenceHz: Double
-    /// The padlock: a locked instrument's controls are doors (they never
-    /// mutate and never ignore a touch — they offer the unlock).
+    /// The padlock: a locked instrument's setup is frozen behind the toolbar
+    /// toggle.
     public var isLocked: Bool
+    /// The preset last applied, while the setup still matches it — any manual
+    /// change (a tuning pick, a string edit, a reference step) clears it.
+    /// This is what the tuning menu's checkmark means ("which one did I
+    /// pick"), and later what the header's "Bach No. 1 (edited)" hangs off.
+    /// Optional and absent from old stored JSON, which decodes as nil.
+    public var loadedPresetID: String?
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
 
@@ -97,7 +103,8 @@ public final class InstrumentStore: ObservableObject {
             name: template.name,
             strings: template.strings,
             referenceHz: seedReference().hz,
-            isLocked: false)
+            isLocked: false,
+            loadedPresetID: nil)
         instances.append(created)
         return created
     }
@@ -115,7 +122,8 @@ public final class InstrumentStore: ObservableObject {
             name: "\(template.name) \(count + 1)",
             strings: template.strings,
             referenceHz: seedReference().hz,
-            isLocked: false)
+            isLocked: false,
+            loadedPresetID: nil)
         instances.append(created)
         return created
     }
@@ -140,7 +148,10 @@ public final class InstrumentStore: ObservableObject {
         guard let current = instance(id: id), current.strings.count == strings.count else {
             return
         }
-        update(id: id) { $0.strings = strings }
+        update(id: id) {
+            $0.strings = strings
+            $0.loadedPresetID = nil
+        }
     }
 
     /// Change one string's target — the string view's stepper. Editing a
@@ -157,7 +168,10 @@ public final class InstrumentStore: ObservableObject {
         let clamped = min(
             max(midi, Self.editableMIDIRange.lowerBound),
             Self.editableMIDIRange.upperBound)
-        update(id: id) { $0.strings[index] = clamped }
+        update(id: id) {
+            $0.strings[index] = clamped
+            $0.loadedPresetID = nil
+        }
     }
 
     /// MIDI notes whose frequency at any offered reference stays inside
@@ -170,7 +184,18 @@ public final class InstrumentStore: ObservableObject {
     public static let editableMIDIRange = 23...95
 
     public func setReference(id: String, _ reference: ReferencePitch) {
-        update(id: id) { $0.referenceHz = reference.hz }
+        update(id: id) {
+            $0.referenceHz = reference.hz
+            $0.loadedPresetID = nil
+        }
+    }
+
+    /// Called by `PresetStore.load` after applying a preset's fields, so the
+    /// instance knows whose values it's carrying. Cleared again by any manual
+    /// change (tuning pick, string edit, reference step) — the id means
+    /// "loaded, and untouched since".
+    public func presetApplied(id: String, presetID: String) {
+        update(id: id) { $0.loadedPresetID = presetID }
     }
 
     public func setLocked(id: String, _ locked: Bool) {

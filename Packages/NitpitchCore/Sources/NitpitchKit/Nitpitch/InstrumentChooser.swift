@@ -152,7 +152,7 @@ struct InstrumentChooser: View {
         let virtualDefault = InstrumentInstance(
             id: template.id, templateID: template.id, name: template.name,
             strings: template.strings, referenceHz: settings.reference.hz,
-            isLocked: false)
+            isLocked: false, loadedPresetID: nil)
         return [virtualDefault] + existing
     }
 

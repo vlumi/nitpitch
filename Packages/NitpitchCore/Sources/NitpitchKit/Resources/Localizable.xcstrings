@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "“%@” already exists." : {
+      "comment" : "Body of the replace confirmation; the placeholder is the preset's name"
+    },
     "%lld across" : {
       "comment" : "Menu option for how many string dials fit across the grid"
     },
@@ -17,7 +20,7 @@
       "comment" : "Star on an instrument row: pin it to the launch screen"
     },
     "Appearance" : {
-      "comment" : "Setting: follow the system appearance, or force light/dark"
+      "comment" : "Setting: follow the system appearance, or force light\/dark"
     },
     "Audio is analyzed on your device and never recorded or sent anywhere." : {
       "comment" : "Privacy summary on the about screen"
@@ -47,7 +50,10 @@
       "comment" : "Dismisses the settings sheet"
     },
     "Drop D" : {
-      "comment" : "Tuning name (guitar/bass): lowest string down to D"
+      "comment" : "Tuning name (guitar\/bass): lowest string down to D"
+    },
+    "Edit presets…" : {
+      "comment" : "Tuning menu: open the preset list for deleting"
     },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments"
@@ -92,7 +98,7 @@
       "comment" : "Shown when the tuner is stopped"
     },
     "Notation" : {
-      "comment" : "Label for the note-naming convention picker (A B C / A H C / Do Re Mi / iroha)"
+      "comment" : "Label for the note-naming convention picker (A B C \/ A H C \/ Do Re Mi \/ iroha)"
     },
     "Open G" : {
       "comment" : "Tuning name (guitar)"
@@ -102,6 +108,9 @@
     },
     "Play a note" : {
       "comment" : "Shown while listening but no pitch is confident enough to display"
+    },
+    "Presets" : {
+      "comment" : "Title of the preset list sheet"
     },
     "Previous string" : {
       "comment" : "Arrow in the single-string view: go to the lower neighbouring string"
@@ -118,6 +127,18 @@
     "Rename" : {
       "comment" : "Context menu action and dialog title: rename an instrument"
     },
+    "Replace" : {
+      "comment" : "Confirms saving over an existing preset"
+    },
+    "Replace preset" : {
+      "comment" : "Title of the confirmation when saving over an existing name"
+    },
+    "Save as preset…" : {
+      "comment" : "Tuning menu: save the current setup under a name"
+    },
+    "Save preset" : {
+      "comment" : "Title of the save dialog"
+    },
     "Settings" : {
       "comment" : "Title of the settings sheet, and the gear button's VoiceOver label"
     },
@@ -129,6 +150,12 @@
     },
     "Tune an instrument" : {
       "comment" : "The button below the chromatic dial that opens the instrument chooser"
+    },
+    "Tuning and reference" : {
+      "comment" : "Save button: the preset carries the pitches and the reference pitch"
+    },
+    "Tuning only" : {
+      "comment" : "Save button: the preset carries the pitches and nothing else"
     },
     "Unlock" : {
       "comment" : "Menu action and dialog button: allow changes again"

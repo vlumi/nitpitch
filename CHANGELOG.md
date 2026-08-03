@@ -22,6 +22,11 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Save the current setup as a preset, under your own name for it — "Gig",
+  "Bach No. 1" — from the tuning menu. A preset carries only what you chose
+  at save time: the tuning alone, or the tuning with the reference pitch, so
+  loading one never moves settings it doesn't hold. Saving over an existing
+  name asks first; Edit presets… deletes stale ones.
 - The padlock is a fixed toolbar toggle on the instrument's screens (the
   grid and the single string), orange and closed when locked. Locked
   controls simply dim; nothing pops up to explain, and tapping the lock is

@@ -214,11 +214,17 @@ lying across the display: the existing light-dot strip carries the tuning
 (it already encodes direction and in-tune), the name and cents ride along,
 and there is no arc at all. The visual matches the thing in your hands.
 
-- **iPhone/iPad: this is what rotating gives you.** Sharp stays to the
-  right; the strips are the natural wide-screen shape, so nothing fights
-  the viewport.
-- **Mac: behind a switch.** Windows don't rotate, and wide windows are the
-  Mac's normal state — opting in is the honest gesture there.
+- **A switch, everywhere — not orientation.** The app already refused
+  view-yanking once: the string view won't follow sounds because a screen
+  must never change under your hands mid-gesture on a stand, and a
+  rotation-triggered metaphor swap is the same yank in another costume. The
+  iPad seals it (landscape is its *normal* orientation — dials would become
+  unreachable) and the Mac needs a switch regardless. So the style —
+  dials / strips — is an explicit, remembered toggle on the instrument
+  screen, identical on every platform; orientation only adapts the layout
+  *within* a style (strips stack in portrait, dials adjust columns), and
+  the toggle may default to whatever fits the viewport the first time it's
+  seen. Sharp stays to the right always.
 - **Piano, when it comes (§ 3), gets its display answer from the same
   idea**: the keys themselves in correct black/white geometry, the tuning
   dots running vertically *inside* each key, names and cents above the

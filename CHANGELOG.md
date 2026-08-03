@@ -22,6 +22,14 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- On the Mac, a modest portrait window now shows one calm column of dials
+  instead of a cramped grid — extra columns have to earn their place by
+  making the dials noticeably bigger — and the cards hug their content
+  rather than stretching across the window.
+- With a non-English notation, the single-string screen now leads with your
+  name for the note — "H (B0)" rather than "B0 (H)" — matching the grid,
+  which has always said H. The chromatic tuner keeps its scientific-first
+  readout: what it heard, then what you call it.
 - The chromatic tuner scales as one piece from a tiny window to fullscreen,
   proportions kept — no more cramped dial in a small Mac window.
 - On the Mac, the strips view is a toggle in the layout menu rather than

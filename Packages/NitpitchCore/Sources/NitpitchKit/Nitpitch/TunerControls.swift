@@ -129,12 +129,27 @@ struct LevelMeter: View {
 /// the string view. See `Note.readoutLabel(in:)` for why the scientific name
 /// and the localized one are kept apart rather than combined.
 struct NoteNameLabel: View {
+    /// Which spelling leads. Detections read scientific-first ("A4 (イ)") —
+    /// the settled chromatic convention — but a *target* is something the
+    /// player asked for by its own name, so the string view leads with the
+    /// local spelling: "H₀ (B0)", not "B0 (H)". The grid cells show the local
+    /// name alone; this keeps the detail view consistent with them.
+    enum Order {
+        case scientificFirst
+        case localizedFirst
+    }
+
     let note: Note
     let naming: NoteNaming
     let fontSize: CGFloat
+    var order: Order = .scientificFirst
 
     var body: some View {
-        let label = note.readoutLabel(in: naming)
+        let readout = note.readoutLabel(in: naming)
+        let label: (name: String, octave: Int, alternate: String?) =
+            order == .localizedFirst && readout.alternate != nil
+            ? (note.name(in: naming), readout.octave, "\(readout.name)\(readout.octave)")
+            : (readout.name, readout.octave, readout.alternate)
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             // The octave is subscripted so the letter stays the thing you read
             // at a glance — the number qualifies it rather than competing.

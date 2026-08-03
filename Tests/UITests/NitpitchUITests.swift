@@ -184,6 +184,38 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertFalse(secondGuitar.waitForExistence(timeout: 2))
     }
 
+    /// The shape chooses the presentation: rotate to landscape and the dials
+    /// become strips — strings drawn as strings — rotate back and the grid
+    /// returns.
+    func testWideViewportShowsStrips() {
+        let app = launch()
+        openViolinGrid(app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.cell.0"].firstMatch.waitForExistence(
+                timeout: 5))
+
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let strip = app.descendants(matching: .any)["strips.row.0"].firstMatch
+        XCTAssertTrue(strip.waitForExistence(timeout: 5), "wide shows strings as strings")
+        // Geometry proves the layout genuinely went landscape — a screenshot
+        // can lie sideways (XCUITest captures the raw framebuffer), a frame
+        // can't.
+        XCTAssertGreaterThan(
+            strip.frame.width, strip.frame.height * 4,
+            "a strip should be much wider than tall")
+
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "strips-view"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.cell.0"].firstMatch.waitForExistence(
+                timeout: 5), "tall shows the dial grid")
+    }
+
     // MARK: - Tunings and the lock
 
     /// Switching the guitar to Drop D retargets the low string's dial — the

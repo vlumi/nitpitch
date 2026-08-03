@@ -22,6 +22,12 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- A wide screen now shows the strings as strings: one horizontal strip per
+  string with the tuning lights running across it, instead of dial cells
+  stretched out of shape. Rotate the phone, or make the Mac window wide,
+  and the view follows; tall keeps the dials.
+- On big windows the dials finally grow with their cells — up to a sensible
+  cap — instead of floating tiny in acres of card.
 - Adding an instrument now asks how many strings — a 6-string bass or a
   9-string guitar is a choice in the + menu, not a missing feature. Uncommon
   counts follow the instrument's own tuning pattern, adding low strings

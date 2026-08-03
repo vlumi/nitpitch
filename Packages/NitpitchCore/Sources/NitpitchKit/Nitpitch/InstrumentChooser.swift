@@ -199,39 +199,47 @@ struct InstrumentChooser: View {
             managementActions(for: entry, template: template)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            if entry.id != template.id {
-                Button(role: .destructive) {
-                    settings.favorites.removeAll { $0 == entry.id }
-                    store.remove(id: entry.id)
-                } label: {
-                    Label {
-                        Text("Delete", bundle: .module)
-                    } icon: {
-                        Image(systemName: "trash")
-                    }
-                }
-            }
-            Button {
-                beginRename(entry, template: template)
-            } label: {
-                Label {
-                    Text("Rename", bundle: .module)
-                } icon: {
-                    Image(systemName: "pencil")
-                }
-            }
-            .tint(.blue)
-            Button {
-                duplicate(entry, template: template)
-            } label: {
-                Label {
-                    Text("Duplicate", bundle: .module)
-                } icon: {
-                    Image(systemName: "plus.square.on.square")
-                }
-            }
-            .tint(.green)
+            swipeButtons(for: entry, template: template)
         }
+    }
+
+    /// The same actions the context menu carries, tinted for the swipe tray.
+    @ViewBuilder
+    private func swipeButtons(
+        for entry: InstrumentInstance, template: Instrument
+    ) -> some View {
+        if entry.id != template.id {
+            Button(role: .destructive) {
+                settings.favorites.removeAll { $0 == entry.id }
+                store.remove(id: entry.id)
+            } label: {
+                Label {
+                    Text("Delete", bundle: .module)
+                } icon: {
+                    Image(systemName: "trash")
+                }
+            }
+        }
+        Button {
+            beginRename(entry, template: template)
+        } label: {
+            Label {
+                Text("Rename", bundle: .module)
+            } icon: {
+                Image(systemName: "pencil")
+            }
+        }
+        .tint(.blue)
+        Button {
+            duplicate(entry, template: template)
+        } label: {
+            Label {
+                Text("Duplicate", bundle: .module)
+            } icon: {
+                Image(systemName: "plus.square.on.square")
+            }
+        }
+        .tint(.green)
     }
 
     /// The Mac's per-row menu — the same actions the swipe carries on iOS.

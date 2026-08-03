@@ -210,7 +210,8 @@ final class DetectionSettingsTests: XCTestCase {
 
         let violin = InstrumentInstance(
             id: "violin", templateID: "violin", name: "Violin",
-            strings: Instrument.violin.strings, referenceHz: 440, isLocked: false)
+            strings: Instrument.violin.strings, referenceHz: 440, isLocked: false,
+            loadedPresetID: nil)
         single.apply(instance: violin, index: 1, tuning: .default)  // D4
         XCTAssertEqual(single.tuner.target.fullName, "D4")
         await slide(440, through: input, sampleRate: controller.sampleRate)

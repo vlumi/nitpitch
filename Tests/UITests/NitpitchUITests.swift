@@ -178,29 +178,35 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(cell.label.hasPrefix("D"), "Drop D bottom string is D")
     }
 
-    /// The padlock: locked controls are doors — they don't mutate, they offer
-    /// the unlock.
-    func testLockedControlsOfferTheUnlock() {
+    /// The padlock is ambient: a fixed toolbar toggle, no dialogs anywhere.
+    /// Locked controls dim; the lock itself is the one way back — and it
+    /// follows the instrument into the string view.
+    func testTheLockFreezesControlsWithoutDialogs() {
         let app = launch()
         openViolinGrid(app)
 
-        // Lock from the layout menu.
-        openLayoutMenu(app)
         let lock = app.buttons["grid.lock"].firstMatch
         XCTAssertTrue(lock.waitForExistence(timeout: 5))
         lock.tap()
 
-        // A locked control's touch raises the offer instead of acting.
         let tuningMenu = app.descendants(matching: .any)["grid.tuning"].firstMatch
         XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
-        tuningMenu.tap()
-        let unlock = app.buttons["Unlock"].firstMatch
-        XCTAssertTrue(unlock.waitForExistence(timeout: 5), "the door should offer the unlock")
-        unlock.tap()
+        XCTAssertFalse(tuningMenu.isEnabled, "locked: the tuning menu is disabled")
 
-        // Unlocked: the tuning menu opens normally again.
-        tuningMenu.tap()
-        XCTAssertTrue(app.buttons["Standard"].firstMatch.waitForExistence(timeout: 5))
+        // The lock follows the instrument into the string view.
+        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+        let stringLock = app.buttons["string.lock"].firstMatch
+        XCTAssertTrue(stringLock.waitForExistence(timeout: 5))
+        let down = app.descendants(matching: .any)["string.down"]
+        XCTAssertTrue(down.waitForExistence(timeout: 5))
+        XCTAssertFalse(down.isEnabled, "locked: the target stepper is disabled")
+
+        // Unlocking here unfreezes everywhere — it's the instrument's lock.
+        stringLock.tap()
+        XCTAssertTrue(down.isEnabled)
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        XCTAssertTrue(tuningMenu.isEnabled, "unlocked in the string view, unlocked here")
     }
 
     // MARK: - Favourites

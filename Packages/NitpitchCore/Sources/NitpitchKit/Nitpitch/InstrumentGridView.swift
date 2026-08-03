@@ -11,9 +11,10 @@ import SwiftUI
 ///
 /// The screen shows an instrument *you own* (`InstrumentInstance`): its name
 /// in the title, its tuning in the header menu, its reference in the footer —
-/// all autosaved through the store, waiting as you left them. The padlock
-/// freezes the lot; locked controls are doors (they never mutate and never
-/// ignore a touch — they offer the unlock).
+/// all autosaved through the store, waiting as you left them. The padlock is
+/// a fixed toolbar toggle that freezes the lot: locked controls are simply
+/// disabled, the lock itself is the one obvious way back, and nothing pops up
+/// to explain — the closed lock over dimmed controls IS the explanation.
 struct InstrumentGridView: View {
     let audio: AudioSessionController
     @ObservedObject var store: InstrumentStore
@@ -25,7 +26,6 @@ struct InstrumentGridView: View {
     /// on the screen — how big is a preference, not a constant.
     @State private var columns: Int
     @State private var isShowingDebug = false
-    @State private var isShowingLockDialog = false
 
     /// The instance as constructed, for while the store catches up and as the
     /// identity to look the live value up by.
@@ -83,6 +83,7 @@ struct InstrumentGridView: View {
         .navigationTitle(instance.nameText)
         .toolbar {
             ToolbarItem(placement: .principal) { tuningMenu }
+            ToolbarItem(placement: .primaryAction) { lockButton }
             ToolbarItem(placement: .primaryAction) { layoutMenu }
         }
         .accessibilityIdentifier("grid.strings")
@@ -107,9 +108,6 @@ struct InstrumentGridView: View {
             DetectorDebugView(
                 detection: detection, strings: strings, naming: settings.naming)
         }
-        .lockDoorDialog(isPresented: $isShowingLockDialog) {
-            store.setLocked(id: instance.id, false)
-        }
     }
 
     private func reconfigure() {
@@ -133,7 +131,7 @@ struct InstrumentGridView: View {
                 set: { store.setReference(id: instance.id, $0) }),
             naming: settings.naming
         )
-        .lockedDoor(instance.isLocked, isPresenting: $isShowingLockDialog)
+        .disabled(instance.isLocked)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .background(.thinMaterial)
@@ -162,9 +160,6 @@ struct InstrumentGridView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                if instance.isLocked {
-                    Image(systemName: "lock.fill").font(.caption2)
-                }
                 tuningText(instance.tuningName ?? "Custom")
                     .font(.callout.weight(.medium))
                 Image(systemName: "chevron.down")
@@ -172,8 +167,26 @@ struct InstrumentGridView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .lockedDoor(instance.isLocked, isPresenting: $isShowingLockDialog)
+        .disabled(instance.isLocked)
         .accessibilityIdentifier("grid.tuning")
+    }
+
+    /// The padlock, ambient and fixed: one glance says whether this
+    /// instrument's setup is frozen, one tap flips it. Closed and prominent
+    /// when locked, open and quiet when not — the same glyph pair every
+    /// platform uses for exactly this.
+    private var lockButton: some View {
+        Button {
+            store.setLocked(id: instance.id, !instance.isLocked)
+        } label: {
+            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
+                .foregroundStyle(
+                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityIdentifier("grid.lock")
+        .accessibilityLabel(
+            instance.isLocked
+                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
     }
 
     /// Catalog names are localizable; a user's custom tuning has no name to
@@ -196,24 +209,6 @@ struct InstrumentGridView: View {
             } label: {
                 Text("Columns", bundle: .module)
             }
-
-            Divider()
-
-            Button {
-                if instance.isLocked {
-                    isShowingLockDialog = true
-                } else {
-                    store.setLocked(id: instance.id, true)
-                }
-            } label: {
-                Label {
-                    instance.isLocked
-                        ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module)
-                } icon: {
-                    Image(systemName: instance.isLocked ? "lock.open" : "lock")
-                }
-            }
-            .accessibilityIdentifier("grid.lock")
 
             if LaunchStores.isDebug {
                 Divider()
@@ -260,45 +255,5 @@ private struct StringCell: View {
     private var cents: Double? {
         if case .reading(let cents, _) = tuner.state { return cents }
         return nil
-    }
-}
-
-extension View {
-    /// The doors rule for a locked instrument's controls: never mutating,
-    /// never ignoring a touch. The control keeps its looks, loses its
-    /// function, and any tap on it raises the unlock offer instead — so the
-    /// novice discovers the way forward with the only gesture anyone tries
-    /// first, and a stray tap on a music stand dies at a dialog.
-    @ViewBuilder
-    func lockedDoor(_ isLocked: Bool, isPresenting: Binding<Bool>) -> some View {
-        if isLocked {
-            self
-                .disabled(true)
-                .overlay(
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture { isPresenting.wrappedValue = true }
-                )
-        } else {
-            self
-        }
-    }
-
-    /// The unlock offer every door opens onto.
-    func lockDoorDialog(isPresented: Binding<Bool>, unlock: @escaping () -> Void) -> some View {
-        alert(
-            Text("This instrument is locked", bundle: .module),
-            isPresented: isPresented
-        ) {
-            Button(action: unlock) {
-                Text("Unlock", bundle: .module)
-            }
-            Button(role: .cancel) {
-            } label: {
-                Text("Cancel", bundle: .module)
-            }
-        } message: {
-            Text("Unlock to make changes?", bundle: .module)
-        }
     }
 }

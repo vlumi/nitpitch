@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- The padlock is a fixed toolbar toggle on the instrument's screens (the
+  grid and the single string), orange and closed when locked. Locked
+  controls simply dim; nothing pops up to explain, and tapping the lock is
+  the one way back.
 - Bass drop D is reachable again: the target stepper stopped one semitone
   short of D1, even though the tuning menu offered it. Targets now step down
   to B0 (a 5-string bass's low string), and the chromatic tuner hears that

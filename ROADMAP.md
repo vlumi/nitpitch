@@ -169,10 +169,9 @@ belongs to the person who saved it.
 The yardstick paragraph above predicted rounds against real hands; the
 first round's findings:
 
-- **The padlock is buried.** A lock in a menu is the wrong furniture for a
-  state you want visible. Wants an obvious tappable lock somewhere ambient —
-  possibly paired with per-control edit affordances that raise the unlock
-  offer — to design, not just relocate.
+- **The target stepper wobbles**: the − and + shift with the width of the
+  note name between them (names vary a lot now). Deliberately left for the
+  layout pass — likely a fixed-width slot for the label.
 - **Instrument management is undiscoverable on the Mac** (and long-press is
   iOS-only furniture anyway). Direction: **fork the affordances, share the
   content** — the house precedent is `SettingsView`'s `macForm`/`sheetForm`,

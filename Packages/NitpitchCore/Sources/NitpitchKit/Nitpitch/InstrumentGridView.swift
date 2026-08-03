@@ -145,10 +145,12 @@ struct InstrumentGridView: View {
                 set: { if !$0 { pendingReplace = nil } })
         ) {
             Button(role: .destructive) {
-                if let pending = pendingReplace {
-                    presets.save(
+                if let pending = pendingReplace,
+                    let saved = presets.save(
                         instance, named: presetName,
                         includeReference: pending.includeReference)
+                {
+                    store.presetApplied(id: instance.id, presetID: saved.id)
                 }
                 pendingReplace = nil
             } label: {
@@ -173,8 +175,12 @@ struct InstrumentGridView: View {
         guard !trimmed.isEmpty else { return }
         if let existing = presets.existing(named: trimmed, templateID: instance.templateID) {
             pendingReplace = (existing, includeReference)
-        } else {
-            presets.save(instance, named: trimmed, includeReference: includeReference)
+        } else if let saved = presets.save(
+            instance, named: trimmed, includeReference: includeReference)
+        {
+            // "This setup is called Gig" — so the claim follows the save:
+            // the pill and the checkmark move to it immediately.
+            store.presetApplied(id: instance.id, presetID: saved.id)
         }
     }
 
@@ -271,7 +277,7 @@ struct InstrumentGridView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                tuningText(instance.tuningName ?? "Custom")
+                pillText
                     .font(.callout.weight(.medium))
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
@@ -280,6 +286,17 @@ struct InstrumentGridView: View {
         }
         .disabled(instance.isLocked)
         .accessibilityIdentifier("grid.tuning")
+    }
+
+    /// What the pill says: the preset you picked while you're on it, the
+    /// tuning identity otherwise. Drift clears the claim (see
+    /// `loadedPresetID`), so the fallback from "test" to "Custom" is honest
+    /// rather than a bookkeeping suffix.
+    private var pillText: Text {
+        if let loaded = loadedPreset {
+            return Text(verbatim: loaded.name)
+        }
+        return tuningText(instance.tuningName ?? "Custom")
     }
 
     /// The padlock, ambient and fixed: one glance says whether this
@@ -300,6 +317,52 @@ struct InstrumentGridView: View {
                 ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
     }
 
+    private var layoutMenu: some View {
+        Menu {
+            Picker(selection: $columns) {
+                ForEach(1...3, id: \.self) { count in
+                    Text("\(count) across", bundle: .module).tag(count)
+                }
+            } label: {
+                Text("Columns", bundle: .module)
+            }
+
+            if LaunchStores.isDebug {
+                Divider()
+                Button {
+                    isShowingDebug = true
+                } label: {
+                    Label {
+                        Text(verbatim: "Detector…")
+                    } icon: {
+                        Image(systemName: "waveform.badge.magnifyingglass")
+                    }
+                }
+                .accessibilityIdentifier("grid.debug")
+            }
+        } label: {
+            // A badge while anything is off its shipped value, so a surprising
+            // reading is never mistaken for how the app actually behaves.
+            Image(
+                systemName: detection.isModified
+                    ? "square.grid.2x2.fill" : "square.grid.2x2"
+            )
+            .foregroundStyle(detection.isModified ? AnyShapeStyle(.orange) : AnyShapeStyle(.tint))
+        }
+        .accessibilityIdentifier("grid.columns")
+        .accessibilityLabel(Text("Columns", bundle: .module))
+    }
+
+    /// Few strings want fewer, wider cells; many want more across so the grid
+    /// doesn't run off the screen.
+    private static func defaultColumns(strings: Int) -> Int {
+        strings > 4 ? 3 : 2
+    }
+}
+
+// The tuning menu's vocabulary, out of the type body — SwiftLint counts the
+// struct's lines, and the view proper is the part worth keeping in one eyeful.
+extension InstrumentGridView {
     /// Catalog names are localizable; a user's custom tuning has no name to
     /// translate, and "Custom" is the catalog's word for that.
     private func tuningText(_ name: String) -> Text {
@@ -350,48 +413,6 @@ struct InstrumentGridView: View {
     private var fittingTunings: [Tuning] {
         guard let template = instance.template else { return [] }
         return template.knownTunings.filter { $0.strings.count == instance.strings.count }
-    }
-
-    private var layoutMenu: some View {
-        Menu {
-            Picker(selection: $columns) {
-                ForEach(1...3, id: \.self) { count in
-                    Text("\(count) across", bundle: .module).tag(count)
-                }
-            } label: {
-                Text("Columns", bundle: .module)
-            }
-
-            if LaunchStores.isDebug {
-                Divider()
-                Button {
-                    isShowingDebug = true
-                } label: {
-                    Label {
-                        Text(verbatim: "Detector…")
-                    } icon: {
-                        Image(systemName: "waveform.badge.magnifyingglass")
-                    }
-                }
-                .accessibilityIdentifier("grid.debug")
-            }
-        } label: {
-            // A badge while anything is off its shipped value, so a surprising
-            // reading is never mistaken for how the app actually behaves.
-            Image(
-                systemName: detection.isModified
-                    ? "square.grid.2x2.fill" : "square.grid.2x2"
-            )
-            .foregroundStyle(detection.isModified ? AnyShapeStyle(.orange) : AnyShapeStyle(.tint))
-        }
-        .accessibilityIdentifier("grid.columns")
-        .accessibilityLabel(Text("Columns", bundle: .module))
-    }
-
-    /// Few strings want fewer, wider cells; many want more across so the grid
-    /// doesn't run off the screen.
-    private static func defaultColumns(strings: Int) -> Int {
-        strings > 4 ? 3 : 2
     }
 }
 

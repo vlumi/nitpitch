@@ -22,21 +22,21 @@ struct InstrumentGridView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var detection: DetectionSettings
 
-    @StateObject private var strings: StringTuners
+    @StateObject var strings: StringTuners
     /// How many dials across. Defaults to the string count and is adjustable
     /// on the screen — how big is a preference, not a constant.
-    @State private var columns: Int
-    @State private var isShowingDebug = false
-    @State private var isSavingPreset = false
-    @State private var presetName = ""
+    @State var columns: Int
+    @State var isShowingDebug = false
+    @State var isSavingPreset = false
+    @State var presetName = ""
     /// A save waiting on the "replace?" confirmation: the preset it would
     /// overwrite, and whether the reference rides along.
-    @State private var pendingReplace: (preset: Preset, includeReference: Bool)?
-    @State private var isManagingPresets = false
+    @State var pendingReplace: (preset: Preset, includeReference: Bool)?
+    @State var isManagingPresets = false
 
     /// The instance as constructed, for while the store catches up and as the
     /// identity to look the live value up by.
-    private let initial: InstrumentInstance
+    let initial: InstrumentInstance
 
     init(
         instance: InstrumentInstance, store: InstrumentStore, presets: PresetStore,
@@ -57,7 +57,7 @@ struct InstrumentGridView: View {
 
     /// The live instance — the store's copy, since tuning and reference can
     /// change right on this screen.
-    private var instance: InstrumentInstance {
+    var instance: InstrumentInstance {
         store.instance(id: initial.id) ?? initial
     }
 
@@ -220,7 +220,7 @@ struct InstrumentGridView: View {
 
     /// Tuner order as displayed — ready to reverse when the instance is a
     /// left-handed instrument (flipped string order, a coming feature).
-    private var displayedTuners: [(index: Int, tuner: StringTunerViewModel)] {
+    var displayedTuners: [(index: Int, tuner: StringTunerViewModel)] {
         strings.tuners.enumerated().map { ($0.offset, $0.element) }
     }
 
@@ -391,100 +391,5 @@ struct InstrumentGridView: View {
     /// doesn't run off the screen.
     private static func defaultColumns(strings: Int) -> Int {
         strings > 4 ? 3 : 2
-    }
-}
-
-// The wide presentation, and the tuning menu's vocabulary — out of the type
-// body: SwiftLint counts the struct's lines, and the view proper is the part
-// worth keeping in one eyeful.
-extension InstrumentGridView {
-    /// The strings as strings: one horizontal strip each, stacked like the
-    /// instrument's own strings across the display.
-    var strips: some View {
-        VStack(spacing: 10) {
-            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
-                NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
-                    StringStrip(tuner: entry.tuner, naming: settings.naming)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("strips.row.\(position)")
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-    }
-
-    /// Catalog names are localizable; a user's custom tuning has no name to
-    /// translate, and "Custom" is the catalog's word for that.
-    private func tuningText(_ name: String) -> Text {
-        Text(LocalizedStringKey(name), bundle: .module)
-    }
-
-    /// The user's name verbatim, with the reference riding along when the
-    /// preset carries one — the label says what loading will do.
-    private func presetLabel(_ preset: Preset) -> Text {
-        if let reference = preset.reference {
-            return Text(verbatim: "\(preset.name) · A=\(Int(reference.hz))")
-        }
-        return Text(verbatim: preset.name)
-    }
-
-    /// The claimed preset — still existing; a dangling id after a deletion
-    /// counts as none. Values may have drifted: that's "(edited)", not gone.
-    private var loadedPreset: Preset? {
-        guard let id = instance.loadedPresetID else { return nil }
-        return presets.presets(fitting: instance).first { $0.id == id }
-    }
-
-    /// Whether a tuning row may carry the checkmark: no preset claim standing
-    /// in the way (intact or drifted — a drifted claim still owns the pill).
-    private var claimIsFree: Bool { loadedPreset == nil }
-
-    /// Whether loading this preset would change nothing — the equals mark.
-    private func valuesMatch(_ preset: Preset) -> Bool {
-        instance.strings == preset.strings
-            && (preset.referenceHz == nil || preset.referenceHz == instance.referenceHz)
-    }
-
-    @ViewBuilder
-    private func menuRow(_ label: Text, checked: Bool, matching: Bool) -> some View {
-        if checked {
-            Label {
-                label
-            } icon: {
-                Image(systemName: "checkmark")
-            }
-        } else if matching {
-            Label {
-                label
-            } icon: {
-                Image(systemName: "equal")
-            }
-        } else {
-            label
-        }
-    }
-
-    private var fittingTunings: [Tuning] {
-        guard let template = instance.template else { return [] }
-        return template.knownTunings.filter { $0.strings.count == instance.strings.count }
-    }
-}
-
-/// One cell, observing its own string's model.
-private struct StringCell: View {
-    @ObservedObject var tuner: StringTunerViewModel
-    let naming: NoteNaming
-    var scale: CGFloat = 1
-
-    var body: some View {
-        CompactDial(
-            name: tuner.target.name(in: naming), cents: cents, level: tuner.level,
-            scale: scale)
-    }
-
-    private var cents: Double? {
-        if case .reading(let cents, _) = tuner.state { return cents }
-        return nil
     }
 }

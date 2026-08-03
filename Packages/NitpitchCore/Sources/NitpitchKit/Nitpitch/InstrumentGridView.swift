@@ -317,6 +317,52 @@ struct InstrumentGridView: View {
                 ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
     }
 
+    private var layoutMenu: some View {
+        Menu {
+            Picker(selection: $columns) {
+                ForEach(1...3, id: \.self) { count in
+                    Text("\(count) across", bundle: .module).tag(count)
+                }
+            } label: {
+                Text("Columns", bundle: .module)
+            }
+
+            if LaunchStores.isDebug {
+                Divider()
+                Button {
+                    isShowingDebug = true
+                } label: {
+                    Label {
+                        Text(verbatim: "Detector…")
+                    } icon: {
+                        Image(systemName: "waveform.badge.magnifyingglass")
+                    }
+                }
+                .accessibilityIdentifier("grid.debug")
+            }
+        } label: {
+            // A badge while anything is off its shipped value, so a surprising
+            // reading is never mistaken for how the app actually behaves.
+            Image(
+                systemName: detection.isModified
+                    ? "square.grid.2x2.fill" : "square.grid.2x2"
+            )
+            .foregroundStyle(detection.isModified ? AnyShapeStyle(.orange) : AnyShapeStyle(.tint))
+        }
+        .accessibilityIdentifier("grid.columns")
+        .accessibilityLabel(Text("Columns", bundle: .module))
+    }
+
+    /// Few strings want fewer, wider cells; many want more across so the grid
+    /// doesn't run off the screen.
+    private static func defaultColumns(strings: Int) -> Int {
+        strings > 4 ? 3 : 2
+    }
+}
+
+// The tuning menu's vocabulary, out of the type body — SwiftLint counts the
+// struct's lines, and the view proper is the part worth keeping in one eyeful.
+extension InstrumentGridView {
     /// Catalog names are localizable; a user's custom tuning has no name to
     /// translate, and "Custom" is the catalog's word for that.
     private func tuningText(_ name: String) -> Text {
@@ -367,48 +413,6 @@ struct InstrumentGridView: View {
     private var fittingTunings: [Tuning] {
         guard let template = instance.template else { return [] }
         return template.knownTunings.filter { $0.strings.count == instance.strings.count }
-    }
-
-    private var layoutMenu: some View {
-        Menu {
-            Picker(selection: $columns) {
-                ForEach(1...3, id: \.self) { count in
-                    Text("\(count) across", bundle: .module).tag(count)
-                }
-            } label: {
-                Text("Columns", bundle: .module)
-            }
-
-            if LaunchStores.isDebug {
-                Divider()
-                Button {
-                    isShowingDebug = true
-                } label: {
-                    Label {
-                        Text(verbatim: "Detector…")
-                    } icon: {
-                        Image(systemName: "waveform.badge.magnifyingglass")
-                    }
-                }
-                .accessibilityIdentifier("grid.debug")
-            }
-        } label: {
-            // A badge while anything is off its shipped value, so a surprising
-            // reading is never mistaken for how the app actually behaves.
-            Image(
-                systemName: detection.isModified
-                    ? "square.grid.2x2.fill" : "square.grid.2x2"
-            )
-            .foregroundStyle(detection.isModified ? AnyShapeStyle(.orange) : AnyShapeStyle(.tint))
-        }
-        .accessibilityIdentifier("grid.columns")
-        .accessibilityLabel(Text("Columns", bundle: .module))
-    }
-
-    /// Few strings want fewer, wider cells; many want more across so the grid
-    /// doesn't run off the screen.
-    private static func defaultColumns(strings: Int) -> Int {
-        strings > 4 ? 3 : 2
     }
 }
 

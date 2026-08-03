@@ -185,6 +185,10 @@ first round's findings:
     ellipsis; hover-revealed controls are the Mac's "hidden underneath".
   - "Add another" is arguably not row-scoped at all — a general add control
     near the top, where the instrument type is picked alongside the rest.
+  - **Duplicate** joins the row actions: someone with a rack of guitars sets
+    up the first, then clones it per instrument — copied tuning and
+    reference, fresh unlocked, numbered name awaiting a rename. Nearly free
+    in the store; the value is all in the affordance.
   - A *complete* platform fork only becomes right if the Mac chooser moves
     to a different navigation shape entirely (sidebar/master-detail, the
     real Mac idiom for lists like this). That's the trigger condition —

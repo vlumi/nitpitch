@@ -364,6 +364,18 @@ final class PitchTests: XCTestCase {
         }
     }
 
+    /// The variants ship as templates rather than a string-count picker:
+    /// their low strings are the very notes the detection floor was set for.
+    func testVariantLowStringsSitOnTheDetectionFloor() {
+        XCTAssertEqual(Instrument.bassGuitar5.notes.first?.fullName, "B0")
+        XCTAssertEqual(Instrument.guitar8.notes.first?.fullName, "F♯1")
+        for instrument in [Instrument.bassGuitar5, .guitar7, .guitar8] {
+            for note in instrument.notes {
+                XCTAssertTrue(Detection.fullBand.contains(note.frequency()))
+            }
+        }
+    }
+
     /// Violin leads — it's the default and the app's reason for existing.
     func testViolinIsFirst() {
         XCTAssertEqual(Instrument.all.first, .violin)

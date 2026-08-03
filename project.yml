@@ -53,7 +53,7 @@ targets:
         # "Nitpitch-iOS". Module name stays Nitpitch_iOS (PRODUCT_MODULE_NAME).
         PRODUCT_NAME: Nitpitch
         CODE_SIGN_ENTITLEMENTS: Sources/iOS/Nitpitch.entitlements
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "0.2.0"
         # Build number is shared across iOS + macOS (kept in lock-step by the
         # release lane, `make release`) — bumped together so the apps never diverge.
         # 0 = never released; the first `make release` cuts build 1.
@@ -125,7 +125,7 @@ targets:
         # spanning both platforms, sharing the name, Apple ID, and SKU.
         PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch
         PRODUCT_NAME: Nitpitch
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "0.2.0"
         # Build number is shared across iOS + macOS (kept in lock-step by the
         # release lane, `make release`) — bumped together so the apps never diverge.
         # 0 = never released; the first `make release` cuts build 1.

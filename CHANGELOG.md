@@ -22,6 +22,15 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Instruments are now *yours*: each remembers its own tuning and reference
+  exactly as you left it, can be renamed (long-press in the list — "Guitar 2"
+  becomes "Strat"), and you can add another of the same kind. The strings
+  screen's header shows the tuning — Standard, Drop D, DADGAD, Open G,
+  Half-step down — and switching retunes every dial.
+- Each instrument also has a padlock (in the layout menu): locked, its tuning
+  and reference can't be nudged — a touch on a locked control offers the
+  unlock instead of silently changing anything. For the music stand, and for
+  keeping an instrument pinned at A=442.
 - Tap a string in the grid to get it full screen: the big dial aimed at that
   one string, hearing the instrument's whole range — a badly slipped peg
   reads "−300¢, keep going" instead of nothing. Arrows or a swipe move

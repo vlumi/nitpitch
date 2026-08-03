@@ -18,20 +18,20 @@ final class SettingsTests: XCTestCase {
         super.tearDown()
     }
 
-    func testDefaultsToViolinAt440() {
+    func testDefaultsTo440WithViolinPinned() {
         let settings = Settings(defaults: defaults)
-        XCTAssertEqual(settings.instrument, .violin)
         XCTAssertEqual(settings.reference.hz, 440)
+        XCTAssertEqual(settings.favorites, [Instrument.violin.id])
     }
 
     func testPersistsAcrossInstances() {
         let first = Settings(defaults: defaults)
-        first.instrument = .cello
         first.reference = ReferencePitch(hz: 442)
+        first.toggleFavorite("guitar")
 
         let second = Settings(defaults: defaults)
-        XCTAssertEqual(second.instrument, .cello)
         XCTAssertEqual(second.reference.hz, 442)
+        XCTAssertEqual(second.favorites, ["violin", "guitar"])
     }
 
     func testMissingReferenceDoesNotClampToLowBound() {
@@ -41,8 +41,4 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(Settings(defaults: defaults).reference.hz, 440)
     }
 
-    func testUnknownInstrumentIDFallsBackToViolin() {
-        defaults.set("theremin", forKey: "instrumentID")
-        XCTAssertEqual(Settings(defaults: defaults).instrument, .violin)
-    }
 }

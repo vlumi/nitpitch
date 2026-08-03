@@ -151,6 +151,26 @@ final class DetectionSettingsTests: XCTestCase {
         }
     }
 
+    /// Switching the tuning retargets every dial — rebanding alone would
+    /// leave cells measuring (and labelled) against the old notes. Caught
+    /// first by a UI test; pinned here where it's cheap.
+    func testConfigureRetargetsTheTuners() {
+        let input = AudioInput()
+        let controller = AudioSessionController(input: input)
+        let strings = StringTuners(
+            instrument: .guitar, audio: controller, reference: .standard)
+        XCTAssertEqual(strings.tuners[0].target.fullName, "E2")
+
+        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        let retuned = Instrument(
+            id: "guitar", name: "Guitar", strings: dropD.strings, family: .fretted)
+        strings.configure(instrument: retuned, reference: .standard)
+        XCTAssertEqual(strings.tuners[0].target.fullName, "D2")
+        XCTAssertEqual(
+            strings.tuners[1].target.fullName, "A2",
+            "unchanged strings keep their targets")
+    }
+
     // MARK: - The string view's coordinator
 
     /// The string view's defining property: bound to one string, it hears the

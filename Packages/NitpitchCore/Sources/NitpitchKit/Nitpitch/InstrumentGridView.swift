@@ -8,9 +8,15 @@ import SwiftUI
 /// neighbouring strings — so playing the G string lights the G dial and
 /// nothing else. All of them read the same microphone through
 /// `AudioSessionController`.
+///
+/// The screen shows an instrument *you own* (`InstrumentInstance`): its name
+/// in the title, its tuning in the header menu, its reference in the footer —
+/// all autosaved through the store, waiting as you left them. The padlock
+/// freezes the lot; locked controls are doors (they never mutate and never
+/// ignore a touch — they offer the unlock).
 struct InstrumentGridView: View {
-    let instrument: Instrument
     let audio: AudioSessionController
+    @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
     @ObservedObject var detection: DetectionSettings
 
@@ -19,20 +25,32 @@ struct InstrumentGridView: View {
     /// on the screen — how big is a preference, not a constant.
     @State private var columns: Int
     @State private var isShowingDebug = false
+    @State private var isShowingLockDialog = false
+
+    /// The instance as constructed, for while the store catches up and as the
+    /// identity to look the live value up by.
+    private let initial: InstrumentInstance
 
     init(
-        instrument: Instrument, audio: AudioSessionController, settings: Settings,
-        detection: DetectionSettings
+        instance: InstrumentInstance, store: InstrumentStore,
+        audio: AudioSessionController, settings: Settings, detection: DetectionSettings
     ) {
-        self.instrument = instrument
         self.audio = audio
+        self.store = store
         self.settings = settings
         self.detection = detection
+        self.initial = instance
         _strings = StateObject(
             wrappedValue: StringTuners(
-                instrument: instrument, audio: audio, reference: settings.reference,
-                tuning: detection.tuning))
-        _columns = State(initialValue: Self.defaultColumns(for: instrument))
+                instrument: instance.instrument, audio: audio,
+                reference: instance.reference, tuning: detection.tuning))
+        _columns = State(initialValue: Self.defaultColumns(strings: instance.strings.count))
+    }
+
+    /// The live instance — the store's copy, since tuning and reference can
+    /// change right on this screen.
+    private var instance: InstrumentInstance {
+        store.instance(id: initial.id) ?? initial
     }
 
     var body: some View {
@@ -51,7 +69,7 @@ struct InstrumentGridView: View {
                 ForEach(Array(strings.tuners.enumerated()), id: \.offset) { index, tuner in
                     // A cell is a link into its string's full-screen view —
                     // the grid shows all of them, the string view holds one.
-                    NavigationLink(value: TunerRoute.string(instrument, index)) {
+                    NavigationLink(value: TunerRoute.string(instance.id, index)) {
                         StringCell(tuner: tuner, naming: settings.naming)
                     }
                     .buttonStyle(.plain)
@@ -62,14 +80,18 @@ struct InstrumentGridView: View {
             .padding(.top, 8)
         }
         .safeAreaInset(edge: .bottom) { footer }
-        .navigationTitle(Text(LocalizedStringKey(instrument.name), bundle: .module))
-        .toolbar { ToolbarItem(placement: .primaryAction) { layoutMenu } }
+        .navigationTitle(instance.nameText)
+        .toolbar {
+            ToolbarItem(placement: .principal) { tuningMenu }
+            ToolbarItem(placement: .primaryAction) { layoutMenu }
+        }
         .accessibilityIdentifier("grid.strings")
         .task { strings.attachAll() }
         .onDisappear { strings.detachAll() }
-        .onChangeCompat(of: settings.reference) { _ in
-            reconfigure()
-        }
+        // The instance owns its state; whenever the store's copy moves —
+        // tuning switched, reference stepped, here or anywhere — the dials
+        // retarget.
+        .onChangeCompat(of: instance) { _ in reconfigure() }
         // Two separate paths on purpose. A band change has to rebuild the
         // detectors — the band is baked into their lag bounds — while a
         // threshold change must not, or dragging a slider would reset the
@@ -85,11 +107,15 @@ struct InstrumentGridView: View {
             DetectorDebugView(
                 detection: detection, strings: strings, naming: settings.naming)
         }
+        .lockDoorDialog(isPresented: $isShowingLockDialog) {
+            store.setLocked(id: instance.id, false)
+        }
     }
 
     private func reconfigure() {
         strings.configure(
-            instrument: instrument, reference: settings.reference, tuning: detection.tuning)
+            instrument: instance.instrument, reference: instance.reference,
+            tuning: detection.tuning)
     }
 
     private var gridColumns: [GridItem] {
@@ -97,13 +123,68 @@ struct InstrumentGridView: View {
     }
 
     /// The reference belongs on this screen: it's what every dial is measured
-    /// against, and it's adjusted in the moment. How *big* the dials are isn't
-    /// — that's set once and lives in the menu.
+    /// against, and it's adjusted in the moment. It's the *instance's*
+    /// reference — this instrument stays at 442 without dragging the rest of
+    /// the app there.
     private var footer: some View {
-        ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(.thinMaterial)
+        ReferencePitchStepper(
+            reference: Binding(
+                get: { instance.reference },
+                set: { store.setReference(id: instance.id, $0) }),
+            naming: settings.naming
+        )
+        .lockedDoor(instance.isLocked, isPresenting: $isShowingLockDialog)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .background(.thinMaterial)
+    }
+
+    /// The tuning, front and centre — "Drop D" is what this screen is *for*,
+    /// so it's the header control rather than a buried setting. Only tunings
+    /// that fit this instrument's strings are offered at all: a mismatched
+    /// count is a type error, not a runtime surprise.
+    private var tuningMenu: some View {
+        Menu {
+            ForEach(fittingTunings, id: \.self) { tuning in
+                Button {
+                    store.setTuning(id: instance.id, strings: tuning.strings)
+                } label: {
+                    if tuning.strings == instance.strings {
+                        Label {
+                            tuningText(tuning.name ?? "Custom")
+                        } icon: {
+                            Image(systemName: "checkmark")
+                        }
+                    } else {
+                        tuningText(tuning.name ?? "Custom")
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                if instance.isLocked {
+                    Image(systemName: "lock.fill").font(.caption2)
+                }
+                tuningText(instance.tuningName ?? "Custom")
+                    .font(.callout.weight(.medium))
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .lockedDoor(instance.isLocked, isPresenting: $isShowingLockDialog)
+        .accessibilityIdentifier("grid.tuning")
+    }
+
+    /// Catalog names are localizable; a user's custom tuning has no name to
+    /// translate, and "Custom" is the catalog's word for that.
+    private func tuningText(_ name: String) -> Text {
+        Text(LocalizedStringKey(name), bundle: .module)
+    }
+
+    private var fittingTunings: [Tuning] {
+        guard let template = instance.template else { return [] }
+        return template.knownTunings.filter { $0.strings.count == instance.strings.count }
     }
 
     private var layoutMenu: some View {
@@ -115,6 +196,24 @@ struct InstrumentGridView: View {
             } label: {
                 Text("Columns", bundle: .module)
             }
+
+            Divider()
+
+            Button {
+                if instance.isLocked {
+                    isShowingLockDialog = true
+                } else {
+                    store.setLocked(id: instance.id, true)
+                }
+            } label: {
+                Label {
+                    instance.isLocked
+                        ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module)
+                } icon: {
+                    Image(systemName: instance.isLocked ? "lock.open" : "lock")
+                }
+            }
+            .accessibilityIdentifier("grid.lock")
 
             if LaunchStores.isDebug {
                 Divider()
@@ -144,8 +243,8 @@ struct InstrumentGridView: View {
 
     /// Few strings want fewer, wider cells; many want more across so the grid
     /// doesn't run off the screen.
-    private static func defaultColumns(for instrument: Instrument) -> Int {
-        instrument.strings.count > 4 ? 3 : 2
+    private static func defaultColumns(strings: Int) -> Int {
+        strings > 4 ? 3 : 2
     }
 }
 
@@ -161,5 +260,45 @@ private struct StringCell: View {
     private var cents: Double? {
         if case .reading(let cents, _) = tuner.state { return cents }
         return nil
+    }
+}
+
+extension View {
+    /// The doors rule for a locked instrument's controls: never mutating,
+    /// never ignoring a touch. The control keeps its looks, loses its
+    /// function, and any tap on it raises the unlock offer instead — so the
+    /// novice discovers the way forward with the only gesture anyone tries
+    /// first, and a stray tap on a music stand dies at a dialog.
+    @ViewBuilder
+    func lockedDoor(_ isLocked: Bool, isPresenting: Binding<Bool>) -> some View {
+        if isLocked {
+            self
+                .disabled(true)
+                .overlay(
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture { isPresenting.wrappedValue = true }
+                )
+        } else {
+            self
+        }
+    }
+
+    /// The unlock offer every door opens onto.
+    func lockDoorDialog(isPresented: Binding<Bool>, unlock: @escaping () -> Void) -> some View {
+        alert(
+            Text("This instrument is locked", bundle: .module),
+            isPresented: isPresented
+        ) {
+            Button(action: unlock) {
+                Text("Unlock", bundle: .module)
+            }
+            Button(role: .cancel) {
+            } label: {
+                Text("Cancel", bundle: .module)
+            }
+        } message: {
+            Text("Unlock to make changes?", bundle: .module)
+        }
     }
 }

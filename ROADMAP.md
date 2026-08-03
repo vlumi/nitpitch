@@ -153,16 +153,17 @@ kind can wait for a real itch.
 
 #### Build order
 
-The pushed chooser, the favourites chips and the string view have shipped.
-Each remaining step is useful on its own, none blocked by the later ones:
+Shipped: the pushed chooser, the favourites chips, the string view, and the
+instances themselves — the store, the tuning catalog with its header menu,
+rename / add another / delete, and the padlock with its door dialogs. What
+remains:
 
-1. **Instrument instances + tuning catalog** (one default per template;
-   Drop D et al.; the instance replaces "last-used memory" — it *is* the
-   memory). "Add another guitar…", rename, and the padlock ride along.
-2. **Per-string target editing** in the string view; Custom relabeling.
-   String counts ride with instrument creation/editing (step 1), so no
-   separate tuning editor exists at all.
-3. **Presets**: save, load, name; then URL/QR share + import.
+1. **Per-string target editing** in the string view; Custom relabeling.
+   String counts ride with instrument creation/editing, so no separate
+   tuning editor exists at all. (Creation currently copies the template's
+   count; a string-count choice at add time joins when a 7-string template
+   or count editing is wanted.)
+2. **Presets**: save, load, name; then URL/QR share + import.
 
 ### The string view: what remains
 

@@ -164,34 +164,24 @@ A=442 and says so when it applies. The save dialog asks what to include
 carries. No runtime "which settings does this affect" toggle — that choice
 belongs to the person who saved it.
 
-#### UI/UX pass notes (from first hands-on)
+#### UI/UX pass notes
 
-The yardstick paragraph above predicted rounds against real hands; the
-first round's findings:
+The first round's findings (buried padlock, Mac management, the stepper
+wobble, duplicate) have all shipped. Still standing from that round: a
+*complete* platform fork of the chooser only becomes right if the Mac moves
+to sidebar/master-detail — the trigger condition; don't pre-fork for
+modifier differences.
 
-- **The target stepper wobbles**: the − and + shift with the width of the
-  note name between them (names vary a lot now). Deliberately left for the
-  layout pass — likely a fixed-width slot for the label.
-- **Instrument management is undiscoverable on the Mac** (and long-press is
-  iOS-only furniture anyway). Direction: **fork the affordances, share the
-  content** — the house precedent is `SettingsView`'s `macForm`/`sheetForm`,
-  one file with two bodies where the idiom diverges. Row content (name,
-  lock, star), sections, the rename alert and the store calls stay shared.
-  - iOS: `.swipeActions` for rename/delete — the native furniture for
-    row-scoped actions, hidden buttons underneath — with the context menu
-    kept (they compose).
-  - macOS: a right-click that demonstrably works, plus probably a visible
-    ellipsis; hover-revealed controls are the Mac's "hidden underneath".
-  - "Add another" is arguably not row-scoped at all — a general add control
-    near the top, where the instrument type is picked alongside the rest.
-  - **Duplicate** joins the row actions: someone with a rack of guitars sets
-    up the first, then clones it per instrument — copied tuning and
-    reference, fresh unlocked, numbered name awaiting a rename. Nearly free
-    in the store; the value is all in the affordance.
-  - A *complete* platform fork only becomes right if the Mac chooser moves
-    to a different navigation shape entirely (sidebar/master-detail, the
-    real Mac idiom for lists like this). That's the trigger condition —
-    don't pre-fork for modifier differences.
+Second round, from a fullscreen Mac window:
+
+- **The grid doesn't scale.** Cells stretch to the window but the dial
+  content is fixed (58 pt arc, fixed fonts), leaving postage stamps in
+  prairie-sized cells. The content should scale with its cell — linearly,
+  up to a sensible cap — because a big window usually means a viewer
+  standing further away. The single-string view has the same fixed-size
+  assumption. Likely shape: size classes derived from cell geometry
+  (GeometryReader), one scale factor feeding the arc height, fonts and
+  strip, capped.
 
 #### Build order
 

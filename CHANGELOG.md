@@ -22,6 +22,16 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Instruments can be managed anywhere: the + in the instrument list adds one
+  (pick the type, name it), swipe a row on iPhone for rename / duplicate /
+  delete, and on the Mac every row has a … menu with the same actions.
+  Duplicate clones the whole setup — rack of guitars, one setup, cloned per
+  instrument.
+- Editing a setup that came from a preset now reads "T-bird (edited)" in the
+  header instead of pretending you picked whatever tuning the edit happens
+  to match. Picking a tuning or preset from the menu starts a fresh claim.
+- The − and + around a string's target no longer shift with the note name's
+  width.
 - The tuning pill in the header now names the preset you're on — save or
   load "T-bird" and the pill says T-bird, not the tuning it happens to
   match. Change anything by hand and it falls back to the tuning's own name.

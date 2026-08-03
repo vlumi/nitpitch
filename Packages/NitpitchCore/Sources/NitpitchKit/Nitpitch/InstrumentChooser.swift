@@ -95,8 +95,13 @@ struct FavoritesRow: View {
 /// Rows are your *instruments* — the default one per template (shown even
 /// before it's materialized, indistinguishably) plus any you've added. A
 /// beginner sees exactly the template list; someone with three guitars sees
-/// three rows under Fretted. Long-press a row for rename / add another /
-/// delete; the star pins to the launch screen.
+/// three rows under Fretted.
+///
+/// Management forks by platform idiom and shares everything else: the same
+/// actions (rename / duplicate / delete) ride iOS swipe actions and the
+/// context menu, and on the Mac a visible ellipsis menu — hover-and-hunt
+/// right-clicks demonstrably weren't found. Adding is not row work at all:
+/// the toolbar's + picks the type.
 struct InstrumentChooser: View {
     @ObservedObject var settings: Settings
     @ObservedObject var store: InstrumentStore
@@ -121,6 +126,9 @@ struct InstrumentChooser: View {
             }
         }
         .navigationTitle(Text("Instrument", bundle: .module))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) { addMenu }
+        }
         .frame(minWidth: 320, minHeight: 380)
         .alert(
             Text("Rename", bundle: .module),
@@ -182,24 +190,112 @@ struct InstrumentChooser: View {
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
+        #if os(macOS)
+        // The Mac's visible affordance: hover-revealed or right-click-only
+        // controls are exactly what wasn't found in use.
+        .safeAreaInset(edge: .trailing, spacing: 8) { moreMenu(entry, template) }
+        #endif
         .contextMenu {
             managementActions(for: entry, template: template)
         }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if entry.id != template.id {
+                Button(role: .destructive) {
+                    settings.favorites.removeAll { $0 == entry.id }
+                    store.remove(id: entry.id)
+                } label: {
+                    Label {
+                        Text("Delete", bundle: .module)
+                    } icon: {
+                        Image(systemName: "trash")
+                    }
+                }
+            }
+            Button {
+                beginRename(entry, template: template)
+            } label: {
+                Label {
+                    Text("Rename", bundle: .module)
+                } icon: {
+                    Image(systemName: "pencil")
+                }
+            }
+            .tint(.blue)
+            Button {
+                duplicate(entry, template: template)
+            } label: {
+                Label {
+                    Text("Duplicate", bundle: .module)
+                } icon: {
+                    Image(systemName: "plus.square.on.square")
+                }
+            }
+            .tint(.green)
+        }
     }
 
-    /// Rename / add another / delete — instrument management, on the row it
-    /// manages.
+    /// The Mac's per-row menu — the same actions the swipe carries on iOS.
+    private func moreMenu(_ entry: InstrumentInstance, _ template: Instrument) -> some View {
+        Menu {
+            managementActions(for: entry, template: template)
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .menuIndicator(.hidden)
+        .accessibilityIdentifier("chooser.more.\(entry.id)")
+    }
+
+    /// The + in the toolbar: pick a type, get a fresh numbered instrument and
+    /// the rename dialog ready to name it what it really is.
+    private var addMenu: some View {
+        Menu {
+            ForEach(Instrument.choosable, id: \.family) { group in
+                ForEach(group.instruments) { template in
+                    Button {
+                        let added = store.add(of: template)
+                        renameText = added.name
+                        renamingID = added.id
+                    } label: {
+                        Text(LocalizedStringKey(template.name), bundle: .module)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "plus")
+        }
+        .accessibilityIdentifier("chooser.add")
+        .accessibilityLabel(Text("Add instrument", bundle: .module))
+    }
+
+    private func beginRename(_ entry: InstrumentInstance, template: Instrument) {
+        // Renaming a virtual default materializes it first.
+        if store.instance(id: entry.id) == nil {
+            _ = store.defaultInstance(for: template)
+        }
+        renameText = entry.name
+        renamingID = entry.id
+    }
+
+    private func duplicate(_ entry: InstrumentInstance, template: Instrument) {
+        // Duplicating a virtual default materializes it first.
+        if store.instance(id: entry.id) == nil {
+            _ = store.defaultInstance(for: template)
+        }
+        _ = store.duplicate(id: entry.id)
+    }
+
+    /// Rename / duplicate / delete — instrument management, on the row it
+    /// manages. Adding lives in the toolbar: it's not about any one row.
     @ViewBuilder
     private func managementActions(
         for entry: InstrumentInstance, template: Instrument
     ) -> some View {
         Button {
-            // Renaming a virtual default materializes it first.
-            if store.instance(id: entry.id) == nil {
-                _ = store.defaultInstance(for: template)
-            }
-            renameText = entry.name
-            renamingID = entry.id
+            beginRename(entry, template: template)
         } label: {
             Label {
                 Text("Rename", bundle: .module)
@@ -208,14 +304,12 @@ struct InstrumentChooser: View {
             }
         }
         Button {
-            let added = store.add(of: template)
-            renameText = added.name
-            renamingID = added.id
+            duplicate(entry, template: template)
         } label: {
             Label {
-                Text("Add another", bundle: .module)
+                Text("Duplicate", bundle: .module)
             } icon: {
-                Image(systemName: "plus")
+                Image(systemName: "plus.square.on.square")
             }
         }
         if entry.id != template.id {

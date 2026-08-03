@@ -120,9 +120,11 @@ final class PresetStoreTests: XCTestCase {
         XCTAssertTrue(presets.presets.isEmpty)
     }
 
-    /// The menu's checkmark is identity, not value: loading records WHICH
-    /// preset the instance is on, and any manual change ends that claim.
-    func testLoadingRecordsIdentityAndEditsClearIt() {
+    /// The claim is provenance: granular edits (a string step, a reference
+    /// step) keep it — the pill shows "(edited)" — and only an explicit pick
+    /// (a tuning from the menu, another preset) replaces it. Clearing on
+    /// edit made the pill announce a catalog tuning nobody picked.
+    func testGranularEditsKeepTheClaimAndPicksReplaceIt() {
         let (presets, instruments) = makeStores()
         let guitar = instruments.defaultInstance(for: .guitar)
         let saved = presets.save(guitar, named: "Gig", includeReference: false)!
@@ -130,17 +132,14 @@ final class PresetStoreTests: XCTestCase {
         presets.load(saved, onto: guitar, in: instruments)
         XCTAssertEqual(instruments.instance(id: guitar.id)?.loadedPresetID, saved.id)
 
-        // A reference step is a manual change — the setup is no longer
-        // "Gig, untouched".
+        // Drift, not a new pick: the claim survives a reference step and a
+        // string edit.
         instruments.setReference(id: guitar.id, ReferencePitch(hz: 443))
-        XCTAssertNil(instruments.instance(id: guitar.id)?.loadedPresetID)
-
-        presets.load(saved, onto: instruments.instance(id: guitar.id)!, in: instruments)
         XCTAssertEqual(instruments.instance(id: guitar.id)?.loadedPresetID, saved.id)
         instruments.setString(id: guitar.id, index: 0, midi: 38)
-        XCTAssertNil(instruments.instance(id: guitar.id)?.loadedPresetID)
+        XCTAssertEqual(instruments.instance(id: guitar.id)?.loadedPresetID, saved.id)
 
-        presets.load(saved, onto: instruments.instance(id: guitar.id)!, in: instruments)
+        // A tuning picked from the menu IS a new claim.
         instruments.setTuning(id: guitar.id, strings: Instrument.guitar.strings)
         XCTAssertNil(instruments.instance(id: guitar.id)?.loadedPresetID)
     }

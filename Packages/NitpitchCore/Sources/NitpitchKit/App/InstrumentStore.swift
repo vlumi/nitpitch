@@ -25,11 +25,13 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// The padlock: a locked instrument's setup is frozen behind the toolbar
     /// toggle.
     public var isLocked: Bool
-    /// The preset last applied, while the setup still matches it — any manual
-    /// change (a tuning pick, a string edit, a reference step) clears it.
-    /// This is what the tuning menu's checkmark means ("which one did I
-    /// pick"), and later what the header's "Bach No. 1 (edited)" hangs off.
-    /// Optional and absent from old stored JSON, which decodes as nil.
+    /// The preset last applied — the setup's *provenance*. An explicit pick
+    /// (another preset, or a tuning from the menu) replaces it; granular
+    /// edits (a string stepper, a reference step) keep it, and the pill shows
+    /// "T-bird (edited)" while the values have drifted from its payload —
+    /// clearing on edit made the pill announce a catalog tuning nobody
+    /// picked. Optional and absent from old stored JSON, which decodes as
+    /// nil.
     public var loadedPresetID: String?
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
@@ -128,6 +130,33 @@ public final class InstrumentStore: ObservableObject {
         return created
     }
 
+    /// Clone an instrument: copied tuning and reference, fresh unlocked, a
+    /// numbered name awaiting a rename — someone with a rack of guitars sets
+    /// up the first and duplicates it per instrument.
+    @discardableResult
+    public func duplicate(id: String) -> InstrumentInstance? {
+        guard let source = instance(id: id) else { return nil }
+        let created = InstrumentInstance(
+            id: UUID().uuidString,
+            templateID: source.templateID,
+            name: nextName(after: source.name, templateID: source.templateID),
+            strings: source.strings,
+            referenceHz: source.referenceHz,
+            isLocked: false,
+            loadedPresetID: nil)
+        instances.append(created)
+        return created
+    }
+
+    /// "Strat 2", or "Strat 3" when that's taken — numbered against the
+    /// template's other instances so a rename is suggested, not required.
+    private func nextName(after base: String, templateID: String) -> String {
+        let taken = Set(instances.filter { $0.templateID == templateID }.map(\.name))
+        var number = 2
+        while taken.contains("\(base) \(number)") { number += 1 }
+        return "\(base) \(number)"
+    }
+
     /// Remove an added instrument. Removing a *default* instance just resets
     /// it: the template row would recreate it on the next tap anyway, so
     /// pretending it can be deleted would only manufacture surprise.
@@ -168,10 +197,8 @@ public final class InstrumentStore: ObservableObject {
         let clamped = min(
             max(midi, Self.editableMIDIRange.lowerBound),
             Self.editableMIDIRange.upperBound)
-        update(id: id) {
-            $0.strings[index] = clamped
-            $0.loadedPresetID = nil
-        }
+        // Keeps the preset claim: a granular edit is drift, not a new pick.
+        update(id: id) { $0.strings[index] = clamped }
     }
 
     /// MIDI notes whose frequency at any offered reference stays inside
@@ -184,10 +211,9 @@ public final class InstrumentStore: ObservableObject {
     public static let editableMIDIRange = 23...95
 
     public func setReference(id: String, _ reference: ReferencePitch) {
-        update(id: id) {
-            $0.referenceHz = reference.hz
-            $0.loadedPresetID = nil
-        }
+        // Keeps the preset claim: drift shows as "(edited)", scope-aware —
+        // a tuning-only preset never claimed the reference at all.
+        update(id: id) { $0.referenceHz = reference.hz }
     }
 
     /// Called by `PresetStore.load` after applying a preset's fields, so the

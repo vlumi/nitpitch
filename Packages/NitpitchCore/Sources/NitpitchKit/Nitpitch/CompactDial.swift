@@ -18,31 +18,35 @@ struct CompactDial: View {
     let cents: Double?
     /// Signal strength behind the reading, 0...1. Zero when nothing reads.
     var level: Double = 0
+    /// One factor drives every dimension, so a big Mac window gets a big
+    /// dial rather than a postage stamp centred in a prairie — you stand
+    /// further from a big window. Capped by the caller.
+    var scale: CGFloat = 1
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 4 * scale) {
             // The chromatic screen's meter, scaled to the cell: centre-out,
             // because a symmetric bar reads as signal the way a hardware input
             // meter does, and it shares the dial's centre-out geometry.
             LevelMeter(level: cents == nil ? 0 : level)
                 .frame(height: 3)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, 22 * scale)
             CompactArc(cents: cents, inTune: isInTune)
-                .frame(height: Self.arcHeight)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                .frame(height: Self.arcHeight * scale)
+            HStack(alignment: .firstTextBaseline, spacing: 6 * scale) {
                 Text(verbatim: name)
-                    .font(.title3.weight(.semibold))
+                    .font(.system(size: 20 * scale, weight: .semibold, design: .rounded))
                     .foregroundStyle(
                         cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 Text(verbatim: centsLabel)
-                    .font(.caption.monospacedDigit())
+                    .font(.system(size: 12 * scale).monospacedDigit())
                     .foregroundStyle(
                         isInTune ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
             }
-            LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 0.55)
+            LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 0.55 * scale)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, 12 * scale)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.secondary.opacity(0.08))

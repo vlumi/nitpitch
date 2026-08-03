@@ -62,30 +62,26 @@ struct InstrumentGridView: View {
     }
 
     var body: some View {
-        ScrollView {
-            // Whether the app can hear anything at all — the same meter, size
-            // and axis as the chromatic screen's. The per-string bars can't
-            // answer this: they're zero both in a quiet room and when sound is
-            // coming in that isn't near any string's target.
-            LevelMeter(level: strings.inputLevel)
-                .frame(width: 72, height: 4)
-                .padding(.top, 6)
-            // Lazy so cost tracks the viewport rather than the string count —
-            // which keeps "only track what's on screen" reachable later, and
-            // lets an arbitrary tuning scale.
-            LazyVGrid(columns: gridColumns, spacing: 12) {
-                ForEach(Array(strings.tuners.enumerated()), id: \.offset) { index, tuner in
-                    // A cell is a link into its string's full-screen view —
-                    // the grid shows all of them, the string view holds one.
-                    NavigationLink(value: TunerRoute.string(instance.id, index)) {
-                        StringCell(tuner: tuner, naming: settings.naming)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("grid.cell.\(index)")
+        // The shape chooses the presentation (ROADMAP § 1): a wide viewport
+        // shows the strings as strings — horizontal strips, the light dots
+        // carrying the tuning — because that's what wide dial cells were
+        // already degenerating into, with a vestigial arc rattling inside.
+        // Tall shows the dial grid, its content scaled to the cells.
+        GeometryReader { geo in
+            ScrollView {
+                // Whether the app can hear anything at all — the same meter,
+                // size and axis as the chromatic screen's. The per-string bars
+                // can't answer this: they're zero both in a quiet room and
+                // when sound is coming in that isn't near any string's target.
+                LevelMeter(level: strings.inputLevel)
+                    .frame(width: 72, height: 4)
+                    .padding(.top, 6)
+                if geo.size.width > geo.size.height * 1.3 {
+                    strips
+                } else {
+                    dialGrid(cellScale: cellScale(for: geo.size.width))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
         }
         .safeAreaInset(edge: .bottom) { footer }
         .navigationTitle(instance.nameText)
@@ -192,6 +188,40 @@ struct InstrumentGridView: View {
 
     private var gridColumns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: 12), count: columns)
+    }
+
+    /// Lazy so cost tracks the viewport rather than the string count — which
+    /// keeps "only track what's on screen" reachable later, and lets an
+    /// arbitrary tuning scale.
+    private func dialGrid(cellScale: CGFloat) -> some View {
+        LazyVGrid(columns: gridColumns, spacing: 12) {
+            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
+                // A cell is a link into its string's full-screen view — the
+                // grid shows all of them, the string view holds one.
+                NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
+                    StringCell(tuner: entry.tuner, naming: settings.naming, scale: cellScale)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("grid.cell.\(position)")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    /// The dial content grows with its cell up to a cap — a big window is
+    /// usually a viewer standing further away — and never shrinks below the
+    /// design size.
+    private func cellScale(for width: CGFloat) -> CGFloat {
+        let available = width - 32 - CGFloat(columns - 1) * 12
+        let cell = available / CGFloat(columns)
+        return min(1.8, max(1, cell / 230))
+    }
+
+    /// Tuner order as displayed — ready to reverse when the instance is a
+    /// left-handed instrument (flipped string order, a coming feature).
+    private var displayedTuners: [(index: Int, tuner: StringTunerViewModel)] {
+        strings.tuners.enumerated().map { ($0.offset, $0.element) }
     }
 
     /// The reference belongs on this screen: it's what every dial is measured
@@ -364,9 +394,26 @@ struct InstrumentGridView: View {
     }
 }
 
-// The tuning menu's vocabulary, out of the type body — SwiftLint counts the
-// struct's lines, and the view proper is the part worth keeping in one eyeful.
+// The wide presentation, and the tuning menu's vocabulary — out of the type
+// body: SwiftLint counts the struct's lines, and the view proper is the part
+// worth keeping in one eyeful.
 extension InstrumentGridView {
+    /// The strings as strings: one horizontal strip each, stacked like the
+    /// instrument's own strings across the display.
+    var strips: some View {
+        VStack(spacing: 10) {
+            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
+                NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
+                    StringStrip(tuner: entry.tuner, naming: settings.naming)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("strips.row.\(position)")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
     /// Catalog names are localizable; a user's custom tuning has no name to
     /// translate, and "Custom" is the catalog's word for that.
     private func tuningText(_ name: String) -> Text {
@@ -428,13 +475,78 @@ extension InstrumentGridView {
 private struct StringCell: View {
     @ObservedObject var tuner: StringTunerViewModel
     let naming: NoteNaming
+    var scale: CGFloat = 1
 
     var body: some View {
-        CompactDial(name: tuner.target.name(in: naming), cents: cents, level: tuner.level)
+        CompactDial(
+            name: tuner.target.name(in: naming), cents: cents, level: tuner.level,
+            scale: scale)
     }
 
     private var cents: Double? {
         if case .reading(let cents, _) = tuner.state { return cents }
         return nil
+    }
+}
+
+/// One string as a strip: the name and cents at the left, the light dots
+/// carrying the tuning across the width, the string's signal at the right —
+/// and no arc, because at this shape the dots ARE the display.
+struct StringStrip: View {
+    @ObservedObject var tuner: StringTunerViewModel
+    let naming: NoteNaming
+
+    var body: some View {
+        HStack(spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: tuner.target.name(in: naming))
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .foregroundStyle(
+                        cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                Text(verbatim: centsLabel)
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(
+                        isInTune ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
+            }
+            .frame(width: 130, alignment: .leading)
+            Spacer(minLength: 0)
+            LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 1.4)
+            Spacer(minLength: 0)
+            LevelMeter(level: cents == nil ? 0 : tuner.level)
+                .frame(width: 48, height: 3)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.secondary.opacity(0.08))
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: tuner.target.name(in: naming)))
+        .accessibilityValue(Text(verbatim: accessibleValue))
+    }
+
+    private var cents: Double? {
+        if case .reading(let cents, _) = tuner.state { return cents }
+        return nil
+    }
+
+    private var isInTune: Bool {
+        guard let cents else { return false }
+        return TuningDisplay.isInTune(cents: cents)
+    }
+
+    private var centsLabel: String {
+        guard let cents else { return "—" }
+        let rounded = Int(cents.rounded())
+        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
+    }
+
+    private var accessibleValue: String {
+        guard let cents else { return "not heard" }
+        if isInTune { return "in tune" }
+        let rounded = abs(Int(cents.rounded()))
+        return cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
     }
 }

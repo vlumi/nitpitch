@@ -205,7 +205,7 @@ Shipped: the view (full dial, whole-instrument band, arrows/swipe, never
 follows the sound) and its target editing. Still to come there: the
 intonation feature (§ 4), eventually.
 
-### Landscape: strings drawn as strings
+### Landscape: strings drawn as strings (shipped; piano part remains)
 
 Landscape shouldn't rearrange the same furniture — it should switch
 metaphors. Instead of reflowed dial cells, a wide screen shows **one
@@ -236,6 +236,12 @@ and there is no arc at all. The visual matches the thing in your hands.
   horizontal-strips view — it just bends the strips into keys.
 - Affinity with the scaling pass: strips scale with width naturally, where
   the dial cells fight it. Worth designing the two together.
+- **Left-handed instruments: a flipped string order, owned by the
+  instrument.** A lefty's low string sits where a righty's high one does,
+  so the instance gets a "flipped" bit that reverses display order
+  everywhere — strips, the dial grid, the string view's prev/next. The
+  cents axis never flips: sharp stays right, because that's pitch, not
+  handedness.
 
 ### Open measurements
 

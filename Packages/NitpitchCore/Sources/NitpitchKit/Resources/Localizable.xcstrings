@@ -154,6 +154,9 @@
     "Replace preset" : {
       "comment" : "Title of the confirmation when saving over an existing name"
     },
+    "Reverse strip order" : {
+      "comment" : "Layout toggle: flip whether the lowest string sits at the top or bottom of the strips"
+    },
     "Save as preset…" : {
       "comment" : "Tuning menu: save the current setup under a name"
     },
@@ -165,6 +168,9 @@
     },
     "Standard" : {
       "comment" : "Tuning name: the instrument's standard tuning"
+    },
+    "Strings as strips" : {
+      "comment" : "Mac layout toggle: show the strings as horizontal strips instead of dials"
     },
     "System" : {
       "comment" : "Appearance option: follow the system setting"

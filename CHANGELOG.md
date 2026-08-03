@@ -22,6 +22,14 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- The chromatic tuner scales as one piece from a tiny window to fullscreen,
+  proportions kept — no more cramped dial in a small Mac window.
+- On the Mac, the strips view is a toggle in the layout menu rather than
+  following the window's shape, the grid picks its own column count from the
+  window width, and the window can't shrink past where the toolbar hides
+  the back button.
+- The strips can run either way — lowest string on top, as you look down at
+  the instrument, or reversed, as tabs are written — from the layout menu.
 - A wide screen now shows the strings as strings: one horizontal strip per
   string with the tuning lights running across it, instead of dial cells
   stretched out of shape. Rotate the phone, or make the Mac window wide,

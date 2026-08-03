@@ -214,21 +214,18 @@ lying across the display: the existing light-dot strip carries the tuning
 (it already encodes direction and in-tune), the name and cents ride along,
 and there is no arc at all. The visual matches the thing in your hands.
 
-- **No switch — the viewport's shape chooses.** Two observations settled
-  it. First, the fullscreen screenshots already contain the strips view:
-  wide grid cells are horizontal strips with a vestigial arc rattling
-  inside — the strips aren't a competing metaphor for landscape, they're
-  what wide cells were degenerating into, done properly. Nothing the dial
-  shows is absent from a strip (the dots are the dial's own light strip),
-  so there is nothing to miss. Second, a considered no-yank objection
-  died on inspection: the string view refuses to follow *sounds*, which
-  are not user actions — but rotating a device or resizing a window is
-  one, and shape-responsive presentation is what platforms train people
-  to expect. On the Mac the window's aspect is continuous and always
-  deliberate: wide window, strips; tall window, dials; same rule
-  everywhere. Sharp stays to the right always. If a real constituency
-  for landscape dials shows up in use, a toggle is cheap to add then —
-  not preemptively.
+- **iOS by shape, Mac by toggle** — settled the third way, by use.
+  Rotation is a gesture, so the device's shape deciding feels right on
+  iPhone and iPad. But hands-on showed a Mac window edge-drag flipping
+  the metaphor feels like the app second-guessing you, so there the
+  strips are a deliberate toggle in the layout menu, and the column
+  count follows the window width instead of a picker. Sharp stays to
+  the right always.
+- **Strip direction is the viewer's call**: lowest string on top ("as you
+  look down at the instrument, fat closest") or reversed ("as you play
+  it" — tab order), a layout-menu toggle. Deliberately distinct from
+  left-handedness, which is the *instrument's* property and will reverse
+  order in every view when it lands.
 - **Piano, when it comes (§ 3), gets its display answer from the same
   idea**: the keys themselves in correct black/white geometry, the tuning
   dots running vertically *inside* each key, names and cents above the

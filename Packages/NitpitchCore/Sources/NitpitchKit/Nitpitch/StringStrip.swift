@@ -7,28 +7,32 @@ import SwiftUI
 struct StringStrip: View {
     @ObservedObject var tuner: StringTunerViewModel
     let naming: NoteNaming
+    /// One factor drives every dimension — computed by the caller so all
+    /// strips FIT the viewport (a phone in landscape) or fill it (a big
+    /// window), never scroll.
+    var scale: CGFloat = 1
 
     var body: some View {
-        HStack(spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(spacing: 16 * scale) {
+            HStack(alignment: .firstTextBaseline, spacing: 8 * scale) {
                 Text(verbatim: tuner.target.name(in: naming))
-                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .font(.system(size: 24 * scale, weight: .semibold, design: .rounded))
                     .foregroundStyle(
                         cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 Text(verbatim: centsLabel)
-                    .font(.callout.monospacedDigit())
+                    .font(.system(size: 15 * scale).monospacedDigit())
                     .foregroundStyle(
                         isInTune ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
             }
-            .frame(width: 130, alignment: .leading)
+            .frame(width: 130 * scale, alignment: .leading)
             Spacer(minLength: 0)
-            LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 1.4)
+            LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 1.4 * scale)
             Spacer(minLength: 0)
             LevelMeter(level: cents == nil ? 0 : tuner.level)
-                .frame(width: 48, height: 3)
+                .frame(width: 48 * scale, height: 3)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
+        .padding(.horizontal, 20 * scale)
+        .padding(.vertical, 18 * scale)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

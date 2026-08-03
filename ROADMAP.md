@@ -196,26 +196,21 @@ first round's findings:
 
 #### Build order
 
-Shipped: the pushed chooser, the favourites chips, the string view, and the
-instances themselves — the store, the tuning catalog with its header menu,
-rename / add another / delete, and the padlock with its door dialogs. What
-remains:
+Shipped: the pushed chooser, the favourites chips, the string view, the
+instances (store, tuning catalog + header menu, rename / add another /
+delete, the padlock with its doors), and per-string target editing with
+Custom relabeling. What remains:
 
-1. **Per-string target editing** in the string view; Custom relabeling.
-   String counts ride with instrument creation/editing, so no separate
-   tuning editor exists at all. (Creation currently copies the template's
-   count; a string-count choice at add time joins when a 7-string template
-   or count editing is wanted.)
-2. **Presets**: save, load, name; then URL/QR share + import.
+1. **Presets**: save, load, name — carrying only the fields they were saved
+   with (see above) — then URL/QR share + import.
+2. String-count choice at add time, when a 7-string template or count
+   editing is wanted. (Creation currently copies the template's count.)
 
 ### The string view: what remains
 
-The view itself shipped (full dial, whole-instrument band, arrows/swipe,
-never follows the sound). Still to come there:
-
-- **Target editing** (build order step 2): the same screen answers "how far
-  is this string from D2" and "make this string's target C2".
-- The intonation feature (§ 4), eventually.
+Shipped: the view (full dial, whole-instrument band, arrows/swipe, never
+follows the sound) and its target editing. Still to come there: the
+intonation feature (§ 4), eventually.
 
 ### Landscape reflow
 

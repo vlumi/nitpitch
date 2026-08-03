@@ -67,6 +67,9 @@
     "Lock" : {
       "comment" : "Menu action: lock this instrument's setup against changes"
     },
+    "Lower target" : {
+      "comment" : "Stepper in the single-string view: this string's target down a semitone"
+    },
     "Microphone access is off" : {
       "comment" : "Shown when the user denied microphone permission"
     },
@@ -102,6 +105,9 @@
     },
     "Previous string" : {
       "comment" : "Arrow in the single-string view: go to the lower neighbouring string"
+    },
+    "Raise target" : {
+      "comment" : "Stepper in the single-string view: this string's target up a semitone"
     },
     "Reference pitch" : {
       "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"

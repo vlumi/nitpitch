@@ -50,7 +50,13 @@ struct StringView: View {
             LevelMeter(level: single.inputLevel)
                 .frame(width: 72, height: 4)
                 .padding(.top, 6)
-            StringDialPane(tuner: single.tuner, naming: settings.naming)
+            StringDialPane(
+                tuner: single.tuner,
+                naming: settings.naming,
+                isLocked: instance.isLocked,
+                isShowingLockDialog: $isShowingLockDialog,
+                canStepTarget: { delta in canStepTarget(delta) },
+                stepTarget: { delta in stepTarget(delta) })
             stringSwitcher
             ReferencePitchStepper(
                 reference: Binding(
@@ -70,7 +76,7 @@ struct StringView: View {
         .task { single.attach() }
         .onDisappear { single.detach() }
         .onChangeCompat(of: instance) { _ in
-            single.configure(reference: instance.reference, tuning: detection.tuning)
+            single.apply(instance: instance, index: index, tuning: detection.tuning)
         }
         .lockDoorDialog(isPresented: $isShowingLockDialog) {
             store.setLocked(id: instance.id, false)
@@ -134,7 +140,20 @@ struct StringView: View {
     private func step(_ delta: Int) {
         guard canStep(delta) else { return }
         index += delta
-        single.retarget(index: index)
+        single.apply(instance: instance, index: index, tuning: detection.tuning)
+    }
+
+    /// The target stepper: nudge D2 down to C2, and the tuning relabels
+    /// itself Custom because the pitches no longer match anything named.
+    private func canStepTarget(_ delta: Int) -> Bool {
+        guard instance.strings.indices.contains(index) else { return false }
+        return InstrumentStore.editableMIDIRange.contains(instance.strings[index] + delta)
+    }
+
+    private func stepTarget(_ delta: Int) {
+        guard canStepTarget(delta) else { return }
+        store.setString(id: instance.id, index: index, midi: instance.strings[index] + delta)
+        // The store change comes back through onChange(of: instance) → apply.
     }
 }
 
@@ -142,6 +161,10 @@ struct StringView: View {
 private struct StringDialPane: View {
     @ObservedObject var tuner: StringTunerViewModel
     let naming: NoteNaming
+    let isLocked: Bool
+    @Binding var isShowingLockDialog: Bool
+    let canStepTarget: (Int) -> Bool
+    let stepTarget: (Int) -> Void
 
     var body: some View {
         TunerDial(cents: displayCents, inTune: isInTune, isReading: isReading) {
@@ -150,14 +173,20 @@ private struct StringDialPane: View {
     }
 
     /// The *target*, not the detection: this screen answers "how far is this
-    /// from D", so D is the headline and the cents are the answer. The
-    /// chromatic tuner shows what it heard; this shows what you're after.
+    /// from D", so D is the headline and the cents are the answer — and the
+    /// steppers flanking it change what's being asked: nudge D2 down to C2
+    /// and this string's target IS C2 (the tuning relabels itself Custom).
+    /// The chromatic tuner shows what it heard; this shows what you're after.
     private var readout: some View {
         VStack(spacing: 6) {
-            NoteNameLabel(note: tuner.target, naming: naming, fontSize: 46)
-                .accessibilityElement(children: .ignore)
-                .accessibilityIdentifier("string.target")
-                .accessibilityLabel(tuner.target.accessibleName(in: naming))
+            HStack(spacing: 18) {
+                targetStep(systemName: "minus", id: "string.down", by: -1)
+                NoteNameLabel(note: tuner.target, naming: naming, fontSize: 46)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("string.target")
+                    .accessibilityLabel(tuner.target.accessibleName(in: naming))
+                targetStep(systemName: "plus", id: "string.up", by: 1)
+            }
             Text(verbatim: centsLabel)
                 .font(.title3.monospacedDigit())
                 .foregroundStyle(
@@ -168,6 +197,26 @@ private struct StringDialPane: View {
                 .accessibilityIdentifier("string.cents")
         }
         .frame(height: 46 * 1.15 + 4 + 20)
+    }
+
+    private func targetStep(systemName: String, id: String, by delta: Int) -> some View {
+        Button {
+            stepTarget(delta)
+        } label: {
+            Image(systemName: systemName)
+                .font(.body.weight(.medium))
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .disabled(!canStepTarget(delta))
+        .lockedDoor(isLocked, isPresenting: $isShowingLockDialog)
+        .accessibilityIdentifier(id)
+        .accessibilityLabel(
+            delta < 0
+                ? Text("Lower target", bundle: .module)
+                : Text("Raise target", bundle: .module))
     }
 
     private var centsLabel: String {
@@ -210,7 +259,7 @@ final class SingleStringTuner: ObservableObject {
     /// grid's.
     @Published private(set) var inputLevel: Double = 0
 
-    private let instrument: Instrument
+    private var instrument: Instrument
     private let audio: AudioSessionController
     private let bank: DetectorBank
     private var subscription: AudioSessionController.Subscription?
@@ -268,27 +317,24 @@ final class SingleStringTuner: ObservableObject {
         tuner.end()
     }
 
-    /// Swipe or arrow: aim at a neighbouring string. The band stays the whole
-    /// instrument — only the target moves.
-    func retarget(index: Int) {
-        let note = instrument.notes[index]
-        bank.configure(
-            targets: [note.frequency(reference: reference)],
-            bands: [instrument.band(reference: reference)],
-            tuning: tuning)
-        tuner.retarget(note)
-    }
-
-    /// The reference moved: target frequency and band shift with it.
-    func configure(reference: ReferencePitch, tuning: DetectionTuning) {
-        self.reference = reference
+    /// The one entry point for "aim here now": swiping to a neighbour, the
+    /// reference moving, or the target itself being edited — all end up as a
+    /// note, a band, and a reference to measure against.
+    func apply(instance: InstrumentInstance, index: Int, tuning: DetectionTuning) {
+        self.instrument = instance.instrument
+        self.reference = instance.reference
         self.tuning = tuning
+        guard instrument.notes.indices.contains(index) else { return }
+        let note = instrument.notes[index]
         let band = instrument.band(reference: reference)
         bank.configure(
-            targets: [tuner.target.frequency(reference: reference)],
+            targets: [note.frequency(reference: reference)],
             bands: [band],
             tuning: tuning)
         tuner.configure(band: band, reference: reference)
+        if tuner.target != note {
+            tuner.retarget(note)
+        }
     }
 
     func retune(_ tuning: DetectionTuning) {

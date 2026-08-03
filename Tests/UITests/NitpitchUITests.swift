@@ -125,6 +125,31 @@ final class NitpitchUITests: XCTestCase {
             "back from a string should land on the grid")
     }
 
+    /// The target stepper: nudge G3 down, the headline changes, the grid's
+    /// cell follows when you go back, and the header relabels the tuning
+    /// Custom — the whole edit loop, end to end.
+    func testEditingATargetFollowsThroughToTheGrid() {
+        let app = launch()
+        openViolinGrid(app)
+        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+
+        let target = app.descendants(matching: .any)["string.target"]
+        XCTAssertTrue(target.waitForExistence(timeout: 5))
+        XCTAssertTrue(target.label.hasPrefix("G"))
+
+        let down = app.descendants(matching: .any)["string.down"]
+        down.tap()
+        XCTAssertTrue(target.label.hasPrefix("F"), "G3 down a semitone is F sharp 3")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        let cell = app.descendants(matching: .any)["grid.cell.0"].firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        XCTAssertTrue(cell.label.hasPrefix("F"), "the grid cell follows the edit")
+        XCTAssertTrue(
+            app.buttons["grid.tuning"].firstMatch.label.contains("Custom"),
+            "an edited named tuning relabels itself Custom")
+    }
+
     // MARK: - Tunings and the lock
 
     /// Switching the guitar to Drop D retargets the low string's dial — the

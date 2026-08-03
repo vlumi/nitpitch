@@ -178,6 +178,42 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(cell.label.hasPrefix("D"), "Drop D bottom string is D")
     }
 
+    /// The preset loop, end to end: set Drop D, save it as "Gig" (tuning
+    /// only), go back to Standard, load Gig — and the header reads Drop D
+    /// again, because the values are the identity.
+    func testSaveAndLoadAPreset() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+        app.descendants(matching: .any)["chooser.guitar"].firstMatch.tap()
+
+        let tuningMenu = app.buttons["grid.tuning"].firstMatch
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        tuningMenu.tap()
+        app.buttons["Drop D"].firstMatch.tap()
+
+        tuningMenu.tap()
+        app.buttons["Save as preset…"].firstMatch.tap()
+        let nameField = app.textFields.firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("Gig")
+        app.buttons["Tuning only"].firstMatch.tap()
+
+        tuningMenu.tap()
+        app.buttons["Standard"].firstMatch.tap()
+        XCTAssertTrue(tuningMenu.label.contains("Standard"))
+
+        tuningMenu.tap()
+        let gig = app.buttons["Gig"].firstMatch
+        XCTAssertTrue(gig.waitForExistence(timeout: 5), "the saved preset should be offered")
+        gig.tap()
+        XCTAssertTrue(
+            tuningMenu.label.contains("Drop D"),
+            "loading Gig restores Drop D — the values are the identity")
+    }
+
     /// The padlock is ambient: a fixed toolbar toggle, no dialogs anywhere.
     /// Locked controls dim; the lock itself is the one way back — and it
     /// follows the instrument into the string view.

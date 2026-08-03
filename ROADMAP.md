@@ -197,12 +197,17 @@ first round's findings:
 
 Shipped: the pushed chooser, the favourites chips, the string view, the
 instances (store, tuning catalog + header menu, rename / add another /
-delete, the padlock with its doors), and per-string target editing with
-Custom relabeling. What remains:
+delete, the ambient padlock), per-string target editing with Custom
+relabeling, and presets — save with the payload choice, load, replace with
+confirm, delete. What remains:
 
-1. **Presets**: save, load, name — carrying only the fields they were saved
-   with (see above) — then URL/QR share + import.
-2. String-count choice at add time, when a 7-string template or count
+1. **Preset share + import**: the URL fragment format, QR render, the import
+   preview (*Load once / Save*), and the site's hosted long tail.
+2. **The loaded preset's name in the header** — "Strat · Bach No. 1", with
+   "(edited)" as the drift marker once anything moves. Needs the instance to
+   remember what was last loaded; deliberately left out of the first preset
+   cut.
+3. String-count choice at add time, when a 7-string template or count
    editing is wanted. (Creation currently copies the template's count.)
 
 ### The string view: what remains

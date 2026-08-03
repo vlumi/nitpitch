@@ -18,6 +18,7 @@ import SwiftUI
 struct InstrumentGridView: View {
     let audio: AudioSessionController
     @ObservedObject var store: InstrumentStore
+    @ObservedObject var presets: PresetStore
     @ObservedObject var settings: Settings
     @ObservedObject var detection: DetectionSettings
 
@@ -26,17 +27,24 @@ struct InstrumentGridView: View {
     /// on the screen — how big is a preference, not a constant.
     @State private var columns: Int
     @State private var isShowingDebug = false
+    @State private var isSavingPreset = false
+    @State private var presetName = ""
+    /// A save waiting on the "replace?" confirmation: the preset it would
+    /// overwrite, and whether the reference rides along.
+    @State private var pendingReplace: (preset: Preset, includeReference: Bool)?
+    @State private var isManagingPresets = false
 
     /// The instance as constructed, for while the store catches up and as the
     /// identity to look the live value up by.
     private let initial: InstrumentInstance
 
     init(
-        instance: InstrumentInstance, store: InstrumentStore,
+        instance: InstrumentInstance, store: InstrumentStore, presets: PresetStore,
         audio: AudioSessionController, settings: Settings, detection: DetectionSettings
     ) {
         self.audio = audio
         self.store = store
+        self.presets = presets
         self.settings = settings
         self.detection = detection
         self.initial = instance
@@ -108,6 +116,66 @@ struct InstrumentGridView: View {
             DetectorDebugView(
                 detection: detection, strings: strings, naming: settings.naming)
         }
+        .sheet(isPresented: $isManagingPresets) {
+            PresetManager(presets: presets, templateID: instance.templateID)
+        }
+        .alert(Text("Save preset", bundle: .module), isPresented: $isSavingPreset) {
+            TextField(text: $presetName) { Text("Name", bundle: .module) }
+            // The payload choice IS the save button (ROADMAP § 1): a preset
+            // carries only what it was saved with, decided right here.
+            Button {
+                attemptSave(includeReference: false)
+            } label: {
+                Text("Tuning only", bundle: .module)
+            }
+            Button {
+                attemptSave(includeReference: true)
+            } label: {
+                Text("Tuning and reference", bundle: .module)
+            }
+            Button(role: .cancel) {
+            } label: {
+                Text("Cancel", bundle: .module)
+            }
+        }
+        .alert(
+            Text("Replace preset", bundle: .module),
+            isPresented: Binding(
+                get: { pendingReplace != nil },
+                set: { if !$0 { pendingReplace = nil } })
+        ) {
+            Button(role: .destructive) {
+                if let pending = pendingReplace {
+                    presets.save(
+                        instance, named: presetName,
+                        includeReference: pending.includeReference)
+                }
+                pendingReplace = nil
+            } label: {
+                Text("Replace", bundle: .module)
+            }
+            Button(role: .cancel) {
+                pendingReplace = nil
+            } label: {
+                Text("Cancel", bundle: .module)
+            }
+        } message: {
+            Text(
+                "\u{201C}\(pendingReplace?.preset.name ?? "")\u{201D} already exists.",
+                bundle: .module)
+        }
+    }
+
+    /// Save, or ask first when the name would overwrite — updating a preset
+    /// is a deliberate save, never an accident.
+    private func attemptSave(includeReference: Bool) {
+        let trimmed = presetName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if let existing = presets.existing(named: trimmed, templateID: instance.templateID) {
+            pendingReplace = (existing, includeReference)
+        } else {
+            presets.save(instance, named: trimmed, includeReference: includeReference)
+        }
     }
 
     private func reconfigure() {
@@ -158,6 +226,49 @@ struct InstrumentGridView: View {
                     }
                 }
             }
+
+            let fitting = presets.presets(fitting: instance)
+            if !fitting.isEmpty {
+                Divider()
+                ForEach(fitting) { preset in
+                    Button {
+                        presets.load(preset, onto: instance, in: store)
+                    } label: {
+                        if isCurrent(preset) {
+                            Label {
+                                presetLabel(preset)
+                            } icon: {
+                                Image(systemName: "checkmark")
+                            }
+                        } else {
+                            presetLabel(preset)
+                        }
+                    }
+                }
+            }
+
+            Divider()
+            Button {
+                presetName = ""
+                isSavingPreset = true
+            } label: {
+                Label {
+                    Text("Save as preset…", bundle: .module)
+                } icon: {
+                    Image(systemName: "square.and.arrow.down")
+                }
+            }
+            if !fitting.isEmpty {
+                Button {
+                    isManagingPresets = true
+                } label: {
+                    Label {
+                        Text("Edit presets…", bundle: .module)
+                    } icon: {
+                        Image(systemName: "list.bullet")
+                    }
+                }
+            }
         } label: {
             HStack(spacing: 4) {
                 tuningText(instance.tuningName ?? "Custom")
@@ -193,6 +304,22 @@ struct InstrumentGridView: View {
     /// translate, and "Custom" is the catalog's word for that.
     private func tuningText(_ name: String) -> Text {
         Text(LocalizedStringKey(name), bundle: .module)
+    }
+
+    /// The user's name verbatim, with the reference riding along when the
+    /// preset carries one — the label says what loading will do.
+    private func presetLabel(_ preset: Preset) -> Text {
+        if let reference = preset.reference {
+            return Text(verbatim: "\(preset.name) · A=\(Int(reference.hz))")
+        }
+        return Text(verbatim: preset.name)
+    }
+
+    /// Whether the instance currently matches what loading this preset would
+    /// produce — the checkmark's meaning.
+    private func isCurrent(_ preset: Preset) -> Bool {
+        instance.strings == preset.strings
+            && (preset.referenceHz == nil || preset.referenceHz == instance.referenceHz)
     }
 
     private var fittingTunings: [Tuning] {

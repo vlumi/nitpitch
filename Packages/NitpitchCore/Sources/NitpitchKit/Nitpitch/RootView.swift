@@ -26,6 +26,7 @@ public struct RootView: View {
     /// The instruments you own. Created here: it lives exactly as long as the
     /// navigation that hands its instances out.
     @StateObject private var store: InstrumentStore
+    @StateObject private var presets = PresetStore(defaults: LaunchStores.defaults)
     @State private var path: [TunerRoute] = []
     /// Created here rather than passed in: it lives for the session, resets on
     /// every launch, and nothing outside the tuner hierarchy has any business
@@ -59,8 +60,8 @@ public struct RootView: View {
                 case .instrument(let id):
                     if let instance = resolve(id) {
                         InstrumentGridView(
-                            instance: instance, store: store, audio: audio,
-                            settings: settings, detection: detection)
+                            instance: instance, store: store, presets: presets,
+                            audio: audio, settings: settings, detection: detection)
                     }
                 case .string(let id, let index):
                     if let instance = resolve(id) {

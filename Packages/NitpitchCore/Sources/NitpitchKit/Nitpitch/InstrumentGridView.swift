@@ -145,10 +145,12 @@ struct InstrumentGridView: View {
                 set: { if !$0 { pendingReplace = nil } })
         ) {
             Button(role: .destructive) {
-                if let pending = pendingReplace {
-                    presets.save(
+                if let pending = pendingReplace,
+                    let saved = presets.save(
                         instance, named: presetName,
                         includeReference: pending.includeReference)
+                {
+                    store.presetApplied(id: instance.id, presetID: saved.id)
                 }
                 pendingReplace = nil
             } label: {
@@ -173,8 +175,12 @@ struct InstrumentGridView: View {
         guard !trimmed.isEmpty else { return }
         if let existing = presets.existing(named: trimmed, templateID: instance.templateID) {
             pendingReplace = (existing, includeReference)
-        } else {
-            presets.save(instance, named: trimmed, includeReference: includeReference)
+        } else if let saved = presets.save(
+            instance, named: trimmed, includeReference: includeReference)
+        {
+            // "This setup is called Gig" — so the claim follows the save:
+            // the pill and the checkmark move to it immediately.
+            store.presetApplied(id: instance.id, presetID: saved.id)
         }
     }
 
@@ -271,7 +277,7 @@ struct InstrumentGridView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                tuningText(instance.tuningName ?? "Custom")
+                pillText
                     .font(.callout.weight(.medium))
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
@@ -280,6 +286,17 @@ struct InstrumentGridView: View {
         }
         .disabled(instance.isLocked)
         .accessibilityIdentifier("grid.tuning")
+    }
+
+    /// What the pill says: the preset you picked while you're on it, the
+    /// tuning identity otherwise. Drift clears the claim (see
+    /// `loadedPresetID`), so the fallback from "test" to "Custom" is honest
+    /// rather than a bookkeeping suffix.
+    private var pillText: Text {
+        if let loaded = loadedPreset {
+            return Text(verbatim: loaded.name)
+        }
+        return tuningText(instance.tuningName ?? "Custom")
     }
 
     /// The padlock, ambient and fixed: one glance says whether this

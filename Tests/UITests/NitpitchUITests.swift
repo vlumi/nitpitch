@@ -200,6 +200,9 @@ final class NitpitchUITests: XCTestCase {
         nameField.tap()
         nameField.typeText("Gig")
         app.buttons["Tuning only"].firstMatch.tap()
+        XCTAssertTrue(
+            tuningMenu.label.contains("Gig"),
+            "saving claims the preset — the pill shows what you just named")
 
         tuningMenu.tap()
         app.buttons["Standard"].firstMatch.tap()
@@ -210,8 +213,8 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(gig.waitForExistence(timeout: 5), "the saved preset should be offered")
         gig.tap()
         XCTAssertTrue(
-            tuningMenu.label.contains("Drop D"),
-            "loading Gig restores Drop D — the values are the identity")
+            tuningMenu.label.contains("Gig"),
+            "the pill shows the picked preset, not the tuning it matches")
     }
 
     /// The padlock is ambient: a fixed toolbar toggle, no dialogs anywhere.

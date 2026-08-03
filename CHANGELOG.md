@@ -22,6 +22,9 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- The tuning pill in the header now names the preset you're on — save or
+  load "T-bird" and the pill says T-bird, not the tuning it happens to
+  match. Change anything by hand and it falls back to the tuning's own name.
 - The tuning menu's checkmark now means "the one you picked": load a preset
   and the check is on the preset, not also on the tuning that happens to
   hold the same notes. Rows that merely match the current setup — loading

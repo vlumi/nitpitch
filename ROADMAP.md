@@ -203,11 +203,10 @@ confirm, delete. What remains:
 
 1. **Preset share + import**: the URL fragment format, QR render, the import
    preview (*Load once / Save*), and the site's hosted long tail.
-2. **The loaded preset's name in the header** — "Strat · Bach No. 1", with
-   "(edited)" as the drift marker once anything moves. Needs the instance to
-   remember what was last loaded; deliberately left out of the first preset
-   cut.
-3. String-count choice at add time, when a 7-string template or count
+   (The header now names the loaded preset — the "(edited)" suffix idea was
+   dropped in favour of drift simply clearing the claim, which is honest and
+   needs no bookkeeping.)
+2. String-count choice at add time, when a 7-string template or count
    editing is wanted. (Creation currently copies the template's count.)
 
 ### The string view: what remains

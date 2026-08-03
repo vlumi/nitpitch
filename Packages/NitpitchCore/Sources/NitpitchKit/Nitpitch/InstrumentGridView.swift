@@ -81,6 +81,13 @@ struct InstrumentGridView: View {
                 } else {
                     let layout = dialLayout(for: geo.size)
                     dialGrid(columns: layout.columns, cellScale: layout.scale)
+                        // Cards hug their content instead of stretching into
+                        // acres — the emptiness lives outside the cards.
+                        .frame(
+                            maxWidth: CGFloat(layout.columns)
+                                * (300 * layout.scale + 12) + 32
+                        )
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
         }

@@ -12,6 +12,16 @@ extension InstrumentGridView {
     /// (observed as a third of the window left empty below the dials).
     private static var cellDesign: CGSize { CGSize(width: 230, height: 132) }
 
+    /// What the viewport spends around the dials: the level-meter row (4pt
+    /// meter + 6pt top padding) above the grid, and the grid's own 8pt top
+    /// padding. The footer is deliberately NOT in here: `safeAreaInset`
+    /// already subtracts it from what the GeometryReader reports, and
+    /// reserving it a second time is exactly what kept leaving a band of
+    /// empty below the grid — the scale stopped early, and the leftover fell
+    /// outside the centering frame, pooling at the bottom.
+    static var meterChrome: CGFloat { 10 }
+    static var gridChrome: CGFloat { meterChrome + 8 }
+
     /// The grid's shape for this viewport. On iOS the column count is the
     /// user's picker and the cells scale to the width — down to half size,
     /// so three-across on an SE shrinks to fit instead of overflowing. On
@@ -32,14 +42,14 @@ extension InstrumentGridView {
         // added column must EARN its place by making the dials noticeably
         // larger (35% per column) — a phone or a modest window keeps one
         // serene column, a big squarish window goes 2×2 huge. The chrome
-        // constant is measured (meter row + footer), not padded: reserving
-        // too much here is exactly what left unexplained margins below.
+        // reservation is `gridChrome`, measured — see its comment for why
+        // the footer must not be counted again here.
         var best = (columns: 1, scale: CGFloat(0), score: CGFloat(0))
         for candidate in 1...count {
             let rows = CGFloat((count + candidate - 1) / candidate)
             let cellWidth =
                 (size.width - 32 - CGFloat(candidate - 1) * 12) / CGFloat(candidate)
-            let cellHeight = (size.height - 100 - (rows - 1) * 12) / rows
+            let cellHeight = (size.height - Self.gridChrome - (rows - 1) * 12) / rows
             let scale = min(
                 cellWidth / Self.cellDesign.width, cellHeight / Self.cellDesign.height)
             let score = scale / pow(1.35, CGFloat(candidate - 1))
@@ -91,11 +101,20 @@ extension InstrumentGridView {
         let ordered =
             settings.stripsReversed ? displayedTuners.reversed() : displayedTuners
         // Sized to FIT: a phone in landscape holds all four strips without
-        // scrolling (they compress a little), a huge Mac window grows them.
+        // scrolling — around nine before the floor forces a scroll — and a
+        // huge Mac window grows them. The chrome reservation is the shared
+        // measured one; 150 here was the same padded guess that left the
+        // dial grid a third empty.
         let count = CGFloat(max(1, ordered.count))
-        let available = size.height - 150 - (count - 1) * 10
+        let available = size.height - Self.gridChrome - (count - 1) * 10
         let scale = min(2.0, max(0.45, available / (count * 64)))
-        return VStack(spacing: 10) {
+        // Height the cap or the floor leaves unspent is spread evenly — the
+        // same share between neighbours and at both edges (the centering
+        // supplies the edge shares) — so four strings occupy the screen
+        // instead of huddling at the top of it.
+        let slack = size.height - Self.gridChrome - count * 64 * scale
+        let share = max(0, (slack - (count - 1) * 10) / (count + 1))
+        return VStack(spacing: 10 + share) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { position, entry in
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
                     StringStrip(tuner: entry.tuner, naming: settings.naming, scale: scale)
@@ -106,6 +125,9 @@ extension InstrumentGridView {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+        .frame(
+            minHeight: max(0, size.height - Self.meterChrome),
+            alignment: .center)
     }
 
     /// Catalog names are localizable; a user's custom tuning has no name to

@@ -69,34 +69,21 @@ struct InstrumentGridView: View {
         // Tall shows the dial grid, its content scaled to the cells.
         GeometryReader { geo in
             ScrollView {
-                // Whether the app can hear anything at all — the same meter,
-                // size and axis as the chromatic screen's. The per-string bars
-                // can't answer this: they're zero both in a quiet room and
-                // when sound is coming in that isn't near any string's target.
-                LevelMeter(level: strings.inputLevel)
-                    .frame(width: 72, height: 4)
-                    .padding(.top, 6)
-                if showStrips(for: geo.size) {
-                    strips(for: geo.size)
-                } else {
-                    let layout = dialLayout(for: geo.size)
-                    dialGrid(columns: layout.columns, cellScale: layout.scale)
-                        // Cards hug their content instead of stretching into
-                        // acres — the emptiness lives outside the cards —
-                        // but loosely enough that a single column can still
-                        // use the width it was visibly given.
-                        .frame(
-                            maxWidth: CGFloat(layout.columns)
-                                * (330 * layout.scale + 12) + 32
-                        )
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        // When width caps the scale so the grid can't fill
-                        // the height, the slack frames the grid on the Mac
-                        // instead of pooling at the bottom; phones read
-                        // scrolling content from the top.
-                        .frame(
-                            minHeight: max(0, geo.size.height - 120),
-                            alignment: verticalCentering)
+                // Spacing accounted to the point: the chrome constants below
+                // and in `dialLayout` must add up to exactly the viewport, or
+                // the leftover materializes as a scrollbar over a screen that
+                // visibly fits (the implicit content stack's default spacing
+                // did exactly that).
+                VStack(spacing: 0) {
+                    // Whether the app can hear anything at all — the same
+                    // meter, size and axis as the chromatic screen's. The
+                    // per-string bars can't answer this: they're zero both in
+                    // a quiet room and when sound is coming in that isn't
+                    // near any string's target.
+                    LevelMeter(level: strings.inputLevel)
+                        .frame(width: 72, height: 4)
+                        .padding(.top, 6)
+                    gridOrStrips(for: geo.size)
                 }
             }
         }
@@ -178,6 +165,33 @@ struct InstrumentGridView: View {
             Text(
                 "\u{201C}\(pendingReplace?.preset.name ?? "")\u{201D} already exists.",
                 bundle: .module)
+        }
+    }
+
+    /// The presentation for this viewport — strips when wide, dials
+    /// otherwise.
+    @ViewBuilder
+    private func gridOrStrips(for size: CGSize) -> some View {
+        if showStrips(for: size) {
+            strips(for: size)
+        } else {
+            let layout = dialLayout(for: size)
+            dialGrid(columns: layout.columns, cellScale: layout.scale)
+                // Cards hug their content instead of stretching into acres —
+                // the emptiness lives outside the cards — but loosely enough
+                // that a single column can still use the width it was
+                // visibly given.
+                .frame(maxWidth: CGFloat(layout.columns) * (330 * layout.scale + 12) + 32)
+                .frame(maxWidth: .infinity, alignment: .center)
+                // When width caps the scale so the grid can't fill the
+                // height, the slack frames the grid on the Mac instead of
+                // pooling at the bottom; phones read scrolling content from
+                // the top. Claims every point below the meter — the footer
+                // inset is already outside the viewport — so no slack is
+                // left where the centering can't reach it.
+                .frame(
+                    minHeight: max(0, size.height - Self.meterChrome),
+                    alignment: verticalCentering)
         }
     }
 

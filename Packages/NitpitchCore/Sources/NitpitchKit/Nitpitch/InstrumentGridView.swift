@@ -408,6 +408,17 @@ struct InstrumentGridView: View {
         .accessibilityLabel(Text("Columns", bundle: .module))
     }
 
+    /// Mac only: phones read scrolling content from the top, but a Mac
+    /// window's height is chosen by the user, and unfilled height should
+    /// frame the content rather than trail it.
+    private var verticalCentering: Alignment {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
+        #endif
+    }
+
     /// Two across reads best — 2×2 for a violin, 3×2 for a guitar — and the
     /// picker remains for anyone who wants denser or looser.
     private static func defaultColumns(strings: Int) -> Int {

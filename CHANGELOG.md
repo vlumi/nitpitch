@@ -22,6 +22,11 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- Mac windows fill properly: the dials size against their real footprint (a
+  bookkeeping error left a third of the window empty below them), and when
+  the width genuinely caps their size, the spare height frames the grid
+  symmetrically instead of pooling at the bottom. The cards themselves stay
+  snug around their content.
 - On the Mac, a modest portrait window now shows one calm column of dials
   instead of a cramped grid — extra columns have to earn their place by
   making the dials noticeably bigger — and the cards hug their content

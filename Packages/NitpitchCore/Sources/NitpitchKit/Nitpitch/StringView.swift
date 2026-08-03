@@ -20,6 +20,11 @@ struct StringView: View {
 
     @StateObject private var single: SingleStringTuner
     @State private var index: Int
+    /// Finger-following displacement of the dial pane while a swipe is in
+    /// flight — zero whenever the pane is at rest.
+    @State private var dragOffset: CGFloat = 0
+    /// The pane row's measured width: the slide distance of one page.
+    @State private var paneWidth: CGFloat = 400
 
     private let initial: InstrumentInstance
 
@@ -49,12 +54,7 @@ struct StringView: View {
             LevelMeter(level: single.inputLevel)
                 .frame(width: 72, height: 4)
                 .padding(.top, 6)
-            StringDialPane(
-                tuner: single.tuner,
-                naming: settings.naming,
-                isLocked: instance.isLocked,
-                canStepTarget: { delta in canStepTarget(delta) },
-                stepTarget: { delta in stepTarget(delta) })
+            dialCarousel
             stringSwitcher
             ReferencePitchStepper(
                 reference: Binding(
@@ -82,15 +82,96 @@ struct StringView: View {
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
         }
-        // Swiping is the same move as the arrows. A high-priority gesture
-        // would fight the scroll-free layout for nothing; plain is enough.
-        .gesture(
-            DragGesture(minimumDistance: 30).onEnded { value in
-                guard abs(value.translation.width) > abs(value.translation.height)
-                else { return }
-                step(value.translation.width < 0 ? 1 : -1)
+        // Swiping is the same move as the arrows, but with the gallery's
+        // physics: the pane rides the finger, the neighbour is revealed
+        // beside it, and the release either commits with a swing or snaps
+        // back. A high-priority gesture would fight the scroll-free layout
+        // for nothing; plain is enough.
+        .gesture(swipeGesture)
+    }
+
+    /// The dial pane as one page of a gallery. Only the current string is
+    /// live — there's one detector, aimed at one target — so the neighbour
+    /// rides in as a still pane (its dial, its target, no reading) and comes
+    /// alive the instant it lands, when the detector retargets.
+    private var dialCarousel: some View {
+        ZStack {
+            StringDialPane(
+                tuner: single.tuner,
+                naming: settings.naming,
+                isLocked: instance.isLocked,
+                canStepTarget: { delta in canStepTarget(delta) },
+                stepTarget: { delta in stepTarget(delta) }
+            )
+            .offset(x: dragOffset)
+            // One rule covers every phase: the ghost is always the
+            // neighbour the offset points toward, one page away. During the
+            // drag that's where you're heading; during the swing-in after a
+            // commit the *old* pane occupies exactly this slot, so the
+            // handover is seamless.
+            if dragOffset != 0, let ghost = ghostIndex {
+                GhostDialPane(note: instrument.notes[ghost], naming: settings.naming)
+                    .offset(x: dragOffset + (dragOffset < 0 ? paneWidth : -paneWidth))
             }
-        )
+        }
+        .clipped()
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            paneWidth = max(1, width)
+        }
+    }
+
+    /// The string the current offset is sliding toward, if there is one.
+    private var ghostIndex: Int? {
+        let candidate = index + (dragOffset < 0 ? 1 : -1)
+        return instrument.notes.indices.contains(candidate) ? candidate : nil
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onChanged { value in
+                // Latch onto a horizontal intent; once panning, keep
+                // following even if the finger wanders vertically.
+                guard
+                    dragOffset != 0
+                        || abs(value.translation.width) > abs(value.translation.height)
+                else { return }
+                let raw = value.translation.width
+                // Rubber-band past the outermost string: movement with
+                // resistance says "there's nothing there" better than
+                // refusing to move.
+                dragOffset = canStep(raw < 0 ? 1 : -1) ? raw : raw * 0.25
+            }
+            .onEnded { value in
+                let raw = value.translation.width
+                let delta = raw < 0 ? 1 : -1
+                // A committed swipe is distance OR a flick — the predicted
+                // end catches a short, fast gesture.
+                let commits =
+                    canStep(delta)
+                    && (abs(raw) > paneWidth / 3
+                        || abs(value.predictedEndTranslation.width) > paneWidth * 0.6)
+                guard commits else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                        dragOffset = 0
+                    }
+                    return
+                }
+                // Commit first, unanimated: the new current pane takes over
+                // the ghost's slot and the old pane becomes the ghost, in
+                // place. Then the swing home animates from exactly there —
+                // the async hop lets that intermediate state render once, so
+                // the spring starts from it rather than from wherever the
+                // finger began.
+                step(delta)
+                dragOffset += CGFloat(delta) * paneWidth
+                DispatchQueue.main.async {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        dragOffset = 0
+                    }
+                }
+            }
     }
 
     /// The same ambient padlock as the grid's — the lock follows the
@@ -168,6 +249,36 @@ struct StringView: View {
         guard canStepTarget(delta) else { return }
         store.setString(id: instance.id, index: index, midi: instance.strings[index] + delta)
         // The store change comes back through onChange(of: instance) → apply.
+    }
+}
+
+/// A neighbouring string's pane while it slides in: the dial at rest and the
+/// target it will aim for — no reading, because nothing is listening for it
+/// yet. Mirrors `StringDialPane`'s geometry exactly (the stepper slots are
+/// blank stand-ins) so the live pane can take its place without a shift.
+private struct GhostDialPane: View {
+    let note: Note
+    let naming: NoteNaming
+
+    var body: some View {
+        TunerDial(cents: 0, inTune: false, isReading: false) {
+            VStack(spacing: 6) {
+                HStack(spacing: 8) {
+                    Color.clear.frame(width: 40, height: 40)
+                    NoteNameLabel(
+                        note: note, naming: naming, fontSize: 46,
+                        order: .localizedFirst
+                    )
+                    .frame(width: 190)
+                    Color.clear.frame(width: 40, height: 40)
+                }
+                Text(verbatim: "—")
+                    .font(.title3.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            .frame(height: 46 * 1.15 + 4 + 20)
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -258,114 +369,5 @@ private struct StringDialPane: View {
     private var isReading: Bool {
         if case .reading = tuner.state { return true }
         return false
-    }
-}
-
-/// The string view's audio: one target, the whole instrument's band.
-///
-/// A sibling of `StringTuners` for the N = 1 case, with the crucial
-/// difference in the *band*: the grid's cells split the range at midpoints so
-/// dials can disambiguate, but a view bound to one string has nothing to
-/// disambiguate against — so it hears everything the instrument can produce,
-/// and the hybrid does the rest (spectral precision near target, MPM finding
-/// a slack string from anywhere).
-@MainActor
-final class SingleStringTuner: ObservableObject {
-    let tuner: StringTunerViewModel
-
-    /// Overall input level for the meter, same curve and quantization as the
-    /// grid's.
-    @Published private(set) var inputLevel: Double = 0
-
-    private var instrument: Instrument
-    private let audio: AudioSessionController
-    private let bank: DetectorBank
-    private var subscription: AudioSessionController.Subscription?
-    private var demo: Task<Void, Never>?
-    private var reference: ReferencePitch
-    /// Kept so retargeting doesn't quietly reset debug-tuned thresholds.
-    private var tuning: DetectionTuning
-
-    init(
-        instrument: Instrument, index: Int, audio: AudioSessionController,
-        reference: ReferencePitch, tuning: DetectionTuning = .default
-    ) {
-        self.instrument = instrument
-        self.audio = audio
-        self.reference = reference
-        self.tuning = tuning
-        let band = instrument.band(reference: reference)
-        let note = instrument.notes[index]
-        tuner = StringTunerViewModel(
-            audio: audio, target: note, band: band, reference: reference)
-        bank = DetectorBank(
-            sampleRate: audio.sampleRate,
-            targets: [note.frequency(reference: reference)],
-            bands: [band],
-            tuning: tuning)
-    }
-
-    func attach() {
-        tuner.begin()
-        if LaunchStores.isDemo {
-            guard demo == nil else { return }
-            demo = Task { await runDemoLevel() }
-            return
-        }
-        guard subscription == nil else { return }
-        subscription = audio.subscribe { [weak self, bank] window in
-            // Analysis queue; only the result hops to main.
-            let results = bank.analyze(window)
-            Task { @MainActor [weak self] in
-                guard let self, let result = results.first else { return }
-                self.tuner.ingest(result)
-                let level = (result.displayLevel * 20).rounded() / 20
-                if level != self.inputLevel { self.inputLevel = level }
-            }
-        }
-    }
-
-    func detach() {
-        subscription?.cancel()
-        subscription = nil
-        demo?.cancel()
-        demo = nil
-        inputLevel = 0
-        bank.interrupted()
-        tuner.end()
-    }
-
-    /// The one entry point for "aim here now": swiping to a neighbour, the
-    /// reference moving, or the target itself being edited — all end up as a
-    /// note, a band, and a reference to measure against.
-    func apply(instance: InstrumentInstance, index: Int, tuning: DetectionTuning) {
-        self.instrument = instance.instrument
-        self.reference = instance.reference
-        self.tuning = tuning
-        guard instrument.notes.indices.contains(index) else { return }
-        let note = instrument.notes[index]
-        let band = instrument.band(reference: reference)
-        bank.configure(
-            targets: [note.frequency(reference: reference)],
-            bands: [band],
-            tuning: tuning)
-        tuner.configure(band: band, reference: reference)
-        if tuner.target != note {
-            tuner.retarget(note)
-        }
-    }
-
-    func retune(_ tuning: DetectionTuning) {
-        self.tuning = tuning
-        bank.retune(tuning)
-    }
-
-    private func runDemoLevel() async {
-        var tick = 0.0
-        while !Task.isCancelled {
-            inputLevel = ((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20
-            tick += 0.055
-            try? await Task.sleep(nanoseconds: 50_000_000)
-        }
     }
 }

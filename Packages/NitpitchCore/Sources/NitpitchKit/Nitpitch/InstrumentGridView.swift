@@ -76,10 +76,11 @@ struct InstrumentGridView: View {
                 LevelMeter(level: strings.inputLevel)
                     .frame(width: 72, height: 4)
                     .padding(.top, 6)
-                if geo.size.width > geo.size.height * 1.3 {
-                    strips
+                if showStrips(for: geo.size) {
+                    strips(for: geo.size)
                 } else {
-                    dialGrid(cellScale: cellScale(for: geo.size.width))
+                    let layout = dialLayout(for: geo.size)
+                    dialGrid(columns: layout.columns, cellScale: layout.scale)
                 }
             }
         }
@@ -186,15 +187,37 @@ struct InstrumentGridView: View {
             tuning: detection.tuning)
     }
 
-    private var gridColumns: [GridItem] {
-        Array(repeating: GridItem(.flexible(), spacing: 12), count: columns)
+    /// On iOS the device's shape decides — rotation is a gesture. On the Mac
+    /// it's a deliberate toggle: dragging a window edge is not a request to
+    /// change metaphors (found immediately in use after shipping the
+    /// shape-only rule).
+    private func showStrips(for size: CGSize) -> Bool {
+        #if os(macOS)
+        return settings.stripsOnMac
+        #else
+        return size.width > size.height * 1.3
+        #endif
+    }
+
+    /// On the Mac the window is continuously resizable, so a fixed column
+    /// count fights it — columns follow the width there. iOS keeps the
+    /// picker: discrete devices, deliberate density choice.
+    private func effectiveColumns(for width: CGFloat) -> Int {
+        #if os(macOS)
+        return max(1, min(4, Int(width / 300)))
+        #else
+        return columns
+        #endif
     }
 
     /// Lazy so cost tracks the viewport rather than the string count — which
     /// keeps "only track what's on screen" reachable later, and lets an
     /// arbitrary tuning scale.
-    private func dialGrid(cellScale: CGFloat) -> some View {
-        LazyVGrid(columns: gridColumns, spacing: 12) {
+    private func dialGrid(columns: Int, cellScale: CGFloat) -> some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
+            spacing: 12
+        ) {
             ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
                 // A cell is a link into its string's full-screen view — the
                 // grid shows all of them, the string view holds one.
@@ -207,15 +230,6 @@ struct InstrumentGridView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-    }
-
-    /// The dial content grows with its cell up to a cap — a big window is
-    /// usually a viewer standing further away — and never shrinks below the
-    /// design size.
-    private func cellScale(for width: CGFloat) -> CGFloat {
-        let available = width - 32 - CGFloat(columns - 1) * 12
-        let cell = available / CGFloat(columns)
-        return min(1.8, max(1, cell / 230))
     }
 
     /// Tuner order as displayed — ready to reverse when the instance is a
@@ -387,9 +401,9 @@ struct InstrumentGridView: View {
         .accessibilityLabel(Text("Columns", bundle: .module))
     }
 
-    /// Few strings want fewer, wider cells; many want more across so the grid
-    /// doesn't run off the screen.
+    /// Two across reads best — 2×2 for a violin, 3×2 for a guitar — and the
+    /// picker remains for anyone who wants denser or looser.
     private static func defaultColumns(strings: Int) -> Int {
-        strings > 4 ? 3 : 2
+        2
     }
 }

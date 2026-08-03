@@ -50,11 +50,26 @@ public struct ChromaticTunerView: View {
 
     public var body: some View {
         GeometryReader { geo in
-            // One rule for both platforms rather than size classes, which
-            // macOS doesn't have and which lie under iPad Split View: a wide,
-            // short viewport puts the controls beside the dial instead of
-            // under it.
-            let isWide = geo.size.width > geo.size.height * 1.3
+            // The layout is drawn on a fixed design canvas and scaled as one
+            // unit to the viewport — proportions hold by construction from a
+            // tiny window to a fullscreen one, instead of each element
+            // compressing on its own until something breaks.
+            //
+            // WHICH canvas wins is decided by fill: compute the scale each
+            // layout could reach in this viewport and take the larger. That
+            // is the "stacked when the tuner spans edge-to-edge with room
+            // below, otherwise side-by-side filling the width" rule, derived
+            // rather than thresholded — a squarish window gets one big
+            // stacked tuner, a wide one gets the side-by-side as large as
+            // the height allows.
+            let stacked = CGSize(width: 400, height: 580)
+            let wide = CGSize(width: 860, height: 400)
+            let stackedScale = min(
+                geo.size.width / stacked.width, geo.size.height / stacked.height)
+            let wideScale = min(geo.size.width / wide.width, geo.size.height / wide.height)
+            let isWide = wideScale > stackedScale
+            let design = isWide ? wide : stacked
+            let scale = min(Self.maxScale, max(0.5, isWide ? wideScale : stackedScale))
             Group {
                 if isWide {
                     sideBySideLayout
@@ -62,6 +77,8 @@ public struct ChromaticTunerView: View {
                     stackedLayout
                 }
             }
+            .frame(width: design.width, height: design.height, alignment: .top)
+            .scaleEffect(scale, anchor: .top)
             .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
         .padding(24)
@@ -78,6 +95,16 @@ public struct ChromaticTunerView: View {
         // Only the reference matters here — the instrument doesn't change this
         // screen's band, which is always full.
         .onChangeCompat(of: settings.reference) { _ in reconfigure() }
+    }
+
+    /// How large the canvas may grow. The Mac earns a higher ceiling: big
+    /// windows there mean a viewer across the room.
+    private static var maxScale: CGFloat {
+        #if os(macOS)
+        return 3.2
+        #else
+        return 2.2
+        #endif
     }
 
     /// Portrait: everything in one column.

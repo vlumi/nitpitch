@@ -28,9 +28,10 @@ struct NitpitchApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(settings: settings, audio: audio)
-                // The readout is a fixed-aspect instrument panel; a resizable
-                // window is fine but it should open at a sane size.
-                .frame(minWidth: 420, minHeight: 320)
+                // Wide enough that the toolbar never collapses the back
+                // button into the » overflow (observed at 420), tall enough
+                // for the dial to breathe.
+                .frame(minWidth: 560, minHeight: 400)
                 .capturesWhileActive(audio)
         }
         .windowResizability(.contentMinSize)

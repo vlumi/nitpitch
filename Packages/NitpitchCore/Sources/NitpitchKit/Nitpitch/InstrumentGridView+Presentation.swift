@@ -40,6 +40,39 @@ extension InstrumentGridView {
         #endif
     }
 
+    /// Lazy so cost tracks the viewport rather than the string count — which
+    /// keeps "only track what's on screen" reachable later, and lets an
+    /// arbitrary tuning scale.
+    func dialGrid(columns: Int, cellScale: CGFloat) -> some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
+            spacing: 12
+        ) {
+            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
+                // A cell is a link into its string's full-screen view — the
+                // grid shows all of them, the string view holds one.
+                NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
+                    StringCell(tuner: entry.tuner, naming: settings.naming, scale: cellScale)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("grid.cell.\(position)")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    /// Mac only: phones read scrolling content from the top, but a Mac
+    /// window's height is chosen by the user, and unfilled height should
+    /// frame the content rather than trail it.
+    var verticalCentering: Alignment {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
+        #endif
+    }
+
     /// The strings as strings: one horizontal strip each, stacked like the
     /// instrument's own strings across the display.
     func strips(for size: CGSize) -> some View {

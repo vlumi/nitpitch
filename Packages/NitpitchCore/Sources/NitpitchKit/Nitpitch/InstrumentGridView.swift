@@ -217,28 +217,6 @@ struct InstrumentGridView: View {
         #endif
     }
 
-    /// Lazy so cost tracks the viewport rather than the string count — which
-    /// keeps "only track what's on screen" reachable later, and lets an
-    /// arbitrary tuning scale.
-    private func dialGrid(columns: Int, cellScale: CGFloat) -> some View {
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
-            spacing: 12
-        ) {
-            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
-                // A cell is a link into its string's full-screen view — the
-                // grid shows all of them, the string view holds one.
-                NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
-                    StringCell(tuner: entry.tuner, naming: settings.naming, scale: cellScale)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("grid.cell.\(position)")
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-    }
-
     /// Tuner order as displayed — ready to reverse when the instance is a
     /// left-handed instrument (flipped string order, a coming feature).
     var displayedTuners: [(index: Int, tuner: StringTunerViewModel)] {
@@ -406,17 +384,6 @@ struct InstrumentGridView: View {
         }
         .accessibilityIdentifier("grid.columns")
         .accessibilityLabel(Text("Columns", bundle: .module))
-    }
-
-    /// Mac only: phones read scrolling content from the top, but a Mac
-    /// window's height is chosen by the user, and unfilled height should
-    /// frame the content rather than trail it.
-    private var verticalCentering: Alignment {
-        #if os(macOS)
-        return .center
-        #else
-        return .top
-        #endif
     }
 
     /// Two across reads best — 2×2 for a violin, 3×2 for a guitar — and the

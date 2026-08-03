@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 2 — 2026-08-03
+
 - An instrument now shows a dial per string rather than a single dial: playing
   the G string moves the G dial. Each dial watches only the pitches nearest its
   own string, so it reads how far *that string* is from where it should be —

@@ -90,28 +90,24 @@ struct StringView: View {
         .gesture(swipeGesture)
     }
 
-    /// The dial pane as one page of a gallery. Only the current string is
-    /// live — there's one detector, aimed at one target — so the neighbour
-    /// rides in as a still pane (its dial, its target, no reading) and comes
-    /// alive the instant it lands, when the detector retargets.
+    /// Every string as a page of one gallery, all mounted all the time,
+    /// positioned relative to the current index. Only the current string is
+    /// live — there's one detector, aimed at one target — so the others are
+    /// still panes (dial at rest, target, no reading) that come alive the
+    /// instant they land.
+    ///
+    /// Always mounted matters: `withAnimation` sets the *model* value
+    /// immediately and animates only the presentation, so any pane whose
+    /// existence depended on `dragOffset != 0` was unmounted the moment the
+    /// swing-home began — the outgoing string vanished instead of sliding
+    /// out. With fixed panes there is nothing to unmount; commits just move
+    /// the offsets, and they stay continuous across the index change by
+    /// construction (`animatedStep` compensates the page the index moved).
     private var dialCarousel: some View {
         ZStack {
-            StringDialPane(
-                tuner: single.tuner,
-                naming: settings.naming,
-                isLocked: instance.isLocked,
-                canStepTarget: { delta in canStepTarget(delta) },
-                stepTarget: { delta in stepTarget(delta) }
-            )
-            .offset(x: dragOffset)
-            // One rule covers every phase: the ghost is always the
-            // neighbour the offset points toward, one page away. During the
-            // drag that's where you're heading; during the swing-in after a
-            // commit the *old* pane occupies exactly this slot, so the
-            // handover is seamless.
-            if dragOffset != 0, let ghost = ghostIndex {
-                GhostDialPane(note: instrument.notes[ghost], naming: settings.naming)
-                    .offset(x: dragOffset + (dragOffset < 0 ? paneWidth : -paneWidth))
+            ForEach(instrument.notes.indices, id: \.self) { position in
+                pane(at: position)
+                    .offset(x: CGFloat(position - index) * paneWidth + dragOffset)
             }
         }
         .clipped()
@@ -122,10 +118,34 @@ struct StringView: View {
         }
     }
 
-    /// The string the current offset is sliding toward, if there is one.
-    private var ghostIndex: Int? {
-        let candidate = index + (dragOffset < 0 ? 1 : -1)
-        return instrument.notes.indices.contains(candidate) ? candidate : nil
+    @ViewBuilder
+    private func pane(at position: Int) -> some View {
+        if position == index {
+            StringDialPane(
+                tuner: single.tuner,
+                naming: settings.naming,
+                isLocked: instance.isLocked,
+                canStepTarget: { delta in canStepTarget(delta) },
+                stepTarget: { delta in stepTarget(delta) })
+        } else {
+            GhostDialPane(note: instrument.notes[position], naming: settings.naming)
+        }
+    }
+
+    /// The commit motion, shared by a released swipe and the arrows: switch
+    /// strings in place — the compensation keeps every pane where it stood —
+    /// then spring the carousel home. The async hop lets the compensated
+    /// state render once, so the spring starts from it rather than from
+    /// wherever the finger began (or, for the arrows, from nowhere at all).
+    private func animatedStep(_ delta: Int) {
+        guard canStep(delta) else { return }
+        step(delta)
+        dragOffset += CGFloat(delta) * paneWidth
+        DispatchQueue.main.async {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                dragOffset = 0
+            }
+        }
     }
 
     private var swipeGesture: some Gesture {
@@ -158,19 +178,7 @@ struct StringView: View {
                     }
                     return
                 }
-                // Commit first, unanimated: the new current pane takes over
-                // the ghost's slot and the old pane becomes the ghost, in
-                // place. Then the swing home animates from exactly there —
-                // the async hop lets that intermediate state render once, so
-                // the spring starts from it rather than from wherever the
-                // finger began.
-                step(delta)
-                dragOffset += CGFloat(delta) * paneWidth
-                DispatchQueue.main.async {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                        dragOffset = 0
-                    }
-                }
+                animatedStep(delta)
             }
     }
 
@@ -191,27 +199,62 @@ struct StringView: View {
     }
 
     /// ◀ dots ▶ — where you are among the strings, and the way sideways.
+    /// The dots are also a scrubber: tap one to jump straight to that
+    /// string, or drag across the row to flick through them.
     private var stringSwitcher: some View {
         HStack(spacing: 24) {
             arrow(systemName: "chevron.left", id: "string.prev", by: -1)
-            HStack(spacing: 7) {
-                ForEach(instrument.notes.indices, id: \.self) { position in
-                    Circle()
-                        .fill(
-                            position == index
-                                ? Color.primary.opacity(0.7) : Color.secondary.opacity(0.25)
-                        )
-                        .frame(width: 7, height: 7)
-                }
-            }
-            .accessibilityHidden(true)
+            dots
             arrow(systemName: "chevron.right", id: "string.next", by: 1)
         }
     }
 
+    /// Dot geometry the scrub mapping depends on: 7pt dots on a 14pt pitch,
+    /// inside an 8pt horizontal inset of finger-sized hit surface.
+    private static let dotPitch: CGFloat = 14
+    private static let dotInset: CGFloat = 8
+
+    private var dots: some View {
+        HStack(spacing: Self.dotPitch - 7) {
+            ForEach(instrument.notes.indices, id: \.self) { position in
+                Circle()
+                    .fill(
+                        position == index
+                            ? Color.primary.opacity(0.7) : Color.secondary.opacity(0.25)
+                    )
+                    .frame(width: 7, height: 7)
+            }
+        }
+        // Hidden as decoration — the arrows and swipe carry the accessible
+        // paths — but interactive as a scrubber, with a finger-sized
+        // surface padded out around the 7pt dots.
+        .accessibilityHidden(true)
+        .padding(.vertical, 12)
+        .padding(.horizontal, Self.dotInset)
+        .contentShape(Rectangle())
+        // minimumDistance 0: touching down on a dot jumps immediately, and
+        // the same gesture keeps following the finger as it scrubs. As a
+        // child gesture it wins over the page-swipe on the pane above.
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    scrub(toX: value.location.x)
+                }
+        )
+    }
+
+    /// Map a position on the dots row to a string, and go there. The first
+    /// dot's centre sits at inset + 3.5; each further one a pitch along.
+    private func scrub(toX x: CGFloat) {
+        let position = Int(((x - Self.dotInset - 3.5) / Self.dotPitch).rounded())
+        let clamped = min(max(position, 0), instrument.notes.count - 1)
+        guard clamped != index else { return }
+        animatedStep(clamped - index)
+    }
+
     private func arrow(systemName: String, id: String, by delta: Int) -> some View {
         Button {
-            step(delta)
+            animatedStep(delta)
         } label: {
             Image(systemName: systemName)
                 .font(.title3.weight(.semibold))
@@ -336,7 +379,12 @@ private struct StringDialPane: View {
             Image(systemName: systemName)
                 .font(.body.weight(.medium))
                 .frame(width: 40, height: 40)
-                .contentShape(Rectangle())
+                // The glyph slot stays 40pt so the row's geometry holds, but
+                // the hit area reaches out into the empty stretch between
+                // the stepper and the note name — a tap in the visual
+                // no-man's-land was clearly aimed at the stepper, and
+                // nothing else in the row is interactive to dispute it.
+                .contentShape(Rectangle().inset(by: -28))
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)

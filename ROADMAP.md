@@ -151,6 +151,35 @@ whether favourite *presets* return one day — a chip that loads a preset onto
 a remembered instrument. Instruments cover the one-tap need first; the chip
 kind can wait for a real itch.
 
+#### Presets carry only what they were saved with
+
+From using the tuning menu: tunings feel like presets — are two concepts
+right? Resolved by unifying the payload, not the UI: **a preset carries only
+the fields it was saved with**, decided at save time. A catalog tuning is
+then exactly a built-in preset that carries pitches and nothing else — one
+concept, two payloads. The invariant that prompted the question holds by
+construction: "Drop D" has no reference to change; "Bach No. 1" carries
+A=442 and says so when it applies. The save dialog asks what to include
+(tuning only / tuning + reference); the import preview shows what a link
+carries. No runtime "which settings does this affect" toggle — that choice
+belongs to the person who saved it.
+
+#### UI/UX pass notes (from first hands-on)
+
+The yardstick paragraph above predicted rounds against real hands; the
+first round's findings:
+
+- **The padlock is buried.** A lock in a menu is the wrong furniture for a
+  state you want visible. Wants an obvious tappable lock somewhere ambient —
+  possibly paired with per-control edit affordances that raise the unlock
+  offer — to design, not just relocate.
+- **Instrument management is undiscoverable on the Mac** (and long-press is
+  iOS-only furniture anyway). Rename/delete likely want a per-row menu
+  (ellipsis or right-click that demonstrably works); "add another" is
+  arguably not row-scoped at all — a general add control near the top,
+  where the instrument type is picked alongside the rest. Decide placement
+  before polishing either.
+
 #### Build order
 
 Shipped: the pushed chooser, the favourites chips, the string view, and the

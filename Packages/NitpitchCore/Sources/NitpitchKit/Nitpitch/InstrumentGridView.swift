@@ -233,7 +233,7 @@ struct InstrumentGridView: View {
                 } label: {
                     menuRow(
                         tuningText(tuning.name ?? "Custom"),
-                        checked: matches && loadedPreset == nil,
+                        checked: matches && claimIsFree,
                         matching: matches)
                 }
             }
@@ -247,7 +247,7 @@ struct InstrumentGridView: View {
                     } label: {
                         menuRow(
                             presetLabel(preset),
-                            checked: loadedPreset?.id == preset.id,
+                            checked: loadedPreset?.id == preset.id && valuesMatch(preset),
                             matching: valuesMatch(preset))
                     }
                 }
@@ -288,15 +288,19 @@ struct InstrumentGridView: View {
         .accessibilityIdentifier("grid.tuning")
     }
 
-    /// What the pill says: the preset you picked while you're on it, the
-    /// tuning identity otherwise. Drift clears the claim (see
-    /// `loadedPresetID`), so the fallback from "test" to "Custom" is honest
-    /// rather than a bookkeeping suffix.
+    /// What the pill says: the preset you picked — with "(edited)" once a
+    /// granular edit drifts from its payload — or the tuning identity when
+    /// nothing is claimed. Only an explicit menu pick replaces the claim;
+    /// without the suffix, stepping one string of "T-bird" made the pill
+    /// announce "Drop D", a catalog tuning nobody picked.
     private var pillText: Text {
-        if let loaded = loadedPreset {
+        guard let loaded = loadedPreset else {
+            return tuningText(instance.tuningName ?? "Custom")
+        }
+        if valuesMatch(loaded) {
             return Text(verbatim: loaded.name)
         }
-        return tuningText(instance.tuningName ?? "Custom")
+        return Text("\(loaded.name) (edited)", bundle: .module)
     }
 
     /// The padlock, ambient and fixed: one glance says whether this
@@ -378,12 +382,16 @@ extension InstrumentGridView {
         return Text(verbatim: preset.name)
     }
 
-    /// The preset the instance is *on*: last loaded, values still intact, and
-    /// still existing — a dangling id after a deletion counts as none.
+    /// The claimed preset — still existing; a dangling id after a deletion
+    /// counts as none. Values may have drifted: that's "(edited)", not gone.
     private var loadedPreset: Preset? {
         guard let id = instance.loadedPresetID else { return nil }
         return presets.presets(fitting: instance).first { $0.id == id }
     }
+
+    /// Whether a tuning row may carry the checkmark: no preset claim standing
+    /// in the way (intact or drifted — a drifted claim still owns the pill).
+    private var claimIsFree: Bool { loadedPreset == nil }
 
     /// Whether loading this preset would change nothing — the equals mark.
     private func valuesMatch(_ preset: Preset) -> Bool {

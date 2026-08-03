@@ -150,6 +150,36 @@ final class NitpitchUITests: XCTestCase {
             "an edited named tuning relabels itself Custom")
     }
 
+    /// Instrument management on iOS: the toolbar + adds (type picked from
+    /// its menu), swipe reveals duplicate, swipe deletes an added one.
+    func testAddDuplicateAndDeleteInstruments() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+
+        // Add a second guitar from the toolbar +; cancel the rename offer.
+        app.buttons["chooser.add"].firstMatch.tap()
+        app.buttons["Guitar"].firstMatch.tap()
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+        cancel.tap()
+        // Rows surface as buttons labelled with the instrument's name.
+        let secondGuitar = app.buttons["Guitar 2"].firstMatch
+        XCTAssertTrue(secondGuitar.waitForExistence(timeout: 5))
+
+        // Duplicate the violin by swiping its row.
+        let violin = app.descendants(matching: .any)["chooser.violin"].firstMatch
+        violin.swipeLeft()
+        app.buttons["Duplicate"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Violin 2"].firstMatch.waitForExistence(timeout: 5))
+
+        // Delete the added guitar by swiping it.
+        secondGuitar.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        XCTAssertFalse(secondGuitar.waitForExistence(timeout: 2))
+    }
+
     // MARK: - Tunings and the lock
 
     /// Switching the guitar to Drop D retargets the low string's dial — the

@@ -192,9 +192,12 @@ private struct StringDialPane: View {
     /// The chromatic tuner shows what it heard; this shows what you're after.
     private var readout: some View {
         VStack(spacing: 6) {
-            HStack(spacing: 18) {
+            HStack(spacing: 8) {
                 targetStep(systemName: "minus", id: "string.down", by: -1)
                 NoteNameLabel(note: tuner.target, naming: naming, fontSize: 46)
+                    // A fixed slot, so the − and + don't wobble with the
+                    // width of whatever note name sits between them.
+                    .frame(width: 190)
                     .accessibilityElement(children: .ignore)
                     .accessibilityIdentifier("string.target")
                     .accessibilityLabel(tuner.target.accessibleName(in: naming))

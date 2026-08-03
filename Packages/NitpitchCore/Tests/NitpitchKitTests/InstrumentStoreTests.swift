@@ -178,6 +178,32 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertEqual(store.instance(id: violin.id)?.name, "Violin")
     }
 
+    /// The rack-of-guitars flow: set one up, clone it per instrument —
+    /// copied setup, fresh unlocked, numbered name awaiting a rename.
+    func testDuplicateCopiesTheSetup() {
+        let store = makeStore()
+        let guitar = store.defaultInstance(for: .guitar)
+        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        store.setTuning(id: guitar.id, strings: dropD.strings)
+        store.setReference(id: guitar.id, ReferencePitch(hz: 442))
+        store.setLocked(id: guitar.id, true)
+        store.rename(id: guitar.id, to: "Strat")
+
+        let clone = store.duplicate(id: guitar.id)!
+        XCTAssertEqual(clone.strings, dropD.strings)
+        XCTAssertEqual(clone.reference.hz, 442)
+        XCTAssertFalse(clone.isLocked, "clones start unlocked")
+        XCTAssertEqual(clone.name, "Strat 2")
+
+        // Numbering steps over taken names.
+        let third = store.duplicate(id: guitar.id)!
+        XCTAssertEqual(third.name, "Strat 3")
+
+        // And the clone is its own instrument.
+        store.setString(id: clone.id, index: 0, midi: 40)
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings, dropD.strings)
+    }
+
     func testRemoveDeletesAnAddedInstance() {
         let store = makeStore()
         let second = store.add(of: .guitar)

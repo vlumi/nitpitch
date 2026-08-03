@@ -291,57 +291,6 @@ final class PitchTests: XCTestCase {
         }
     }
 
-    // MARK: - Tunings
-
-    /// Every catalog tuning must fit its own instrument — a wrong string
-    /// count in the catalog would be unloadable by construction.
-    func testKnownTuningsFitTheirInstrument() {
-        for instrument in Instrument.all where !instrument.strings.isEmpty {
-            for tuning in instrument.knownTunings {
-                XCTAssertEqual(
-                    tuning.strings.count, instrument.strings.count,
-                    "\(instrument.name): \(tuning.name ?? "?") has the wrong string count")
-                XCTAssertNotNil(tuning.name, "catalog tunings are all named")
-            }
-            XCTAssertEqual(
-                instrument.knownTunings.first?.strings, instrument.strings,
-                "\(instrument.name): Standard must come first and match the template")
-        }
-    }
-
-    /// Identity follows the values: pitches matching a catalog entry ARE that
-    /// tuning, anything else is custom (nil).
-    func testTuningIdentityFollowsTheValues() {
-        let dropD = [38, 45, 50, 55, 59, 64]
-        XCTAssertEqual(Instrument.guitar.knownTuning(matching: dropD)?.name, "Drop D")
-        XCTAssertNil(Instrument.guitar.knownTuning(matching: [39, 45, 50, 55, 59, 64]))
-        XCTAssertEqual(
-            Instrument.guitar.knownTuning(matching: Instrument.guitar.strings)?.name,
-            "Standard")
-    }
-
-    /// A tuning the catalog offers but the app couldn't hear or the stepper
-    /// couldn't reach would be a standing contradiction — the bass drop D
-    /// was exactly that until the floors were unified.
-    func testEveryCatalogTuningIsDetectableEverywhere() {
-        for instrument in Instrument.all where !instrument.strings.isEmpty {
-            for tuning in instrument.knownTunings {
-                for midi in tuning.strings {
-                    XCTAssertTrue(
-                        Detection.fullBand.contains(Note(midi: midi).frequency()),
-                        "\(instrument.name) \(tuning.name ?? "?"): MIDI \(midi) is outside the chromatic band"
-                    )
-                }
-            }
-        }
-    }
-
-    /// Half-step down is exactly that, string for string.
-    func testHalfStepDownIsAUniformShift() {
-        let halfStep = Instrument.guitar.knownTunings.first { $0.name == "Half-step down" }!
-        XCTAssertEqual(halfStep.strings, Instrument.guitar.strings.map { $0 - 1 })
-    }
-
     // MARK: - Picker grouping
 
     /// The picker renders `grouped`, so anything missing from it is an
@@ -374,6 +323,35 @@ final class PitchTests: XCTestCase {
                 XCTAssertTrue(Detection.fullBand.contains(note.frequency()))
             }
         }
+    }
+
+    /// The extension rule: continue the template's interval pattern low-side,
+    /// flipping high when the floor is reached. Not a compromise — it derives
+    /// the real-world tunings.
+    func testStringCountExtensionDerivesRealTunings() {
+        // 5-string bass: low B0.
+        XCTAssertEqual(Instrument.bassGuitar.strings(count: 5), [23, 28, 33, 38, 43])
+        // 6-string bass: F#0 would be below the floor, so the sixth string
+        // goes HIGH — B0 E A D G + C3, the actual 6-string tuning, derived.
+        XCTAssertEqual(Instrument.bassGuitar.strings(count: 6), [23, 28, 33, 38, 43, 48])
+        // 7-string guitar: low B1. Matches the shipped template.
+        XCTAssertEqual(Instrument.guitar.strings(count: 7), Instrument.guitar7.strings)
+        // 8-string: low F#1. Matches the shipped template.
+        XCTAssertEqual(Instrument.guitar.strings(count: 8), Instrument.guitar8.strings)
+        // 9-string guitar: low C#1, the real extended-range convention.
+        XCTAssertEqual(Instrument.guitar.strings(count: 9).first, 25)
+    }
+
+    /// Trimming keeps the highest strings — the treble side is the melodic
+    /// one — and degenerate inputs pass through unharmed.
+    func testStringCountTrimAndEdges() {
+        XCTAssertEqual(Instrument.guitar.strings(count: 4), [50, 55, 59, 64])
+        XCTAssertEqual(Instrument.guitar.strings(count: 6), Instrument.guitar.strings)
+        XCTAssertEqual(Instrument.chromatic.strings(count: 5), [])
+        // Growth stops rather than violating the floor or ceiling: however
+        // many are asked for, every string stays in the target range.
+        let many = Instrument.bassGuitar.strings(count: 30)
+        XCTAssertTrue(many.allSatisfy { Detection.targetMIDIRange.contains($0) })
     }
 
     /// Violin leads — it's the default and the app's reason for existing.

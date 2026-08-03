@@ -112,6 +112,40 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// This instrument's tuning extended (or trimmed) to `count` strings.
+    ///
+    /// Extension continues the template's own interval pattern on the LOW
+    /// side — the dominant convention (5-string bass adds B0, 7-string
+    /// guitar adds B1) — and flips to the high side when the next low string
+    /// would fall below what the detector can hear. The flip is not a
+    /// compromise: for a bass it derives the *real* 6-string tuning, B0 up
+    /// top-side to C3, rather than an inaudible F♯0. Rarer shapes (a
+    /// high-C 5-string) are one preset or a few target edits away — the
+    /// point is that no count is blocked, not that every stringing is
+    /// guessed. Trimming keeps the highest strings: the treble side is the
+    /// melodic one.
+    public func strings(count: Int) -> [Int] {
+        guard !strings.isEmpty, count > 0, count != strings.count else { return strings }
+        if count < strings.count { return Array(strings.suffix(count)) }
+        let lowInterval = strings.count > 1 ? strings[1] - strings[0] : 5
+        let highInterval =
+            strings.count > 1 ? strings[strings.count - 1] - strings[strings.count - 2] : 5
+        var result = strings
+        for _ in 0..<(count - strings.count) {
+            let below = result[0] - lowInterval
+            if below >= Detection.targetMIDIRange.lowerBound {
+                result.insert(below, at: 0)
+            } else if let top = result.last,
+                top + highInterval <= Detection.targetMIDIRange.upperBound
+            {
+                result.append(top + highInterval)
+            } else {
+                break  // nowhere left to grow
+            }
+        }
+        return result
+    }
+
     /// How far past the outermost strings their bands reach.
     ///
     /// A major third, matching `band(reference:)`'s headroom below the lowest

@@ -205,12 +205,33 @@ Shipped: the view (full dial, whole-instrument band, arrows/swipe, never
 follows the sound) and its target editing. Still to come there: the
 intonation feature (§ 4), eventually.
 
-### Landscape reflow
+### Landscape: strings drawn as strings
 
-The grid scrolls vertically at any string count; what it doesn't yet do is
-reflow for a wide, short landscape screen — fewer rows, more columns,
-scrolling sideways where portrait scrolls down. Each dial stays upright
-relative to the player either way, so sharp is always to the right.
+Landscape shouldn't rearrange the same furniture — it should switch
+metaphors. Instead of reflowed dial cells, a wide screen shows **one
+horizontal strip per string**, stacked like the instrument's own strings
+lying across the display: the existing light-dot strip carries the tuning
+(it already encodes direction and in-tune), the name and cents ride along,
+and there is no arc at all. The visual matches the thing in your hands.
+
+- **A switch, everywhere — not orientation.** The app already refused
+  view-yanking once: the string view won't follow sounds because a screen
+  must never change under your hands mid-gesture on a stand, and a
+  rotation-triggered metaphor swap is the same yank in another costume. The
+  iPad seals it (landscape is its *normal* orientation — dials would become
+  unreachable) and the Mac needs a switch regardless. So the style —
+  dials / strips — is an explicit, remembered toggle on the instrument
+  screen, identical on every platform; orientation only adapts the layout
+  *within* a style (strips stack in portrait, dials adjust columns), and
+  the toggle may default to whatever fits the viewport the first time it's
+  seen. Sharp stays to the right always.
+- **Piano, when it comes (§ 3), gets its display answer from the same
+  idea**: the keys themselves in correct black/white geometry, the tuning
+  dots running vertically *inside* each key, names and cents above the
+  black keys and below the white ones. The keyboard is already the
+  horizontal-strips view — it just bends the strips into keys.
+- Affinity with the scaling pass: strips scale with width naturally, where
+  the dial cells fight it. Worth designing the two together.
 
 ### Open measurements
 
@@ -318,7 +339,10 @@ the temperaments entry (§ 4) — so it's worth building once, deliberately.
 ### What a piano mode needs beyond that
 
 - **88 notes, not N strings.** The grid doesn't scale to a keyboard; a piano
-  wants different navigation — a keyboard strip, or note-by-note.
+  wants different navigation — and the landscape strings-as-strings idea
+  (§ 1) already sketches its display: real key geometry, dots vertically
+  inside each key, names and cents above the black keys and below the
+  white.
 - **Unison tuning.** Most notes have two or three strings tuned to each
   other, and hearing the beats between them is most of the job — closer to
   § 2 than to the ordinary tuner.

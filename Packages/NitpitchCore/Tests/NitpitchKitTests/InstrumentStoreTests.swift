@@ -107,6 +107,43 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Custom")
     }
 
+    /// The string view's stepper: one string moves, the rest stand still, and
+    /// the tuning relabels itself by the values.
+    func testSetStringEditsOneTargetAndRelabels() {
+        let store = makeStore()
+        let guitar = store.defaultInstance(for: .guitar)
+        store.setString(id: guitar.id, index: 0, midi: 38)  // E2 -> D2
+        let edited = store.instance(id: guitar.id)!
+        XCTAssertEqual(edited.strings, [38, 45, 50, 55, 59, 64])
+        // One string edited to match Drop D exactly IS Drop D.
+        XCTAssertEqual(edited.tuningName, "Drop D")
+
+        store.setString(id: guitar.id, index: 0, midi: 37)
+        XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Custom")
+    }
+
+    /// A target the detector can never hear would be a dial that can never
+    /// light — edits clamp to the searchable range.
+    func testSetStringClampsToTheDetectableRange() {
+        let store = makeStore()
+        let violin = store.defaultInstance(for: .violin)
+        store.setString(id: violin.id, index: 0, midi: 5)
+        XCTAssertEqual(
+            store.instance(id: violin.id)?.strings[0],
+            InstrumentStore.editableMIDIRange.lowerBound)
+        store.setString(id: violin.id, index: 3, midi: 120)
+        XCTAssertEqual(
+            store.instance(id: violin.id)?.strings[3],
+            InstrumentStore.editableMIDIRange.upperBound)
+    }
+
+    func testSetStringIgnoresBadIndices() {
+        let store = makeStore()
+        let violin = store.defaultInstance(for: .violin)
+        store.setString(id: violin.id, index: 9, midi: 60)
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, Instrument.violin.strings)
+    }
+
     func testRenameRejectsEmptyNames() {
         let store = makeStore()
         let violin = store.defaultInstance(for: .violin)

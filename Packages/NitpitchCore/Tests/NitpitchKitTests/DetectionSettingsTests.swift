@@ -208,13 +208,46 @@ final class DetectionSettingsTests: XCTestCase {
         }
         XCTAssertEqual(atA, 0, accuracy: 3)
 
-        single.retarget(index: 1)  // D4
+        let violin = InstrumentInstance(
+            id: "violin", templateID: "violin", name: "Violin",
+            strings: Instrument.violin.strings, referenceHz: 440, isLocked: false)
+        single.apply(instance: violin, index: 1, tuning: .default)  // D4
         XCTAssertEqual(single.tuner.target.fullName, "D4")
         await slide(440, through: input, sampleRate: controller.sampleRate)
         guard case .reading(let atD, _) = single.tuner.state else {
             return XCTFail("A should read against D after retargeting")
         }
         XCTAssertEqual(atD, 700, accuracy: 8, "440 Hz against D4 is ~+700¢")
+    }
+
+    /// The string view's edit loop: the store changes a target, apply() aims
+    /// the live tuner at it, and the same sound reads against the new note.
+    func testApplyFollowsAnEditedTarget() async {
+        let input = AudioInput()
+        let controller = AudioSessionController(input: input)
+        let defaults = UserDefaults(suiteName: "fi.misaki.nitpitch.tests.\(UUID().uuidString)")!
+        defer { defaults.removePersistentDomain(forName: defaults.description) }
+        let store = InstrumentStore(defaults: defaults) { .standard }
+        let violin = store.defaultInstance(for: .violin)
+
+        let single = SingleStringTuner(
+            instrument: violin.instrument, index: 2, audio: controller,
+            reference: violin.reference)
+        single.attach()
+        defer { single.detach() }
+        XCTAssertEqual(single.tuner.target.fullName, "A4")
+
+        // Nudge A4 down two semitones -> G4; the tuner follows.
+        store.setString(id: violin.id, index: 2, midi: 67)
+        single.apply(instance: store.instance(id: violin.id)!, index: 2, tuning: .default)
+        XCTAssertEqual(single.tuner.target.fullName, "G4")
+
+        // 440 Hz against a G4 target reads +200 cents.
+        await slide(440, through: input, sampleRate: controller.sampleRate)
+        guard case .reading(let cents, _) = single.tuner.state else {
+            return XCTFail("should read against the edited target")
+        }
+        XCTAssertEqual(cents, 200, accuracy: 5)
     }
 
     // MARK: - Reaching the detectors

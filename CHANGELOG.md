@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- A string's target can be nudged right where you tune it: the − and +
+  flanking the note on the single-string screen move that string's target by
+  semitones. Edit a named tuning and it relabels itself Custom — the name
+  follows the pitches. Locked instruments keep their targets locked too.
 - Instruments are now *yours*: each remembers its own tuning and reference
   exactly as you left it, can be renamed (long-press in the list — "Guitar 2"
   becomes "Strat"), and you can add another of the same kind. The strings

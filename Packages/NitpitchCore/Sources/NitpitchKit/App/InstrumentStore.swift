@@ -143,6 +143,27 @@ public final class InstrumentStore: ObservableObject {
         update(id: id) { $0.strings = strings }
     }
 
+    /// Change one string's target — the string view's stepper. Editing a
+    /// named tuning relabels it Custom automatically, because the tuning's
+    /// identity follows the pitches (see `InstrumentInstance.tuningName`).
+    ///
+    /// Clamped to the range the detector can actually search
+    /// (`Detection.fullBand`): a target the app can never hear would be a
+    /// dial that can never light, presented as if it could.
+    public func setString(id: String, index: Int, midi: Int) {
+        guard let current = instance(id: id), current.strings.indices.contains(index) else {
+            return
+        }
+        let clamped = min(
+            max(midi, Self.editableMIDIRange.lowerBound),
+            Self.editableMIDIRange.upperBound)
+        update(id: id) { $0.strings[index] = clamped }
+    }
+
+    /// MIDI notes whose frequency at any offered reference stays inside
+    /// `Detection.fullBand` (27 ≈ 38.9 Hz, 95 ≈ 1976 Hz at A=440).
+    public static let editableMIDIRange = 27...95
+
     public func setReference(id: String, _ reference: ReferencePitch) {
         update(id: id) { $0.referenceHz = reference.hz }
     }

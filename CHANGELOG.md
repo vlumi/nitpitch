@@ -22,6 +22,10 @@ first `make release` will produce build 1.
 
 ### Unreleased (next build)
 
+- 7- and 8-string guitars and the 5-string bass join the instrument list —
+  common variants offered directly rather than hidden behind configuration.
+  The 8-string's F#1 and the 5-string's B0 are exactly the notes the
+  detector's floor was lowered for.
 - Instruments can be managed anywhere: the + in the instrument list adds one
   (pick the type, name it), swipe a row on iPhone for rename / duplicate /
   delete, and on the Mac every row has a … menu with the same actions.

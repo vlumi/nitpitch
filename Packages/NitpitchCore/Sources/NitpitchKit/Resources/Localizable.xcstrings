@@ -1,11 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "“%@” already exists." : {
+      "comment" : "Body of the replace confirmation; the placeholder is the preset's name"
+    },
     "%@ (edited)" : {
       "comment" : "Tuning pill: the loaded preset's name once the setup has drifted from it"
     },
     "%lld across" : {
       "comment" : "Menu option for how many string dials fit across the grid"
+    },
+    "5-string Bass" : {
+      "comment" : "Instrument name"
+    },
+    "7-string Guitar" : {
+      "comment" : "Instrument name"
+    },
+    "8-string Guitar" : {
+      "comment" : "Instrument name"
     },
     "About" : {
       "comment" : "Title of the about screen"
@@ -20,7 +32,7 @@
       "comment" : "Star on an instrument row: pin it to the launch screen"
     },
     "Appearance" : {
-      "comment" : "Setting: follow the system appearance, or force light/dark"
+      "comment" : "Setting: follow the system appearance, or force light\/dark"
     },
     "Audio is analyzed on your device and never recorded or sent anywhere." : {
       "comment" : "Privacy summary on the about screen"
@@ -50,7 +62,7 @@
       "comment" : "Dismisses the settings sheet"
     },
     "Drop D" : {
-      "comment" : "Tuning name (guitar/bass): lowest string down to D"
+      "comment" : "Tuning name (guitar\/bass): lowest string down to D"
     },
     "Duplicate" : {
       "comment" : "Row action: clone this instrument with its current setup"
@@ -79,11 +91,11 @@
     "Lower target" : {
       "comment" : "Stepper in the single-string view: this string's target down a semitone"
     },
-    "MIT licensed." : {
-      "comment" : "License note on the about screen"
-    },
     "Microphone access is off" : {
       "comment" : "Shown when the user denied microphone permission"
+    },
+    "MIT licensed." : {
+      "comment" : "License note on the about screen"
     },
     "Name" : {
       "comment" : "Text field placeholder in the rename dialog"
@@ -101,7 +113,7 @@
       "comment" : "Shown when the tuner is stopped"
     },
     "Notation" : {
-      "comment" : "Label for the note-naming convention picker (A B C / A H C / Do Re Mi / iroha)"
+      "comment" : "Label for the note-naming convention picker (A B C \/ A H C \/ Do Re Mi \/ iroha)"
     },
     "Open G" : {
       "comment" : "Tuning name (guitar)"
@@ -165,9 +177,6 @@
     },
     "Version %@" : {
       "comment" : "Version pill on the about screen; %@ is like '0.1.0 (12)'"
-    },
-    "“%@” already exists." : {
-      "comment" : "Body of the replace confirmation; the placeholder is the preset's name"
     }
   },
   "version" : "1.0"

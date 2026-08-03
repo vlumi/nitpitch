@@ -138,9 +138,19 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     public static let guitar = Instrument(
         id: "guitar", name: "Guitar", strings: [40, 45, 50, 55, 59, 64],
         family: .fretted)  // E2 A2 D3 G3 B3 E4
+    public static let guitar7 = Instrument(
+        id: "guitar-7", name: "7-string Guitar", strings: [35, 40, 45, 50, 55, 59, 64],
+        family: .fretted)  // B1 + standard
+    public static let guitar8 = Instrument(
+        id: "guitar-8", name: "8-string Guitar",
+        strings: [30, 35, 40, 45, 50, 55, 59, 64],
+        family: .fretted)  // F#1 B1 + standard
     public static let bassGuitar = Instrument(
         id: "bass-guitar", name: "Bass Guitar", strings: [28, 33, 38, 43],
         family: .fretted)  // E1 A1 D2 G2
+    public static let bassGuitar5 = Instrument(
+        id: "bass-guitar-5", name: "5-string Bass", strings: [23, 28, 33, 38, 43],
+        family: .fretted)  // B0 + standard — the note the detection floor was set for
 
     /// Chromatic: no fixed strings, the full detectable band.
     public static let chromatic = Instrument(
@@ -150,7 +160,9 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     /// ordered high to low. Violin leads because it's the app's reason for
     /// existing and its default — and because it's the highest bowed string.
     public static let all: [Instrument] = [
-        .violin, .viola, .cello, .doubleBass, .guitar, .bassGuitar, .chromatic,
+        .violin, .viola, .cello, .doubleBass,
+        .guitar, .guitar7, .guitar8, .bassGuitar, .bassGuitar5,
+        .chromatic,
     ]
 
     /// `all`, split into the picker's sections. Families keep the order they're

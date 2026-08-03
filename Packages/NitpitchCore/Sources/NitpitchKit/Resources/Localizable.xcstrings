@@ -10,6 +10,9 @@
     "About Nitpitch" : {
       "comment" : "Row that opens the about screen"
     },
+    "Add another" : {
+      "comment" : "Context menu action: add another instrument of this kind"
+    },
     "Add to favorites" : {
       "comment" : "Star on an instrument row: pin it to the launch screen"
     },
@@ -22,17 +25,35 @@
     "Bowed" : {
       "comment" : "Instrument picker section: bowed string instruments"
     },
+    "Cancel" : {
+      "comment" : "Dismisses a dialog without doing anything"
+    },
     "Columns" : {
       "comment" : "Label for the control setting how many string dials fit across the grid"
+    },
+    "Custom" : {
+      "comment" : "Tuning name shown when the pitches match no known tuning"
+    },
+    "DADGAD" : {
+      "comment" : "Tuning name (guitar)"
     },
     "Dark" : {
       "comment" : "Appearance option: always dark"
     },
+    "Delete" : {
+      "comment" : "Context menu action: remove an added instrument"
+    },
     "Done" : {
       "comment" : "Dismisses the settings sheet"
     },
+    "Drop D" : {
+      "comment" : "Tuning name (guitar\/bass): lowest string down to D"
+    },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments"
+    },
+    "Half-step down" : {
+      "comment" : "Tuning name: every string one semitone down"
     },
     "How note names are spelled." : {
       "comment" : "Footnote under the notation picker"
@@ -43,11 +64,17 @@
     "Light" : {
       "comment" : "Appearance option: always light"
     },
+    "Lock" : {
+      "comment" : "Menu action: lock this instrument's setup against changes"
+    },
     "Microphone access is off" : {
       "comment" : "Shown when the user denied microphone permission"
     },
     "MIT licensed." : {
       "comment" : "License note on the about screen"
+    },
+    "Name" : {
+      "comment" : "Text field placeholder in the rename dialog"
     },
     "Next string" : {
       "comment" : "Arrow in the single-string view: go to the higher neighbouring string"
@@ -64,6 +91,9 @@
     "Notation" : {
       "comment" : "Label for the note-naming convention picker (A B C \/ A H C \/ Do Re Mi \/ iroha)"
     },
+    "Open G" : {
+      "comment" : "Tuning name (guitar)"
+    },
     "Other" : {
       "comment" : "Instrument picker section: everything else (chromatic mode)"
     },
@@ -79,14 +109,29 @@
     "Remove from favorites" : {
       "comment" : "Star on an instrument row: unpin it from the launch screen"
     },
+    "Rename" : {
+      "comment" : "Context menu action and dialog title: rename an instrument"
+    },
     "Settings" : {
       "comment" : "Title of the settings sheet, and the gear button's VoiceOver label"
+    },
+    "Standard" : {
+      "comment" : "Tuning name: the instrument's standard tuning"
     },
     "System" : {
       "comment" : "Appearance option: follow the system setting"
     },
+    "This instrument is locked" : {
+      "comment" : "Title of the dialog a locked control opens"
+    },
     "Tune an instrument" : {
       "comment" : "The button below the chromatic dial that opens the instrument chooser"
+    },
+    "Unlock" : {
+      "comment" : "Menu action and dialog button: allow changes again"
+    },
+    "Unlock to make changes?" : {
+      "comment" : "Message of the dialog a locked control opens"
     },
     "Version %@" : {
       "comment" : "Version pill on the about screen; %@ is like '0.1.0 (12)'"

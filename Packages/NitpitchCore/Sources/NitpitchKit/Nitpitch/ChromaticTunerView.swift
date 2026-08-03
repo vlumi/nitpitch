@@ -24,20 +24,22 @@ public struct ChromaticTunerView: View {
     /// Mac, where this ambient value is unreliable under a forced scheme.
     @Environment(\.colorScheme) private var systemScheme
 
+    @ObservedObject private var store: InstrumentStore
     /// Opens the pushed instrument list.
     private let onOpenChooser: () -> Void
-    /// Goes straight to one instrument's grid — the favourite chips' path,
+    /// Goes straight to one instance's grid — the favourite chips' path,
     /// skipping the chooser the way a favourite should.
-    private let onChooseInstrument: (Instrument) -> Void
+    private let onChooseInstance: (String) -> Void
 
     public init(
-        settings: Settings, audio: AudioSessionController,
+        settings: Settings, audio: AudioSessionController, store: InstrumentStore,
         onOpenChooser: @escaping () -> Void,
-        onChooseInstrument: @escaping (Instrument) -> Void
+        onChooseInstance: @escaping (String) -> Void
     ) {
         self.settings = settings
+        self.store = store
         self.onOpenChooser = onOpenChooser
-        self.onChooseInstrument = onChooseInstrument
+        self.onChooseInstance = onChooseInstance
         // Full band, not the saved instrument's: this screen is chromatic by
         // definition, and an instrument is somewhere you navigate to.
         _model = StateObject(
@@ -125,18 +127,29 @@ public struct ChromaticTunerView: View {
         VStack(spacing: 16) {
             ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
             VStack(spacing: 10) {
-                if !pinnedInstruments.isEmpty {
-                    FavoritesRow(favorites: pinnedInstruments, onChoose: onChooseInstrument)
+                if !pinnedChips.isEmpty {
+                    FavoritesRow(chips: pinnedChips, onChoose: onChooseInstance)
                 }
                 InstrumentButton(onOpen: onOpenChooser)
             }
         }
     }
 
-    /// Pinned ids resolved to instruments, in pin order; ids that no longer
-    /// resolve are skipped rather than crashing a launch screen.
-    private var pinnedInstruments: [Instrument] {
-        settings.favorites.compactMap(Instrument.named)
+    /// Pinned ids resolved to chips, in pin order. An id resolves through the
+    /// store (an instance you own) or, before its default instance exists,
+    /// through the template; ids that resolve to neither are skipped rather
+    /// than crashing a launch screen.
+    private var pinnedChips: [FavoritesRow.Chip] {
+        settings.favorites.compactMap { id in
+            if let instance = store.instance(id: id) {
+                return FavoritesRow.Chip(id: id, label: instance.nameText)
+            }
+            if let template = Instrument.named(id) {
+                return FavoritesRow.Chip(
+                    id: id, label: Text(LocalizedStringKey(template.name), bundle: .module))
+            }
+            return nil
+        }
     }
 
     private func reconfigure() {

@@ -109,8 +109,14 @@ final class StringTuners: ObservableObject {
             targets: instrument.notes.map { $0.frequency(reference: reference) },
             bands: bands,
             tuning: tuning)
-        for (tuner, band) in zip(tuners, bands) {
+        for (tuner, (note, band)) in zip(tuners, zip(instrument.notes, bands)) {
             tuner.configure(band: band, reference: reference)
+            // The tuning may have moved this string to a different note —
+            // Drop D turns E2's dial into D2's. Rebanding alone would leave
+            // the cell measuring (and labelled) against the old target.
+            if tuner.target != note {
+                tuner.retarget(note)
+            }
         }
     }
 

@@ -9,7 +9,6 @@ import NitpitchCore
 public final class Settings: ObservableObject {
     private enum Key {
         static let referenceHz = "referenceHz"
-        static let instrumentID = "instrumentID"
         static let noteNaming = "noteNaming"
         static let appearance = "appearance"
         static let favorites = "favoriteInstruments"
@@ -19,10 +18,6 @@ public final class Settings: ObservableObject {
 
     @Published public var reference: ReferencePitch {
         didSet { defaults.set(reference.hz, forKey: Key.referenceHz) }
-    }
-
-    @Published public var instrument: Instrument {
-        didSet { defaults.set(instrument.id, forKey: Key.instrumentID) }
     }
 
     @Published public var naming: NoteNaming {
@@ -54,8 +49,6 @@ public final class Settings: ObservableObject {
         // would clamp to the low bound — check presence explicitly.
         let storedHz = defaults.object(forKey: Key.referenceHz) as? Double
         self.reference = storedHz.map(ReferencePitch.init(hz:)) ?? .standard
-        self.instrument =
-            (defaults.string(forKey: Key.instrumentID).flatMap(Instrument.named)) ?? .violin
         self.naming =
             (defaults.string(forKey: Key.noteNaming).flatMap(NoteNaming.init(rawValue:)))
             ?? .english

@@ -125,6 +125,59 @@ final class NitpitchUITests: XCTestCase {
             "back from a string should land on the grid")
     }
 
+    // MARK: - Tunings and the lock
+
+    /// Switching the guitar to Drop D retargets the low string's dial — the
+    /// header menu is the tuning control, and the instance remembers.
+    func testTuningMenuRetunesTheGrid() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+        let guitar = app.descendants(matching: .any)["chooser.guitar"]
+        XCTAssertTrue(guitar.waitForExistence(timeout: 5))
+        guitar.tap()
+
+        let cell = app.descendants(matching: .any)["grid.cell.0"].firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        XCTAssertTrue(cell.label.hasPrefix("E"), "guitar standard bottom string is E")
+
+        let tuningMenu = app.buttons["grid.tuning"].firstMatch
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        tuningMenu.tap()
+        let dropD = app.buttons["Drop D"].firstMatch
+        XCTAssertTrue(dropD.waitForExistence(timeout: 5))
+        dropD.tap()
+
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        XCTAssertTrue(cell.label.hasPrefix("D"), "Drop D bottom string is D")
+    }
+
+    /// The padlock: locked controls are doors — they don't mutate, they offer
+    /// the unlock.
+    func testLockedControlsOfferTheUnlock() {
+        let app = launch()
+        openViolinGrid(app)
+
+        // Lock from the layout menu.
+        openLayoutMenu(app)
+        let lock = app.buttons["grid.lock"].firstMatch
+        XCTAssertTrue(lock.waitForExistence(timeout: 5))
+        lock.tap()
+
+        // A locked control's touch raises the offer instead of acting.
+        let tuningMenu = app.descendants(matching: .any)["grid.tuning"].firstMatch
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        tuningMenu.tap()
+        let unlock = app.buttons["Unlock"].firstMatch
+        XCTAssertTrue(unlock.waitForExistence(timeout: 5), "the door should offer the unlock")
+        unlock.tap()
+
+        // Unlocked: the tuning menu opens normally again.
+        tuningMenu.tap()
+        XCTAssertTrue(app.buttons["Standard"].firstMatch.waitForExistence(timeout: 5))
+    }
+
     // MARK: - Favourites
 
     /// The point of the row: one tap from launch to the violin's strings,

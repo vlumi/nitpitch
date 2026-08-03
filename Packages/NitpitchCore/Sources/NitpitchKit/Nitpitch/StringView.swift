@@ -14,26 +14,36 @@ import SwiftUI
 /// arrows are the only way to move, so the screen can't yank away mid-turn on
 /// a peg.
 struct StringView: View {
-    let instrument: Instrument
+    @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
     @ObservedObject var detection: DetectionSettings
 
     @StateObject private var single: SingleStringTuner
     @State private var index: Int
+    @State private var isShowingLockDialog = false
+
+    private let initial: InstrumentInstance
 
     init(
-        instrument: Instrument, index: Int, audio: AudioSessionController,
-        settings: Settings, detection: DetectionSettings
+        instance: InstrumentInstance, index: Int, store: InstrumentStore,
+        audio: AudioSessionController, settings: Settings, detection: DetectionSettings
     ) {
-        self.instrument = instrument
+        self.store = store
         self.settings = settings
         self.detection = detection
+        self.initial = instance
         _index = State(initialValue: index)
         _single = StateObject(
             wrappedValue: SingleStringTuner(
-                instrument: instrument, index: index, audio: audio,
-                reference: settings.reference, tuning: detection.tuning))
+                instrument: instance.instrument, index: index, audio: audio,
+                reference: instance.reference, tuning: detection.tuning))
     }
+
+    private var instance: InstrumentInstance {
+        store.instance(id: initial.id) ?? initial
+    }
+
+    private var instrument: Instrument { instance.instrument }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -42,19 +52,28 @@ struct StringView: View {
                 .padding(.top, 6)
             StringDialPane(tuner: single.tuner, naming: settings.naming)
             stringSwitcher
-            ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
+            ReferencePitchStepper(
+                reference: Binding(
+                    get: { instance.reference },
+                    set: { store.setReference(id: instance.id, $0) }),
+                naming: settings.naming
+            )
+            .lockedDoor(instance.isLocked, isPresenting: $isShowingLockDialog)
             Spacer(minLength: 0)
         }
         .padding(24)
         .frame(maxWidth: 520)
         .frame(maxWidth: .infinity, alignment: .center)
-        .navigationTitle(Text(LocalizedStringKey(instrument.name), bundle: .module))
+        .navigationTitle(instance.nameText)
         // No identifier on the container: applied here it stamps every child
         // element and clobbers their own ids (string.target went missing).
         .task { single.attach() }
         .onDisappear { single.detach() }
-        .onChangeCompat(of: settings.reference) { _ in
-            single.configure(reference: settings.reference, tuning: detection.tuning)
+        .onChangeCompat(of: instance) { _ in
+            single.configure(reference: instance.reference, tuning: detection.tuning)
+        }
+        .lockDoorDialog(isPresented: $isShowingLockDialog) {
+            store.setLocked(id: instance.id, false)
         }
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)

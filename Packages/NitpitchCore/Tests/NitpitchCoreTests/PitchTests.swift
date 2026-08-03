@@ -291,6 +291,41 @@ final class PitchTests: XCTestCase {
         }
     }
 
+    // MARK: - Tunings
+
+    /// Every catalog tuning must fit its own instrument — a wrong string
+    /// count in the catalog would be unloadable by construction.
+    func testKnownTuningsFitTheirInstrument() {
+        for instrument in Instrument.all where !instrument.strings.isEmpty {
+            for tuning in instrument.knownTunings {
+                XCTAssertEqual(
+                    tuning.strings.count, instrument.strings.count,
+                    "\(instrument.name): \(tuning.name ?? "?") has the wrong string count")
+                XCTAssertNotNil(tuning.name, "catalog tunings are all named")
+            }
+            XCTAssertEqual(
+                instrument.knownTunings.first?.strings, instrument.strings,
+                "\(instrument.name): Standard must come first and match the template")
+        }
+    }
+
+    /// Identity follows the values: pitches matching a catalog entry ARE that
+    /// tuning, anything else is custom (nil).
+    func testTuningIdentityFollowsTheValues() {
+        let dropD = [38, 45, 50, 55, 59, 64]
+        XCTAssertEqual(Instrument.guitar.knownTuning(matching: dropD)?.name, "Drop D")
+        XCTAssertNil(Instrument.guitar.knownTuning(matching: [39, 45, 50, 55, 59, 64]))
+        XCTAssertEqual(
+            Instrument.guitar.knownTuning(matching: Instrument.guitar.strings)?.name,
+            "Standard")
+    }
+
+    /// Half-step down is exactly that, string for string.
+    func testHalfStepDownIsAUniformShift() {
+        let halfStep = Instrument.guitar.knownTunings.first { $0.name == "Half-step down" }!
+        XCTAssertEqual(halfStep.strings, Instrument.guitar.strings.map { $0 - 1 })
+    }
+
     // MARK: - Picker grouping
 
     /// The picker renders `grouped`, so anything missing from it is an

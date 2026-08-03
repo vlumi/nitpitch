@@ -13,7 +13,7 @@ public final class Settings: ObservableObject {
         static let appearance = "appearance"
         static let favorites = "favoriteInstruments"
         static let stripsOnMac = "stripsOnMac"
-        static let stripsReversed = "stripsReversed"
+        static let stripsLowOnTop = "stripsLowOnTop"
     }
 
     private let defaults: UserDefaults
@@ -32,7 +32,7 @@ public final class Settings: ObservableObject {
 
     /// Instruments pinned to the launch screen, in pin order. Stored as ids so
     /// the list survives instruments gaining state of their own later
-    /// (ROADMAP § 1: favourites become pinned instrument *instances*).
+    /// (favorites are pinned instrument *instances* — AGENTS.md).
     @Published public var favorites: [String] {
         didSet { defaults.set(favorites, forKey: Key.favorites) }
     }
@@ -44,13 +44,16 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(stripsOnMac, forKey: Key.stripsOnMac) }
     }
 
-    /// Strip order: false = low string on top ("as you look down at the
-    /// strings, fat closest"), true = reversed ("as you play it" / tab
-    /// order, fat at the bottom). A viewer preference — distinct from
-    /// left-handedness, which is the instrument's property and will affect
-    /// every view.
-    @Published public var stripsReversed: Bool {
-        didSet { defaults.set(stripsReversed, forKey: Key.stripsReversed) }
+    /// Strip order: false (default) = low string at the bottom — pitch
+    /// intuition, and how tabs are written; true = low on top, the
+    /// looking-down-at-the-neck view. Low-at-bottom is the default because
+    /// it's the only order with a universal referent: bowed instruments
+    /// have no view in which their strings stack vertically at all, and
+    /// fretted players read tab, which puts the thickest string at the
+    /// bottom. Handedness never enters it: a lefty's mirrored stringing and
+    /// mirrored hold cancel, so the looking-down order is the same.
+    @Published public var stripsLowOnTop: Bool {
+        didSet { defaults.set(stripsLowOnTop, forKey: Key.stripsLowOnTop) }
     }
 
     public func toggleFavorite(_ id: String) {
@@ -78,6 +81,6 @@ public final class Settings: ObservableObject {
         // hide the feature exactly from the person it was built for.
         self.favorites = defaults.stringArray(forKey: Key.favorites) ?? [Instrument.violin.id]
         self.stripsOnMac = defaults.bool(forKey: Key.stripsOnMac)
-        self.stripsReversed = defaults.bool(forKey: Key.stripsReversed)
+        self.stripsLowOnTop = defaults.bool(forKey: Key.stripsLowOnTop)
     }
 }

@@ -97,6 +97,9 @@
     "Lock" : {
       "comment" : "Menu action: lock this instrument's setup against changes"
     },
+    "Low string on top" : {
+      "comment" : "Settings toggle for the strips view's string order; off (default) means the lowest string sits at the bottom"
+    },
     "Lower target" : {
       "comment" : "Stepper in the single-string view: this string's target down a semitone"
     },
@@ -157,9 +160,6 @@
     "Replace preset" : {
       "comment" : "Title of the confirmation when saving over an existing name"
     },
-    "Reverse strip order" : {
-      "comment" : "Layout toggle: flip whether the lowest string sits at the top or bottom of the strips"
-    },
     "Save as preset…" : {
       "comment" : "Tuning menu: save the current setup under a name"
     },
@@ -171,6 +171,9 @@
     },
     "Standard" : {
       "comment" : "Tuning name: the instrument's standard tuning"
+    },
+    "String order in the strips view. Off: lowest at the bottom, as tabs are written." : {
+      "comment" : "Footer explaining the strip-order toggle"
     },
     "Strings as strips" : {
       "comment" : "Mac layout toggle: show the strings as horizontal strips instead of dials"

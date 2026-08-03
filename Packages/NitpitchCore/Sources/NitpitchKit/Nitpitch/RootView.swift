@@ -3,9 +3,8 @@ import SwiftUI
 
 /// Where the app can navigate to.
 ///
-/// The enlarged single-string view (ROADMAP § 1) joins later, which is why
-/// this is a typed path rather than a `NavigationPath` — popping to a known
-/// point stays a one-liner.
+/// A typed path rather than a `NavigationPath`: popping to a known point
+/// stays a one-liner.
 public enum TunerRoute: Hashable {
     /// The instrument list. Pushed, not presented: back from a grid lands
     /// here, on the list you chose from, the way the mental model expects.
@@ -37,7 +36,7 @@ public struct RootView: View {
         self.settings = settings
         self.audio = audio
         // A new instrument's reference seeds from the chromatic screen's —
-        // "from wherever you came from" (ROADMAP § 1).
+        // "from wherever you came from".
         _store = StateObject(
             wrappedValue: InstrumentStore(defaults: LaunchStores.defaults) {
                 settings.reference

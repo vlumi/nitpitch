@@ -1,294 +1,45 @@
 # Roadmap
 
-Open future work only. Settled decisions live in [AGENTS.md](AGENTS.md); what
-has shipped is in [CHANGELOG.md](CHANGELOG.md).
+Planned work only — if it's not planned, it's not here. Settled decisions and
+their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
+in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.1.0 (build 1) is released on both platforms, and
-v0.2.0 is being cut. Its centerpiece — a dial per string, with the detection
-to make it honest — shipped, along with the whole tuning flow (your
-instruments, presets, favorites, the padlock), the swipe-paging string view,
-and the scaling pass. What follows is the open tail of v0.2, then the larger
-ideas.
+**Where things stand:** v0.1.0 (build 1) is released on both platforms;
+v0.2.0 is being cut.
 
 ## 1. Finishing v0.2
 
-### Design draft: from launch to one string
-
-The whole flow — instruments, tunings, presets, favorites — designed as one
-thing, because it is one thing. The organizing observation: the app hosts two
-different acts. **Setting up** (what am I tuning?) happens once per session;
-**tuning** happens constantly. Today's pain — two taps to reach the violin —
-is setup friction on a *repeated* setup, and that's exactly what a favorite
-is: a repeated setup converted into one tap.
-
-**The yardstick for every iteration of this flow:** a beginning violinist
-gets there with no vocabulary and no reading, and someone who knows the app
-never hears about it — guidance that only appears in the moment it's needed,
-through the gesture the user was already making. Expect a few rounds against
-real hands before it holds.
-
-#### The model: your instruments, and presets as stamps
-
-```text
-Tuning     = ordered [MIDI] + its canonical name when it has one
-             ("Standard", "Drop D", "DADGAD") — or none, for Custom
-Instrument = one YOU OWN: "Strat", "Acoustic", "My Violin" — a named
-             instance of a template (guitar, violin…), holding its own
-             mutable state (tuning + reference + lock), autosaved,
-             waiting as you left it. One is auto-created per template
-             ("My Guitar"), so nobody meets the plural until they own
-             a plural: "Add another guitar…" is where it appears.
-             THE STRING COUNT IS PART OF THE INSTRUMENT — it's a
-             physical fact, set when you add one (a 7-string guitar is
-             added as one), changed by editing the instrument, never by
-             a tuning.
-Preset     = a frozen setup under the USER'S name ("Bach No. 1").
-             Not a place you visit — a stamp you LOAD onto an
-             instrument, after which everything is freely tweakable.
-             Saving is the only way values flow back: Save → "New
-             preset…" / "Replace 'Bach No. 1'", with a confirm.
-Lock       = per-instrument, optional: a fixed toolbar padlock holds
-             the whole setup — the orchestral "keep my violin at 442",
-             and stray-tap protection on a music stand. Locked controls
-             simply dim; the closed lock over dimmed controls IS the
-             explanation, and tapping it is the one way back.
-Favorite  = an instrument pinned to the launch screen.
-```
-
-Three earlier drafts converged here, each killing a concept:
-
-- **Instances killed favorite-presets.** People own several guitars, and
-  each remembers its own state — so if your Violin sits at Bach No. 1,
-  tapping "Violin" *is* one-tap-to-Bach-No.-1. The instrument is the
-  memory. (A preset chip would also have had to guess *which* guitar to
-  load onto.)
-- **Load-semantics killed the locked preset session.** Presets stay frozen
-  (loading copies values out; saving is explicit and confirmed), but
-  there's no "being on a preset" — so there's only ever ONE kind of
-  screen: your instrument, mutable. The trade, taken knowingly: drift
-  after loading is *visible* rather than *impossible* — the header's
-  "Strat · Bach No. 1" becomes "Strat · Bach No. 1 (edited)" on the first
-  nudge.
-- **The per-instrument padlock resurrected what the locked session did
-  well, in its natural home.** "Hold this at A=442" is a property of
-  *your violin*, not of a preset's honor. (An earlier draft had locked
-  controls answer every touch with an "Unlock to make changes?" dialog;
-  in use, popups from a music stand were exactly the wrong thing. What
-  shipped: locked controls dim, the always-visible toolbar padlock is
-  the explanation and the way back, and nothing pops up anywhere.)
-  Loading a preset counts as a change, so the lock guards it too.
-
-The reference pitch belongs to the instrument's state (and to presets),
-not to a global setting: "Bach No. 1 at A=442" only means something if 442
-is part of it. Chromatic keeps its own. Sharing stays a preset in a URL.
-`Instrument` templates keep the catalog of known tunings; the midpoint band
-scheme already accepts any string array, so custom tunings — odd string
-counts included — need no special-casing downstream.
-
-#### The navigation
-
-```text
-Chromatic launch  (unchanged: immediately usable, no setup)
-├── favorites row: [My Violin] [Strat] [Acoustic] …   ← ONE tap, as you
-│                                                        left it
-└── "Instruments…" — pushed, not a sheet
-        Your instruments (rename / string count / reorder / add another)
-        Bowed / Fretted / … templates → opens (creating if first time)
-                                        that template's default instance
-        Import preset…                 (paste link / scan QR)
-
-Grid — header "Strat · Bach No. 1", or "· Drop D (edited)"; 🔒 if locked
-├── tuning menu: known tunings · load preset · Save as preset…
-├── reference stepper
-└── tap a cell → String view
-
-String view (one string, full screen)
-├── full dial, wide-band listening — tracks a slipped peg from anywhere
-├── ◀ ▶ / swipe between strings; back → grid
-└── the string's TARGET is a stepper here: nudge D2 down to C2 and the
-    tuning label forks to "Custom"
-```
-
-Decisions this draft takes, and why:
-
-- **Push the chooser; drop the accordion.** The accordion's one advantage —
-  choosing tuning at instrument-choice time — is served better by
-  favorites (the repeat case) and by the grid header's tuning menu (the
-  change-of-mind case). With those, the chooser can stay a dumb list, and
-  back finally walks the path you came.
-- **Per-string editing lives in the string view.** "Choose individual
-  tunings for each string" needs no new screen: you're already looking at
-  one string full screen, so its target is editable right there. Retuning
-  a string of "Drop D" relabels the instrument's tuning *Custom* — named
-  tunings are never edited in place — and "Save as preset…" is how Custom
-  gets a name. Tunings are purely about *pitches*: the string count
-  belongs to the instrument, so the once-awkward "Customize…" list editor
-  disappears from the tuning menu entirely.
-- **Presets that don't fit your instrument don't offer themselves.** A
-  7-string preset on a 6-string Strat is a type error, not a runtime
-  surprise: it lists disabled, with the reason ("7 strings"). This closes
-  what an earlier draft left open.
-- **Locked controls dim; the lock explains itself.** The dialog-per-touch
-  idea ("doors, not corpses") lost to use: the always-visible padlock in
-  the toolbar says why the controls are quiet, the expert who leaves
-  things unlocked never hears about any of it, and a stray tap on a
-  music stand dies silently instead of at a dialog.
-- **"(edited)" is the drift alarm.** With no locked preset mode, noticing
-  replaces impossibility: the header names what was loaded and admits
-  what's changed. Anyone who wants impossibility back locks the
-  instrument — that's what the padlock is.
-- **Sharing is a URL, and the site is the library.** A preset serializes
-  into a link fragment (small enough; no server) and renders as a QR
-  code. Importing — from a link or the camera — shows a preview
-  ("Guitar · Open G · A=442") with *Load once* and *Save*. nitpitch.app
-  hosts the long tail — scordatura, historical setups — as those same
-  links, so the collection grows without app updates or App Review, and
-  the in-app picker stays uncluttered.
-- **The user's name stays separate from the tuning's name.** Two presets
-  can hold identical strings and differ only in purpose; renaming on save
-  is the expected move, not an edge case. Instruments are named the same
-  way — "Strat" is what it means to you, not what the factory called it.
-
-Open, deliberately: favorites-row capacity (cap at ~4, overflow scrolls?),
-whether presets and instruments sync via iCloud or stay per-device, and
-whether favorite *presets* return one day — a chip that loads a preset onto
-a remembered instrument. Instruments cover the one-tap need first; the chip
-kind can wait for a real itch.
-
-#### Presets carry only what they were saved with
-
-From using the tuning menu: tunings feel like presets — are two concepts
-right? Resolved by unifying the payload, not the UI: **a preset carries only
-the fields it was saved with**, decided at save time. A catalog tuning is
-then exactly a built-in preset that carries pitches and nothing else — one
-concept, two payloads. The invariant that prompted the question holds by
-construction: "Drop D" has no reference to change; "Bach No. 1" carries
-A=442 and says so when it applies. The save dialog asks what to include
-(tuning only / tuning + reference); the import preview shows what a link
-carries. No runtime "which settings does this affect" toggle — that choice
-belongs to the person who saved it.
-
-#### UI/UX pass notes
-
-The first round's findings (buried padlock, Mac management, the stepper
-wobble, duplicate) have all shipped. Still standing from that round: a
-*complete* platform fork of the chooser only becomes right if the Mac moves
-to sidebar/master-detail — the trigger condition; don't pre-fork for
-modifier differences.
-
-The second round's finding — the grid didn't scale, postage stamps in
-prairie-sized cells — shipped as the scaling pass: every screen draws on a
-measured design footprint and scales as one piece, with the Mac centering
-what the width can't fill.
-
-#### Build order
-
-Shipped: the pushed chooser, the favorites chips, the string view, the
-instances (store, tuning catalog + header menu, rename / add another /
-delete, the ambient padlock), per-string target editing with Custom
-relabeling, and presets — save with the payload choice, load, replace with
-confirm, delete. What remains:
-
-1. **Preset share + import**: the URL fragment format, QR render, the import
-   preview (*Load once / Save*), and the site's hosted long tail.
-   (The header names the loaded preset, with "(edited)" once values drift —
-   granular edits keep the claim; only an explicit menu pick replaces it.
-   Drift-clears-the-claim was tried first and made the pill announce catalog
-   tunings nobody picked.)
-2. **An instrument editor** — a string list, nothing else: add a string at
-   either end with a proposed pitch from the template's own interval rule,
-   edit targets in place. Reachable at creation, from Edit…, and after
-   Duplicate. (String-count choice at add time shipped; the editor replaces
-   the count question for the odd shapes.)
-
-### The string view: what remains
-
-Shipped: the view (full dial, whole-instrument band, arrows/swipe, never
-follows the sound) and its target editing. Still to come there: the
-intonation feature (§ 4), eventually.
-
-### Landscape: strings drawn as strings (shipped; piano part remains)
-
-Landscape shouldn't rearrange the same furniture — it should switch
-metaphors. Instead of reflowed dial cells, a wide screen shows **one
-horizontal strip per string**, stacked like the instrument's own strings
-lying across the display: the existing light-dot strip carries the tuning
-(it already encodes direction and in-tune), the name and cents ride along,
-and there is no arc at all. The visual matches the thing in your hands.
-
-- **iOS by shape, Mac by toggle** — settled the third way, by use.
-  Rotation is a gesture, so the device's shape deciding feels right on
-  iPhone and iPad. But hands-on showed a Mac window edge-drag flipping
-  the metaphor feels like the app second-guessing you, so there the
-  strips are a deliberate toggle in the layout menu, and the column
-  count follows the window width instead of a picker. Sharp stays to
-  the right always.
-- **Strip direction is the viewer's call**: lowest string on top ("as you
-  look down at the instrument, fat closest") or reversed ("as you play
-  it" — tab order), a layout-menu toggle. Deliberately distinct from
-  left-handedness, which is the *instrument's* property and will reverse
-  order in every view when it lands.
-- **Piano, when it comes (§ 3), gets its display answer from the same
-  idea**: the keys themselves in correct black/white geometry, the tuning
-  dots running vertically *inside* each key, names and cents above the
-  black keys and below the white ones. The keyboard is already the
-  horizontal-strips view — it just bends the strips into keys.
-- **Left-handed instruments: a flipped string order, owned by the
-  instrument.** A lefty's low string sits where a righty's high one does,
-  so the instance gets a "flipped" bit that reverses display order
-  everywhere — strips, the dial grid, the string view's prev/next. The
-  cents axis never flips: sharp stays right, because that's pitch, not
-  handedness.
-
-### Open measurements
-
-- **CPU with N dials live.** The per-string detectors are each cheaper than
-  the old full-band one (shorter lag searches), and the spectral path is one
-  FFT per hop — but that's reasoning, not measurement. Profile on the SE.
-  Two levers if it proves expensive, both already latent in the design: only
-  track visible cells (the grid is lazy), and suspend the rest while one
-  string is enlarged.
-- **Bass through an amp — measured, prediction confirmed in the nuance.**
-  Through an amp into the Mac mic, single strings read nicely, drop D
-  included (the B0 floor fix earning its keep at 36.7 Hz). Double stops
-  worked only for D+G — exactly the pair whose anchor harmonics (73–196 Hz)
-  all clear the voice-processed mic's rolloff; E+A's anchors at 41–110 Hz
-  get eaten, spectral declines, and the hybrid degrades to single-string
-  tracking, which is the designed behavior. Not a problem in use. Still
-  untested: the phone's `.measurement` mode, which should extend the
-  double-stop range downward.
-
-### Verifying instruments nobody here owns
-
-On hand: violin, electric guitar, electric bass, digital piano. Not on hand:
-viola, cello, double bass. Should the unverified ones ship marked
-"experimental"? **No — verify them with the piano instead.**
-
-- **An instrument definition is a MIDI array.** The detector doesn't know
-  names; it knows frequencies. The failure modes worth fearing are *range*
-  and *timbre*, not which label the picker shows.
-- **Range is already covered.** Violin, electric guitar and electric bass
-  together span 41–659 Hz of open strings; every string of every shipped
-  instrument falls inside that. Double bass is literally the same MIDI array
-  as bass guitar.
-- **A digital piano is a calibrated reference oscillator.** The functional
-  check for an unowned instrument takes five minutes: select it, play its
-  open-string pitches on the piano, confirm the right dial lights near 0¢
-  and its neighbours stay dark. (Piano stretch is negligible mid-range;
-  don't use it to judge cents at the extremes.)
-
-What the piano can't verify is timbre — a bowed cello's noise floor against
-the gates. That's what the TestFlight beta is for: say in "What to Test"
-which instruments are verified by their own kind and ask cellists/violists
-to report. An in-app "experimental" badge would communicate risk the math
-doesn't have, and would not catch the risk that does exist — a badge never
-bowed a cello.
-
-### Release mechanics
-
-Donpa's `Scripts/asc/` (listing and screenshot sync) is deliberately not
-copied yet — bring it over when the v0.2 release is close, minus the
-achievements parts, which are game-specific.
+- **Preset share + import.** A preset serializes into a URL fragment (small
+  enough; no server) and renders as a QR code. Importing — from a link or
+  the camera — shows a preview ("Guitar · Open G · A=442") with *Load once*
+  and *Save*. nitpitch.app hosts the long tail — scordatura, historical
+  setups — as those same links, so the collection grows without app updates
+  or App Review, and the in-app picker stays uncluttered.
+- **An instrument editor** — a string list, nothing else: add a string at
+  either end with a proposed pitch from the template's own interval rule,
+  edit targets in place. Reachable at creation, from Edit…, and after
+  Duplicate; it replaces the count question for the odd shapes.
+- **Beta verification of unowned instruments.** On hand: violin, electric
+  guitar, electric bass, digital piano; not on hand: viola, cello, double
+  bass. The functional check is the piano — an instrument definition is a
+  MIDI array, and a digital piano is a calibrated oscillator: select the
+  instrument, play its open-string pitches, confirm the right dial lights
+  near 0¢ and neighbours stay dark. What the piano can't verify is timbre
+  (a bowed cello's noise floor against the gates); the TestFlight "What to
+  Test" says which instruments are verified by their own kind and asks
+  cellists and violists to report. No in-app "experimental" badge — it
+  would communicate risk the math doesn't have, and a badge never bowed a
+  cello.
+- **Open measurements.** CPU with N dials live: each per-string detector is
+  cheaper than the old full-band one and the spectral path is one FFT per
+  hop, but that's reasoning, not measurement — profile on the SE. (Two
+  levers already latent if it proves expensive: the grid is lazy, so only
+  track visible cells; suspend the rest while one string is enlarged.)
+  Also still untested: bass through the phone microphone in `.measurement`
+  mode, which should extend the double-stop range downward.
+- **Release mechanics.** Port donpa's `Scripts/asc/` (listing and
+  screenshot sync) for the App Store submission, minus the achievements
+  parts, which are game-specific.
 
 ## 2. Interval tuning — the remaining half of double stops
 
@@ -346,10 +97,10 @@ the temperaments entry (§ 4) — so it's worth building once, deliberately.
 ### What a piano mode needs beyond that
 
 - **88 notes, not N strings.** The grid doesn't scale to a keyboard; a piano
-  wants different navigation — and the landscape strings-as-strings idea
-  (§ 1) already sketches its display: real key geometry, dots vertically
-  inside each key, names and cents above the black keys and below the
-  white.
+  wants different navigation — and the strips view already sketches its
+  display: the keyboard is the strips bent into keys. Real key geometry,
+  the tuning dots running vertically *inside* each key, names and cents
+  above the black keys and below the white ones.
 - **Unison tuning.** Most notes have two or three strings tuned to each
   other, and hearing the beats between them is most of the job — closer to
   § 2 than to the ordinary tuner.
@@ -369,7 +120,7 @@ everything else depends on, and worth putting in early.
   *along its length*, not just open: compare the open string against the
   12th-fret note or harmonic, move the saddle, repeat. A display question,
   not DSP — the missing piece is showing two readings for one string (open
-  target and what's being played now). Belongs in the string view (§ 1).
+  target and what's being played now). Belongs in the string view.
 - **Fine-tuning display** — a strobe or beat-frequency view, how
   professionals tune to a fraction of a cent. Shares machinery with § 2.
 - **Temperaments** — just intonation and Pythagorean, for ensembles tuning

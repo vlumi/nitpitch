@@ -3,7 +3,8 @@ import Foundation
 import NitpitchCore
 
 /// A frozen setup under the user's own name — "Bach No. 1", "Tomorrow's gig"
-/// — carrying **only the fields it was saved with** (ROADMAP § 1).
+/// — carrying **only the fields it was saved with** (AGENTS.md, "The tuning
+/// flow").
 ///
 /// The payload rule is the whole design: a preset that carries pitches and
 /// nothing else is exactly what a catalog tuning is, so "a tuning must never

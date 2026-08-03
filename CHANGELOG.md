@@ -110,8 +110,8 @@ and remembered exactly as you left them.
   out of shape. Rotate the phone, or flip the toggle on the Mac, and the view
   follows; tall keeps the dials. The strips spread out to use the whole
   screen — four strings occupy it evenly instead of huddling at the top —
-  and they can run either way: lowest string on top, as you look down at the
-  instrument, or reversed, as tabs are written.
+  and run low-to-high from the bottom, the way tabs are written and pitch
+  reads; a Settings switch flips them for the looking-down-at-the-neck view.
 - On the Mac, the strips view is a deliberate toggle in the layout menu
   rather than following the window's shape, and the window can't shrink past
   where the toolbar hides the back button.
@@ -125,7 +125,7 @@ and remembered exactly as you left them.
   and extra columns have to earn their place by making the dials noticeably
   bigger — a big squarish window goes 2×2 huge, and an iPhone fits four full
   rows when they fit. The cards stay snug around their content, and a fixed
-  count is still a menu choice away.
+  count — or Auto again — is a menu choice away.
 - The launch screen's header is a real toolbar: the level meter rides the
   title area and the settings gear is a standard toolbar button — the same
   species as the + in the instrument list, instead of a hand-drawn imitation.

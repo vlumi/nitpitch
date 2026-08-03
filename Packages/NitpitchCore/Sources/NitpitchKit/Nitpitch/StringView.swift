@@ -49,25 +49,42 @@ struct StringView: View {
 
     private var instrument: Instrument { instance.instrument }
 
+    /// The measured content: meter 10, dial pane 183 (arc 80 + readout 77 +
+    /// strip 14 + gaps), switcher 40, reference row ~30, three 16pt gaps.
+    /// Measured, not padded — an overstated canvas is empty window (the
+    /// chromatic root and the grid cells both had that disease).
+    private static let design = CGSize(width: 400, height: 315)
+
     var body: some View {
-        VStack(spacing: 16) {
-            LevelMeter(level: single.inputLevel)
-                .frame(width: 72, height: 4)
-                .padding(.top, 6)
-            dialCarousel
-            stringSwitcher
-            ReferencePitchStepper(
-                reference: Binding(
-                    get: { instance.reference },
-                    set: { store.setReference(id: instance.id, $0) }),
-                naming: settings.naming
-            )
-            .disabled(instance.isLocked)
-            Spacer(minLength: 0)
+        GeometryReader { geo in
+            // The same design-canvas presentation as the chromatic root:
+            // drawn at design size, scaled as one unit, so it grows into a
+            // Mac window instead of floating in it. The swipe stays INSIDE
+            // the canvas on purpose — gesture coordinates there are
+            // pre-scale, so every threshold, offset and the dots' scrub
+            // mapping keep design units, and the pane follows the finger
+            // 1:1 at any scale (the visual offset and the visual pane are
+            // multiplied by the same factor).
+            let scale = min(
+                DesignCanvas.maxScale,
+                max(
+                    0.5,
+                    min(
+                        geo.size.width / Self.design.width,
+                        geo.size.height / Self.design.height)))
+            content
+                .frame(
+                    width: Self.design.width, height: Self.design.height,
+                    alignment: DesignCanvas.alignment
+                )
+                .contentShape(Rectangle())
+                .gesture(swipeGesture)
+                .scaleEffect(scale, anchor: DesignCanvas.anchor)
+                .frame(
+                    width: geo.size.width, height: geo.size.height,
+                    alignment: DesignCanvas.alignment)
         }
         .padding(24)
-        .frame(maxWidth: 520)
-        .frame(maxWidth: .infinity, alignment: .center)
         .navigationTitle(instance.nameText)
         .toolbar {
             ToolbarItem(placement: .primaryAction) { lockButton }
@@ -82,14 +99,30 @@ struct StringView: View {
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
         }
-        // Swiping is the same move as the arrows, but with the gallery's
-        // physics: the pane rides the finger, the neighbour is revealed
-        // beside it, and the release either commits with a swing or snaps
-        // back. Plain priority on purpose: the controls above are tap
-        // gestures that fail on movement (see `arrow`), so a swipe may
-        // begin anywhere — including on a stepper — while the dots' own
-        // scrubber, a child gesture, still wins over this one.
-        .gesture(swipeGesture)
+    }
+
+    /// Swiping is the same move as the arrows, but with the gallery's
+    /// physics: the pane rides the finger, the neighbour is revealed beside
+    /// it, and the release either commits with a swing or snaps back. Plain
+    /// priority on purpose: the controls are tap gestures that fail on
+    /// movement (see `arrow`), so a swipe may begin anywhere — including on
+    /// a stepper — while the dots' own scrubber, a child gesture, still
+    /// wins over the swipe.
+    private var content: some View {
+        VStack(spacing: 16) {
+            LevelMeter(level: single.inputLevel)
+                .frame(width: 72, height: 4)
+                .padding(.top, 6)
+            dialCarousel
+            stringSwitcher
+            ReferencePitchStepper(
+                reference: Binding(
+                    get: { instance.reference },
+                    set: { store.setReference(id: instance.id, $0) }),
+                naming: settings.naming
+            )
+            .disabled(instance.isLocked)
+        }
     }
 
     /// Every string as a page of one gallery, all mounted all the time,
@@ -298,132 +331,5 @@ struct StringView: View {
         guard canStepTarget(delta) else { return }
         store.setString(id: instance.id, index: index, midi: instance.strings[index] + delta)
         // The store change comes back through onChange(of: instance) → apply.
-    }
-}
-
-/// A neighbouring string's pane while it slides in: the dial at rest and the
-/// target it will aim for — no reading, because nothing is listening for it
-/// yet. Mirrors `StringDialPane`'s geometry exactly (the stepper slots are
-/// blank stand-ins) so the live pane can take its place without a shift.
-private struct GhostDialPane: View {
-    let note: Note
-    let naming: NoteNaming
-
-    var body: some View {
-        TunerDial(cents: 0, inTune: false, isReading: false) {
-            VStack(spacing: 6) {
-                HStack(spacing: 8) {
-                    Color.clear.frame(width: 40, height: 40)
-                    NoteNameLabel(
-                        note: note, naming: naming, fontSize: 46,
-                        order: .localizedFirst
-                    )
-                    .frame(width: 190)
-                    Color.clear.frame(width: 40, height: 40)
-                }
-                Text(verbatim: "—")
-                    .font(.title3.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            .frame(height: 46 * 1.15 + 4 + 20)
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-/// The dial and its readout, observing the string's model.
-private struct StringDialPane: View {
-    @ObservedObject var tuner: StringTunerViewModel
-    let naming: NoteNaming
-    let isLocked: Bool
-    let canStepTarget: (Int) -> Bool
-    let stepTarget: (Int) -> Void
-
-    var body: some View {
-        TunerDial(cents: displayCents, inTune: isInTune, isReading: isReading) {
-            readout
-        }
-    }
-
-    /// The *target*, not the detection: this screen answers "how far is this
-    /// from D", so D is the headline and the cents are the answer — and the
-    /// steppers flanking it change what's being asked: nudge D2 down to C2
-    /// and this string's target IS C2 (the tuning relabels itself Custom).
-    /// The chromatic tuner shows what it heard; this shows what you're after.
-    private var readout: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 8) {
-                targetStep(systemName: "minus", id: "string.down", by: -1)
-                NoteNameLabel(
-                    note: tuner.target, naming: naming, fontSize: 46,
-                    order: .localizedFirst
-                )
-                // A fixed slot, so the − and + don't wobble with the
-                // width of whatever note name sits between them.
-                .frame(width: 190)
-                .accessibilityElement(children: .ignore)
-                .accessibilityIdentifier("string.target")
-                .accessibilityLabel(tuner.target.accessibleName(in: naming))
-                targetStep(systemName: "plus", id: "string.up", by: 1)
-            }
-            Text(verbatim: centsLabel)
-                .font(.title3.monospacedDigit())
-                .foregroundStyle(
-                    isInTune
-                        ? AnyShapeStyle(Color.green)
-                        : AnyShapeStyle(.secondary)
-                )
-                .accessibilityIdentifier("string.cents")
-        }
-        .frame(height: 46 * 1.15 + 4 + 20)
-    }
-
-    /// A tap target, not a `Button` — same reasoning as the string arrows:
-    /// with the widened hit area a swipe often begins here, and it must
-    /// join the page-pan instead of being held hostage until release.
-    private func targetStep(systemName: String, id: String, by delta: Int) -> some View {
-        let enabled = canStepTarget(delta) && !isLocked
-        return Image(systemName: systemName)
-            .font(.body.weight(.medium))
-            .frame(width: 40, height: 40)
-            // The glyph slot stays 40pt so the row's geometry holds, but
-            // the hit area reaches out into the empty stretch between
-            // the stepper and the note name — a tap in the visual
-            // no-man's-land was clearly aimed at the stepper, and
-            // nothing else in the row is interactive to dispute it.
-            .contentShape(Rectangle().inset(by: -28))
-            .foregroundStyle(.secondary)
-            .opacity(enabled ? 1 : 0.35)
-            .onTapGesture { stepTarget(delta) }
-            .disabled(!enabled)
-            .accessibilityIdentifier(id)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel(
-                delta < 0
-                    ? Text("Lower target", bundle: .module)
-                    : Text("Raise target", bundle: .module))
-    }
-
-    private var centsLabel: String {
-        guard case .reading(let cents, _) = tuner.state else { return "—" }
-        let rounded = Int(cents.rounded())
-        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
-    }
-
-    private var displayCents: Double {
-        if case .reading(let cents, _) = tuner.state { return cents }
-        return 0
-    }
-
-    private var isInTune: Bool {
-        if case .reading(let cents, _) = tuner.state {
-            return TuningDisplay.isInTune(cents: cents)
-        }
-        return false
-    }
-
-    private var isReading: Bool {
-        if case .reading = tuner.state { return true }
-        return false
     }
 }

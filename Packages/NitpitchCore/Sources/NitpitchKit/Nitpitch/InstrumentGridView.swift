@@ -82,12 +82,21 @@ struct InstrumentGridView: View {
                     let layout = dialLayout(for: geo.size)
                     dialGrid(columns: layout.columns, cellScale: layout.scale)
                         // Cards hug their content instead of stretching into
-                        // acres — the emptiness lives outside the cards.
+                        // acres — the emptiness lives outside the cards —
+                        // but loosely enough that a single column can still
+                        // use the width it was visibly given.
                         .frame(
                             maxWidth: CGFloat(layout.columns)
-                                * (300 * layout.scale + 12) + 32
+                                * (330 * layout.scale + 12) + 32
                         )
                         .frame(maxWidth: .infinity, alignment: .center)
+                        // When width caps the scale so the grid can't fill
+                        // the height, the slack frames the grid on the Mac
+                        // instead of pooling at the bottom; phones read
+                        // scrolling content from the top.
+                        .frame(
+                            minHeight: max(0, geo.size.height - 120),
+                            alignment: verticalCentering)
                 }
             }
         }
@@ -386,9 +395,9 @@ struct InstrumentGridView: View {
         .accessibilityLabel(Text("Columns", bundle: .module))
     }
 
-    /// Two across reads best — 2×2 for a violin, 3×2 for a guitar — and the
-    /// picker remains for anyone who wants denser or looser.
+    /// Zero means Auto: the fill algorithm chooses (see `dialLayout`). The
+    /// picker offers fixed counts for anyone who wants denser or looser.
     private static func defaultColumns(strings: Int) -> Int {
-        2
+        0
     }
 }

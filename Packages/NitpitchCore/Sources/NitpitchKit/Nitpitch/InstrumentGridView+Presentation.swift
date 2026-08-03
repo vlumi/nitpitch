@@ -22,22 +22,30 @@ extension InstrumentGridView {
     /// than one thin row across the top.
     func dialLayout(for size: CGSize) -> (columns: Int, scale: CGFloat) {
         let count = max(1, strings.tuners.count)
-        #if os(macOS)
-        var best = (columns: 1, scale: CGFloat(0))
+        // A picked count (the iOS picker) skips the choice but keeps the
+        // scaling, floored low so three-across on an SE shrinks to fit.
+        if columns > 0 {
+            let cellWidth = (size.width - 32 - CGFloat(columns - 1) * 12) / CGFloat(columns)
+            return (columns, min(1.8, max(0.5, cellWidth / Self.cellDesign.width)))
+        }
+        // Auto, the default on both platforms: try every count, and each
+        // added column must EARN its place by making the dials noticeably
+        // larger (35% per column) — a phone or a modest window keeps one
+        // serene column, a big squarish window goes 2×2 huge. The chrome
+        // constant is measured (meter row + footer), not padded: reserving
+        // too much here is exactly what left unexplained margins below.
+        var best = (columns: 1, scale: CGFloat(0), score: CGFloat(0))
         for candidate in 1...count {
             let rows = CGFloat((count + candidate - 1) / candidate)
             let cellWidth =
                 (size.width - 32 - CGFloat(candidate - 1) * 12) / CGFloat(candidate)
-            let cellHeight = (size.height - 150 - (rows - 1) * 12) / rows
+            let cellHeight = (size.height - 100 - (rows - 1) * 12) / rows
             let scale = min(
                 cellWidth / Self.cellDesign.width, cellHeight / Self.cellDesign.height)
-            if scale > best.scale { best = (candidate, scale) }
+            let score = scale / pow(1.35, CGFloat(candidate - 1))
+            if score > best.score { best = (candidate, scale, score) }
         }
-        return (best.columns, min(3.0, max(0.6, best.scale)))
-        #else
-        let cellWidth = (size.width - 32 - CGFloat(columns - 1) * 12) / CGFloat(columns)
-        return (columns, min(1.8, max(0.5, cellWidth / Self.cellDesign.width)))
-        #endif
+        return (best.columns, min(3.0, max(0.5, best.scale)))
     }
 
     /// Lazy so cost tracks the viewport rather than the string count — which

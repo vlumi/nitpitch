@@ -214,7 +214,10 @@ public struct ChromaticTunerView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
+        // The root hides the system bar (its header IS the bar), so this is
+        // a hand-drawn toolbar button — it should look like the species it
+        // is, tinted like the chooser's +, not a grey ornament.
+        .foregroundStyle(.tint)
         .accessibilityIdentifier("tuner.settings")
         .accessibilityLabel(Text("Settings", bundle: .module))
     }

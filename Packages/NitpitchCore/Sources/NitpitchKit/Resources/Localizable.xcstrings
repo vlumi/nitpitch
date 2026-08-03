@@ -43,6 +43,9 @@
     "Audio is analyzed on your device and never recorded or sent anywhere." : {
       "comment" : "Privacy summary on the about screen"
     },
+    "Auto" : {
+      "comment" : "Column picker: let the screen choose the grid shape"
+    },
     "Bowed" : {
       "comment" : "Instrument picker section: bowed string instruments"
     },

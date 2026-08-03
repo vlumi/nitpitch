@@ -74,7 +74,7 @@ public struct ChromaticTunerView: View {
             let wideScale = min(geo.size.width / wide.width, geo.size.height / wide.height)
             let isWide = wideScale > stackedScale
             let design = isWide ? wide : stacked
-            let scale = min(Self.maxScale, max(0.5, isWide ? wideScale : stackedScale))
+            let scale = min(DesignCanvas.maxScale, max(0.5, isWide ? wideScale : stackedScale))
             Group {
                 if isWide {
                     sideBySideLayout
@@ -87,12 +87,12 @@ public struct ChromaticTunerView: View {
             // pooled below it. Phones keep reading from the top.
             .frame(
                 width: design.width, height: design.height,
-                alignment: Self.canvasAlignment
+                alignment: DesignCanvas.alignment
             )
-            .scaleEffect(scale, anchor: Self.canvasAnchor)
+            .scaleEffect(scale, anchor: DesignCanvas.anchor)
             .frame(
                 width: geo.size.width, height: geo.size.height,
-                alignment: Self.canvasAlignment)
+                alignment: DesignCanvas.alignment)
         }
         .padding(24)
         // The header IS the toolbar now, rather than a hand-drawn imitation
@@ -124,35 +124,6 @@ public struct ChromaticTunerView: View {
         // Only the reference matters here — the instrument doesn't change this
         // screen's band, which is always full.
         .onChangeCompat(of: settings.reference) { _ in reconfigure() }
-    }
-
-    /// How large the canvas may grow. The Mac earns a higher ceiling: big
-    /// windows there mean a viewer across the room.
-    private static var maxScale: CGFloat {
-        #if os(macOS)
-        return 3.2
-        #else
-        return 2.2
-        #endif
-    }
-
-    /// Where the canvas sits in the viewport, and the content in the canvas:
-    /// centred on the Mac (a window's unfilled height frames the tuner),
-    /// top-read on phones.
-    private static var canvasAlignment: Alignment {
-        #if os(macOS)
-        return .center
-        #else
-        return .top
-        #endif
-    }
-
-    private static var canvasAnchor: UnitPoint {
-        #if os(macOS)
-        return .center
-        #else
-        return .top
-        #endif
     }
 
     /// Portrait: everything in one column.

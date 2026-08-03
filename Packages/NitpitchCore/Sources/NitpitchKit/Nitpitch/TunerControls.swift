@@ -4,6 +4,40 @@ import SwiftUI
 // Controls shared by every tuning screen. They live apart from any one
 // screen because the per-string grid reuses all three.
 
+/// The design-canvas presentation the full-screen tuner views share: a
+/// layout drawn at a fixed design size and scaled as one unit to the
+/// viewport, so proportions hold from a tiny window to a fullscreen one.
+///
+/// The platform split is one decision made once: Mac windows frame their
+/// content (unfilled space splits around it) and earn a higher scale ceiling
+/// — a big window there means a viewer across the room — while phones read
+/// from the top and stay at arm's length.
+enum DesignCanvas {
+    static var maxScale: CGFloat {
+        #if os(macOS)
+        return 3.2
+        #else
+        return 2.2
+        #endif
+    }
+
+    static var alignment: Alignment {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
+        #endif
+    }
+
+    static var anchor: UnitPoint {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
+        #endif
+    }
+}
+
 /// The light strip: logarithmically spaced dots, centre lit when in tune.
 ///
 /// Spacing doubles outward (±2, 4, 8, 16, 32¢) because the ear responds to

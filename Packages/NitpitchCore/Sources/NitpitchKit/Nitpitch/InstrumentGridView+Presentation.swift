@@ -5,8 +5,12 @@ import SwiftUI
 // body: SwiftLint counts the struct's lines, and the view proper is the part
 // worth keeping in one eyeful.
 extension InstrumentGridView {
-    /// One cell's design footprint, the unit the scale multiplies.
-    private static var cellDesign: CGSize { CGSize(width: 230, height: 158) }
+    /// One cell's design footprint, the unit the scale multiplies. The height
+    /// is CompactDial's actual stack at scale 1 — meter 3 + arc 58 + text
+    /// ~24 + dots ~11 + three 4pt gaps + 24pt vertical padding ≈ 132 — not a
+    /// round guess: overstating it makes every height-bound layout underfill
+    /// (observed as a third of the window left empty below the dials).
+    private static var cellDesign: CGSize { CGSize(width: 230, height: 132) }
 
     /// The grid's shape for this viewport. On iOS the column count is the
     /// user's picker and the cells scale to the width — down to half size,
@@ -33,6 +37,39 @@ extension InstrumentGridView {
         #else
         let cellWidth = (size.width - 32 - CGFloat(columns - 1) * 12) / CGFloat(columns)
         return (columns, min(1.8, max(0.5, cellWidth / Self.cellDesign.width)))
+        #endif
+    }
+
+    /// Lazy so cost tracks the viewport rather than the string count — which
+    /// keeps "only track what's on screen" reachable later, and lets an
+    /// arbitrary tuning scale.
+    func dialGrid(columns: Int, cellScale: CGFloat) -> some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
+            spacing: 12
+        ) {
+            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
+                // A cell is a link into its string's full-screen view — the
+                // grid shows all of them, the string view holds one.
+                NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
+                    StringCell(tuner: entry.tuner, naming: settings.naming, scale: cellScale)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("grid.cell.\(position)")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    /// Mac only: phones read scrolling content from the top, but a Mac
+    /// window's height is chosen by the user, and unfilled height should
+    /// frame the content rather than trail it.
+    var verticalCentering: Alignment {
+        #if os(macOS)
+        return .center
+        #else
+        return .top
         #endif
     }
 

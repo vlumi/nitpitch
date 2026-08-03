@@ -9,7 +9,7 @@ Last updated: 1 August 2026.
 Nitpitch needs microphone access for the only reason a tuner could: to hear the
 note you are playing and show you how far off it is.
 
-Audio is analysed **as it arrives, in memory, on your device**, and then
+Audio is analyzed **as it arrives, in memory, on your device**, and then
 discarded. At any instant the app holds at most a fraction of a second of sound
 — a small fixed buffer that is continuously overwritten by whatever comes next.
 
@@ -67,7 +67,7 @@ above, and that is the entirety of what it leaves behind.
 
 ## Verifying any of this
 
-Nitpitch is open source under the MIT licence. Every claim on this page can be
+Nitpitch is open source under the MIT license. Every claim on this page can be
 checked in the code at <https://github.com/vlumi/nitpitch> — the entitlements
 files show exactly which capabilities the app requests, and the audio path in
 `AudioInput.swift` shows the buffer being overwritten rather than retained.

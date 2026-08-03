@@ -3,21 +3,22 @@
 Open future work only. Settled decisions live in [AGENTS.md](AGENTS.md); what
 has shipped is in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.1.0 (build 1) is released on both platforms. The
-v0.2 centrepiece — a dial per string, with the detection to make it honest —
-is merged: midpoint bands, the subharmonic filter, the spectral engine, and
-the frame-level hybrid as default. What follows is the rest of v0.2, then the
-larger ideas.
+**Where things stand:** v0.1.0 (build 1) is released on both platforms, and
+v0.2.0 is being cut. Its centerpiece — a dial per string, with the detection
+to make it honest — shipped, along with the whole tuning flow (your
+instruments, presets, favorites, the padlock), the swipe-paging string view,
+and the scaling pass. What follows is the open tail of v0.2, then the larger
+ideas.
 
 ## 1. Finishing v0.2
 
 ### Design draft: from launch to one string
 
-The whole flow — instruments, tunings, presets, favourites — designed as one
+The whole flow — instruments, tunings, presets, favorites — designed as one
 thing, because it is one thing. The organizing observation: the app hosts two
 different acts. **Setting up** (what am I tuning?) happens once per session;
 **tuning** happens constantly. Today's pain — two taps to reach the violin —
-is setup friction on a *repeated* setup, and that's exactly what a favourite
+is setup friction on a *repeated* setup, and that's exactly what a favorite
 is: a repeated setup converted into one tap.
 
 **The yardstick for every iteration of this flow:** a beginning violinist
@@ -46,15 +47,17 @@ Preset     = a frozen setup under the USER'S name ("Bach No. 1").
              instrument, after which everything is freely tweakable.
              Saving is the only way values flow back: Save → "New
              preset…" / "Replace 'Bach No. 1'", with a confirm.
-Lock       = per-instrument, optional: a padlock in the header holds
+Lock       = per-instrument, optional: a fixed toolbar padlock holds
              the whole setup — the orchestral "keep my violin at 442",
-             and stray-tap protection on a music stand.
-Favourite  = an instrument pinned to the launch screen.
+             and stray-tap protection on a music stand. Locked controls
+             simply dim; the closed lock over dimmed controls IS the
+             explanation, and tapping it is the one way back.
+Favorite  = an instrument pinned to the launch screen.
 ```
 
 Three earlier drafts converged here, each killing a concept:
 
-- **Instances killed favourite-presets.** People own several guitars, and
+- **Instances killed favorite-presets.** People own several guitars, and
   each remembers its own state — so if your Violin sits at Bach No. 1,
   tapping "Violin" *is* one-tap-to-Bach-No.-1. The instrument is the
   memory. (A preset chip would also have had to guess *which* guitar to
@@ -68,11 +71,12 @@ Three earlier drafts converged here, each killing a concept:
   nudge.
 - **The per-instrument padlock resurrected what the locked session did
   well, in its natural home.** "Hold this at A=442" is a property of
-  *your violin*, not of a preset's honor. Locked controls keep the doors
-  rule: they never mutate and never ignore a touch — touching one offers
-  "This instrument is locked. Unlock to make changes?", Cancel means
-  nothing happened, unlocking lands on the same screen with the control
-  live. Loading a preset counts as a change, so the lock guards it too.
+  *your violin*, not of a preset's honor. (An earlier draft had locked
+  controls answer every touch with an "Unlock to make changes?" dialog;
+  in use, popups from a music stand were exactly the wrong thing. What
+  shipped: locked controls dim, the always-visible toolbar padlock is
+  the explanation and the way back, and nothing pops up anywhere.)
+  Loading a preset counts as a change, so the lock guards it too.
 
 The reference pitch belongs to the instrument's state (and to presets),
 not to a global setting: "Bach No. 1 at A=442" only means something if 442
@@ -85,7 +89,7 @@ counts included — need no special-casing downstream.
 
 ```text
 Chromatic launch  (unchanged: immediately usable, no setup)
-├── favourites row: [My Violin] [Strat] [Acoustic] …   ← ONE tap, as you
+├── favorites row: [My Violin] [Strat] [Acoustic] …   ← ONE tap, as you
 │                                                        left it
 └── "Instruments…" — pushed, not a sheet
         Your instruments (rename / string count / reorder / add another)
@@ -109,7 +113,7 @@ Decisions this draft takes, and why:
 
 - **Push the chooser; drop the accordion.** The accordion's one advantage —
   choosing tuning at instrument-choice time — is served better by
-  favourites (the repeat case) and by the grid header's tuning menu (the
+  favorites (the repeat case) and by the grid header's tuning menu (the
   change-of-mind case). With those, the chooser can stay a dumb list, and
   back finally walks the path you came.
 - **Per-string editing lives in the string view.** "Choose individual
@@ -124,11 +128,11 @@ Decisions this draft takes, and why:
   7-string preset on a 6-string Strat is a type error, not a runtime
   surprise: it lists disabled, with the reason ("7 strings"). This closes
   what an earlier draft left open.
-- **Locked controls are doors, not corpses** — on a locked *instrument*,
-  since that's the only lock left. Never mutating, never ignoring: the
-  novice discovers the way forward with the only gesture anyone tries
-  first, the expert who leaves things unlocked never hears about any of
-  it, and a stray tap on a music stand dies at a dialog.
+- **Locked controls dim; the lock explains itself.** The dialog-per-touch
+  idea ("doors, not corpses") lost to use: the always-visible padlock in
+  the toolbar says why the controls are quiet, the expert who leaves
+  things unlocked never hears about any of it, and a stray tap on a
+  music stand dies silently instead of at a dialog.
 - **"(edited)" is the drift alarm.** With no locked preset mode, noticing
   replaces impossibility: the header names what was loaded and admits
   what's changed. Anyone who wants impossibility back locks the
@@ -145,9 +149,9 @@ Decisions this draft takes, and why:
   is the expected move, not an edge case. Instruments are named the same
   way — "Strat" is what it means to you, not what the factory called it.
 
-Open, deliberately: favourites-row capacity (cap at ~4, overflow scrolls?),
+Open, deliberately: favorites-row capacity (cap at ~4, overflow scrolls?),
 whether presets and instruments sync via iCloud or stay per-device, and
-whether favourite *presets* return one day — a chip that loads a preset onto
+whether favorite *presets* return one day — a chip that loads a preset onto
 a remembered instrument. Instruments cover the one-tap need first; the chip
 kind can wait for a real itch.
 
@@ -172,20 +176,14 @@ wobble, duplicate) have all shipped. Still standing from that round: a
 to sidebar/master-detail — the trigger condition; don't pre-fork for
 modifier differences.
 
-Second round, from a fullscreen Mac window:
-
-- **The grid doesn't scale.** Cells stretch to the window but the dial
-  content is fixed (58 pt arc, fixed fonts), leaving postage stamps in
-  prairie-sized cells. The content should scale with its cell — linearly,
-  up to a sensible cap — because a big window usually means a viewer
-  standing further away. The single-string view has the same fixed-size
-  assumption. Likely shape: size classes derived from cell geometry
-  (GeometryReader), one scale factor feeding the arc height, fonts and
-  strip, capped.
+The second round's finding — the grid didn't scale, postage stamps in
+prairie-sized cells — shipped as the scaling pass: every screen draws on a
+measured design footprint and scales as one piece, with the Mac centering
+what the width can't fill.
 
 #### Build order
 
-Shipped: the pushed chooser, the favourites chips, the string view, the
+Shipped: the pushed chooser, the favorites chips, the string view, the
 instances (store, tuning catalog + header menu, rename / add another /
 delete, the ambient padlock), per-string target editing with Custom
 relabeling, and presets — save with the payload choice, load, replace with
@@ -193,11 +191,15 @@ confirm, delete. What remains:
 
 1. **Preset share + import**: the URL fragment format, QR render, the import
    preview (*Load once / Save*), and the site's hosted long tail.
-   (The header now names the loaded preset — the "(edited)" suffix idea was
-   dropped in favour of drift simply clearing the claim, which is honest and
-   needs no bookkeeping.)
-2. String-count choice at add time, when a 7-string template or count
-   editing is wanted. (Creation currently copies the template's count.)
+   (The header names the loaded preset, with "(edited)" once values drift —
+   granular edits keep the claim; only an explicit menu pick replaces it.
+   Drift-clears-the-claim was tried first and made the pill announce catalog
+   tunings nobody picked.)
+2. **An instrument editor** — a string list, nothing else: add a string at
+   either end with a proposed pitch from the template's own interval rule,
+   edit targets in place. Reachable at creation, from Edit…, and after
+   Duplicate. (String-count choice at add time shipped; the editor replaces
+   the count question for the odd shapes.)
 
 ### The string view: what remains
 
@@ -231,8 +233,6 @@ and there is no arc at all. The visual matches the thing in your hands.
   dots running vertically *inside* each key, names and cents above the
   black keys and below the white ones. The keyboard is already the
   horizontal-strips view — it just bends the strips into keys.
-- Affinity with the scaling pass: strips scale with width naturally, where
-  the dial cells fight it. Worth designing the two together.
 - **Left-handed instruments: a flipped string order, owned by the
   instrument.** A lefty's low string sits where a righty's high one does,
   so the instance gets a "flipped" bit that reverses display order
@@ -254,7 +254,7 @@ and there is no arc at all. The visual matches the thing in your hands.
   worked only for D+G — exactly the pair whose anchor harmonics (73–196 Hz)
   all clear the voice-processed mic's rolloff; E+A's anchors at 41–110 Hz
   get eaten, spectral declines, and the hybrid degrades to single-string
-  tracking, which is the designed behaviour. Not a problem in use. Still
+  tracking, which is the designed behavior. Not a problem in use. Still
   untested: the phone's `.measurement` mode, which should extend the
   double-stop range downward.
 
@@ -312,7 +312,7 @@ fifth, not either note alone. No mainstream tuner shows this.
   designing on paper.
 - **Known risk, not solvable in software:** sustaining a clean double stop
   is a bowing skill. The per-string signal bars already show when the bow
-  favours one string; whether that's nuisance or dealbreaker is a
+  favors one string; whether that's nuisance or dealbreaker is a
   real-instrument question.
 
 ## 3. Piano — and why the target isn't always 2^(n/12)
@@ -370,10 +370,6 @@ everything else depends on, and worth putting in early.
   12th-fret note or harmonic, move the saddle, repeat. A display question,
   not DSP — the missing piece is showing two readings for one string (open
   target and what's being played now). Belongs in the string view (§ 1).
-- **Lock the settings** — freeze the reference and tuning so a stray tap
-  mid-session can't move them. Most valuable exactly where the app is most
-  exposed: on a stand, handled one-handed. Small to build; the design
-  question is how you get *out* without that being just as easy to trigger.
 - **Fine-tuning display** — a strobe or beat-frequency view, how
   professionals tune to a fraction of a cent. Shares machinery with § 2.
 - **Temperaments** — just intonation and Pythagorean, for ensembles tuning

@@ -278,7 +278,7 @@ Branch off `main`, one focused change per PR (details in
   historical / roadmap ("lands later") narration in source — that goes in commit
   messages. The DSP is the exception: the non-obvious invariants above are worth
   the lines, because each one silently produces *plausible* wrong answers.
-- **Never analyse on the audio thread.** The tap callback copies into the ring
+- **Never analyze on the audio thread.** The tap callback copies into the ring
   buffer and returns; DSP runs on `analysisQueue`. The render thread has a hard
   real-time deadline.
 - **Never assume the hardware sample rate.** It's 48 kHz on most Macs, 44.1 or 48

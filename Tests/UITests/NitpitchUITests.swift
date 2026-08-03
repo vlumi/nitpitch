@@ -158,9 +158,13 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(button.waitForExistence(timeout: 10))
         button.tap()
 
-        // Add a second guitar from the toolbar +; cancel the rename offer.
+        // Add a second guitar from the toolbar +; the type opens a count
+        // submenu; cancel the rename offer.
         app.buttons["chooser.add"].firstMatch.tap()
         app.buttons["Guitar"].firstMatch.tap()
+        let standardCount = app.buttons["6 strings (standard)"].firstMatch
+        XCTAssertTrue(standardCount.waitForExistence(timeout: 5))
+        standardCount.tap()
         let cancel = app.buttons["Cancel"].firstMatch
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
         cancel.tap()

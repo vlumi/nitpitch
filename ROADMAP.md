@@ -174,11 +174,21 @@ first round's findings:
   possibly paired with per-control edit affordances that raise the unlock
   offer — to design, not just relocate.
 - **Instrument management is undiscoverable on the Mac** (and long-press is
-  iOS-only furniture anyway). Rename/delete likely want a per-row menu
-  (ellipsis or right-click that demonstrably works); "add another" is
-  arguably not row-scoped at all — a general add control near the top,
-  where the instrument type is picked alongside the rest. Decide placement
-  before polishing either.
+  iOS-only furniture anyway). Direction: **fork the affordances, share the
+  content** — the house precedent is `SettingsView`'s `macForm`/`sheetForm`,
+  one file with two bodies where the idiom diverges. Row content (name,
+  lock, star), sections, the rename alert and the store calls stay shared.
+  - iOS: `.swipeActions` for rename/delete — the native furniture for
+    row-scoped actions, hidden buttons underneath — with the context menu
+    kept (they compose).
+  - macOS: a right-click that demonstrably works, plus probably a visible
+    ellipsis; hover-revealed controls are the Mac's "hidden underneath".
+  - "Add another" is arguably not row-scoped at all — a general add control
+    near the top, where the instrument type is picked alongside the rest.
+  - A *complete* platform fork only becomes right if the Mac chooser moves
+    to a different navigation shape entirely (sidebar/master-detail, the
+    real Mac idiom for lists like this). That's the trigger condition —
+    don't pre-fork for modifier differences.
 
 #### Build order
 

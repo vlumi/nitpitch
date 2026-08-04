@@ -33,6 +33,13 @@ struct InstrumentGridView: View {
     /// overwrite, and whether the reference rides along.
     @State var pendingReplace: (preset: Preset, includeReference: Bool)?
     @State var isManagingPresets = false
+    /// The grid's own management flows — the chooser's swipe actions were
+    /// findable by the initiated; the … menu is findable by everyone.
+    @State var isRenamingInstrument = false
+    @State var instrumentRenameText = ""
+    @State var duplicating: Creation?
+    @State var isEditingStrings = false
+    @Environment(\.dismiss) var dismissGrid
 
     /// The instance as constructed, for while the store catches up and as the
     /// identity to look the live value up by.
@@ -130,6 +137,32 @@ struct InstrumentGridView: View {
         }
         .sheet(isPresented: $isManagingPresets) {
             PresetManager(presets: presets, settings: settings, instance: instance)
+        }
+        .sheet(item: $duplicating) { creation in
+            InstrumentCreator(
+                store: store, settings: settings, template: creation.template,
+                source: creation.source)
+        }
+        .sheet(isPresented: $isEditingStrings) {
+            InstrumentEditor(store: store, settings: settings, instanceID: instance.id)
+        }
+        .alert(
+            Text("Rename", bundle: .module),
+            isPresented: $isRenamingInstrument
+        ) {
+            TextField(text: $instrumentRenameText) { Text("Name", bundle: .module) }
+                // Fresh identity per presentation — a reused alert TextField
+                // keeps its first life's text and ignores the prefill.
+                .id(instance.id + (isRenamingInstrument ? "1" : "0"))
+            Button {
+                store.rename(id: instance.id, to: instrumentRenameText)
+            } label: {
+                Text("Rename", bundle: .module)
+            }
+            Button(role: .cancel) {
+            } label: {
+                Text("Cancel", bundle: .module)
+            }
         }
         .alert(Text("Save preset", bundle: .module), isPresented: $isSavingPreset) {
             TextField(text: $presetName) { Text("Name", bundle: .module) }
@@ -261,166 +294,6 @@ struct InstrumentGridView: View {
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .background(.thinMaterial)
-    }
-
-    /// The tuning, front and centre — "Drop D" is what this screen is *for*,
-    /// so it's the header control rather than a buried setting. Only tunings
-    /// that fit this instrument's strings are offered at all: a mismatched
-    /// count is a type error, not a runtime surprise.
-    private var tuningMenu: some View {
-        Menu {
-            // Two marks with two meanings. The CHECK is identity: the row you
-            // picked — the loaded preset, or the tuning when nothing loaded.
-            // The EQUALS asserts an action, not object equality: "loading
-            // this would change nothing". For a tuning-only preset that stays
-            // exactly true whatever the reference is — it says nothing about
-            // the reference, and its label (no "· A=442" suffix) already
-            // declares that scope. Without the split, a preset saved from
-            // Standard and Standard itself both showed checked — true, but
-            // reading as a contradiction.
-            ForEach(fittingTunings, id: \.self) { tuning in
-                let matches = tuning.strings == instance.strings
-                Button {
-                    store.setTuning(id: instance.id, strings: tuning.strings)
-                } label: {
-                    menuRow(
-                        tuningText(tuning.name ?? "Custom"),
-                        checked: matches && claimIsFree,
-                        matching: matches)
-                }
-            }
-
-            let fitting = presets.presets(fitting: instance)
-            if !fitting.isEmpty {
-                Divider()
-                ForEach(fitting) { preset in
-                    Button {
-                        presets.load(preset, onto: instance, in: store)
-                    } label: {
-                        menuRow(
-                            presetLabel(preset),
-                            checked: loadedPreset?.id == preset.id && valuesMatch(preset),
-                            matching: valuesMatch(preset))
-                    }
-                }
-            }
-
-            Divider()
-            Button {
-                presetName = ""
-                isSavingPreset = true
-            } label: {
-                Label {
-                    Text("Save as preset…", bundle: .module)
-                } icon: {
-                    Image(systemName: "square.and.arrow.down")
-                }
-            }
-            if !fitting.isEmpty {
-                Button {
-                    isManagingPresets = true
-                } label: {
-                    Label {
-                        Text("Edit presets…", bundle: .module)
-                    } icon: {
-                        Image(systemName: "list.bullet")
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                pillText
-                    .font(.callout.weight(.medium))
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .disabled(instance.isLocked)
-        .accessibilityIdentifier("grid.tuning")
-    }
-
-    /// What the pill says: the preset you picked — with "(edited)" once a
-    /// granular edit drifts from its payload — or the tuning identity when
-    /// nothing is claimed. Only an explicit menu pick replaces the claim;
-    /// without the suffix, stepping one string of "T-bird" made the pill
-    /// announce "Drop D", a catalog tuning nobody picked.
-    private var pillText: Text {
-        guard let loaded = loadedPreset else {
-            return tuningText(instance.tuningName ?? "Custom")
-        }
-        if valuesMatch(loaded) {
-            return Text(verbatim: loaded.name)
-        }
-        return Text("\(loaded.name) (edited)", bundle: .module)
-    }
-
-    /// The padlock, ambient and fixed: one glance says whether this
-    /// instrument's setup is frozen, one tap flips it. Closed and prominent
-    /// when locked, open and quiet when not — the same glyph pair every
-    /// platform uses for exactly this.
-    private var lockButton: some View {
-        Button {
-            store.setLocked(id: instance.id, !instance.isLocked)
-        } label: {
-            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
-                .foregroundStyle(
-                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
-        }
-        .accessibilityIdentifier("grid.lock")
-        .accessibilityLabel(
-            instance.isLocked
-                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
-    }
-
-    private var layoutMenu: some View {
-        Menu {
-            Picker(selection: $columns) {
-                // Auto is the default and must stay reachable — without this
-                // row, picking a fixed count was a one-way door.
-                Text("Auto", bundle: .module).tag(0)
-                ForEach(1...3, id: \.self) { count in
-                    Text("\(count) across", bundle: .module).tag(count)
-                }
-            } label: {
-                Text("Columns", bundle: .module)
-            }
-
-            // The Mac's way into the strips: its window doesn't rotate, so
-            // the metaphor is a deliberate choice here, not a shape. A view
-            // switch, not a preference — which is why it lives in the layout
-            // menu while the strip *order* lives in Settings.
-            #if os(macOS)
-            Divider()
-            Toggle(isOn: $settings.stripsOnMac) {
-                Text("Strings as strips", bundle: .module)
-            }
-            #endif
-
-            if LaunchStores.isDebug {
-                Divider()
-                Button {
-                    isShowingDebug = true
-                } label: {
-                    Label {
-                        Text(verbatim: "Detector…")
-                    } icon: {
-                        Image(systemName: "waveform.badge.magnifyingglass")
-                    }
-                }
-                .accessibilityIdentifier("grid.debug")
-            }
-        } label: {
-            // A badge while anything is off its shipped value, so a surprising
-            // reading is never mistaken for how the app actually behaves.
-            Image(
-                systemName: detection.isModified
-                    ? "square.grid.2x2.fill" : "square.grid.2x2"
-            )
-            .foregroundStyle(detection.isModified ? AnyShapeStyle(.orange) : AnyShapeStyle(.tint))
-        }
-        .accessibilityIdentifier("grid.columns")
-        .accessibilityLabel(Text("Columns", bundle: .module))
     }
 
     /// Zero means Auto: the fill algorithm chooses (see `dialLayout`). The

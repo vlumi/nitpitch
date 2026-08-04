@@ -17,6 +17,13 @@ struct PresetManager: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    ForEach(fittingTunings, id: \.self) { tuning in
+                        tuningRow(for: tuning)
+                    }
+                } header: {
+                    Text("Tunings", bundle: .module)
+                }
                 if !favorites.isEmpty {
                     Section {
                         ForEach(favorites) { preset in
@@ -48,6 +55,40 @@ struct PresetManager: View {
             }
         }
         .frame(minWidth: 400, minHeight: 300)
+    }
+
+    /// The catalog tunings this instrument can wear — pinnable like any
+    /// preset ("a catalog tuning is exactly a built-in preset"), never
+    /// deletable: the catalog is few enough not to need pruning, and
+    /// Standard stays standard by simply being catalog.
+    private var fittingTunings: [Tuning] {
+        guard let template = instance.template else { return [] }
+        return template.knownTunings.filter { $0.strings.count == instance.strings.count }
+    }
+
+    private func tuningRow(for tuning: Tuning) -> some View {
+        let name = tuning.name ?? "Custom"
+        let pinID = CatalogPinID.make(templateID: instance.templateID, tuningName: name)
+        let pinned = settings.isPinned(instrumentID: instance.id, presetID: pinID)
+        return HStack(spacing: 10) {
+            Text(LocalizedStringKey(name), bundle: .module)
+            Spacer()
+            Button {
+                settings.togglePin(instrumentID: instance.id, presetID: pinID)
+            } label: {
+                Image(systemName: pinned ? "pin.fill" : "pin")
+                    .foregroundStyle(
+                        pinned
+                            ? AnyShapeStyle(Color.orange)
+                            : AnyShapeStyle(Color.secondary.opacity(0.5))
+                    )
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityIdentifier("presets.pin.\(name)")
+            .accessibilityLabel(Text("Pin to launch screen", bundle: .module))
+        }
     }
 
     private var templatePresets: [Preset] {

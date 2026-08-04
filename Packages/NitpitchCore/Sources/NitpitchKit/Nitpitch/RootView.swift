@@ -94,10 +94,18 @@ public struct RootView: View {
     /// instrument only opens: the navigation half of a pin is not a
     /// change, and the toolbar padlock explains on arrival.
     private func openPin(instrument id: String, preset presetID: String) {
-        if let instance = resolve(id), !instance.isLocked,
-            let preset = presets.presets.first(where: { $0.id == presetID })
-        {
-            presets.load(preset, onto: instance, in: store)
+        if let instance = resolve(id), !instance.isLocked {
+            if let name = CatalogPinID.tuningName(
+                in: presetID, templateID: instance.templateID),
+                let tuning = instance.template?.knownTunings
+                    .first(where: { $0.name == name })
+            {
+                // A catalog pin applies the tuning — pitches only, exactly
+                // the tuning menu's semantics.
+                store.setTuning(id: instance.id, strings: tuning.strings)
+            } else if let preset = presets.presets.first(where: { $0.id == presetID }) {
+                presets.load(preset, onto: instance, in: store)
+            }
         }
         path.append(.instrument(id))
     }

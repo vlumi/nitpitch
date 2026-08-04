@@ -46,6 +46,8 @@ struct LaunchRack: View {
     struct PinEntry: Identifiable {
         let presetID: String
         let name: String
+        /// Catalog tuning names localize; a user's preset name is verbatim.
+        var localized: Bool = false
         var id: String { presetID }
     }
 
@@ -102,8 +104,14 @@ struct LaunchRack: View {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
                             .foregroundStyle(.orange)
-                        Text(verbatim: pin.name)
-                            .font(.caption.weight(.medium))
+                        Group {
+                            if pin.localized {
+                                Text(LocalizedStringKey(pin.name), bundle: .module)
+                            } else {
+                                Text(verbatim: pin.name)
+                            }
+                        }
+                        .font(.caption.weight(.medium))
                         if entry.isLocked {
                             Image(systemName: "lock.fill")
                                 .font(.caption2)

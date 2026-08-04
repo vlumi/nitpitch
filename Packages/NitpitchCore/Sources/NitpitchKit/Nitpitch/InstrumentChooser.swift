@@ -90,6 +90,11 @@ struct FavoritesRow: View {
     }
 }
 
+/// The instance whose strings are open in the editor sheet.
+private struct EditingStrings: Identifiable {
+    let id: String
+}
+
 /// The instrument list, grouped by family, pushed onto the stack.
 ///
 /// Rows are your *instruments* — the default one per template (shown even
@@ -110,6 +115,8 @@ struct InstrumentChooser: View {
     /// The instance being renamed, driving the alert.
     @State private var renamingID: String?
     @State private var renameText = ""
+    /// The instance whose strings are being edited, driving the sheet.
+    @State private var editing: EditingStrings?
 
     var body: some View {
         List {
@@ -130,6 +137,9 @@ struct InstrumentChooser: View {
             ToolbarItem(placement: .primaryAction) { addMenu }
         }
         .frame(minWidth: 320, minHeight: 380)
+        .sheet(item: $editing) { target in
+            InstrumentEditor(store: store, settings: settings, instanceID: target.id)
+        }
         .alert(
             Text("Rename", bundle: .module),
             isPresented: Binding(
@@ -280,6 +290,16 @@ struct InstrumentChooser: View {
                                 }
                             }
                         }
+                        // The odd shapes: a standard instance, opened
+                        // straight into the string editor — add at either
+                        // end, retune in place, no count question.
+                        Divider()
+                        Button {
+                            let added = store.add(of: template)
+                            editing = EditingStrings(id: added.id)
+                        } label: {
+                            Text("Custom…", bundle: .module)
+                        }
                     } label: {
                         Text(LocalizedStringKey(template.name), bundle: .module)
                     }
@@ -318,6 +338,14 @@ struct InstrumentChooser: View {
         _ = store.duplicate(id: entry.id)
     }
 
+    private func beginEditStrings(_ entry: InstrumentInstance, template: Instrument) {
+        // Editing a virtual default materializes it first.
+        if store.instance(id: entry.id) == nil {
+            _ = store.defaultInstance(for: template)
+        }
+        editing = EditingStrings(id: entry.id)
+    }
+
     /// Rename / duplicate / delete — instrument management, on the row it
     /// manages. Adding lives in the toolbar: it's not about any one row.
     @ViewBuilder
@@ -342,6 +370,19 @@ struct InstrumentChooser: View {
                 Image(systemName: "plus.square.on.square")
             }
         }
+        // The instrument editor: strings are the instrument's physical
+        // shape, so the door is here with the other instrument management —
+        // and closed while the padlock holds the setup frozen.
+        Button {
+            beginEditStrings(entry, template: template)
+        } label: {
+            Label {
+                Text("Edit strings…", bundle: .module)
+            } icon: {
+                Image(systemName: "music.note.list")
+            }
+        }
+        .disabled(entry.isLocked)
         if entry.id != template.id {
             Button(role: .destructive) {
                 settings.favorites.removeAll { $0 == entry.id }

@@ -184,6 +184,41 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertFalse(secondGuitar.waitForExistence(timeout: 2))
     }
 
+    /// The instrument editor, end to end: Custom… creates an instance and
+    /// opens the string list, adding a high string grows it, and the grid
+    /// then shows the extra dial.
+    func testCustomInstrumentOpensTheEditor() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+
+        app.buttons["chooser.add"].firstMatch.tap()
+        app.buttons["Violin"].firstMatch.tap()
+        let custom = app.buttons["Custom…"].firstMatch
+        XCTAssertTrue(custom.waitForExistence(timeout: 5))
+        custom.tap()
+
+        // The editor sheet opens on the new instance.
+        let addHigh = app.buttons["editor.add.high"].firstMatch
+        XCTAssertTrue(addHigh.waitForExistence(timeout: 5))
+        addHigh.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["editor.row.4"].firstMatch
+                .waitForExistence(timeout: 5),
+            "a fifth string appears")
+        app.buttons["editor.done"].firstMatch.tap()
+
+        // The grown instrument opens with five dials.
+        let row = app.buttons["Violin 2"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.cell.4"].firstMatch
+                .waitForExistence(timeout: 5),
+            "the fifth dial exists")
+    }
+
     /// The shape chooses the presentation: rotate to landscape and the dials
     /// become strips — strings drawn as strings — rotate back and the grid
     /// returns.

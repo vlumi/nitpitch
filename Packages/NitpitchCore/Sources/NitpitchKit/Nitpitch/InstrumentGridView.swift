@@ -103,7 +103,11 @@ struct InstrumentGridView: View {
             ToolbarItem(placement: .primaryAction) { layoutMenu }
         }
         .accessibilityIdentifier("grid.strings")
-        .task { strings.attachAll() }
+        .task {
+            strings.attachAll()
+            // Recency feeds "my instruments" ordering — opening counts.
+            store.markUsed(id: initial.id)
+        }
         .onDisappear { strings.detachAll() }
         // The instance owns its state; whenever the store's copy moves —
         // tuning switched, reference stepped, here or anywhere — the dials
@@ -234,17 +238,6 @@ struct InstrumentGridView: View {
         return settings.stripsOnMac
         #else
         return size.width > size.height * 1.3
-        #endif
-    }
-
-    /// On the Mac the window is continuously resizable, so a fixed column
-    /// count fights it — columns follow the width there. iOS keeps the
-    /// picker: discrete devices, deliberate density choice.
-    private func effectiveColumns(for width: CGFloat) -> Int {
-        #if os(macOS)
-        return max(1, min(4, Int(width / 300)))
-        #else
-        return columns
         #endif
     }
 

@@ -221,6 +221,42 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertNil(store.instance(id: second.id))
     }
 
+    /// "My instruments" orders by actual use — most recent first, the
+    /// never-used trailing by name — until a drag stores an explicit order,
+    /// which then wins totally: later use never rearranges it.
+    func testMyInstrumentsOrdering() {
+        let store = makeStore()
+        let violin = store.defaultInstance(for: .violin)
+        let guitar = store.defaultInstance(for: .guitar)
+        let bass = store.defaultInstance(for: .bassGuitar)
+
+        store.markUsed(id: guitar.id)
+        store.markUsed(id: bass.id)
+        XCTAssertEqual(store.myInstruments.map(\.id), [bass.id, guitar.id, violin.id])
+        store.markUsed(id: guitar.id)
+        XCTAssertEqual(store.myInstruments.first?.id, guitar.id)
+
+        // Drag the violin to the top: from now on the order is the user's.
+        store.moveMyInstruments(from: IndexSet(integer: 2), to: 0)
+        XCTAssertEqual(store.myInstruments.map(\.id), [violin.id, guitar.id, bass.id])
+        store.markUsed(id: bass.id)
+        XCTAssertEqual(
+            store.myInstruments.map(\.id), [violin.id, guitar.id, bass.id],
+            "use never rearranges a dragged order")
+
+        // Instruments the stored order doesn't know join at the end.
+        let second = store.add(of: .guitar)
+        XCTAssertEqual(store.myInstruments.last?.id, second.id)
+    }
+
+    /// The stamp survives a relaunch, like everything else.
+    func testLastUsedPersists() {
+        let first = makeStore()
+        let guitar = first.defaultInstance(for: .guitar)
+        first.markUsed(id: guitar.id)
+        XCTAssertNotNil(makeStore().instance(id: guitar.id)?.lastUsedAt)
+    }
+
     /// The creation sheet's confirm: name and strings arrive together, and
     /// blanks fall back to the suggestion and the template.
     func testAddNamedWithStrings() {

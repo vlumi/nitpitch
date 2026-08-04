@@ -49,6 +49,9 @@
     "Auto" : {
       "comment" : "Column picker: let the screen choose the grid shape"
     },
+    "Bass" : {
+      "comment" : "Kind tag: bass guitar"
+    },
     "Bowed" : {
       "comment" : "Instrument picker section: bowed string instruments"
     },
@@ -70,6 +73,9 @@
     "Dark" : {
       "comment" : "Appearance option: always dark"
     },
+    "Db" : {
+      "comment" : "Kind tag: double bass (orchestra abbreviation)"
+    },
     "Delete" : {
       "comment" : "Context menu action: remove an added instrument"
     },
@@ -90,6 +96,9 @@
     },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments"
+    },
+    "Gtr" : {
+      "comment" : "Kind tag: guitar"
     },
     "Half-step down" : {
       "comment" : "Tuning name: every string one semitone down"
@@ -120,6 +129,9 @@
     },
     "MIT licensed." : {
       "comment" : "License note on the about screen"
+    },
+    "My instruments" : {
+      "comment" : "Chooser section: the instruments the user has made theirs"
     },
     "Name" : {
       "comment" : "Text field placeholder in the rename dialog"
@@ -208,8 +220,17 @@
     "Unlock" : {
       "comment" : "Menu action and dialog button: allow changes again"
     },
+    "Vc" : {
+      "comment" : "Kind tag: cello (orchestra abbreviation)"
+    },
     "Version %@" : {
       "comment" : "Version pill on the about screen; %@ is like '0.1.0 (12)'"
+    },
+    "Vla" : {
+      "comment" : "Kind tag: viola (orchestra abbreviation)"
+    },
+    "Vln" : {
+      "comment" : "Kind tag: violin (orchestra abbreviation)"
     }
   },
   "version" : "1.0"

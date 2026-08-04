@@ -229,7 +229,7 @@ final class DetectionSettingsTests: XCTestCase {
         let defaults = UserDefaults(suiteName: "fi.misaki.nitpitch.tests.\(UUID().uuidString)")!
         defer { defaults.removePersistentDomain(forName: defaults.description) }
         let store = InstrumentStore(defaults: defaults) { .standard }
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
 
         let single = SingleStringTuner(
             instrument: violin.instrument, index: 2, audio: controller,

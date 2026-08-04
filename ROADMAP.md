@@ -130,6 +130,17 @@ everything else depends on, and worth putting in early.
 - **Temperaments** — just intonation and Pythagorean, for ensembles tuning
   fifths pure. A genuine violin concern and a prerequisite for § 2; shares
   the seam described in § 3.
+- **iCloud sync** — instruments, presets, pins and order between devices.
+  The design is settled: per-record last-writer-wins over
+  `NSUbiquitousKeyValueStore` (one key per instrument/preset, `modifiedAt`
+  as the currency — already stamped by the stores — plus deletion
+  tombstones), which never duplicates because ids are stable: the factory
+  seed uses template ids precisely so two devices seed identically and
+  the first merge is clean. Opt-in like donpa: a toggle on the
+  instruments page, off by default — because "nothing leaves the device"
+  is a shipped promise (the macOS build carries no network entitlement),
+  and the day sync ships, PRIVACY.md, the README and the App Store text
+  all need the honest rewrite to "…unless you enable iCloud sync".
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.
 - **Watch app** — plausible, but microphone quality and screen size both

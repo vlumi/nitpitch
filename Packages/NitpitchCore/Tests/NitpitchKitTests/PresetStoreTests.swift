@@ -11,7 +11,7 @@ extension PresetStoreTests {
     @MainActor
     func testFavoritesFloatAndFollowDeletion() {
         let (store, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let first = store.save(guitar, named: "Alpha", includeReference: false)!
         let second = store.save(guitar, named: "Beta", includeReference: false)!
 
@@ -56,7 +56,7 @@ final class PresetStoreTests: XCTestCase {
     /// to apply — the invariant that unified tunings and presets.
     func testTuningOnlyPresetNeverTouchesTheReference() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
         instruments.setTuning(id: guitar.id, strings: dropD.strings)
         instruments.setReference(id: guitar.id, ReferencePitch(hz: 442))
@@ -78,7 +78,7 @@ final class PresetStoreTests: XCTestCase {
     /// And one saved with its reference applies it, visibly by design.
     func testReferenceCarryingPresetAppliesIt() {
         let (presets, instruments) = makeStores()
-        let violin = instruments.defaultInstance(for: .violin)
+        let violin = instruments.instance(id: Instrument.violin.id)!
         instruments.setReference(id: violin.id, ReferencePitch(hz: 442))
         let saved = presets.save(
             instruments.instance(id: violin.id)!, named: "Bach No. 1", includeReference: true)!
@@ -93,7 +93,7 @@ final class PresetStoreTests: XCTestCase {
     /// names differing only in case are one intent, not two presets.
     func testSavingOverAnExistingNameReplaces() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let first = presets.save(guitar, named: "Gig", includeReference: false)!
 
         instruments.setReference(id: guitar.id, ReferencePitch(hz: 443))
@@ -110,8 +110,8 @@ final class PresetStoreTests: XCTestCase {
     /// string count.
     func testFittingIsByTemplateAndCount() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
-        let violin = instruments.defaultInstance(for: .violin)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
+        let violin = instruments.instance(id: Instrument.violin.id)!
         presets.save(guitar, named: "Gig", includeReference: false)
 
         XCTAssertEqual(presets.presets(fitting: guitar).count, 1)
@@ -120,14 +120,14 @@ final class PresetStoreTests: XCTestCase {
 
     func testEmptyNamesAreRefused() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         XCTAssertNil(presets.save(guitar, named: "   ", includeReference: false))
         XCTAssertTrue(presets.presets.isEmpty)
     }
 
     func testPresetsPersistAcrossStores() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         presets.save(guitar, named: "Gig", includeReference: true)
 
         let reloaded = PresetStore(defaults: defaults)
@@ -138,7 +138,7 @@ final class PresetStoreTests: XCTestCase {
 
     func testRemoveDeletes() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let saved = presets.save(guitar, named: "Gig", includeReference: false)!
         presets.remove(id: saved.id)
         XCTAssertTrue(presets.presets.isEmpty)
@@ -150,7 +150,7 @@ final class PresetStoreTests: XCTestCase {
     /// edit made the pill announce a catalog tuning nobody picked.
     func testGranularEditsKeepTheClaimAndPicksReplaceIt() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let saved = presets.save(guitar, named: "Gig", includeReference: false)!
 
         presets.load(saved, onto: guitar, in: instruments)
@@ -171,7 +171,7 @@ final class PresetStoreTests: XCTestCase {
     /// The lock is not a setup change — locking must not un-claim the preset.
     func testLockingKeepsTheLoadedIdentity() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let saved = presets.save(guitar, named: "Gig", includeReference: false)!
         presets.load(saved, onto: guitar, in: instruments)
 
@@ -182,7 +182,7 @@ final class PresetStoreTests: XCTestCase {
     /// A preset never mutates by loading — frozen means frozen.
     func testLoadingDoesNotChangeThePreset() {
         let (presets, instruments) = makeStores()
-        let guitar = instruments.defaultInstance(for: .guitar)
+        let guitar = instruments.instance(id: Instrument.guitar.id)!
         let saved = presets.save(guitar, named: "Gig", includeReference: false)!
 
         instruments.setString(id: guitar.id, index: 0, midi: 38)

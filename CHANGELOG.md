@@ -39,13 +39,19 @@ and remembered exactly as you left them.
   below. No more names truncating into "Epiphone Thunderb…"; the dial
   stays the headline, and the rack is capped at four rows with the rest
   a tap away.
-- The instrument list knows which instruments are yours: everything you've
-  actually opened, renamed, or created sits in a "My instruments" section
-  on top — ordered by use, most recent first, until you drag rows into an
-  order of your own, which then holds still forever — with the untouched
-  catalog below, visibly a catalog. Each of your instruments carries a
-  small kind tag (Vln, Gtr, Bass…) and its current tuning, so which is
-  which reads at a glance without renaming anything.
+- Instruments are deliberate now, and the factory list is real: first
+  launch seeds one ordinary, fully editable instrument per catalog kind —
+  browse and tune immediately, rename the violin "Guarneri", delete the
+  ones you'll never touch (all of them, if you like: the list can be
+  empty, and a big Add button takes their place). Starred instruments form
+  a Favorites section on top — drag-ordered, and that order IS the launch
+  screen's — while everything unstarred sits below, family-grouped and
+  stable. Nothing joins or leaves anywhere by side effect: opening an
+  instrument is just opening it. Duplicate became a shortcut into the
+  creation sheet, prefilled from the source — name suggested, strings and
+  reference copied, everything editable, Cancel creates nothing. Each row
+  carries a small kind tag (Vln, Gtr, Bass…) and its current tuning, so
+  which is which reads at a glance without renaming anything.
 
 - Rotating an iPhone to the strips and back no longer lands on a different
   grid than you left: the title bar quietly kept its collapsed landscape

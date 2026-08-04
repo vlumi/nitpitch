@@ -102,14 +102,10 @@ public struct RootView: View {
         path.append(.instrument(id))
     }
 
-    /// An instance by id, materializing the default one when the id names a
-    /// template — which is how a favourite chip works before its instrument
-    /// has ever been opened.
+    /// An instance by id — and nothing else: instruments exist only by
+    /// seeding or deliberate creation, so navigation never materializes
+    /// anything. A route to a deleted instrument simply resolves to nil.
     private func resolve(_ id: String) -> InstrumentInstance? {
-        if let existing = store.instance(id: id) { return existing }
-        if let template = Instrument.named(id) {
-            return store.defaultInstance(for: template)
-        }
-        return nil
+        store.instance(id: id)
     }
 }

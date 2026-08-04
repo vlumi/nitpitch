@@ -21,18 +21,29 @@ struct InstrumentCreator: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
     let template: Instrument
+    /// Duplicate's shortcut: prefill everything from an existing
+    /// instrument — "a copy" is usually "near what I want", and every
+    /// prefilled field stays editable before anything exists.
+    let source: InstrumentInstance?
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
     @State private var strings: [Int]
     @State private var isListExpanded = false
 
-    init(store: InstrumentStore, settings: Settings, template: Instrument) {
+    init(
+        store: InstrumentStore, settings: Settings, template: Instrument,
+        source: InstrumentInstance? = nil
+    ) {
         self.store = store
         self.settings = settings
         self.template = template
-        _name = State(initialValue: store.nextAddedName(for: template))
-        _strings = State(initialValue: template.strings)
+        self.source = source
+        _name = State(
+            initialValue: source.map {
+                store.nextName(after: $0.name, templateID: template.id)
+            } ?? store.nextAddedName(for: template))
+        _strings = State(initialValue: source?.strings ?? template.strings)
     }
 
     var body: some View {
@@ -44,7 +55,15 @@ struct InstrumentCreator: View {
     }
 
     private func create() {
-        store.add(of: template, named: name, strings: strings)
+        let added = store.add(
+            of: template, named: name, strings: strings,
+            referenceHz: source?.referenceHz)
+        // Creation is deliberate by construction — it earns the star, and
+        // the rack cap keeps a growing collection from flooding the
+        // launch screen.
+        if !settings.favorites.contains(added.id) {
+            settings.favorites.append(added.id)
+        }
         dismiss()
     }
 

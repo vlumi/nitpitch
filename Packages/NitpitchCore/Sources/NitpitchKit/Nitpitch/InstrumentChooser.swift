@@ -18,6 +18,14 @@ struct EditingStrings: Identifiable {
     let id: String
 }
 
+/// A creation in progress: the kind, and optionally the instrument it is
+/// a near-copy of (Duplicate's shortcut into the same sheet).
+struct Creation: Identifiable {
+    let template: Instrument
+    var source: InstrumentInstance?
+    var id: String { source?.id ?? template.id }
+}
+
 /// The instrument list, grouped by family, pushed onto the stack.
 ///
 /// Rows are your *instruments* — the default one per template (shown even
@@ -40,36 +48,52 @@ struct InstrumentChooser: View {
     @State private var renameText = ""
     /// The instance whose strings are being edited, driving the sheet.
     @State var editing: EditingStrings?
-    /// The kind being created, driving the creation sheet.
-    @State var creating: Instrument?
+    /// The creation in progress — a kind, optionally prefilled from a
+    /// source instrument (Duplicate) — driving the sheet.
+    @State var creating: Creation?
 
     var body: some View {
         List {
-            // Your instruments first — the things you actually tune — with
-            // the untouched catalog below, visibly a catalog. Presence in
-            // the store IS the "mine" heuristic: opening, renaming, or
-            // starring a template materializes it.
-            if !store.myInstruments.isEmpty {
+            // Favorites first: the starred instruments, in YOUR order — the
+            // same order the launch rack shows, which is exactly why only
+            // this section is draggable. Below, everything else, grouped by
+            // family like a catalog — but every row is a real, ordinary,
+            // fully editable instrument: the factory list is seeded as
+            // instances on first launch, and starring any row promotes it.
+            if !starred.isEmpty {
                 Section {
-                    ForEach(store.myInstruments) { entry in
+                    ForEach(starred) { entry in
                         if let template = entry.template {
                             row(for: entry, template: template)
                         }
                     }
                     .onMove { source, destination in
-                        store.moveMyInstruments(from: source, to: destination)
+                        settings.favorites.move(fromOffsets: source, toOffset: destination)
                     }
                 } header: {
-                    Text("My instruments", bundle: .module)
+                    Text("Favorites", bundle: .module)
+                } footer: {
+                    if starred.count > LaunchRack.rowCap {
+                        Text("The first four are on the launch screen.", bundle: .module)
+                    }
                 }
             }
-            ForEach(catalogGroups, id: \.family) { group in
+            ForEach(familyGroups, id: \.family) { group in
                 Section {
-                    ForEach(group.instruments) { template in
-                        catalogRow(for: template)
+                    ForEach(group.instruments) { entry in
+                        if let template = entry.template {
+                            row(for: entry, template: template)
+                        }
                     }
                 } header: {
                     Text(LocalizedStringKey(group.family.name), bundle: .module)
+                }
+            }
+            if starred.isEmpty && familyGroups.isEmpty {
+                // Deleting everything is legitimate; a blank screen isn't.
+                Section {
+                    addMenu(label: emptyStateLabel)
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -104,35 +128,42 @@ struct InstrumentChooser: View {
                 Text("Cancel", bundle: .module)
             }
         }
-        .sheet(item: $creating) { template in
-            InstrumentCreator(store: store, settings: settings, template: template)
+        .sheet(item: $creating) { creation in
+            InstrumentCreator(
+                store: store, settings: settings, template: creation.template,
+                source: creation.source)
         }
     }
 
-    /// The catalog: templates you haven't touched, still grouped by family.
-    /// A family whose every template is already yours disappears from here.
-    private var catalogGroups: [(family: InstrumentFamily, instruments: [Instrument])] {
+    /// The starred instruments, in the favorites list's own order — the
+    /// list is both membership and the launch-screen order, one source of
+    /// truth, nothing to migrate.
+    private var starred: [InstrumentInstance] {
+        settings.favorites.compactMap { store.instance(id: $0) }
+    }
+
+    /// Everything unstarred, family-grouped like a catalog and ordered by
+    /// kind then name — deliberately NOT draggable: the stable shelf, so
+    /// the only custom order anywhere is the one the launch screen shows.
+    private var familyGroups: [(family: InstrumentFamily, instruments: [InstrumentInstance])] {
         Instrument.choosable.compactMap { group in
-            let untouched = group.instruments.filter { store.instance(id: $0.id) == nil }
-            return untouched.isEmpty ? nil : (group.family, untouched)
+            let members = group.instruments.flatMap { template in
+                store.instances(of: template)
+                    .filter { !settings.favorites.contains($0.id) }
+            }
+            return members.isEmpty ? nil : (group.family, members)
         }
     }
 
-    /// A catalog row: just the way in. No star, no management — there is
-    /// nothing to manage until the first open materializes it as yours.
-    private func catalogRow(for template: Instrument) -> some View {
-        Button {
-            onChoose(template.id)
-        } label: {
-            HStack(spacing: 10) {
-                KindTag(template: template)
-                Text(LocalizedStringKey(template.name), bundle: .module)
-                Spacer()
-            }
-            .contentShape(Rectangle())
+    private var emptyStateLabel: some View {
+        Label {
+            Text("Add an instrument", bundle: .module)
+        } icon: {
+            Image(systemName: "plus.circle.fill")
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("chooser.\(template.id)")
+        .font(.body.weight(.medium))
+        .foregroundStyle(.tint)
+        .padding(.vertical, 10)
     }
 
     private func row(for entry: InstrumentInstance, template: Instrument) -> some View {
@@ -188,16 +219,13 @@ struct InstrumentChooser: View {
     private func swipeButtons(
         for entry: InstrumentInstance, template: Instrument
     ) -> some View {
-        if entry.id != template.id {
-            Button(role: .destructive) {
-                settings.favorites.removeAll { $0 == entry.id }
-                store.remove(id: entry.id)
-            } label: {
-                Label {
-                    Text("Delete", bundle: .module)
-                } icon: {
-                    Image(systemName: "trash")
-                }
+        Button(role: .destructive) {
+            removeInstrument(entry)
+        } label: {
+            Label {
+                Text("Delete", bundle: .module)
+            } icon: {
+                Image(systemName: "trash")
             }
         }
         Button {
@@ -238,27 +266,19 @@ struct InstrumentChooser: View {
     }
 
     private func beginRename(_ entry: InstrumentInstance, template: Instrument) {
-        // Renaming a virtual default materializes it first.
-        if store.instance(id: entry.id) == nil {
-            _ = store.defaultInstance(for: template)
-        }
         renameText = entry.name
         renamingID = entry.id
     }
 
+    /// Duplicate is a shortcut into the creation sheet, prefilled from the
+    /// source — name suggested, strings copied and editable, reference
+    /// carried — because "a copy" is usually "near what I want", and
+    /// Cancel still creates nothing.
     private func duplicate(_ entry: InstrumentInstance, template: Instrument) {
-        // Duplicating a virtual default materializes it first.
-        if store.instance(id: entry.id) == nil {
-            _ = store.defaultInstance(for: template)
-        }
-        _ = store.duplicate(id: entry.id)
+        creating = Creation(template: template, source: entry)
     }
 
     private func beginEditStrings(_ entry: InstrumentInstance, template: Instrument) {
-        // Editing a virtual default materializes it first.
-        if store.instance(id: entry.id) == nil {
-            _ = store.defaultInstance(for: template)
-        }
         editing = EditingStrings(id: entry.id)
     }
 
@@ -299,18 +319,24 @@ struct InstrumentChooser: View {
             }
         }
         .disabled(entry.isLocked)
-        if entry.id != template.id {
-            Button(role: .destructive) {
-                settings.favorites.removeAll { $0 == entry.id }
-                store.remove(id: entry.id)
-            } label: {
-                Label {
-                    Text("Delete", bundle: .module)
-                } icon: {
-                    Image(systemName: "trash")
-                }
+        Button(role: .destructive) {
+            removeInstrument(entry)
+        } label: {
+            Label {
+                Text("Delete", bundle: .module)
+            } icon: {
+                Image(systemName: "trash")
             }
         }
+    }
+
+    /// Deleting takes the instrument's satellites along — its star and its
+    /// pins. Any instrument may go, the seeded ones included; the + menu
+    /// is always the way back.
+    private func removeInstrument(_ entry: InstrumentInstance) {
+        settings.favorites.removeAll { $0 == entry.id }
+        settings.presetPins.removeAll { $0.instrumentID == entry.id }
+        store.remove(id: entry.id)
     }
 
     /// Pin/unpin. `.borderless` so the star and the row stay separately

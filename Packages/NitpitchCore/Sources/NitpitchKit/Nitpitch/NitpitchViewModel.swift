@@ -72,6 +72,19 @@ public final class NitpitchViewModel: ObservableObject {
             let result = self.detector.analyze(window)
             Task { @MainActor in self.consume(result) }
         }
+        applyAudioStatus()
+    }
+
+    /// The no-input state's way back: connect a microphone, tap Retry —
+    /// re-activation either comes up running or lands back on the same
+    /// message, both honestly.
+    public func retryInput() async {
+        guard !LaunchStores.isDemo else { return }
+        await audio.activate()
+        applyAudioStatus()
+    }
+
+    private func applyAudioStatus() {
         switch audio.status {
         case .permissionDenied: state = .permissionDenied
         case .unavailable: state = .noInput

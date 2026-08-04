@@ -297,7 +297,18 @@ public struct ChromaticTunerView: View {
         case .permissionDenied:
             status("Microphone access is off", id: "tuner.status")
         case .noInput:
-            status("No audio input device", id: "tuner.status")
+            VStack(spacing: 8) {
+                status("No audio input device", id: "tuner.status")
+                // The cheapest recovery loop there is: plug one in, tap.
+                Button {
+                    Task { await model.retryInput() }
+                } label: {
+                    Text("Retry", bundle: .module)
+                        .font(.callout.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("tuner.retry")
+            }
         case .idle:
             status("Not listening", id: "tuner.status")
         }

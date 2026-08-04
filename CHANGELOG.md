@@ -29,7 +29,7 @@ and remembered exactly as you left them.
   hardware that doesn't exist, so the app now checks for input devices
   before asking — and says so: the tuner reads "No audio input device"
   instead of sitting silent or asking you to play a note it could never
-  hear. (The device check also stays inside the audio stack now, keeping
+  hear — with a Retry button for when the microphone arrives. (The device check also stays inside the audio stack now, keeping
   the camera subsystem's entitlement complaints out of the console.)
 
 ### build 3 — 2026-08-04

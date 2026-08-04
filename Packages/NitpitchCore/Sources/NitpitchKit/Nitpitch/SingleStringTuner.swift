@@ -14,8 +14,10 @@ final class SingleStringTuner: ObservableObject {
     let tuner: StringTunerViewModel
 
     /// Overall input level for the meter, same curve and quantization as the
-    /// grid's.
-    @Published private(set) var inputLevel: Double = 0
+    /// grid's — and the same observable island (see `InputLevel`): the
+    /// string view's whole body re-rendering per meter tick would fight the
+    /// swipe animation for no reason.
+    let inputLevel = InputLevel()
 
     private var instrument: Instrument
     private let audio: AudioSessionController
@@ -59,8 +61,7 @@ final class SingleStringTuner: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self, let result = results.first else { return }
                 self.tuner.ingest(result)
-                let level = (result.displayLevel * 20).rounded() / 20
-                if level != self.inputLevel { self.inputLevel = level }
+                self.inputLevel.set((result.displayLevel * 20).rounded() / 20)
             }
         }
     }
@@ -70,7 +71,7 @@ final class SingleStringTuner: ObservableObject {
         subscription = nil
         demo?.cancel()
         demo = nil
-        inputLevel = 0
+        inputLevel.set(0)
         bank.interrupted()
         tuner.end()
     }
@@ -103,7 +104,7 @@ final class SingleStringTuner: ObservableObject {
     private func runDemoLevel() async {
         var tick = 0.0
         while !Task.isCancelled {
-            inputLevel = ((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20
+            inputLevel.set(((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20)
             tick += 0.055
             try? await Task.sleep(nanoseconds: 50_000_000)
         }

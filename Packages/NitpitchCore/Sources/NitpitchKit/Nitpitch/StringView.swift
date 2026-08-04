@@ -110,8 +110,7 @@ struct StringView: View {
     /// wins over the swipe.
     private var content: some View {
         VStack(spacing: 16) {
-            LevelMeter(level: single.inputLevel)
-                .frame(width: 72, height: 4)
+            ObservedLevelMeter(level: single.inputLevel)
                 .padding(.top, 6)
             dialCarousel
             stringSwitcher

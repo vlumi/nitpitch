@@ -145,7 +145,7 @@ final class DetectionSettingsTests: XCTestCase {
         strings.retune(DetectionTuning(engine: .spectral))
         await slide(510, through: input, sampleRate: controller.sampleRate)
 
-        XCTAssertGreaterThan(strings.inputLevel, 0)
+        XCTAssertGreaterThan(strings.inputLevel.value, 0)
         for (index, tuner) in strings.tuners.enumerated() {
             XCTAssertEqual(tuner.state, .waiting, "dial \(index) read a between-strings pitch")
         }

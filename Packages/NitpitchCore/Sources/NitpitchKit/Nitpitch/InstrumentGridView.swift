@@ -80,8 +80,7 @@ struct InstrumentGridView: View {
                     // per-string bars can't answer this: they're zero both in
                     // a quiet room and when sound is coming in that isn't
                     // near any string's target.
-                    LevelMeter(level: strings.inputLevel)
-                        .frame(width: 72, height: 4)
+                    ObservedLevelMeter(level: strings.inputLevel)
                         .padding(.top, 6)
                     gridOrStrips(for: geo.size)
                 }

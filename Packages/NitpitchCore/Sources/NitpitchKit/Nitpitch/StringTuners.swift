@@ -21,8 +21,11 @@ final class StringTuners: ObservableObject {
     /// tells "quiet room" apart from "sound coming in, just not near any
     /// string's target", which the per-string bars can't: they're zero in
     /// both cases. Quantized to twentieths, like the per-string levels, so a
-    /// frame with no visible change publishes nothing.
-    @Published private(set) var inputLevel: Double = 0
+    /// frame with no visible change publishes nothing. Its own island, NOT a
+    /// `@Published` here: this object anchors the whole grid, and a screen
+    /// re-rendering per meter tick closed any open macOS menu (see
+    /// `InputLevel`).
+    let inputLevel = InputLevel()
 
     private let audio: AudioSessionController
     /// All the DSP, shared with the analysis queue — see `DetectorBank` for
@@ -69,8 +72,7 @@ final class StringTuners: ObservableObject {
                 // Every result carries the same frame's RMS; the meter shows
                 // the shared display curve of it.
                 if let frame = results.first {
-                    let level = (frame.displayLevel * 20).rounded() / 20
-                    if level != self.inputLevel { self.inputLevel = level }
+                    self.inputLevel.set((frame.displayLevel * 20).rounded() / 20)
                 }
             }
         }
@@ -81,7 +83,7 @@ final class StringTuners: ObservableObject {
     private func runDemoLevel() async {
         var tick = 0.0
         while !Task.isCancelled {
-            inputLevel = ((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20
+            inputLevel.set(((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20)
             tick += 0.055
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
@@ -92,7 +94,7 @@ final class StringTuners: ObservableObject {
         subscription = nil
         demo?.cancel()
         demo = nil
-        inputLevel = 0
+        inputLevel.set(0)
         // The spectral engine's phase pair must not span the gap.
         bank.interrupted()
         for tuner in tuners { tuner.end() }

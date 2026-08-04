@@ -222,6 +222,21 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// The string counts this kind of instrument commonly exists with — the
+    /// creation sheet's one-tap chips. Violins, violas and cellos are
+    /// essentially always four, so they offer no choice at all; double
+    /// basses come in four and five; the guitars have real extended
+    /// families. Anything else stays reachable by editing the string list
+    /// itself — common is a shortcut, not a wall.
+    public var commonStringCounts: [Int] {
+        switch id {
+        case "double-bass": return [4, 5]
+        case "guitar": return [6, 7, 8]
+        case "bass-guitar": return [4, 5, 6]
+        default: return [strings.count]
+        }
+    }
+
     /// The templates the + menu offers: one per instrument KIND. The
     /// N-string variants stay off this list — the string count is the next
     /// step's question, so "7-string Guitar" beside "Guitar" would ask it

@@ -142,6 +142,29 @@ public final class InstrumentStore: ObservableObject {
         return created
     }
 
+    /// The creation sheet's confirm: everything decided in the sheet —
+    /// name and strings together — comes to exist here, in one move.
+    /// Nothing was in the store before this; cancelling the sheet had
+    /// nothing to undo.
+    @discardableResult
+    public func add(
+        of template: Instrument, named name: String, strings: [Int]
+    ) -> InstrumentInstance {
+        // Make sure the default exists first, so numbering reads naturally.
+        _ = defaultInstance(for: template)
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let created = InstrumentInstance(
+            id: UUID().uuidString,
+            templateID: template.id,
+            name: trimmed.isEmpty ? nextAddedName(for: template) : trimmed,
+            strings: strings.isEmpty ? template.strings : strings,
+            referenceHz: seedReference().hz,
+            isLocked: false,
+            loadedPresetID: nil)
+        instances.append(created)
+        return created
+    }
+
     /// Clone an instrument: copied tuning and reference, fresh unlocked, a
     /// numbered name awaiting a rename — someone with a rack of guitars sets
     /// up the first and duplicates it per instrument.
@@ -218,58 +241,41 @@ public final class InstrumentStore: ObservableObject {
     /// type's contract with the stepper.
     public static let editableMIDIRange = Detection.targetMIDIRange
 
-    /// Whether a string can be added at this end: only while the outermost
-    /// pitch has room to extend past — a duplicated outermost target would
-    /// give two dials one zero-width band.
+    /// Whether a string can be added at this end — `StringListEditing`
+    /// holds the rule; this is the store's door to it.
     public func canAddString(id: String, lowEnd: Bool) -> Bool {
-        guard let strings = instance(id: id)?.strings,
-            let outer = lowEnd ? strings.first : strings.last
-        else { return false }
-        return lowEnd
-            ? outer > Self.editableMIDIRange.lowerBound
-            : outer < Self.editableMIDIRange.upperBound
+        guard let strings = instance(id: id)?.strings else { return false }
+        return StringListEditing.canExtend(strings, lowEnd: lowEnd)
     }
 
-    /// Grow the instrument by one string — the editor's verb. The proposed
-    /// pitch continues the outermost interval (a violin grows a viola's C3
-    /// below, or a B5 above; a guitar grows a 7-string's B1), clamped to the
-    /// detectable range. A structural change is a new shape, so any loaded
-    /// preset's claim clears — the old shape's preset can't even fit.
+    /// Grow the instrument by one string — the proposal logic lives in
+    /// `StringListEditing`, shared with the creation sheet's draft. A
+    /// structural change is a new shape, so any loaded preset's claim
+    /// clears — the old shape's preset can't even fit.
     public func addString(id: String, lowEnd: Bool) {
-        guard canAddString(id: id, lowEnd: lowEnd),
-            let strings = instance(id: id)?.strings,
-            let outer = lowEnd ? strings.first : strings.last
-        else { return }
-        // With one string there's no interval to continue; a fifth is the
-        // least surprising guess for anything strung.
-        let count = strings.count
-        let interval =
-            count >= 2
-            ? (lowEnd ? strings[1] - strings[0] : strings[count - 1] - strings[count - 2])
-            : 7
-        let proposed = lowEnd ? outer - interval : outer + interval
-        let clamped = min(
-            max(proposed, Self.editableMIDIRange.lowerBound),
-            Self.editableMIDIRange.upperBound)
-        update(id: id) {
-            if lowEnd {
-                $0.strings.insert(clamped, at: 0)
-            } else {
-                $0.strings.append(clamped)
-            }
-            $0.loadedPresetID = nil
-        }
+        guard let current = instance(id: id) else { return }
+        setEditedStrings(id: id, StringListEditing.extended(current.strings, lowEnd: lowEnd))
     }
 
     /// Remove one string, never the last — a zero-string instrument is a
     /// screen with nothing on it. Structural, so the preset claim clears.
     public func removeString(id: String, index: Int) {
-        guard let current = instance(id: id), current.strings.count > 1,
-            current.strings.indices.contains(index)
+        guard let current = instance(id: id) else { return }
+        setEditedStrings(id: id, StringListEditing.removed(current.strings, at: index))
+    }
+
+    /// The instrument editor's single write path. The claim rule rides the
+    /// shape: the same count is a nudge and keeps a loaded preset's claim,
+    /// like every target stepper; a different count is structural and
+    /// clears it.
+    public func setEditedStrings(id: String, _ strings: [Int]) {
+        guard let current = instance(id: id), !strings.isEmpty,
+            strings != current.strings
         else { return }
+        let structural = current.strings.count != strings.count
         update(id: id) {
-            $0.strings.remove(at: index)
-            $0.loadedPresetID = nil
+            $0.strings = strings
+            if structural { $0.loadedPresetID = nil }
         }
     }
 

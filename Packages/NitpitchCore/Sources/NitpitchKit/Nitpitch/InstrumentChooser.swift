@@ -117,9 +117,8 @@ struct InstrumentChooser: View {
     @State private var renameText = ""
     /// The instance whose strings are being edited, driving the sheet.
     @State var editing: EditingStrings?
-    /// A staged creation, driving the "New instrument" prompt.
-    @State var pendingAdd: PendingAdd?
-    @State var newName = ""
+    /// The kind being created, driving the creation sheet.
+    @State var creating: Instrument?
 
     var body: some View {
         List {
@@ -166,26 +165,8 @@ struct InstrumentChooser: View {
                 Text("Cancel", bundle: .module)
             }
         }
-        .alert(
-            Text("New instrument", bundle: .module),
-            isPresented: Binding(
-                get: { pendingAdd != nil },
-                set: { if !$0 { pendingAdd = nil } })
-        ) {
-            TextField(text: $newName) { Text("Name", bundle: .module) }
-                .id(pendingAdd?.id)
-            // Creation happens HERE, not when the menu item was picked:
-            // cancelling a staged add leaves nothing behind to clean up.
-            Button {
-                confirmAdd()
-            } label: {
-                Text("Create", bundle: .module)
-            }
-            Button(role: .cancel) {
-                pendingAdd = nil
-            } label: {
-                Text("Cancel", bundle: .module)
-            }
+        .sheet(item: $creating) { template in
+            InstrumentCreator(store: store, settings: settings, template: template)
         }
     }
 

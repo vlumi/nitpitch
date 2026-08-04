@@ -24,14 +24,19 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
-- Adding an instrument asks first: picking a type and count now opens a
-  "New instrument" prompt with the name ready to edit, and Cancel creates
-  nothing — instead of an instrument appearing instantly with a rename box
-  as an afterthought. Rename now genuinely presents the current name to
-  edit. The + menu shows one entry per instrument kind, grouped by family
-  like the list itself — the N-string variants left the first level, since
-  the count is the next step's question — and in the list the favorite
-  star leads each row, with the do-nothing chevron gone.
+- Adding an instrument is one sheet: pick the kind from the + menu (one
+  entry per kind, grouped by family) and everything else — the name,
+  ready to edit, and the strings — is decided together, with Create the
+  moment anything comes to exist and Cancel leaving no trace. Kinds that
+  really come in sizes offer their common counts as one-tap chips
+  (double bass 4/5, guitar 6/7/8, bass 4/5/6 — violins offer nothing,
+  being violins), and the full string list waits behind a disclosure for
+  the genuinely odd shapes. Nothing is ever labelled "custom": touch the
+  list and the chips simply stop matching, the same way tunings work.
+  The common case is two taps; the sheet grows with the list on the Mac
+  instead of scrolling six strings in a keyhole. Rename now genuinely
+  presents the current name to edit, the favorite star leads each list
+  row, and the do-nothing chevron is gone.
 - The strips look like strings now: each row is a compact card — name, dots,
   cents — threaded on a line that runs to both screen edges at the string's
   own gauge, the lowest fattest, so which string is which reads the way it
@@ -47,10 +52,11 @@ and remembered exactly as you left them.
 - Every instrument's strings can be edited as a list: add a string at either
   end — the proposed pitch continues the instrument's own pattern, so a
   violin grows a viola's C3 below or a B5 above — nudge any target in place,
-  or remove strings. Reachable from Edit strings… on the instrument's row,
-  and from Custom… in the + menu, which creates the instrument and opens the
-  editor in one move. Rows stack the shared way (lowest at the bottom), so
-  the row numbers read like a string set's: the 1st string on top.
+  or remove strings. Reachable from Edit strings… on the instrument's row —
+  and the same string list lives inside the creation sheet, editing the
+  draft before anything exists. Rows stack the shared way (lowest at the
+  bottom), so the row numbers read like a string set's: the 1st string on
+  top.
 - The dial grid follows the strips' order: the lowest string sits at the
   bottom, rows reading left to right and climbing upward — so a one-column
   grid and the strips finally agree on which way is down. The "Low string

@@ -33,6 +33,10 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// picked. Optional and absent from old stored JSON, which decodes as
     /// nil.
     public var loadedPresetID: String?
+    /// When this instrument was last opened — "my instruments" defaults to
+    /// the ones you actually use, most recent first. Optional: absent from
+    /// old stored JSON, never shown to the user.
+    public var lastUsedAt: Date?
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
 
@@ -106,7 +110,8 @@ public final class InstrumentStore: ObservableObject {
             strings: template.strings,
             referenceHz: seedReference().hz,
             isLocked: false,
-            loadedPresetID: nil)
+            loadedPresetID: nil,
+            lastUsedAt: nil)
         instances.append(created)
         return created
     }
@@ -137,7 +142,8 @@ public final class InstrumentStore: ObservableObject {
             strings: stringCount.map(template.strings(count:)) ?? template.strings,
             referenceHz: seedReference().hz,
             isLocked: false,
-            loadedPresetID: nil)
+            loadedPresetID: nil,
+            lastUsedAt: nil)
         instances.append(created)
         return created
     }
@@ -160,7 +166,8 @@ public final class InstrumentStore: ObservableObject {
             strings: strings.isEmpty ? template.strings : strings,
             referenceHz: seedReference().hz,
             isLocked: false,
-            loadedPresetID: nil)
+            loadedPresetID: nil,
+            lastUsedAt: nil)
         instances.append(created)
         return created
     }
@@ -178,7 +185,8 @@ public final class InstrumentStore: ObservableObject {
             strings: source.strings,
             referenceHz: source.referenceHz,
             isLocked: false,
-            loadedPresetID: nil)
+            loadedPresetID: nil,
+            lastUsedAt: nil)
         instances.append(created)
         return created
     }
@@ -295,6 +303,55 @@ public final class InstrumentStore: ObservableObject {
 
     public func setLocked(id: String, _ locked: Bool) {
         update(id: id) { $0.isLocked = locked }
+    }
+
+    /// Stamp an instrument as just-opened — the grid calls this on entry,
+    /// so "my instruments" orders itself by actual use.
+    public func markUsed(id: String) {
+        update(id: id) { $0.lastUsedAt = Date() }
+    }
+
+    /// Your instruments, in the order the chooser shows them: the dragged
+    /// order once one exists, recency until then. Dragging is deliberate
+    /// and wins totally — a list that keeps rearranging itself under
+    /// muscle memory is the failure mode this exists to avoid; recency is
+    /// only the sensible default before anyone has expressed an order.
+    public var myInstruments: [InstrumentInstance] {
+        let byRecency = instances.sorted {
+            switch ($0.lastUsedAt, $1.lastUsedAt) {
+            case (let a?, let b?): return a > b
+            case (.some, .none): return true
+            case (.none, .some): return false
+            case (.none, .none): return $0.name < $1.name
+            }
+        }
+        guard !myOrder.isEmpty else { return byRecency }
+        let position = Dictionary(
+            uniqueKeysWithValues: myOrder.enumerated().map { ($1, $0) })
+        // Instruments the stored order doesn't know yet (added after the
+        // last drag) join at the end, in recency order among themselves.
+        let known = byRecency.filter { position[$0.id] != nil }
+            .sorted { position[$0.id]! < position[$1.id]! }
+        let unknown = byRecency.filter { position[$0.id] == nil }
+        return known + unknown
+    }
+
+    /// Apply a drag in the chooser: the resulting full order is stored, so
+    /// from the first drag on, the order is entirely the user's.
+    public func moveMyInstruments(from source: IndexSet, to destination: Int) {
+        var ordered = myInstruments.map(\.id)
+        ordered.move(fromOffsets: source, toOffset: destination)
+        myOrder = ordered
+    }
+
+    private static let orderKey = "instruments.myOrder.v1"
+
+    private var myOrder: [String] {
+        get { defaults.stringArray(forKey: Self.orderKey) ?? [] }
+        set {
+            objectWillChange.send()
+            defaults.set(newValue, forKey: Self.orderKey)
+        }
     }
 
     private func update(id: String, _ change: (inout InstrumentInstance) -> Void) {

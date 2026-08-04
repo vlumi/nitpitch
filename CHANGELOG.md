@@ -24,6 +24,14 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The instrument list knows which instruments are yours: everything you've
+  actually opened, renamed, or created sits in a "My instruments" section
+  on top — ordered by use, most recent first, until you drag rows into an
+  order of your own, which then holds still forever — with the untouched
+  catalog below, visibly a catalog. Each of your instruments carries a
+  small kind tag (Vln, Gtr, Bass…) and its current tuning, so which is
+  which reads at a glance without renaming anything.
+
 - Rotating an iPhone to the strips and back no longer lands on a different
   grid than you left: the title bar quietly kept its collapsed landscape
   height after returning to portrait, and the auto layout honestly picked

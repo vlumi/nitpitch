@@ -237,6 +237,21 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// A short kind tag — "which instrument is which" at a glance, without
+    /// encoding the kind into the user's name for it. Orchestra-standard
+    /// abbreviations where they exist (Vln, Vla, Vc, Db); localizable keys.
+    public var kindTag: String {
+        switch id {
+        case "violin": return "Vln"
+        case "viola": return "Vla"
+        case "cello": return "Vc"
+        case "double-bass": return "Db"
+        case "guitar", "guitar-7", "guitar-8": return "Gtr"
+        case "bass-guitar", "bass-guitar-5": return "Bass"
+        default: return ""
+        }
+    }
+
     /// The templates the + menu offers: one per instrument KIND. The
     /// N-string variants stay off this list — the string count is the next
     /// step's question, so "7-string Guitar" beside "Guitar" would ask it

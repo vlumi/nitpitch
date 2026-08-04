@@ -122,12 +122,28 @@ struct InstrumentChooser: View {
 
     var body: some View {
         List {
-            ForEach(Instrument.choosable, id: \.family) { group in
+            // Your instruments first — the things you actually tune — with
+            // the untouched catalog below, visibly a catalog. Presence in
+            // the store IS the "mine" heuristic: opening, renaming, or
+            // starring a template materializes it.
+            if !store.myInstruments.isEmpty {
                 Section {
-                    ForEach(group.instruments) { template in
-                        ForEach(entries(for: template)) { entry in
+                    ForEach(store.myInstruments) { entry in
+                        if let template = entry.template {
                             row(for: entry, template: template)
                         }
+                    }
+                    .onMove { source, destination in
+                        store.moveMyInstruments(from: source, to: destination)
+                    }
+                } header: {
+                    Text("My instruments", bundle: .module)
+                }
+            }
+            ForEach(catalogGroups, id: \.family) { group in
+                Section {
+                    ForEach(group.instruments) { template in
+                        catalogRow(for: template)
                     }
                 } header: {
                     Text(LocalizedStringKey(group.family.name), bundle: .module)
@@ -170,17 +186,48 @@ struct InstrumentChooser: View {
         }
     }
 
-    /// One row per instance of the template — with the default instance
-    /// present even before it exists in the store, so the list never changes
-    /// shape just because something was opened once.
-    private func entries(for template: Instrument) -> [InstrumentInstance] {
-        let existing = store.instances(of: template)
-        if existing.contains(where: { $0.id == template.id }) { return existing }
-        let virtualDefault = InstrumentInstance(
-            id: template.id, templateID: template.id, name: template.name,
-            strings: template.strings, referenceHz: settings.reference.hz,
-            isLocked: false, loadedPresetID: nil)
-        return [virtualDefault] + existing
+    /// The catalog: templates you haven't touched, still grouped by family.
+    /// A family whose every template is already yours disappears from here.
+    private var catalogGroups: [(family: InstrumentFamily, instruments: [Instrument])] {
+        Instrument.choosable.compactMap { group in
+            let untouched = group.instruments.filter { store.instance(id: $0.id) == nil }
+            return untouched.isEmpty ? nil : (group.family, untouched)
+        }
+    }
+
+    /// A catalog row: just the way in. No star, no management — there is
+    /// nothing to manage until the first open materializes it as yours.
+    private func catalogRow(for template: Instrument) -> some View {
+        Button {
+            onChoose(template.id)
+        } label: {
+            HStack(spacing: 10) {
+                kindTag(for: template)
+                Text(LocalizedStringKey(template.name), bundle: .module)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("chooser.\(template.id)")
+    }
+
+    /// "Which instrument is which" without renaming or grouping headers: a
+    /// small kind tag leads the row, quiet enough to ignore at one
+    /// instrument and load-bearing at ten.
+    @ViewBuilder
+    func kindTag(for template: Instrument) -> some View {
+        if !template.kindTag.isEmpty {
+            Text(LocalizedStringKey(template.kindTag), bundle: .module)
+                .font(.caption2.weight(.medium))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
+                )
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func row(for entry: InstrumentInstance, template: Instrument) -> some View {
@@ -190,12 +237,22 @@ struct InstrumentChooser: View {
         HStack(spacing: 12) {
             star(for: entry)
 
+            kindTag(for: template)
+
             Button {
                 onChoose(entry.id)
             } label: {
                 HStack(spacing: 6) {
                     entry.nameText
                         .foregroundStyle(.primary)
+                    Text(LocalizedStringKey(entry.tuningName ?? "Custom"), bundle: .module)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        // Visual seasoning only: in the accessibility tree it
+                        // would pollute the row's name ("Guitar 2, Standard"),
+                        // breaking name-addressed automation and VoiceOver
+                        // alike.
+                        .accessibilityHidden(true)
                     if entry.isLocked {
                         Image(systemName: "lock.fill")
                             .font(.caption2)

@@ -214,6 +214,9 @@
     "Replace preset" : {
       "comment" : "Title of the confirmation when saving over an existing name"
     },
+    "Retry" : {
+      "comment" : "No-input state: re-check for a microphone after connecting one"
+    },
     "Save as preset…" : {
       "comment" : "Tuning menu: save the current setup under a name"
     },

@@ -198,6 +198,16 @@ one of the drafts that lost.
   catalog names localize. A tuning's displayed name is derived by matching
   pitches against the catalog — identity follows the values, so it can't
   drift from what's strung.
+- **Readouts are the local note name on scientific octaves.** Every
+  readout — targets and detections alike — leads with the player's own
+  spelling ("H₃", "Si₃"), the octave as a scientific subscript, and the
+  scientific spelling in parens on the full-size dials. Helmholtz
+  (`E A d g h e′`), the classically native German form, was considered
+  and parked: its case-and-prime encoding needs comma prefixes exactly
+  in this app's extended low range, case-as-meaning collides with a UI
+  that styles note letters, and the scientific octave is the app's own
+  cross-reference (A4=440, presets, docs). It could return as a third
+  notation option if real users ask; it is not a relabeling.
 
 ## Commands
 

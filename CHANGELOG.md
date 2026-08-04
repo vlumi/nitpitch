@@ -27,9 +27,10 @@ and remembered exactly as you left them.
 - A Mac with no microphone at all no longer crashes at launch: the audio
   engine throws an uncatchable exception the moment it's asked about input
   hardware that doesn't exist, so the app now checks for input devices
-  before asking. Without one it simply says "Not listening" — an
-  instruction-free truth, where "Play a note" was a promise it couldn't
-  keep.
+  before asking — and says so: the tuner reads "No audio input device"
+  instead of sitting silent or asking you to play a note it could never
+  hear. (The device check also stays inside the audio stack now, keeping
+  the camera subsystem's entitlement complaints out of the console.)
 
 ### build 3 — 2026-08-04
 

@@ -16,6 +16,10 @@ public final class NitpitchViewModel: ObservableObject {
         case idle
         /// Permission was refused — the UI offers a route to Settings.
         case permissionDenied
+        /// The system has no audio input device at all (a mic-less Mac
+        /// mini) — different from idle: the app CAN'T listen, and saying
+        /// so beats sitting silent.
+        case noInput
         /// Running, but nothing confident enough to show.
         case listening
         /// A confident reading.
@@ -70,10 +74,8 @@ public final class NitpitchViewModel: ObservableObject {
         }
         switch audio.status {
         case .permissionDenied: state = .permissionDenied
-        // No input device: "Not listening" is at least true — "Play a
-        // note" on a mic-less Mac mini was an instruction it could never
-        // honor.
-        case .unavailable, .idle: state = .idle
+        case .unavailable: state = .noInput
+        case .idle: state = .idle
         case .running: state = .listening
         }
     }

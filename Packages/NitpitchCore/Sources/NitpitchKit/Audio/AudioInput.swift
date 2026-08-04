@@ -80,10 +80,16 @@ public final class AudioInput {
         // handling, so the zero-rate guard below never got its chance (a
         // mic-less Mac mini crashed at launch). Ask AVCaptureDevice first:
         // it can say "none" politely.
+        // Audio device types only: including `.external` pulled the CMIO
+        // camera stack into the question, spraying entitlement complaints
+        // into the console. `.microphone` covers built-ins and USB audio
+        // interfaces alike; `default(for: .audio)` is the belt to that
+        // suspender.
         let discovered = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.microphone, .external],
+            deviceTypes: [.microphone],
             mediaType: .audio, position: .unspecified)
-        guard !discovered.devices.isEmpty else { throw AudioInputError.noInputDevice }
+        guard !discovered.devices.isEmpty || AVCaptureDevice.default(for: .audio) != nil
+        else { throw AudioInputError.noInputDevice }
         #endif
 
         let input = engine.inputNode

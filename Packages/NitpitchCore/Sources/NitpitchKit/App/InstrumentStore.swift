@@ -111,6 +111,15 @@ public final class InstrumentStore: ObservableObject {
         return created
     }
 
+    /// The name `add(of:)` would give the next instance — for prefilling a
+    /// creation prompt without creating anything. Counts the default the
+    /// add would materialize, so the suggestion and the eventual name agree.
+    public func nextAddedName(for template: Instrument) -> String {
+        let existing = instances.filter { $0.templateID == template.id }.count
+        let withDefault = instance(id: template.id) == nil ? existing + 1 : existing
+        return "\(template.name) \(withDefault + 1)"
+    }
+
     /// "Add another guitar…" — a second instance of a template, named after
     /// it ("Guitar 2") until renamed to what it really is ("Strat"). A
     /// custom `stringCount` extends the template's tuning along its own

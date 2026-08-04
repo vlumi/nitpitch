@@ -221,6 +221,18 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertNil(store.instance(id: second.id))
     }
 
+    /// The creation prompt's suggested name must be the name `add` would
+    /// give — counting the default the add would materialize.
+    func testNextAddedNameMatchesWhatAddProduces() {
+        let store = makeStore()
+        // Before anything exists: the default counts as 1, so the next is 2.
+        XCTAssertEqual(store.nextAddedName(for: .guitar), "Guitar 2")
+        XCTAssertEqual(store.add(of: .guitar).name, "Guitar 2")
+        // And again, now with real instances in the way.
+        XCTAssertEqual(store.nextAddedName(for: .guitar), "Guitar 3")
+        XCTAssertEqual(store.add(of: .guitar).name, "Guitar 3")
+    }
+
     /// The editor's grow verb continues the outermost interval: a violin
     /// grows a viola's C3 below, or a B5 above.
     func testAddStringContinuesTheOutermostInterval() {

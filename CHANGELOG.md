@@ -24,6 +24,14 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Adding an instrument asks first: picking a type and count now opens a
+  "New instrument" prompt with the name ready to edit, and Cancel creates
+  nothing — instead of an instrument appearing instantly with a rename box
+  as an afterthought. Rename now genuinely presents the current name to
+  edit. The + menu shows one entry per instrument kind, grouped by family
+  like the list itself — the N-string variants left the first level, since
+  the count is the next step's question — and in the list the favorite
+  star leads each row, with the do-nothing chevron gone.
 - The strips look like strings now: each row is a compact card — name, dots,
   cents — threaded on a line that runs to both screen edges at the string's
   own gauge, the lowest fattest, so which string is which reads the way it

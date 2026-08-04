@@ -61,6 +61,9 @@
     "Columns" : {
       "comment" : "Label for the control setting how many string dials fit across the grid"
     },
+    "Create" : {
+      "comment" : "Confirming button of the New instrument prompt"
+    },
     "Custom" : {
       "comment" : "Tuning name shown when the pitches match no known tuning"
     },
@@ -126,6 +129,9 @@
     },
     "Name" : {
       "comment" : "Text field placeholder in the rename dialog"
+    },
+    "New instrument" : {
+      "comment" : "Title of the staged-creation prompt: name the instrument being added"
     },
     "Next string" : {
       "comment" : "Arrow in the single-string view: go to the higher neighbouring string"

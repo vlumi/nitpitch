@@ -91,7 +91,7 @@ struct FavoritesRow: View {
 }
 
 /// The instance whose strings are open in the editor sheet.
-private struct EditingStrings: Identifiable {
+struct EditingStrings: Identifiable {
     let id: String
 }
 
@@ -116,7 +116,10 @@ struct InstrumentChooser: View {
     @State private var renamingID: String?
     @State private var renameText = ""
     /// The instance whose strings are being edited, driving the sheet.
-    @State private var editing: EditingStrings?
+    @State var editing: EditingStrings?
+    /// A staged creation, driving the "New instrument" prompt.
+    @State var pendingAdd: PendingAdd?
+    @State var newName = ""
 
     var body: some View {
         List {
@@ -147,6 +150,10 @@ struct InstrumentChooser: View {
                 set: { if !$0 { renamingID = nil } })
         ) {
             TextField(text: $renameText) { Text("Name", bundle: .module) }
+                // Fresh identity per presentation: a reused alert TextField
+                // keeps its first life's text and ignores the prefill — the
+                // rename box came up empty instead of holding the name.
+                .id(renamingID)
             Button {
                 if let id = renamingID { store.rename(id: id, to: renameText) }
                 renamingID = nil
@@ -155,6 +162,27 @@ struct InstrumentChooser: View {
             }
             Button(role: .cancel) {
                 renamingID = nil
+            } label: {
+                Text("Cancel", bundle: .module)
+            }
+        }
+        .alert(
+            Text("New instrument", bundle: .module),
+            isPresented: Binding(
+                get: { pendingAdd != nil },
+                set: { if !$0 { pendingAdd = nil } })
+        ) {
+            TextField(text: $newName) { Text("Name", bundle: .module) }
+                .id(pendingAdd?.id)
+            // Creation happens HERE, not when the menu item was picked:
+            // cancelling a staged add leaves nothing behind to clean up.
+            Button {
+                confirmAdd()
+            } label: {
+                Text("Create", bundle: .module)
+            }
+            Button(role: .cancel) {
+                pendingAdd = nil
             } label: {
                 Text("Cancel", bundle: .module)
             }
@@ -175,7 +203,12 @@ struct InstrumentChooser: View {
     }
 
     private func row(for entry: InstrumentInstance, template: Instrument) -> some View {
+        // The star leads the row — favorites read as a column at a glance —
+        // and there's no chevron: it promised nothing the whole row doesn't
+        // already do.
         HStack(spacing: 12) {
+            star(for: entry)
+
             Button {
                 onChoose(entry.id)
             } label: {
@@ -193,12 +226,6 @@ struct InstrumentChooser: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("chooser.\(entry.id)")
-
-            star(for: entry)
-
-            Image(systemName: "chevron.right")
-                .font(.footnote)
-                .foregroundStyle(.tertiary)
         }
         #if os(macOS)
         // The Mac's visible affordance: hover-revealed or right-click-only
@@ -265,60 +292,6 @@ struct InstrumentChooser: View {
         .buttonStyle(.borderless)
         .menuIndicator(.hidden)
         .accessibilityIdentifier("chooser.more.\(entry.id)")
-    }
-
-    /// The + in the toolbar: pick a type — and, for anything strung, how
-    /// many strings — then get a fresh numbered instrument and the rename
-    /// dialog ready to name it what it really is. Uncommon counts extend the
-    /// template's own interval pattern (see `Instrument.strings(count:)`),
-    /// so a 6-string bass is a creation choice, not a blocked shape.
-    private var addMenu: some View {
-        Menu {
-            ForEach(Instrument.choosable, id: \.family) { group in
-                ForEach(group.instruments) { template in
-                    Menu {
-                        ForEach(countOptions(for: template), id: \.self) { count in
-                            Button {
-                                let added = store.add(of: template, stringCount: count)
-                                renameText = added.name
-                                renamingID = added.id
-                            } label: {
-                                if count == template.strings.count {
-                                    Text("\(count) strings (standard)", bundle: .module)
-                                } else {
-                                    Text("\(count) strings", bundle: .module)
-                                }
-                            }
-                        }
-                        // The odd shapes: a standard instance, opened
-                        // straight into the string editor — add at either
-                        // end, retune in place, no count question.
-                        Divider()
-                        Button {
-                            let added = store.add(of: template)
-                            editing = EditingStrings(id: added.id)
-                        } label: {
-                            Text("Custom…", bundle: .module)
-                        }
-                    } label: {
-                        Text(LocalizedStringKey(template.name), bundle: .module)
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: "plus")
-        }
-        .accessibilityIdentifier("chooser.add")
-        .accessibilityLabel(Text("Add instrument", bundle: .module))
-    }
-
-    /// The counts worth offering: around the template's own, and only where
-    /// the extension rule can actually produce that many strings.
-    private func countOptions(for template: Instrument) -> [Int] {
-        let base = template.strings.count
-        return (max(2, base - 1)...(base + 4)).filter {
-            template.strings(count: $0).count == $0
-        }
     }
 
     private func beginRename(_ entry: InstrumentInstance, template: Instrument) {

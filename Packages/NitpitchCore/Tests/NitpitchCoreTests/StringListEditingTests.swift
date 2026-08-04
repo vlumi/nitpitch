@@ -69,6 +69,19 @@ final class StringListEditingTests: XCTestCase {
         XCTAssertTrue(choosable.contains("guitar-7"), "variants stay in the list")
     }
 
+    /// Every choosable template carries a kind tag — "which is which" must
+    /// never fall back to blank — and the orchestra abbreviations hold.
+    func testKindTagsCoverTheCatalog() {
+        for template in Instrument.choosable.flatMap(\.instruments) {
+            XCTAssertFalse(template.kindTag.isEmpty, template.name)
+        }
+        XCTAssertEqual(Instrument.violin.kindTag, "Vln")
+        XCTAssertEqual(Instrument.doubleBass.kindTag, "Db")
+        XCTAssertEqual(Instrument.guitar7.kindTag, "Gtr")
+        XCTAssertEqual(Instrument.bassGuitar5.kindTag, "Bass")
+        XCTAssertTrue(Instrument.chromatic.kindTag.isEmpty)
+    }
+
     /// Every common count must be reachable by the extension rule, include
     /// the standard, and the always-four bowed kinds offer no choice.
     func testCommonStringCountsAreHonest() {

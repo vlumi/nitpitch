@@ -40,6 +40,9 @@
     "Add to favorites" : {
       "comment" : "Star on an instrument row: pin it to the launch screen"
     },
+    "All instruments…" : {
+      "comment" : "Launch rack: the row into the full instrument list"
+    },
     "Appearance" : {
       "comment" : "Setting: follow the system appearance, or force light\/dark"
     },
@@ -207,9 +210,6 @@
     },
     "System" : {
       "comment" : "Appearance option: follow the system setting"
-    },
-    "Tune an instrument" : {
-      "comment" : "The button below the chromatic dial that opens the instrument chooser"
     },
     "Tuning and reference" : {
       "comment" : "Save button: the preset carries the pitches and the reference pitch"

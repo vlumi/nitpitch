@@ -62,13 +62,15 @@ public struct ChromaticTunerView: View {
             // rather than thresholded — a squarish window gets one big
             // stacked tuner, a wide one gets the side-by-side as large as
             // the height allows.
-            // Heights are the measured content — dial 168 (TunerDial.height)
-            // plus, stacked, 16pt spacing and ~140pt of controls — not
+            // Heights are the measured content — dial 174 (arc less its
+            // readout's rise, plus the readout), stepper 30, 16pt gaps, and
+            // the rack at its EXACT height for the current pin count — not
             // padded guesses: overstating them is exactly what left a third
             // of the window empty below the tuner (the dial-grid's cell had
             // the same disease). Margins live outside, in the 24pt padding.
-            let stacked = CGSize(width: 400, height: 320)
-            let wide = CGSize(width: 860, height: 162)
+            let rackHeight = LaunchRack.height(forPinned: pinned.count)
+            let stacked = CGSize(width: 400, height: 236 + rackHeight)
+            let wide = CGSize(width: 860, height: max(174, 46 + rackHeight))
             let stackedScale = min(
                 geo.size.width / stacked.width, geo.size.height / stacked.height)
             let wideScale = min(geo.size.width / wide.width, geo.size.height / wide.height)
@@ -163,33 +165,36 @@ public struct ChromaticTunerView: View {
             rise: 50, readout: { readout })
     }
 
-    /// Applies to the reading rather than being part of it: the reference the
-    /// dial is measured against, and the ways into an instrument — pinned
-    /// chips for one tap, the full list for everything else.
+    /// Applies to the reading rather than being part of it: the reference
+    /// the dial is measured against, and the rack — your instruments as
+    /// rows that say what they'll open into, the whole list one row below.
     private var controls: some View {
         VStack(spacing: 16) {
             ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
-            VStack(spacing: 10) {
-                if !pinnedChips.isEmpty {
-                    FavoritesRow(chips: pinnedChips, onChoose: onChooseInstance)
-                }
-                InstrumentButton(onOpen: onOpenChooser)
-            }
+            LaunchRack(
+                entries: pinned, onChoose: onChooseInstance,
+                onOpenChooser: onOpenChooser)
         }
     }
 
-    /// Pinned ids resolved to chips, in pin order. An id resolves through the
-    /// store (an instance you own) or, before its default instance exists,
-    /// through the template; ids that resolve to neither are skipped rather
-    /// than crashing a launch screen.
-    private var pinnedChips: [FavoritesRow.Chip] {
+    /// Pinned ids resolved to rack rows, in pin order. An id resolves
+    /// through the store (an instrument you own, with its live tuning and
+    /// lock) or, before its default instance exists, through the template;
+    /// ids that resolve to neither are skipped rather than crashing a
+    /// launch screen.
+    private var pinned: [LaunchRack.Entry] {
         settings.favorites.compactMap { id in
             if let instance = store.instance(id: id) {
-                return FavoritesRow.Chip(id: id, label: instance.nameText)
+                return LaunchRack.Entry(
+                    id: id, name: instance.nameText, template: instance.template,
+                    tuningName: instance.tuningName, isLocked: instance.isLocked)
             }
             if let template = Instrument.named(id) {
-                return FavoritesRow.Chip(
-                    id: id, label: Text(LocalizedStringKey(template.name), bundle: .module))
+                return LaunchRack.Entry(
+                    id: id,
+                    name: Text(LocalizedStringKey(template.name), bundle: .module),
+                    template: template,
+                    tuningName: "Standard", isLocked: false)
             }
             return nil
         }

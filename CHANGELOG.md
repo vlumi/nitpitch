@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The launch screen's chips grew into a rack: your pinned instruments as
+  full rows — kind tag, name, current tuning, padlock — that say what
+  they'll open into before the tap, with "All instruments…" one row
+  below. No more names truncating into "Epiphone Thunderb…"; the dial
+  stays the headline, and the rack is capped at four rows with the rest
+  a tap away.
 - The instrument list knows which instruments are yours: everything you've
   actually opened, renamed, or created sits in a "My instruments" section
   on top — ordered by use, most recent first, until you drag rows into an

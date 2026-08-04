@@ -43,9 +43,26 @@ struct StringListEditor: View {
                 Image(systemName: "plus.circle")
             }
             .foregroundStyle(.tint)
+            .contentShape(Rectangle())
         }
+        // Explicitly borderless: in the Mac form (a plain stack, not a
+        // List) the default style would render a push button.
+        .buttonStyle(.borderless)
+        // Fixed row heights on purpose — the Mac sheet hugs a stack of
+        // these, so their size must be ours, not a list style's.
+        .frame(height: Self.addRowHeight)
         .disabled(!StringListEditing.canExtend(strings, lowEnd: lowEnd))
         .accessibilityIdentifier(lowEnd ? "editor.add.low" : "editor.add.high")
+    }
+
+    /// The deterministic row metrics the Mac sheets size against.
+    static let rowHeight: CGFloat = 36
+    static let addRowHeight: CGFloat = 32
+
+    /// The exact height of the whole block — rows plus both add rows —
+    /// for containers that hug rather than scroll.
+    static func blockHeight(strings count: Int) -> CGFloat {
+        CGFloat(count) * rowHeight + 2 * addRowHeight
     }
 
     private func stringRow(index: Int) -> some View {
@@ -77,6 +94,7 @@ struct StringListEditor: View {
             .accessibilityIdentifier("editor.remove.\(index)")
             .accessibilityLabel(Text("Remove string", bundle: .module))
         }
+        .frame(height: Self.rowHeight)
         .accessibilityIdentifier("editor.row.\(index)")
     }
 

@@ -38,6 +38,33 @@ enum DesignCanvas {
     }
 }
 
+/// The overall input level as its own observable island.
+///
+/// The meter ticks on every audibly-different frame; when that ticking
+/// lived as a `@Published` on the same object a screen holds, the whole
+/// screen — toolbar included — re-rendered per tick, and macOS closes an
+/// open `Menu` whenever its anchor rebuilds: the grid's columns picker
+/// dropped the moment any sound arrived. Only the small meter view observes
+/// this island, so the ticking reaches exactly the pixels it moves.
+@MainActor
+final class InputLevel: ObservableObject {
+    @Published private(set) var value: Double = 0
+
+    func set(_ level: Double) {
+        if level != value { value = level }
+    }
+}
+
+/// The meter wired to its island — the header slot's drop-in.
+struct ObservedLevelMeter: View {
+    @ObservedObject var level: InputLevel
+
+    var body: some View {
+        LevelMeter(level: level.value)
+            .frame(width: 72, height: 4)
+    }
+}
+
 /// The light strip: logarithmically spaced dots, centre lit when in tune.
 ///
 /// Spacing doubles outward (±2, 4, 8, 16, 32¢) because the ear responds to

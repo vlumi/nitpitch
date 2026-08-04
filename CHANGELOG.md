@@ -24,6 +24,11 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- On the Mac, the grid's menus no longer snap shut the moment the microphone
+  hears anything — picking a column count or a tuning mid-note works. The
+  level meter's ticking was re-rendering the whole screen, toolbar included,
+  and macOS closes an open menu whenever its anchor rebuilds; the meter now
+  ticks alone.
 - Every instrument's strings can be edited as a list: add a string at either
   end — the proposed pitch continues the instrument's own pattern, so a
   violin grows a viola's C3 below or a B5 above — nudge any target in place,

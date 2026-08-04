@@ -24,6 +24,15 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- A preset can be pinned to an instrument as a launch shortcut: light the
+  📌 beside "Gig" in the Strat's presets sheet, and a pin chip appears
+  under the Strat's row on the launch screen — tap it and the Strat opens
+  with Gig loaded, an explicit pick that overwrites any drift (the plain
+  row still opens the instrument exactly as you left it). The pin is the
+  (instrument, preset) pair, so pinning Gig to one guitar never surfaces
+  it on another; on a locked instrument the chips dim and only navigate.
+  Presets also gained favorites of their own — the ★ beside each preset
+  floats it into a Favorites block atop every preset list, template-wide.
 - The launch screen's chips grew into a rack: your pinned instruments as
   full rows — kind tag, name, current tuning, padlock — that say what
   they'll open into before the tap, with "All instruments…" one row

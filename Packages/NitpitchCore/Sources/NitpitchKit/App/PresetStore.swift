@@ -60,9 +60,32 @@ public final class PresetStore: ObservableObject {
         }
     }
 
-    /// The presets loadable onto this instance, in the order they were saved.
+    /// The presets loadable onto this instance — favorites first, then the
+    /// rest, each block in the order they were saved.
     public func presets(fitting instance: InstrumentInstance) -> [Preset] {
-        presets.filter { $0.fits(instance) }
+        let fitting = presets.filter { $0.fits(instance) }
+        return fitting.filter { isFavorite($0.id) } + fitting.filter { !isFavorite($0.id) }
+    }
+
+    /// Preset favorites — "float to the top of every preset list",
+    /// template-wide like presets themselves. Stored beside the presets
+    /// rather than on them, so old stored payloads need no migration.
+    public func isFavorite(_ id: String) -> Bool {
+        favoriteIDs.contains(id)
+    }
+
+    public func toggleFavorite(_ id: String) {
+        objectWillChange.send()
+        var ids = favoriteIDs
+        if !ids.insert(id).inserted { ids.remove(id) }
+        favoriteIDs = ids
+    }
+
+    private static let favoritesKey = "presets.favorites.v1"
+
+    private var favoriteIDs: Set<String> {
+        get { Set(defaults.stringArray(forKey: Self.favoritesKey) ?? []) }
+        set { defaults.set(Array(newValue).sorted(), forKey: Self.favoritesKey) }
     }
 
     /// An existing preset that a save under `name` would replace: same
@@ -101,6 +124,9 @@ public final class PresetStore: ObservableObject {
 
     public func remove(id: String) {
         presets.removeAll { $0.id == id }
+        // The favorite flag dies with the preset; launch pins resolve by
+        // lookup, so a dangling pin simply stops rendering.
+        if isFavorite(id) { toggleFavorite(id) }
     }
 
     /// Apply a preset to an instance: the fields it carries, nothing else.

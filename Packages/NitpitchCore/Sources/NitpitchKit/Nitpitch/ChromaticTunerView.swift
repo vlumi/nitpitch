@@ -25,21 +25,29 @@ public struct ChromaticTunerView: View {
     @Environment(\.colorScheme) private var systemScheme
 
     @ObservedObject private var store: InstrumentStore
+    @ObservedObject private var presets: PresetStore
     /// Opens the pushed instrument list.
     private let onOpenChooser: () -> Void
-    /// Goes straight to one instance's grid — the favourite chips' path,
-    /// skipping the chooser the way a favourite should.
+    /// Goes straight to one instance's grid — a rack row's path, skipping
+    /// the chooser the way a favorite should.
     private let onChooseInstance: (String) -> Void
+    /// A pin's path: the instrument opened INTO a preset — or, locked,
+    /// merely opened (the navigation half of a pin is not a change).
+    private let onChoosePin: (String, String) -> Void
 
     public init(
         settings: Settings, audio: AudioSessionController, store: InstrumentStore,
+        presets: PresetStore,
         onOpenChooser: @escaping () -> Void,
-        onChooseInstance: @escaping (String) -> Void
+        onChooseInstance: @escaping (String) -> Void,
+        onChoosePin: @escaping (String, String) -> Void
     ) {
         self.settings = settings
         self.store = store
+        self.presets = presets
         self.onOpenChooser = onOpenChooser
         self.onChooseInstance = onChooseInstance
+        self.onChoosePin = onChoosePin
         // Full band, not the saved instrument's: this screen is chromatic by
         // definition, and an instrument is somewhere you navigate to.
         _model = StateObject(
@@ -68,7 +76,7 @@ public struct ChromaticTunerView: View {
             // padded guesses: overstating them is exactly what left a third
             // of the window empty below the tuner (the dial-grid's cell had
             // the same disease). Margins live outside, in the 24pt padding.
-            let rackHeight = LaunchRack.height(forPinned: pinned.count)
+            let rackHeight = LaunchRack.height(for: pinned)
             let stacked = CGSize(width: 400, height: 236 + rackHeight)
             let wide = CGSize(width: 860, height: max(174, 46 + rackHeight))
             let stackedScale = min(
@@ -173,7 +181,7 @@ public struct ChromaticTunerView: View {
             ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
             LaunchRack(
                 entries: pinned, onChoose: onChooseInstance,
-                onOpenChooser: onOpenChooser)
+                onChoosePin: onChoosePin, onOpenChooser: onOpenChooser)
         }
     }
 
@@ -187,7 +195,8 @@ public struct ChromaticTunerView: View {
             if let instance = store.instance(id: id) {
                 return LaunchRack.Entry(
                     id: id, name: instance.nameText, template: instance.template,
-                    tuningName: instance.tuningName, isLocked: instance.isLocked)
+                    tuningName: instance.tuningName, isLocked: instance.isLocked,
+                    pins: pinEntries(for: instance))
             }
             if let template = Instrument.named(id) {
                 return LaunchRack.Entry(
@@ -198,6 +207,20 @@ public struct ChromaticTunerView: View {
             }
             return nil
         }
+    }
+
+    /// The instrument's pins, resolved: a pin whose preset was deleted (or
+    /// no longer fits after a reshape) resolves to nothing and vanishes.
+    private func pinEntries(for instance: InstrumentInstance) -> [LaunchRack.PinEntry] {
+        settings.presetPins
+            .filter { $0.instrumentID == instance.id }
+            .compactMap { pin in
+                guard
+                    let preset = presets.presets.first(where: { $0.id == pin.presetID }),
+                    preset.fits(instance)
+                else { return nil }
+                return LaunchRack.PinEntry(presetID: preset.id, name: preset.name)
+            }
     }
 
     private func reconfigure() {

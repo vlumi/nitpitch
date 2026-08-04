@@ -330,6 +330,59 @@ final class NitpitchUITests: XCTestCase {
             "the pill shows the picked preset, not the tuning it matches")
     }
 
+    /// A pinned preset is a launch shortcut into the setup: pin "Gig" to
+    /// the guitar in its presets sheet, and a chip appears under the
+    /// guitar's rack row; tapping it opens the guitar WITH Gig loaded.
+    func testPinnedPresetOpensTheSetup() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+        app.descendants(matching: .any)["chooser.guitar"].firstMatch.tap()
+
+        // Set up Drop D, save it as "Gig", pin it in the presets sheet.
+        let tuningMenu = app.buttons["grid.tuning"].firstMatch
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        tuningMenu.tap()
+        app.buttons["Drop D"].firstMatch.tap()
+        tuningMenu.tap()
+        app.buttons["Save as preset…"].firstMatch.tap()
+        let nameField = app.textFields.firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("Gig")
+        app.buttons["Tuning only"].firstMatch.tap()
+
+        tuningMenu.tap()
+        app.buttons["Edit presets…"].firstMatch.tap()
+        let pin = app.descendants(matching: .any)["presets.pin.Gig"].firstMatch
+        XCTAssertTrue(pin.waitForExistence(timeout: 5))
+        pin.tap()
+        app.buttons["Done"].firstMatch.tap()
+
+        // Leave the guitar in a different tuning, so the pin has work to do.
+        tuningMenu.tap()
+        app.buttons["Standard"].firstMatch.tap()
+
+        // Star the guitar so it has a rack row, then walk back home.
+        app.navigationBars.buttons.firstMatch.tap()
+        let star = app.descendants(matching: .any)["chooser.pin.guitar"].firstMatch
+        XCTAssertTrue(star.waitForExistence(timeout: 5))
+        star.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+
+        // The chip sits under the guitar's row; tapping it opens the
+        // guitar with Gig loaded — an explicit pick, drift overwritten.
+        let chip = app.descendants(matching: .any)["pin.guitar.Gig"].firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5), "the pin renders as a chip")
+        chip.tap()
+        let pill = app.buttons["grid.tuning"].firstMatch
+        XCTAssertTrue(pill.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            pill.label.contains("Gig"),
+            "the pin opens the instrument INTO the preset")
+    }
+
     /// The padlock is ambient: a fixed toolbar toggle, no dialogs anywhere.
     /// Locked controls dim; the lock itself is the one way back — and it
     /// follows the instrument into the string view.

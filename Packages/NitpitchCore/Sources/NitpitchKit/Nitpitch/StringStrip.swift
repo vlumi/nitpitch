@@ -31,7 +31,7 @@ struct StringStrip: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: tuner.target.name(in: naming)))
+        .accessibilityLabel(Text(verbatim: tuner.target.accessibleName(in: naming)))
         .accessibilityValue(Text(verbatim: accessibleValue))
     }
 
@@ -46,12 +46,13 @@ struct StringStrip: View {
 
     private var card: some View {
         HStack(spacing: 10 * scale) {
-            Text(verbatim: tuner.target.name(in: naming))
-                .font(.system(size: 24 * scale, weight: .semibold, design: .rounded))
-                .foregroundStyle(
-                    cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary)
-                )
-                .frame(width: 60 * scale, alignment: .leading)
+            // The octave rides as a subscript here too — a guitar has two
+            // E strings, and the strips are where they sit side by side.
+            CompactNoteName(
+                note: tuner.target, naming: naming, fontSize: 24 * scale,
+                color: cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary)
+            )
+            .frame(width: 60 * scale, alignment: .leading)
             centsSlot(flatSide: true)
             VStack(spacing: 5 * scale) {
                 LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 1.4 * scale)

@@ -37,6 +37,12 @@ and remembered exactly as you left them.
   showed a stale "Not listening" forever. It now observes the status, so
   the display follows activation whenever it finishes — including after
   Retry.
+- Unplugging the microphone mid-run no longer strands the tuner: the
+  windows just stopped coming, the volume bar froze at its last reading,
+  and plugging back in resumed nothing. The capture now listens for the
+  hardware coming and going and rebuilds itself around whatever the input
+  is — unplug drops to "No audio input device" (meter cleared), replug
+  picks the tuning back up on its own.
 
 ### build 3 — 2026-08-04
 

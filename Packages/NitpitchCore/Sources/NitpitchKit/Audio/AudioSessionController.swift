@@ -77,6 +77,24 @@ public final class AudioSessionController: ObservableObject {
         self.input.onWindow = { window in
             for receive in receivers.all() { receive(window) }
         }
+        self.input.onDeviceChange = { [weak self] in
+            Task { @MainActor in await self?.reactivate() }
+        }
+    }
+
+    /// Rebuild capture around whatever the default input is now.
+    ///
+    /// An unplug stops the engine's windows without any error — they just
+    /// stop coming — and a replug restarts nothing by itself, so both funnel
+    /// here: tear down, activate again, and let the outcome set the status
+    /// honestly (`.running` on the new device, `.unavailable` without one).
+    /// `.idle` is left alone — capture follows the scene, and the next
+    /// foreground pass activates anyway — as is `.permissionDenied`, where
+    /// restarting would answer a question nobody asked.
+    private func reactivate() async {
+        guard status == .running || status == .unavailable else { return }
+        input.stop()
+        await activate()
     }
 
     /// Start capturing, asking for permission if it hasn't been granted yet.

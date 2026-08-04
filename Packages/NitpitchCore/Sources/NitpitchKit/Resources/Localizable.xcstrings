@@ -97,9 +97,6 @@
     "Duplicate" : {
       "comment" : "Row action: clone this instrument with its current setup"
     },
-    "Edit presets…" : {
-      "comment" : "Tuning menu: open the preset list for deleting"
-    },
     "Edit strings…" : {
       "comment" : "Instrument management action opening the string editor"
     },
@@ -141,6 +138,9 @@
     },
     "Lower target" : {
       "comment" : "Stepper in the single-string view: this string's target down a semitone"
+    },
+    "Manage presets…" : {
+      "comment" : "Tuning-menu door into the presets sheet: star, pin, delete"
     },
     "Microphone access is off" : {
       "comment" : "Shown when the user denied microphone permission"

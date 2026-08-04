@@ -58,15 +58,16 @@ extension InstrumentGridView {
                     Image(systemName: "square.and.arrow.down")
                 }
             }
-            if !fitting.isEmpty {
-                Button {
-                    isManagingPresets = true
-                } label: {
-                    Label {
-                        Text("Edit presets…", bundle: .module)
-                    } icon: {
-                        Image(systemName: "list.bullet")
-                    }
+            // Always offered: the sheet stopped being deletion-only when
+            // the pins moved in — gating it on having saved a preset locked
+            // a fresh user out of pinning Standard entirely.
+            Button {
+                isManagingPresets = true
+            } label: {
+                Label {
+                    Text("Manage presets…", bundle: .module)
+                } icon: {
+                    Image(systemName: "list.bullet")
                 }
             }
         } label: {

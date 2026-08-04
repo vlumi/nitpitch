@@ -28,7 +28,10 @@ and remembered exactly as you left them.
   the presets sheet gained a Tunings section with the same 📌, a pinned
   tuning's chip applies it exactly as the menu would, and pinned things
   float to the top of the tuning menu whether or not the instrument is
-  on the launch screen — a pin means "I reach for this HERE".
+  on the launch screen — a pin means "I reach for this HERE". Manage
+  presets… (renamed from Edit — the sheet stars, pins and deletes) is
+  always in the tuning menu now, saved presets or not: it's where the
+  pins live, so it can't hide behind having saved one.
 - The instrument's own screen manages the instrument now: the layout
   menu grew into an … menu carrying Rename, Duplicate (into the
   prefilled creation sheet), Edit strings and Delete alongside the

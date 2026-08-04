@@ -26,8 +26,11 @@ and remembered exactly as you left them.
 
 - Every readout leads with your own name for the note now — the chromatic
   tuner included, which used to insist on scientific-first. In German
-  naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄ everywhere, with the scientific
-  spelling in parens on the full-size dials for cross-referencing.
+  naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄ everywhere; the string view's
+  target keeps the scientific spelling in parens for cross-referencing,
+  and the chromatic readout dropped it — "(A4)" under "La₄" said the same
+  thing twice. The note itself grew to fill what the parens and the arc's
+  hollow gave back: the headline of the screen, sized like one.
 - Grid cells stack the name over the cents, each centred on its own line —
   side by side the pair wobbled with every reading's width — with the name
   risen into the arc's empty hollow, so the cell spends the pixels it has.

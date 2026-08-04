@@ -155,9 +155,12 @@ public struct ChromaticTunerView: View {
     /// Everything specific to one reading. Self-contained so the per-string
     /// grid can repeat it.
     private var dial: some View {
+        // Rises deeper than the default (50 vs 40): this readout is a
+        // narrow centred column, so it clears the arc's sagging line where
+        // the string view's stepper-flanked row wouldn't.
         TunerDial(
             cents: displayCents, inTune: isInTune, isReading: isReading,
-            readout: { readout })
+            rise: 50, readout: { readout })
     }
 
     /// Applies to the reading rather than being part of it: the reference the
@@ -220,16 +223,21 @@ public struct ChromaticTunerView: View {
     /// the font sizes rather than hardcoded, so it holds if they change.
     private static let readoutHeight: CGFloat = noteFontSize * 1.15 + 4 + 20
 
-    /// Sized to sit inside the arc alongside the light strip, in a unit
-    /// compact enough to appear twice on an iPhone SE.
-    private static let noteFontSize: CGFloat = 46
+    /// The headline of the whole screen — big, because the parens' exit and
+    /// the deeper rise into the arc's hollow both paid for the points.
+    private static let noteFontSize: CGFloat = 56
 
-    /// The note being heard, via the shared label.
+    /// The note being heard, via the shared label — subscripted octave, no
+    /// scientific parens: with the local name leading, "(A4)" under "La₄"
+    /// said the same thing twice.
     private func noteLabel(_ note: Note) -> some View {
-        NoteNameLabel(note: note, naming: settings.naming, fontSize: Self.noteFontSize)
-            .accessibilityElement(children: .ignore)
-            .accessibilityIdentifier("tuner.note")
-            .accessibilityLabel(note.accessibleName(in: settings.naming))
+        NoteNameLabel(
+            note: note, naming: settings.naming, fontSize: Self.noteFontSize,
+            showsScientific: false
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("tuner.note")
+        .accessibilityLabel(note.accessibleName(in: settings.naming))
     }
 
     @ViewBuilder

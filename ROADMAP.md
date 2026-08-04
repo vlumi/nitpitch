@@ -4,36 +4,13 @@ Planned work only — if it's not planned, it's not here. Settled decisions and
 their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
 in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.2.0 is feature-complete and being cut for beta;
-v0.3 — tuning the tuning — is the next milestone.
+**Where things stand:** v0.2.0 is feature-complete, build 3 cut for beta.
+Per-hop CPU was measured and retired as a concern — a 6-dial guitar costs
+~4.5 ms of the 46 ms hop on a desktop core, ~8 dials ~6.4 ms (pinned by
+`DetectorBankPerformanceTests`) — so the once-planned lazy-tracking levers
+stay unbuilt. Next milestone: v0.3, tuning the tuning.
 
-## 1. Finishing v0.2
-
-Feature-complete; what remains is release work, not product.
-
-- **Beta verification of unowned instruments.** On hand: violin, electric
-  guitar, electric bass, digital piano; not on hand: viola, cello, double
-  bass. The functional check is the piano — an instrument definition is a
-  MIDI array, and a digital piano is a calibrated oscillator: select the
-  instrument, play its open-string pitches, confirm the right dial lights
-  near 0¢ and neighbours stay dark. What the piano can't verify is timbre
-  (a bowed cello's noise floor against the gates); the TestFlight "What to
-  Test" says which instruments are verified by their own kind and asks
-  cellists and violists to report. No in-app "experimental" badge — it
-  would communicate risk the math doesn't have, and a badge never bowed a
-  cello.
-- **Open measurements.** CPU with N dials live: each per-string detector is
-  cheaper than the old full-band one and the spectral path is one FFT per
-  hop, but that's reasoning, not measurement — profile on the SE. (Two
-  levers already latent if it proves expensive: the grid is lazy, so only
-  track visible cells; suspend the rest while one string is enlarged.)
-  Also still untested: bass through the phone microphone in `.measurement`
-  mode, which should extend the double-stop range downward.
-- **Release mechanics.** Port donpa's `Scripts/asc/` (listing and
-  screenshot sync) for the App Store submission, minus the achievements
-  parts, which are game-specific.
-
-## 2. v0.3 — tuning the tuning (violin, guitar, bass)
+## 1. v0.3 — tuning the tuning (violin, guitar, bass)
 
 The next milestone: improvements to the act of tuning itself, for the
 instruments actually on hand. Build order follows dependency: the seam is
@@ -47,7 +24,7 @@ The equal-temperament assumption lives in exactly two places, both in
 function from note to expected frequency, with equal temperament the
 identity, and both call sites route through it. One small abstraction
 covers the just fifths below, the temperaments entry, and piano stretch
-later (§ 3) — worth building first, deliberately.
+later (§ 2) — worth building first, deliberately.
 
 ### Tone generator
 
@@ -102,7 +79,7 @@ cent. Shares machinery with the interval display.
 Just intonation and Pythagorean, for ensembles tuning fifths pure — a
 genuine violin concern, riding the seam above.
 
-## 3. Piano — and why the target isn't always 2^(n/12)
+## 2. Piano — and why the target isn't always 2^(n/12)
 
 Wanting to tune a piano with this breaks an assumption the app rests on
 everywhere: that a note's correct frequency is `reference × 2^(semitones/12)`.
@@ -118,7 +95,7 @@ from the piano in front of you; a published average is a starting point.
 
 ### The seam is small
 
-Covered by the temperament seam in § 2 — piano stretch is exactly a
+Covered by the temperament seam in § 1 — piano stretch is exactly a
 temperament: a per-instrument function from note to expected frequency.
 
 ### What a piano mode needs beyond that
@@ -138,13 +115,13 @@ temperament: a per-instrument function from note to expected frequency.
   above the black keys and below the white ones.
 - **Unison tuning.** Most notes have two or three strings tuned to each
   other, and hearing the beats between them is most of the job — closer to
-  § 2 than to the ordinary tuner.
+  § 1 than to the ordinary tuner.
 - **Measuring inharmonicity**, if it goes beyond a published average curve.
 
 A large feature, clearly not v0.2 — but the temperament seam is the part
 everything else depends on, and worth putting in early.
 
-## 4. Other features worth considering
+## 3. Other features worth considering
 
 - **Preset share + import** — a preset serializes into a URL fragment
   (small enough; no server) and renders as a QR code; importing shows a
@@ -167,6 +144,23 @@ everything else depends on, and worth putting in early.
   a translation task, deferred until the UI text settles.
 - **Watch app** — plausible, but microphone quality and screen size both
   work against it. Investigate before committing.
+
+## 4. Toward 1.0
+
+Not scheduled for any near milestone — the pile that matters when an App
+Store release does.
+
+- **Release mechanics** — port donpa's `Scripts/asc/` (listing and
+  screenshot sync), minus the game-specific achievements parts.
+- **Beta verification of unowned instruments** (viola, cello, double
+  bass) — the digital piano verifies range in five minutes per
+  instrument; timbre needs real players via TestFlight's "What to Test".
+  No in-app "experimental" badge either way: it would communicate risk
+  the math doesn't have, and a badge never bowed a cello.
+- **Bass through the phone microphone** — a minutes-long field check:
+  iOS already runs `.measurement` mode (AGC and processing off), so this
+  is purely playing the bass at the iPhone, single strings and the
+  D+G / E+A double stops.
 
 ## 5. Owed upstream to donpa
 

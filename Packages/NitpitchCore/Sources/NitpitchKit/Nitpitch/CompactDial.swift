@@ -36,16 +36,18 @@ struct CompactDial: View {
                 .frame(height: Self.arcHeight * scale)
                 // The hollow under the arc's apex is real estate — the name
                 // rises into it, the same move the full dial makes with its
-                // readout (`TunerDial.apexSlack`). 24 measured against the
+                // readout (`TunerDial.apexSlack`). 28 measured against the
                 // compact geometry: the band's inner edge sits ~25 into the
-                // 58pt box, and the name at 34 clears the arc's line at its
+                // 58pt box, and the name at 30 clears the arc's line at its
                 // own width.
-                .padding(.bottom, -24 * scale)
+                .padding(.bottom, -28 * scale)
             // Name and cents stacked, each centred on its own line: side by
             // side, the pair wobbled left and right as the number's width
-            // changed with every reading.
+            // changed with every reading. The name is the cell's headline;
+            // growing it faster than the cell is what keeps it legible on
+            // an SE, where six height-bound rows shrink everything.
             CompactNoteName(
-                note: note, naming: naming, fontSize: 20 * scale,
+                note: note, naming: naming, fontSize: 26 * scale,
                 color: cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
             Text(verbatim: centsLabel)
                 .font(.system(size: 12 * scale).monospacedDigit())

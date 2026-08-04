@@ -11,6 +11,11 @@ struct TunerDial<Readout: View>: View {
     let cents: Double
     let inTune: Bool
     let isReading: Bool
+    /// How far the readout rises into the arc's hollow. The default is safe
+    /// for any readout; the chromatic dial rises deeper (50) because its
+    /// readout is a narrow column — the string view's, flanked by steppers
+    /// reaching toward the arc's sagging ends, needs the clearance.
+    var rise: CGFloat = TunerDial<EmptyView>.apexSlack
     @ViewBuilder var readout: () -> Readout
 
     /// Height of the arc alone. The readout and light strip stack *below* it.
@@ -42,7 +47,7 @@ struct TunerDial<Readout: View>: View {
                 // ~37pt below its centre. Stacking naively leaves that dead
                 // space under the apex — right where the note sits — so the
                 // readout is pulled back up into it.
-                .padding(.bottom, -Self.apexSlack)
+                .padding(.bottom, -rise)
             readout()
             LightStrip(cents: cents, isReading: isReading)
         }
@@ -58,7 +63,7 @@ struct TunerDial<Readout: View>: View {
     ///
     /// Computed, not stored: the type is generic over its readout, and Swift
     /// has no static stored properties on generic types.
-    private static var apexSlack: CGFloat { 40 }
+    static var apexSlack: CGFloat { 40 }
 }
 
 /// The dial: a fixed needle standing at vertical, and the gap between it and

@@ -221,6 +221,10 @@ struct NoteNameLabel: View {
     let note: Note
     let naming: NoteNaming
     let fontSize: CGFloat
+    /// The scientific spelling in parens. The string view's target keeps it
+    /// (the one place a cross-reference earns its width); the chromatic
+    /// readout dropped it — "(A4)" under "La₄" says the same thing twice.
+    var showsScientific = true
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -234,7 +238,7 @@ struct NoteNameLabel: View {
                     .foregroundStyle(.secondary)
                     .baselineOffset(-fontSize * 0.06)
             }
-            if let alternate {
+            if showsScientific, let alternate {
                 Text(verbatim: "(\(alternate))")
                     .font(.system(size: fontSize * 0.40, weight: .light))
                     .foregroundStyle(.secondary)

@@ -221,6 +221,34 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertNil(store.instance(id: second.id))
     }
 
+    /// The creation sheet's confirm: name and strings arrive together, and
+    /// blanks fall back to the suggestion and the template.
+    func testAddNamedWithStrings() {
+        let store = makeStore()
+        let added = store.add(
+            of: .guitar, named: "  Strat  ", strings: [35, 40, 45, 50, 55, 59, 64])
+        XCTAssertEqual(added.name, "Strat")
+        XCTAssertEqual(added.strings.count, 7)
+        let blank = store.add(of: .guitar, named: "   ", strings: [])
+        XCTAssertEqual(blank.name, "Guitar 3")
+        XCTAssertEqual(blank.strings, Instrument.guitar.strings)
+    }
+
+    /// The editor's single write path reads the claim rule off the shape:
+    /// the same count is a nudge and keeps it, a different count clears it.
+    func testSetEditedStringsClaimFollowsShape() {
+        let store = makeStore()
+        let guitar = store.defaultInstance(for: .guitar)
+        store.presetApplied(id: guitar.id, presetID: "p1")
+        store.setEditedStrings(id: guitar.id, [38, 45, 50, 55, 59, 64])
+        XCTAssertEqual(store.instance(id: guitar.id)?.loadedPresetID, "p1")
+        store.setEditedStrings(id: guitar.id, [35, 38, 45, 50, 55, 59, 64])
+        XCTAssertNil(store.instance(id: guitar.id)?.loadedPresetID)
+        // Empty writes are refused.
+        store.setEditedStrings(id: guitar.id, [])
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings.count, 7)
+    }
+
     /// The creation prompt's suggested name must be the name `add` would
     /// give — counting the default the add would materialize.
     func testNextAddedNameMatchesWhatAddProduces() {

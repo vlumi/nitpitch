@@ -158,13 +158,11 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(button.waitForExistence(timeout: 10))
         button.tap()
 
-        // The + stages a creation behind a prompt — cancelling it creates
-        // NOTHING (adding used to create first and offer a rename after).
+        // The + opens the creation sheet — one kind, one sheet — and
+        // cancelling it creates NOTHING (adding used to create first and
+        // offer a rename after).
         app.buttons["chooser.add"].firstMatch.tap()
         app.buttons["Guitar"].firstMatch.tap()
-        var standardCount = app.buttons["6 strings (standard)"].firstMatch
-        XCTAssertTrue(standardCount.waitForExistence(timeout: 5))
-        standardCount.tap()
         let cancel = app.buttons["Cancel"].firstMatch
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
         cancel.tap()
@@ -173,14 +171,11 @@ final class NitpitchUITests: XCTestCase {
             secondGuitar.waitForExistence(timeout: 2),
             "a cancelled creation leaves nothing behind")
 
-        // Same door, confirmed this time — the prompt's suggested name
-        // stands unless edited.
+        // Same door, confirmed this time — the sheet's suggested name
+        // stands unless edited, and the common case is two taps.
         app.buttons["chooser.add"].firstMatch.tap()
         app.buttons["Guitar"].firstMatch.tap()
-        standardCount = app.buttons["6 strings (standard)"].firstMatch
-        XCTAssertTrue(standardCount.waitForExistence(timeout: 5))
-        standardCount.tap()
-        let create = app.buttons["Create"].firstMatch
+        let create = app.buttons["creator.create"].firstMatch
         XCTAssertTrue(create.waitForExistence(timeout: 5))
         create.tap()
         // Rows surface as buttons labelled with the instrument's name.
@@ -198,10 +193,10 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertFalse(secondGuitar.waitForExistence(timeout: 2))
     }
 
-    /// The instrument editor, end to end: Custom… creates an instance and
-    /// opens the string list, adding a high string grows it, and the grid
-    /// then shows the extra dial.
-    func testCustomInstrumentOpensTheEditor() {
+    /// The creation sheet's odd-shape path, end to end: the string list
+    /// waits behind the disclosure, adding a high string grows the draft,
+    /// Create makes it real, and the grid shows the extra dial.
+    func testCreationSheetEditsTheStrings() {
         let app = launch()
         let button = app.descendants(matching: .any)["tuner.instrument"]
         XCTAssertTrue(button.waitForExistence(timeout: 10))
@@ -209,24 +204,20 @@ final class NitpitchUITests: XCTestCase {
 
         app.buttons["chooser.add"].firstMatch.tap()
         app.buttons["Violin"].firstMatch.tap()
-        let custom = app.buttons["Custom…"].firstMatch
-        XCTAssertTrue(custom.waitForExistence(timeout: 5))
-        custom.tap()
 
-        // Custom… stages the creation like any add; Create opens the editor.
-        let create = app.buttons["Create"].firstMatch
-        XCTAssertTrue(create.waitForExistence(timeout: 5))
-        create.tap()
-
-        // The editor sheet opens on the new instance.
+        // The string list is an accordion in the same sheet — no separate
+        // "custom" anywhere; editing IS what custom means.
+        let summary = app.staticTexts["4 strings"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        summary.tap()
         let addHigh = app.buttons["editor.add.high"].firstMatch
         XCTAssertTrue(addHigh.waitForExistence(timeout: 5))
         addHigh.tap()
         XCTAssertTrue(
             app.descendants(matching: .any)["editor.row.4"].firstMatch
                 .waitForExistence(timeout: 5),
-            "a fifth string appears")
-        app.buttons["editor.done"].firstMatch.tap()
+            "a fifth string appears in the draft")
+        app.buttons["creator.create"].firstMatch.tap()
 
         // The grown instrument opens with five dials.
         let row = app.buttons["Violin 2"].firstMatch

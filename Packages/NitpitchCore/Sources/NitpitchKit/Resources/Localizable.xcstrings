@@ -13,9 +13,6 @@
     "%lld strings" : {
       "comment" : "String-count choice when adding an instrument"
     },
-    "%lld strings (standard)" : {
-      "comment" : "The template's own string count in the add menu"
-    },
     "5-string Bass" : {
       "comment" : "Instrument name"
     },
@@ -66,9 +63,6 @@
     },
     "Custom" : {
       "comment" : "Tuning name shown when the pitches match no known tuning"
-    },
-    "Custom…" : {
-      "comment" : "Add-menu row: create an instrument and open the string editor"
     },
     "DADGAD" : {
       "comment" : "Tuning name (guitar)"

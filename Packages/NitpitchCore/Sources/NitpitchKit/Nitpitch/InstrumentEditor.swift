@@ -9,6 +9,11 @@ import SwiftUI
 /// Pitch nudges keep a loaded preset's claim, like the string view's
 /// stepper; adding or removing is structural and clears it — the store's
 /// `setEditedStrings` reads the difference off the shape.
+///
+/// Like the creation sheet, the presentation forks: an iPhone List, and a
+/// Mac form that hugs exactly its rows (`fixedSize`) — growing as strings
+/// are added, scrolling only when a truly long instrument outgrows a
+/// screen's worth.
 struct InstrumentEditor: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
@@ -18,24 +23,56 @@ struct InstrumentEditor: View {
     private var instance: InstrumentInstance? { store.instance(id: instanceID) }
 
     var body: some View {
+        #if os(macOS)
+        macBody
+        #else
+        sheetBody
+        #endif
+    }
+
+    #if os(macOS)
+    private var macBody: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if let instance {
+                instance.nameText
+                    .font(.headline)
+                tuningCaption(for: instance)
+                    .font(.callout)
+                ScrollView {
+                    VStack(spacing: 0) {
+                        stringList(for: instance)
+                    }
+                }
+                .frame(
+                    height: min(
+                        StringListEditor.blockHeight(strings: instance.strings.count), 440)
+                )
+                .disabled(instance.isLocked)
+                HStack {
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Done", bundle: .module)
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .accessibilityIdentifier("editor.done")
+                }
+            }
+        }
+        .padding(20)
+        .frame(width: 440)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    #else
+    private var sheetBody: some View {
         NavigationStack {
             List {
                 if let instance {
                     Section {
-                        StringListEditor(
-                            strings: instance.strings,
-                            naming: settings.naming,
-                            lowOnTop: settings.stripsLowOnTop
-                        ) { edited in
-                            store.setEditedStrings(id: instanceID, edited)
-                        }
+                        stringList(for: instance)
                     } footer: {
-                        // The same naming rule as everywhere: the tuning's
-                        // identity follows the pitches, so edits relabel it
-                        // by themselves.
-                        Text(
-                            LocalizedStringKey(instance.tuningName ?? "Custom"),
-                            bundle: .module)
+                        tuningCaption(for: instance)
                     }
                     .disabled(instance.isLocked)
                 }
@@ -52,20 +89,23 @@ struct InstrumentEditor: View {
                 }
             }
         }
-        .frame(
-            minWidth: 380,
-            // The list's rows: the strings plus the two add rows.
-            minHeight: Self.sheetHeight(rows: (instance?.strings.count ?? 4) + 2, chrome: 150))
+    }
+    #endif
+
+    private func stringList(for instance: InstrumentInstance) -> some View {
+        StringListEditor(
+            strings: instance.strings,
+            naming: settings.naming,
+            lowOnTop: settings.stripsLowOnTop
+        ) { edited in
+            store.setEditedStrings(id: instanceID, edited)
+        }
     }
 
-    /// Tall enough for exactly the list, growing as strings are added,
-    /// capped where a screen stops being one — a Mac sheet that scrolled
-    /// six guitar strings was pointless economy, and one padded past its
-    /// rows pools the leftover as a margin above the buttons. `rows` is
-    /// every visible list row; `chrome` is the measured rest (bars and
-    /// insets). Piano and harp will need a different shape entirely; for
-    /// anything strung this holds.
-    static func sheetHeight(rows: Int, chrome: CGFloat) -> CGFloat {
-        min(720, chrome + CGFloat(rows) * 44)
+    /// The same naming rule as everywhere: the tuning's identity follows
+    /// the pitches, so edits relabel it by themselves.
+    private func tuningCaption(for instance: InstrumentInstance) -> some View {
+        Text(LocalizedStringKey(instance.tuningName ?? "Custom"), bundle: .module)
+            .foregroundStyle(.secondary)
     }
 }

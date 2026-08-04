@@ -33,10 +33,12 @@ and remembered exactly as you left them.
   being violins), and the full string list waits behind a disclosure for
   the genuinely odd shapes. Nothing is ever labelled "custom": touch the
   list and the chips simply stop matching, the same way tunings work.
-  The common case is two taps; the sheet grows with the list on the Mac
-  instead of scrolling six strings in a keyhole. Rename now genuinely
-  presents the current name to edit, the favorite star leads each list
-  row, and the do-nothing chevron is gone.
+  The common case is two taps. On the Mac the sheet is a plain form that
+  fits its content exactly — the strings always visible, growing as they're
+  added, no accordion to hunt and no leftover margins — while the iPhone
+  keeps the tidy disclosure. Rename now genuinely presents the current
+  name to edit, the favorite star leads each list row, and the do-nothing
+  chevron is gone.
 - The strips look like strings now: each row is a compact card — name, dots,
   cents — threaded on a line that runs to both screen edges at the string's
   own gauge, the lowest fattest, so which string is which reads the way it

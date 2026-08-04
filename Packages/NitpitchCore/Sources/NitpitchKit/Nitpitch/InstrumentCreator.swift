@@ -7,10 +7,16 @@ import SwiftUI
 ///
 /// The common case is two taps — pick the kind, Create. Kinds that really
 /// come in sizes (double bass, the guitars) show their common counts as
-/// one-tap chips; the full string list waits behind a disclosure for the
-/// genuinely odd shapes. There is no "custom" to select anywhere — like
-/// tunings, the shape's identity follows the values: touch the list and
-/// the chips simply stop matching.
+/// one-tap chips. There is no "custom" to select anywhere — like tunings,
+/// the shape's identity follows the values: touch the list and the chips
+/// simply stop matching.
+///
+/// The presentation forks by platform. iPhone: a List with the string rows
+/// behind a disclosure, so the sheet stays calm. Mac: a plain fixed-width
+/// form that HUGS its content (`fixedSize`, like the Settings window) with
+/// the rows always visible — a disclosure there meant hunting a tiny
+/// chevron and a shrink-then-grow resize, and every attempt to precompute
+/// a List's height left either a keyhole or a margin.
 struct InstrumentCreator: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
@@ -30,6 +36,62 @@ struct InstrumentCreator: View {
     }
 
     var body: some View {
+        #if os(macOS)
+        macBody
+        #else
+        sheetBody
+        #endif
+    }
+
+    private func create() {
+        store.add(of: template, named: name, strings: strings)
+        dismiss()
+    }
+
+    #if os(macOS)
+    private var macBody: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("New instrument", bundle: .module)
+                .font(.headline)
+            TextField(text: $name) { Text("Name", bundle: .module) }
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("creator.name")
+            if template.commonStringCounts.count > 1 {
+                countChips
+            }
+            stringsSummary
+                .font(.callout)
+            // The rows, at their own deterministic heights; only a truly
+            // long instrument scrolls, everything else is hugged exactly.
+            ScrollView {
+                VStack(spacing: 0) {
+                    stringList
+                }
+            }
+            .frame(height: min(StringListEditor.blockHeight(strings: strings.count), 440))
+            HStack {
+                Spacer()
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Cancel", bundle: .module)
+                }
+                .keyboardShortcut(.cancelAction)
+                Button {
+                    create()
+                } label: {
+                    Text("Create", bundle: .module)
+                }
+                .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("creator.create")
+            }
+        }
+        .padding(20)
+        .frame(width: 440)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    #else
+    private var sheetBody: some View {
         NavigationStack {
             List {
                 Section {
@@ -41,13 +103,7 @@ struct InstrumentCreator: View {
                         countChips
                     }
                     DisclosureGroup(isExpanded: $isListExpanded) {
-                        StringListEditor(
-                            strings: strings,
-                            naming: settings.naming,
-                            lowOnTop: settings.stripsLowOnTop
-                        ) { edited in
-                            strings = edited
-                        }
+                        stringList
                     } label: {
                         stringsSummary
                     }
@@ -66,8 +122,7 @@ struct InstrumentCreator: View {
                     // Creation happens HERE: nothing existed while the sheet
                     // was open, so Cancel had nothing to clean up.
                     Button {
-                        store.add(of: template, named: name, strings: strings)
-                        dismiss()
+                        create()
                     } label: {
                         Text("Create", bundle: .module)
                     }
@@ -75,14 +130,17 @@ struct InstrumentCreator: View {
                 }
             }
         }
-        .frame(
-            minWidth: 380,
-            // Rows: name, chips (when shown) and the summary always; the
-            // strings and their two add rows only while disclosed.
-            minHeight: InstrumentEditor.sheetHeight(
-                rows: (template.commonStringCounts.count > 1 ? 3 : 2)
-                    + (isListExpanded ? strings.count + 2 : 0),
-                chrome: 180))
+    }
+    #endif
+
+    private var stringList: some View {
+        StringListEditor(
+            strings: strings,
+            naming: settings.naming,
+            lowOnTop: settings.stripsLowOnTop
+        ) { edited in
+            strings = edited
+        }
     }
 
     /// The kind's common sizes as one-tap chips. A chip lights only while
@@ -115,11 +173,11 @@ struct InstrumentCreator: View {
         }
     }
 
-    /// What the disclosure hides, said on its label: the count, and a name
-    /// for the pitches — "Standard" whenever they're the count's standard
-    /// stringing (a chip's 5-string bass is standard even though the
-    /// catalog's named tunings only know four strings), a catalog name when
-    /// one matches, "Custom" only when nothing does.
+    /// The list's caption: the count, and a name for the pitches —
+    /// "Standard" whenever they're the count's standard stringing (a
+    /// chip's 5-string bass is standard even though the catalog's named
+    /// tunings only know four strings), a catalog name when one matches,
+    /// "Custom" only when nothing does.
     private var stringsSummary: some View {
         HStack(spacing: 6) {
             Text("\(strings.count) strings", bundle: .module)

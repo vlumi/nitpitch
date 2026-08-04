@@ -68,7 +68,14 @@ public final class NitpitchViewModel: ObservableObject {
             let result = self.detector.analyze(window)
             Task { @MainActor in self.consume(result) }
         }
-        state = audio.status == .permissionDenied ? .permissionDenied : .listening
+        switch audio.status {
+        case .permissionDenied: state = .permissionDenied
+        // No input device: "Not listening" is at least true — "Play a
+        // note" on a mic-less Mac mini was an instruction it could never
+        // honor.
+        case .unavailable, .idle: state = .idle
+        case .running: state = .listening
+        }
     }
 
     /// Drives the display from a synthetic reading, for laying out the UI

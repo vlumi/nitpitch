@@ -73,6 +73,19 @@ public final class AudioInput {
         try session.setActive(true)
         #endif
 
+        #if os(macOS)
+        // Merely ACCESSING `engine.inputNode` on a Mac with no input device
+        // raises an Objective-C exception while the engine wires its input
+        // unit to hardware that isn't there — unreachable by Swift error
+        // handling, so the zero-rate guard below never got its chance (a
+        // mic-less Mac mini crashed at launch). Ask AVCaptureDevice first:
+        // it can say "none" politely.
+        let discovered = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.microphone, .external],
+            mediaType: .audio, position: .unspecified)
+        guard !discovered.devices.isEmpty else { throw AudioInputError.noInputDevice }
+        #endif
+
         let input = engine.inputNode
         let hardwareFormat = input.outputFormat(forBus: 0)
         // A zero sample rate means no input device is available (or none is

@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- A Mac with no microphone at all no longer crashes at launch: the audio
+  engine throws an uncatchable exception the moment it's asked about input
+  hardware that doesn't exist, so the app now checks for input devices
+  before asking. Without one it simply says "Not listening" — an
+  instruction-free truth, where "Play a note" was a promise it couldn't
+  keep.
+
 ### build 3 — 2026-08-04
 
 - Instruments are deliberate now, and the factory list is real: first

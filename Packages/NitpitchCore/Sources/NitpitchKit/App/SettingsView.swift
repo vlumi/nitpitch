@@ -110,7 +110,7 @@ public struct SettingsView: View {
                     .accessibilityIdentifier("settings.stripsLowOnTop")
                 } footer: {
                     Text(
-                        "String order in the strips view. Off: lowest at the bottom, as tabs are written.",
+                        "In the dial grid and the strips. Off: lowest at the bottom, as tabs are written.",
                         bundle: .module)
                 }
 

@@ -183,12 +183,15 @@ one of the drafts that lost.
   path. Pinned chips jump straight to an instance; the instance
   remembering its state is what makes one tap enough — a favorite-preset
   chip would also have had to guess which guitar to load onto.
-- **Strips run low-at-bottom by default.** Pitch intuition and tab notation
-  agree, and a violin has no view in which its strings stack vertically at
-  all; "low string on top" (real only as the looking-down-a-fretted-neck
-  view) is a Settings preference. iOS enters the strips by device shape,
-  the Mac by a layout-menu toggle — a window edge-drag is not a request to
-  change metaphors. Handedness needs nothing anywhere: a lefty's mirrored
+- **Vertical string order is low-at-bottom by default — strips and the
+  dial grid's rows alike.** Pitch intuition and tab notation agree, and a
+  violin has no view in which its strings stack vertically at all; "low
+  string on top" (real only as the looking-down-a-fretted-neck view) is a
+  Settings preference that flips both views together — a one-column grid
+  visually IS the strips, so they must agree. Within a grid row, pitch
+  ascends left to right. iOS enters the strips by device shape, the Mac by
+  a layout-menu toggle — a window edge-drag is not a request to change
+  metaphors. Handedness needs nothing anywhere: a lefty's mirrored
   stringing and mirrored hold cancel, so string order is identical.
 - **The user's name is never the tuning's name.** Instruments and presets
   carry the user's words verbatim ("Strat", "Bach No. 1"), never localized;

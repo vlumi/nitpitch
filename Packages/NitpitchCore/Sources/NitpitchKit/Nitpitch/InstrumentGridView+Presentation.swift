@@ -66,18 +66,38 @@ extension InstrumentGridView {
             columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
             spacing: 12
         ) {
-            ForEach(Array(displayedTuners.enumerated()), id: \.offset) { position, entry in
+            ForEach(gridOrdered(columns: columns), id: \.index) { entry in
                 // A cell is a link into its string's full-screen view — the
                 // grid shows all of them, the string view holds one.
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
                     StringCell(tuner: entry.tuner, naming: settings.naming, scale: cellScale)
                 }
                 .buttonStyle(.plain)
-                .accessibilityIdentifier("grid.cell.\(position)")
+                // Identified by STRING, not by visual position: cell 0 is the
+                // lowest string wherever the row order puts it.
+                .accessibilityIdentifier("grid.cell.\(entry.index)")
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+    }
+
+    /// Cells in display order: pitch ascends left to right within a row, and
+    /// rows ascend *upward* — the lowest string sits at the bottom of the
+    /// grid, the same shared order as the strips, flipped by the same
+    /// Settings switch (`Settings.stripsLowOnTop`). Without this, a
+    /// one-column grid — which visually IS the strips — read top-down while
+    /// the strips read bottom-up.
+    private func gridOrdered(columns: Int) -> [(index: Int, tuner: StringTunerViewModel)] {
+        let all = displayedTuners
+        var rows: [[(index: Int, tuner: StringTunerViewModel)]] = []
+        var start = 0
+        while start < all.count {
+            let end = min(start + max(1, columns), all.count)
+            rows.append(Array(all[start..<end]))
+            start = end
+        }
+        return settings.stripsLowOnTop ? rows.flatMap { $0 } : rows.reversed().flatMap { $0 }
     }
 
     /// Mac only: phones read scrolling content from the top, but a Mac

@@ -24,6 +24,11 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The dial grid follows the strips' order: the lowest string sits at the
+  bottom, rows reading left to right and climbing upward — so a one-column
+  grid and the strips finally agree on which way is down. The "Low string
+  on top" switch in Settings flips both views together.
+
 ### build 2 — 2026-08-03
 
 - An instrument now shows a dial per string rather than a single dial: playing

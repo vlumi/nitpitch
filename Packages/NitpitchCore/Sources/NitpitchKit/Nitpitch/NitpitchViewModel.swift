@@ -33,6 +33,7 @@ public final class NitpitchViewModel: ObservableObject {
 
     private let audio: AudioSessionController
     private var subscription: AudioSessionController.Subscription?
+    private var statusWatch: AnyCancellable?
     private var detector: PitchDetector
     private var smoother = ReadingSmoother()
     private var reference: ReferencePitch
@@ -72,24 +73,35 @@ public final class NitpitchViewModel: ObservableObject {
             let result = self.detector.analyze(window)
             Task { @MainActor in self.consume(result) }
         }
-        applyAudioStatus()
+        // OBSERVE the status, don't sample it: activation runs in its own
+        // task and usually finishes after this one, so a one-shot read here
+        // sees `.idle` and — on a machine with no microphone, where no
+        // windows ever arrive to move the state along — sticks there
+        // forever. The publisher replays the current value, so this also
+        // covers the case where activation already finished.
+        statusWatch = audio.$status.sink { [weak self] status in
+            self?.apply(status)
+        }
     }
 
     /// The no-input state's way back: connect a microphone, tap Retry —
     /// re-activation either comes up running or lands back on the same
-    /// message, both honestly.
+    /// message, both honestly (the status watch relays the outcome).
     public func retryInput() async {
         guard !LaunchStores.isDemo else { return }
         await audio.activate()
-        applyAudioStatus()
     }
 
-    private func applyAudioStatus() {
-        switch audio.status {
+    private func apply(_ status: AudioSessionController.Status) {
+        switch status {
         case .permissionDenied: state = .permissionDenied
         case .unavailable: state = .noInput
         case .idle: state = .idle
-        case .running: state = .listening
+        case .running:
+            // Activation re-fires on every foreground pass; a republished
+            // `.running` must not knock a live reading back to "listening".
+            if case .reading = state { return }
+            state = .listening
         }
     }
 
@@ -130,6 +142,7 @@ public final class NitpitchViewModel: ObservableObject {
     public func detach() {
         subscription?.cancel()
         subscription = nil
+        statusWatch = nil
         smoother.reset()
         state = .idle
         level = 0

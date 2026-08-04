@@ -5,7 +5,26 @@ All notable changes to this project are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **How this file is maintained:** a user-facing PR writes its own bullet under
-`### Unreleased (next build)
+`### Unreleased (next build)` as part of that PR. The release lane
+(`make release`) only *stamps* that heading with the build number it cuts and
+opens a fresh empty `Unreleased` above it — it never writes entries itself. The
+`### Unreleased (next build)` heading is therefore load-bearing: the stamping
+script (`Scripts/release-lib.sh`) matches it exactly, and expects its list items
+to follow immediately with nothing in between.
+
+Apple builds are identified as `version (build)`; the build number is shared
+across iOS and macOS and bumped on every release so the two never diverge.
+
+## [0.2.0] — unreleased
+
+The per-string version: choosing an instrument now means something — every
+string gets its own dial, the detection genuinely reads them (two at once
+included), and the instruments themselves become yours: named, tuned, locked,
+and remembered exactly as you left them.
+
+### Unreleased (next build)
+
+### build 3 — 2026-08-04
 
 - Instruments are deliberate now, and the factory list is real: first
   launch seeds one ordinary, fully editable instrument per catalog kind —

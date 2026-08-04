@@ -44,14 +44,15 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(stripsOnMac, forKey: Key.stripsOnMac) }
     }
 
-    /// Strip order: false (default) = low string at the bottom — pitch
-    /// intuition, and how tabs are written; true = low on top, the
-    /// looking-down-at-the-neck view. Low-at-bottom is the default because
-    /// it's the only order with a universal referent: bowed instruments
-    /// have no view in which their strings stack vertically at all, and
-    /// fretted players read tab, which puts the thickest string at the
-    /// bottom. Handedness never enters it: a lefty's mirrored stringing and
-    /// mirrored hold cancel, so the looking-down order is the same.
+    /// Vertical string order, shared by the strips and the dial grid's rows:
+    /// false (default) = low string at the bottom — pitch intuition, and how
+    /// tabs are written; true = low on top, the looking-down-at-the-neck
+    /// view. Low-at-bottom is the default because it's the only order with
+    /// a universal referent: bowed instruments have no view in which their
+    /// strings stack vertically at all, and fretted players read tab, which
+    /// puts the thickest string at the bottom. Handedness never enters it:
+    /// a lefty's mirrored stringing and mirrored hold cancel, so the
+    /// looking-down order is the same.
     @Published public var stripsLowOnTop: Bool {
         didSet { defaults.set(stripsLowOnTop, forKey: Key.stripsLowOnTop) }
     }

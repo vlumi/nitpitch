@@ -120,6 +120,22 @@ public final class Settings: ObservableObject {
 
 /// One launch-screen shortcut: an instrument opened INTO a preset. The pin
 /// is the pair — presets stay instrument-agnostic stamps.
+/// Catalog tunings are pinnable too — "a catalog tuning is exactly a
+/// built-in preset that carries pitches and nothing else" — via a synthetic
+/// preset id, so a pin stores one string whatever it points at.
+public enum CatalogPinID {
+    public static func make(templateID: String, tuningName: String) -> String {
+        "catalog:\(templateID):\(tuningName)"
+    }
+
+    /// The tuning name, when the id is a catalog pin for this template.
+    public static func tuningName(in presetID: String, templateID: String) -> String? {
+        let prefix = "catalog:\(templateID):"
+        guard presetID.hasPrefix(prefix) else { return nil }
+        return String(presetID.dropFirst(prefix.count))
+    }
+}
+
 public struct PresetPin: Codable, Equatable, Hashable, Identifiable, Sendable {
     public let instrumentID: String
     public let presetID: String

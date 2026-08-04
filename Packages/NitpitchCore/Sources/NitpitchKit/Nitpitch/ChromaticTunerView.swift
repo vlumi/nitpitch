@@ -215,6 +215,19 @@ public struct ChromaticTunerView: View {
         settings.presetPins
             .filter { $0.instrumentID == instance.id }
             .compactMap { pin in
+                // A catalog pin resolves through the template's tunings…
+                if let name = CatalogPinID.tuningName(
+                    in: pin.presetID, templateID: instance.templateID)
+                {
+                    guard
+                        let tuning = instance.template?.knownTunings
+                            .first(where: { $0.name == name }),
+                        tuning.strings.count == instance.strings.count
+                    else { return nil }
+                    return LaunchRack.PinEntry(
+                        presetID: pin.presetID, name: name, localized: true)
+                }
+                // …a preset pin through the store; dangling ones vanish.
                 guard
                     let preset = presets.presets.first(where: { $0.id == pin.presetID }),
                     preset.fits(instance)

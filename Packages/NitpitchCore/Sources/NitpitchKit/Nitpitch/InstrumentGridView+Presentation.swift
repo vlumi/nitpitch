@@ -234,6 +234,32 @@ extension InstrumentGridView {
         }
     }
 
+    /// The menu's tunings, pinned-first: a pin is "I reach for this on
+    /// THIS instrument", so it floats here even when the instrument never
+    /// made the launch screen.
+    var orderedTunings: [Tuning] {
+        let all = fittingTunings
+        let pinned = all.filter { isPinnedTuning($0) }
+        return pinned + all.filter { !isPinnedTuning($0) }
+    }
+
+    private func isPinnedTuning(_ tuning: Tuning) -> Bool {
+        settings.isPinned(
+            instrumentID: instance.id,
+            presetID: CatalogPinID.make(
+                templateID: instance.templateID, tuningName: tuning.name ?? "Custom"))
+    }
+
+    /// The menu's presets: pinned (this instrument) first, then favorites
+    /// (template-wide, already floated by the store), then the rest.
+    var orderedPresets: [Preset] {
+        let all = presets.presets(fitting: instance)
+        let pinned = all.filter {
+            settings.isPinned(instrumentID: instance.id, presetID: $0.id)
+        }
+        return pinned + all.filter { pin in !pinned.contains(pin) }
+    }
+
     var fittingTunings: [Tuning] {
         guard let template = instance.template else { return [] }
         return template.knownTunings.filter { $0.strings.count == instance.strings.count }

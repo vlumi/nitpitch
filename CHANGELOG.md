@@ -24,6 +24,18 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The factory tunings are pinnable like any preset — Standard included:
+  the presets sheet gained a Tunings section with the same 📌, a pinned
+  tuning's chip applies it exactly as the menu would, and pinned things
+  float to the top of the tuning menu whether or not the instrument is
+  on the launch screen — a pin means "I reach for this HERE".
+- The instrument's own screen manages the instrument now: the layout
+  menu grew into an … menu carrying Rename, Duplicate (into the
+  prefilled creation sheet), Edit strings and Delete alongside the
+  column picker — the chooser's swipe and long-press carry the same
+  actions for those who find them, but the … is findable by everyone,
+  and Edit strings stops being a Mac-menu secret on iPhone.
+
 - A preset can be pinned to an instrument as a launch shortcut: light the
   📌 beside "Gig" in the Strat's presets sheet, and a pin chip appears
   under the Strat's row on the launch screen — tap it and the Strat opens

@@ -127,6 +127,9 @@
     "Instrument" : {
       "comment" : "Title of the instrument chooser"
     },
+    "Instrument options" : {
+      "comment" : "Accessibility label for the grid's … menu"
+    },
     "Light" : {
       "comment" : "Appearance option: always light"
     },
@@ -234,6 +237,9 @@
     },
     "Tuning only" : {
       "comment" : "Save button: the preset carries the pitches and nothing else"
+    },
+    "Tunings" : {
+      "comment" : "Presets sheet: the catalog tunings section"
     },
     "Unlock" : {
       "comment" : "Menu action and dialog button: allow changes again"

@@ -154,12 +154,17 @@ one of the drafts that lost.
 
 - **An instrument is one you own**: a named instance of a template
   ("Strat"), holding its own mutable state — tuning, reference, lock —
-  autosaved, waiting as you left it. The default instance per template is
-  created on first use, so a beginner never meets the concept; "add
-  another guitar" is where the plural appears. **The string count is part
-  of the instrument** — a physical fact, set when it's added (uncommon
-  counts extend the template's own interval pattern), never changed by a
-  tuning.
+  autosaved, waiting as you left it. **Instruments exist only by seeding
+  or deliberate creation, never by navigation**: first launch seeds the
+  whole factory list as ordinary instances (ids = template ids, stable
+  for sync and old favorites), all of them renamable and deletable down
+  to an empty list; opening an instrument is just opening it. The star
+  is the launch screen: starred instruments form the drag-ordered
+  Favorites section whose order IS the rack's; everything else sits
+  family-grouped and stable below. Duplicate opens the creation sheet
+  prefilled from the source. **The string count is part of the
+  instrument** — a physical fact, set at creation (uncommon counts extend
+  the template's own interval pattern), never changed by a tuning.
 - **A preset is a stamp, not a place**: it carries **only the fields it was
   saved with** (tuning alone, or tuning + reference), decided at save time.
   A catalog tuning is exactly a built-in preset that carries pitches and

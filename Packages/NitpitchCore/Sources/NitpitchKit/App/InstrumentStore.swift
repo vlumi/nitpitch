@@ -33,10 +33,13 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// picked. Optional and absent from old stored JSON, which decodes as
     /// nil.
     public var loadedPresetID: String?
-    /// When this instrument was last opened — "my instruments" defaults to
-    /// the ones you actually use, most recent first. Optional: absent from
-    /// old stored JSON, never shown to the user.
+    /// When this instrument was last opened. Optional: absent from old
+    /// stored JSON, never shown to the user.
     public var lastUsedAt: Date?
+    /// When any field last changed — the currency of last-writer-wins
+    /// syncing (ROADMAP: iCloud sync). Stamped by the store's one update
+    /// chokepoint; optional for old stored JSON.
+    public var modifiedAt: Date?
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
 
@@ -84,6 +87,34 @@ public final class InstrumentStore: ObservableObject {
         } else {
             instances = []
         }
+        seedFactoryInstruments()
+    }
+
+    private static let seededKey = "instruments.seeded.v1"
+
+    /// The factory list, as real instruments: one ordinary, fully editable
+    /// instance per catalog template, so the app is browsable and tunable
+    /// from first launch with nothing to add. Runs once (deletions stick
+    /// afterwards — an empty list is a legitimate state); ids are the
+    /// template ids, DELIBERATELY stable: two devices seed identically, so
+    /// a future first sync merges clean instead of doubling the list, and
+    /// pre-existing favorites keep resolving.
+    private func seedFactoryInstruments() {
+        guard !defaults.bool(forKey: Self.seededKey) else { return }
+        for template in Instrument.choosable.flatMap(\.instruments)
+        where instance(id: template.id) == nil {
+            instances.append(
+                InstrumentInstance(
+                    id: template.id,
+                    templateID: template.id,
+                    name: template.name,
+                    strings: template.strings,
+                    referenceHz: seedReference().hz,
+                    isLocked: false,
+                    loadedPresetID: nil,
+                    lastUsedAt: nil))
+        }
+        defaults.set(true, forKey: Self.seededKey)
     }
 
     public func instance(id: String) -> InstrumentInstance? {
@@ -98,31 +129,14 @@ public final class InstrumentStore: ObservableObject {
             }
     }
 
-    /// The default instance for a template, created on first use — which is
-    /// what makes a beginner's path free of the whole concept: tap Violin,
-    /// get the violin, never learn that instances exist.
-    public func defaultInstance(for template: Instrument) -> InstrumentInstance {
-        if let existing = instance(id: template.id) { return existing }
-        let created = InstrumentInstance(
-            id: template.id,
-            templateID: template.id,
-            name: template.name,
-            strings: template.strings,
-            referenceHz: seedReference().hz,
-            isLocked: false,
-            loadedPresetID: nil,
-            lastUsedAt: nil)
-        instances.append(created)
-        return created
-    }
-
     /// The name `add(of:)` would give the next instance — for prefilling a
     /// creation prompt without creating anything. Counts the default the
     /// add would materialize, so the suggestion and the eventual name agree.
     public func nextAddedName(for template: Instrument) -> String {
         let existing = instances.filter { $0.templateID == template.id }.count
-        let withDefault = instance(id: template.id) == nil ? existing + 1 : existing
-        return "\(template.name) \(withDefault + 1)"
+        return existing == 0
+            ? template.name
+            : "\(template.name) \(existing + 1)"
     }
 
     /// "Add another guitar…" — a second instance of a template, named after
@@ -132,8 +146,6 @@ public final class InstrumentStore: ObservableObject {
     /// bass or a 9-string guitar is a creation choice, not a blocked shape.
     @discardableResult
     public func add(of template: Instrument, stringCount: Int? = nil) -> InstrumentInstance {
-        // Make sure the default exists first, so numbering reads naturally.
-        _ = defaultInstance(for: template)
         let siblings = instances.filter { $0.templateID == template.id }.count
         let created = InstrumentInstance(
             id: UUID().uuidString,
@@ -154,17 +166,16 @@ public final class InstrumentStore: ObservableObject {
     /// nothing to undo.
     @discardableResult
     public func add(
-        of template: Instrument, named name: String, strings: [Int]
+        of template: Instrument, named name: String, strings: [Int],
+        referenceHz: Double? = nil
     ) -> InstrumentInstance {
-        // Make sure the default exists first, so numbering reads naturally.
-        _ = defaultInstance(for: template)
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let created = InstrumentInstance(
             id: UUID().uuidString,
             templateID: template.id,
             name: trimmed.isEmpty ? nextAddedName(for: template) : trimmed,
             strings: strings.isEmpty ? template.strings : strings,
-            referenceHz: seedReference().hz,
+            referenceHz: referenceHz ?? seedReference().hz,
             isLocked: false,
             loadedPresetID: nil,
             lastUsedAt: nil)
@@ -192,17 +203,17 @@ public final class InstrumentStore: ObservableObject {
     }
 
     /// "Strat 2", or "Strat 3" when that's taken — numbered against the
-    /// template's other instances so a rename is suggested, not required.
-    private func nextName(after base: String, templateID: String) -> String {
+    /// template's other instances. The duplicate sheet prefills with this.
+    public func nextName(after base: String, templateID: String) -> String {
         let taken = Set(instances.filter { $0.templateID == templateID }.map(\.name))
         var number = 2
         while taken.contains("\(base) \(number)") { number += 1 }
         return "\(base) \(number)"
     }
 
-    /// Remove an added instrument. Removing a *default* instance just resets
-    /// it: the template row would recreate it on the next tap anyway, so
-    /// pretending it can be deleted would only manufacture surprise.
+    /// Remove an instrument — any instrument: the seeded factory ones are
+    /// ordinary, and an empty list is a legitimate state (the + menu is
+    /// always the way back). Deletions stick; the seed never reruns.
     public func remove(id: String) {
         instances.removeAll { $0.id == id }
     }
@@ -311,52 +322,10 @@ public final class InstrumentStore: ObservableObject {
         update(id: id) { $0.lastUsedAt = Date() }
     }
 
-    /// Your instruments, in the order the chooser shows them: the dragged
-    /// order once one exists, recency until then. Dragging is deliberate
-    /// and wins totally — a list that keeps rearranging itself under
-    /// muscle memory is the failure mode this exists to avoid; recency is
-    /// only the sensible default before anyone has expressed an order.
-    public var myInstruments: [InstrumentInstance] {
-        let byRecency = instances.sorted {
-            switch ($0.lastUsedAt, $1.lastUsedAt) {
-            case (let a?, let b?): return a > b
-            case (.some, .none): return true
-            case (.none, .some): return false
-            case (.none, .none): return $0.name < $1.name
-            }
-        }
-        guard !myOrder.isEmpty else { return byRecency }
-        let position = Dictionary(
-            uniqueKeysWithValues: myOrder.enumerated().map { ($1, $0) })
-        // Instruments the stored order doesn't know yet (added after the
-        // last drag) join at the end, in recency order among themselves.
-        let known = byRecency.filter { position[$0.id] != nil }
-            .sorted { position[$0.id]! < position[$1.id]! }
-        let unknown = byRecency.filter { position[$0.id] == nil }
-        return known + unknown
-    }
-
-    /// Apply a drag in the chooser: the resulting full order is stored, so
-    /// from the first drag on, the order is entirely the user's.
-    public func moveMyInstruments(from source: IndexSet, to destination: Int) {
-        var ordered = myInstruments.map(\.id)
-        ordered.move(fromOffsets: source, toOffset: destination)
-        myOrder = ordered
-    }
-
-    private static let orderKey = "instruments.myOrder.v1"
-
-    private var myOrder: [String] {
-        get { defaults.stringArray(forKey: Self.orderKey) ?? [] }
-        set {
-            objectWillChange.send()
-            defaults.set(newValue, forKey: Self.orderKey)
-        }
-    }
-
     private func update(id: String, _ change: (inout InstrumentInstance) -> Void) {
         guard let index = instances.firstIndex(where: { $0.id == id }) else { return }
         change(&instances[index])
+        instances[index].modifiedAt = Date()
     }
 
     private func save() {

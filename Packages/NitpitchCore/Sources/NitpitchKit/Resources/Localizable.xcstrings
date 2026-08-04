@@ -28,6 +28,9 @@
     "About Nitpitch" : {
       "comment" : "Row that opens the about screen"
     },
+    "Add an instrument" : {
+      "comment" : "Empty-state button when every instrument has been deleted"
+    },
     "Add high string" : {
       "comment" : "String editor: add a string above the highest"
     },
@@ -222,6 +225,9 @@
     },
     "System" : {
       "comment" : "Appearance option: follow the system setting"
+    },
+    "The first four are on the launch screen." : {
+      "comment" : "Favorites section footer when more than four are starred"
     },
     "Tuning and reference" : {
       "comment" : "Save button: the preset carries the pitches and the reference pitch"

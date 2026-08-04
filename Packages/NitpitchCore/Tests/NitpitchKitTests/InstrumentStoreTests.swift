@@ -25,30 +25,46 @@ final class InstrumentStoreTests: XCTestCase {
         InstrumentStore(defaults: defaults) { ReferencePitch(hz: reference) }
     }
 
-    /// The default instance shares the template's id — which is what lets a
-    /// favourite pinned before instances existed keep working unchanged, and
-    /// keeps accessibility identifiers readable.
-    func testDefaultInstanceSharesTheTemplateID() {
+    /// First launch seeds the whole factory list as REAL instruments —
+    /// browsable and tunable with nothing to add — with ids equal to the
+    /// template ids: stable across devices (a future sync's first merge
+    /// stays clean) and across time (old favorites keep resolving).
+    func testSeedsTheFactoryListOnce() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
-        XCTAssertEqual(violin.id, "violin")
-        XCTAssertEqual(violin.name, "Violin")
-        XCTAssertEqual(violin.strings, Instrument.violin.strings)
-        XCTAssertFalse(violin.isLocked)
+        for template in Instrument.choosable.flatMap(\.instruments) {
+            let seeded = store.instance(id: template.id)
+            XCTAssertEqual(seeded?.id, template.id, template.name)
+            XCTAssertEqual(seeded?.strings, template.strings, template.name)
+            XCTAssertEqual(seeded?.isLocked, false, template.name)
+        }
+        XCTAssertEqual(store.instances(of: .violin).count, 1)
     }
 
-    /// Asking twice yields the same instance, not a second violin.
-    func testDefaultInstanceIsCreatedOnce() {
+    /// Deletions stick: the seed never reruns, and an empty store is a
+    /// legitimate state — the factory instruments are ordinary.
+    func testDeletionsStickAcrossRelaunch() {
+        let first = makeStore()
+        for instance in first.instances {
+            first.remove(id: instance.id)
+        }
+        XCTAssertTrue(first.instances.isEmpty)
+        XCTAssertTrue(makeStore().instances.isEmpty, "the seed must not rerun")
+    }
+
+    /// Every change stamps modifiedAt — the currency a future
+    /// last-writer-wins sync will trade in.
+    func testUpdatesStampModifiedAt() {
         let store = makeStore()
-        _ = store.defaultInstance(for: .violin)
-        _ = store.defaultInstance(for: .violin)
-        XCTAssertEqual(store.instances(of: .violin).count, 1)
+        let violin = store.instance(id: Instrument.violin.id)!
+        XCTAssertNil(violin.lastUsedAt)
+        store.rename(id: violin.id, to: "Guarneri")
+        XCTAssertNotNil(store.instance(id: violin.id)?.modifiedAt)
     }
 
     /// "Waiting as you left it": state survives a relaunch.
     func testStatePersistsAcrossStores() {
         let first = makeStore()
-        let guitar = first.defaultInstance(for: .guitar)
+        let guitar = first.instance(id: Instrument.guitar.id)!
         let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
         first.setTuning(id: guitar.id, strings: dropD.strings)
         first.setReference(id: guitar.id, ReferencePitch(hz: 442))
@@ -67,7 +83,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// A second guitar is its own instrument with its own state.
     func testAddedInstanceIsIndependent() {
         let store = makeStore()
-        let first = store.defaultInstance(for: .guitar)
+        let first = store.instance(id: Instrument.guitar.id)!
         let second = store.add(of: .guitar)
         XCTAssertNotEqual(first.id, second.id)
         XCTAssertEqual(second.name, "Guitar 2")
@@ -81,14 +97,14 @@ final class InstrumentStoreTests: XCTestCase {
     /// A new instrument's reference seeds from where you came from.
     func testNewInstanceSeedsTheCurrentReference() {
         let store = makeStore(reference: 443)
-        XCTAssertEqual(store.defaultInstance(for: .cello).reference.hz, 443)
+        XCTAssertEqual(store.instance(id: Instrument.cello.id)!.reference.hz, 443)
     }
 
     /// The string count is a physical fact: a tuning with a different count
     /// never applies, however it arrives.
     func testTuningWithWrongStringCountIsRefused() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
         store.setTuning(id: violin.id, strings: [40, 45, 50, 55, 59, 64])
         XCTAssertEqual(store.instance(id: violin.id)?.strings, Instrument.violin.strings)
     }
@@ -97,7 +113,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// matching nothing is Custom.
     func testTuningNameFollowsTheValues() {
         let store = makeStore()
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Standard")
 
         store.setTuning(id: guitar.id, strings: [38, 45, 50, 55, 59, 64])
@@ -111,7 +127,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// the tuning relabels itself by the values.
     func testSetStringEditsOneTargetAndRelabels() {
         let store = makeStore()
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         store.setString(id: guitar.id, index: 0, midi: 38)  // E2 -> D2
         let edited = store.instance(id: guitar.id)!
         XCTAssertEqual(edited.strings, [38, 45, 50, 55, 59, 64])
@@ -126,7 +142,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// light — edits clamp to the searchable range.
     func testSetStringClampsToTheDetectableRange() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
         store.setString(id: violin.id, index: 0, midi: 5)
         XCTAssertEqual(
             store.instance(id: violin.id)?.strings[0],
@@ -141,7 +157,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// drop D — not stall a semitone short at the clamp.
     func testBassStepsDownToDropD() {
         let store = makeStore()
-        let bass = store.defaultInstance(for: .bassGuitar)
+        let bass = store.instance(id: Instrument.bassGuitar.id)!
         store.setString(id: bass.id, index: 0, midi: 27)  // E1 -> D#1
         store.setString(id: bass.id, index: 0, midi: 26)  // D#1 -> D1
         let edited = store.instance(id: bass.id)!
@@ -166,14 +182,14 @@ final class InstrumentStoreTests: XCTestCase {
 
     func testSetStringIgnoresBadIndices() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
         store.setString(id: violin.id, index: 9, midi: 60)
         XCTAssertEqual(store.instance(id: violin.id)?.strings, Instrument.violin.strings)
     }
 
     func testRenameRejectsEmptyNames() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
         store.rename(id: violin.id, to: "   ")
         XCTAssertEqual(store.instance(id: violin.id)?.name, "Violin")
     }
@@ -182,7 +198,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// copied setup, fresh unlocked, numbered name awaiting a rename.
     func testDuplicateCopiesTheSetup() {
         let store = makeStore()
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
         store.setTuning(id: guitar.id, strings: dropD.strings)
         store.setReference(id: guitar.id, ReferencePitch(hz: 442))
@@ -221,38 +237,10 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertNil(store.instance(id: second.id))
     }
 
-    /// "My instruments" orders by actual use — most recent first, the
-    /// never-used trailing by name — until a drag stores an explicit order,
-    /// which then wins totally: later use never rearranges it.
-    func testMyInstrumentsOrdering() {
-        let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
-        let guitar = store.defaultInstance(for: .guitar)
-        let bass = store.defaultInstance(for: .bassGuitar)
-
-        store.markUsed(id: guitar.id)
-        store.markUsed(id: bass.id)
-        XCTAssertEqual(store.myInstruments.map(\.id), [bass.id, guitar.id, violin.id])
-        store.markUsed(id: guitar.id)
-        XCTAssertEqual(store.myInstruments.first?.id, guitar.id)
-
-        // Drag the violin to the top: from now on the order is the user's.
-        store.moveMyInstruments(from: IndexSet(integer: 2), to: 0)
-        XCTAssertEqual(store.myInstruments.map(\.id), [violin.id, guitar.id, bass.id])
-        store.markUsed(id: bass.id)
-        XCTAssertEqual(
-            store.myInstruments.map(\.id), [violin.id, guitar.id, bass.id],
-            "use never rearranges a dragged order")
-
-        // Instruments the stored order doesn't know join at the end.
-        let second = store.add(of: .guitar)
-        XCTAssertEqual(store.myInstruments.last?.id, second.id)
-    }
-
     /// The stamp survives a relaunch, like everything else.
     func testLastUsedPersists() {
         let first = makeStore()
-        let guitar = first.defaultInstance(for: .guitar)
+        let guitar = first.instance(id: Instrument.guitar.id)!
         first.markUsed(id: guitar.id)
         XCTAssertNotNil(makeStore().instance(id: guitar.id)?.lastUsedAt)
     }
@@ -274,7 +262,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// the same count is a nudge and keeps it, a different count clears it.
     func testSetEditedStringsClaimFollowsShape() {
         let store = makeStore()
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         store.presetApplied(id: guitar.id, presetID: "p1")
         store.setEditedStrings(id: guitar.id, [38, 45, 50, 55, 59, 64])
         XCTAssertEqual(store.instance(id: guitar.id)?.loadedPresetID, "p1")
@@ -301,13 +289,13 @@ final class InstrumentStoreTests: XCTestCase {
     /// grows a viola's C3 below, or a B5 above.
     func testAddStringContinuesTheOutermostInterval() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)  // G3 D4 A4 E5
+        let violin = store.instance(id: Instrument.violin.id)!  // G3 D4 A4 E5
         store.addString(id: violin.id, lowEnd: true)
         XCTAssertEqual(store.instance(id: violin.id)?.strings, [48, 55, 62, 69, 76])
         store.addString(id: violin.id, lowEnd: false)
         XCTAssertEqual(store.instance(id: violin.id)?.strings, [48, 55, 62, 69, 76, 83])
         // Guitar's low end continues in fourths: E2 grows a 7-string's B1.
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         store.addString(id: guitar.id, lowEnd: true)
         XCTAssertEqual(store.instance(id: guitar.id)?.strings.first, 35)
     }
@@ -327,7 +315,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// Removing works anywhere but never below one string.
     func testRemoveStringKeepsAtLeastOne() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
         store.removeString(id: violin.id, index: 0)
         XCTAssertEqual(store.instance(id: violin.id)?.strings, [62, 69, 76])
         store.removeString(id: violin.id, index: 1)
@@ -343,7 +331,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// where a pitch nudge (setString) keeps it.
     func testStructuralEditsClearThePresetClaim() {
         let store = makeStore()
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         store.presetApplied(id: guitar.id, presetID: "p1")
         store.setString(id: guitar.id, index: 0, midi: 38)
         XCTAssertEqual(
@@ -361,7 +349,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// guesses a fifth rather than freezing.
     func testAddStringToASingleStringGuessesAFifth() {
         let store = makeStore()
-        let violin = store.defaultInstance(for: .violin)
+        let violin = store.instance(id: Instrument.violin.id)!
         for _ in 0..<3 { store.removeString(id: violin.id, index: 0) }
         XCTAssertEqual(store.instance(id: violin.id)?.strings, [76])
         store.addString(id: violin.id, lowEnd: true)
@@ -372,7 +360,7 @@ final class InstrumentStoreTests: XCTestCase {
     /// instance's strings and the template's family.
     func testEffectiveInstrumentReflectsTheInstance() {
         let store = makeStore()
-        let guitar = store.defaultInstance(for: .guitar)
+        let guitar = store.instance(id: Instrument.guitar.id)!
         let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
         store.setTuning(id: guitar.id, strings: dropD.strings)
 

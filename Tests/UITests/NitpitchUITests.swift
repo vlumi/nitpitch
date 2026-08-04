@@ -181,12 +181,14 @@ final class NitpitchUITests: XCTestCase {
         // Rows surface as buttons labelled with the instrument's name.
         XCTAssertTrue(secondGuitar.waitForExistence(timeout: 5))
 
-        // Duplicate the guitar by swiping its row — a MINE row (the add
-        // above materialized the default guitar); catalog rows carry no
-        // management until first touched.
+        // Duplicate opens the creation sheet prefilled from the source —
+        // "a copy" is "near what I want", and Cancel would create nothing.
         let guitar = app.descendants(matching: .any)["chooser.guitar"].firstMatch
         guitar.swipeLeft()
         app.buttons["Duplicate"].firstMatch.tap()
+        let duplicateCreate = app.buttons["creator.create"].firstMatch
+        XCTAssertTrue(duplicateCreate.waitForExistence(timeout: 5))
+        duplicateCreate.tap()
         XCTAssertTrue(app.buttons["Guitar 3"].firstMatch.waitForExistence(timeout: 5))
 
         // Delete the added guitar by swiping it.
@@ -442,14 +444,8 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(button.waitForExistence(timeout: 10))
         button.tap()
 
-        // Catalog rows have no star: opening the guitar once makes it
-        // "mine", and the star appears with the rest of the management.
-        app.descendants(matching: .any)["chooser.guitar"].firstMatch.tap()
-        XCTAssertTrue(
-            app.descendants(matching: .any)["grid.cell.0"].firstMatch
-                .waitForExistence(timeout: 5))
-        app.navigationBars.buttons.firstMatch.tap()
-
+        // Every factory instrument is seeded and ordinary — the star is
+        // right there on the row.
         let pin = app.descendants(matching: .any)["chooser.pin.guitar"]
         XCTAssertTrue(pin.waitForExistence(timeout: 5))
         pin.tap()

@@ -161,10 +161,15 @@ extension InstrumentGridView {
         // instead of huddling at the top of it.
         let slack = size.height - Self.gridChrome - count * 64 * scale
         let share = max(0, (slack - (count - 1) * 10) / (count + 1))
+        // The drawn gauge grades by pitch — the lowest string the fattest,
+        // like the set in your hand — independent of display order.
+        let total = max(1, strings.tuners.count - 1)
         return VStack(spacing: 10 + share) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { position, entry in
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
-                    StringStrip(tuner: entry.tuner, naming: settings.naming, scale: scale)
+                    StringStrip(
+                        tuner: entry.tuner, naming: settings.naming, scale: scale,
+                        gauge: 1.5 + CGFloat(total - entry.index) / CGFloat(total) * 3.5)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("strips.row.\(position)")

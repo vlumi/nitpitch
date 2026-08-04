@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The strips look like strings now: each row is a compact card — name, dots,
+  cents — threaded on a line that runs to both screen edges at the string's
+  own gauge, the lowest fattest, so which string is which reads the way it
+  does in your hand. The cents got bigger and lost their symbol, and sit on
+  the side the pitch leans — left of the dots when flat, right when sharp —
+  in a reserved slot, so which way to turn the peg is visible before the
+  number is even read. The signal bar tucked in under the dots.
 - On the Mac, the grid's menus no longer snap shut the moment the microphone
   hears anything — picking a column count or a tuning mid-note works. The
   level meter's ticking was re-rendering the whole screen, toolbar included,

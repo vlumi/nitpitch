@@ -67,8 +67,8 @@ public struct ChromaticTunerView: View {
             // padded guesses: overstating them is exactly what left a third
             // of the window empty below the tuner (the dial-grid's cell had
             // the same disease). Margins live outside, in the 24pt padding.
-            let stacked = CGSize(width: 400, height: 330)
-            let wide = CGSize(width: 860, height: 172)
+            let stacked = CGSize(width: 400, height: 320)
+            let wide = CGSize(width: 860, height: 162)
             let stackedScale = min(
                 geo.size.width / stacked.width, geo.size.height / stacked.height)
             let wideScale = min(geo.size.width / wide.width, geo.size.height / wide.height)

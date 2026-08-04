@@ -49,11 +49,12 @@ struct StringView: View {
 
     private var instrument: Instrument { instance.instrument }
 
-    /// The measured content: meter 10, dial pane 183 (arc 80 + readout 77 +
-    /// strip 14 + gaps), switcher 40, reference row ~30, three 16pt gaps.
-    /// Measured, not padded — an overstated canvas is empty window (the
-    /// chromatic root and the grid cells both had that disease).
-    private static let design = CGSize(width: 400, height: 315)
+    /// The measured content: meter 10, dial pane 173 (arc 70 after the
+    /// readout's rise + readout 77 + strip 14 + gaps), switcher 40,
+    /// reference row ~30, three 16pt gaps. Measured, not padded — an
+    /// overstated canvas is empty window (the chromatic root and the grid
+    /// cells both had that disease).
+    private static let design = CGSize(width: 400, height: 305)
 
     var body: some View {
         GeometryReader { geo in

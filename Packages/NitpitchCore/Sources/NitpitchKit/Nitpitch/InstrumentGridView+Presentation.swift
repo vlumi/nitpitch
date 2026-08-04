@@ -7,11 +7,11 @@ import SwiftUI
 extension InstrumentGridView {
     /// One cell's design footprint, the unit the scale multiplies. The height
     /// is CompactDial's actual stack at scale 1 — meter 3 + arc (58 less the
-    /// 14 the name rises into its hollow) + name ~24 + cents ~14 + dots ~11
-    /// + four 4pt gaps + 24pt vertical padding ≈ 136 — not a round guess:
+    /// 24 the name rises into its hollow) + name ~24 + cents ~14 + dots ~11
+    /// + four 4pt gaps + 24pt vertical padding ≈ 126 — not a round guess:
     /// overstating it makes every height-bound layout underfill (observed
     /// as a third of the window left empty below the dials).
-    private static var cellDesign: CGSize { CGSize(width: 230, height: 136) }
+    private static var cellDesign: CGSize { CGSize(width: 230, height: 126) }
 
     /// What the viewport spends around the dials: the level-meter row (4pt
     /// meter + 6pt top padding) above the grid, and the grid's own 8pt top

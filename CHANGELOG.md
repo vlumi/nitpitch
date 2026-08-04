@@ -34,7 +34,10 @@ and remembered exactly as you left them.
 - The dial grid follows the strips' order: the lowest string sits at the
   bottom, rows reading left to right and climbing upward — so a one-column
   grid and the strips finally agree on which way is down. The "Low string
-  on top" switch in Settings flips both views together.
+  on top" switch in Settings flips both views together. When the strings
+  don't divide evenly into the columns, the leftover row sits at the
+  bottom, so up-and-right always means higher — a violin in three columns
+  is G alone at bottom-left with D A E above it.
 
 ### build 2 — 2026-08-03
 

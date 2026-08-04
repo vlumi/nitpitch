@@ -90,14 +90,42 @@ extension InstrumentGridView {
     /// the strips read bottom-up.
     private func gridOrdered(columns: Int) -> [(index: Int, tuner: StringTunerViewModel)] {
         let all = displayedTuners
-        var rows: [[(index: Int, tuner: StringTunerViewModel)]] = []
-        var start = 0
-        while start < all.count {
-            let end = min(start + max(1, columns), all.count)
-            rows.append(Array(all[start..<end]))
-            start = end
+        return Self.gridRows(
+            count: all.count, columns: columns, lowOnTop: settings.stripsLowOnTop
+        )
+        .flatMap { row in row.map { all[$0] } }
+    }
+
+    /// String indices (ascending = low to high) arranged into the grid's
+    /// visual rows, top row first — exactly what `LazyVGrid` consumes, which
+    /// is the point: the grid fills rows top-down row-major, so the sequence
+    /// handed to it must already BE the visual arrangement. (Building
+    /// bottom-up rows and reversing the flat list garbled every layout whose
+    /// count didn't divide the columns: a violin in three columns read
+    /// E G D / A.)
+    ///
+    /// With low at the bottom, the BOTTOM row takes the remainder, so the
+    /// full rows stack above it and pitch stays monotone: up and to the
+    /// right is always higher — a violin in three columns is G alone at
+    /// bottom-left with D A E above, E in the top-right corner.
+    static func gridRows(count: Int, columns: Int, lowOnTop: Bool) -> [[Int]] {
+        let cols = max(1, columns)
+        let indices = Array(0..<max(0, count))
+        if lowOnTop {
+            // Low at the top reads like a list: plain row-major chunks.
+            return stride(from: 0, to: indices.count, by: cols).map {
+                Array(indices[$0..<min($0 + cols, indices.count)])
+            }
         }
-        return settings.stripsLowOnTop ? rows.flatMap { $0 } : rows.reversed().flatMap { $0 }
+        var rows: [[Int]] = []
+        let remainder = indices.count % cols
+        var start = remainder == 0 ? min(cols, indices.count) : remainder
+        if start > 0 { rows.append(Array(indices[0..<start])) }
+        while start < indices.count {
+            rows.append(Array(indices[start..<start + cols]))
+            start += cols
+        }
+        return rows.reversed()
     }
 
     /// Mac only: phones read scrolling content from the top, but a Mac

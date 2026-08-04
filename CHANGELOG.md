@@ -38,7 +38,8 @@ and remembered exactly as you left them.
   alike (E₂ and E₄, not two Es), which is how a guitar's outer strings
   stop being a coin flip. The dials pulled their readouts deeper into the
   hollow on every screen — the band of nothing between the arc and the
-  note is gone, on the chromatic dial too.
+  note is gone, on the chromatic dial too — and the cell's name grew into
+  the reclaimed space, so an SE's six height-bound rows stay legible.
 
 - Adding an instrument is one sheet: pick the kind from the + menu (one
   entry per kind, grouped by family) and everything else — the name,

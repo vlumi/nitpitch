@@ -158,18 +158,32 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(button.waitForExistence(timeout: 10))
         button.tap()
 
-        // Add a second guitar from the toolbar +; the type opens a count
-        // submenu; cancel the rename offer.
+        // The + stages a creation behind a prompt — cancelling it creates
+        // NOTHING (adding used to create first and offer a rename after).
         app.buttons["chooser.add"].firstMatch.tap()
         app.buttons["Guitar"].firstMatch.tap()
-        let standardCount = app.buttons["6 strings (standard)"].firstMatch
+        var standardCount = app.buttons["6 strings (standard)"].firstMatch
         XCTAssertTrue(standardCount.waitForExistence(timeout: 5))
         standardCount.tap()
         let cancel = app.buttons["Cancel"].firstMatch
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
         cancel.tap()
-        // Rows surface as buttons labelled with the instrument's name.
         let secondGuitar = app.buttons["Guitar 2"].firstMatch
+        XCTAssertFalse(
+            secondGuitar.waitForExistence(timeout: 2),
+            "a cancelled creation leaves nothing behind")
+
+        // Same door, confirmed this time — the prompt's suggested name
+        // stands unless edited.
+        app.buttons["chooser.add"].firstMatch.tap()
+        app.buttons["Guitar"].firstMatch.tap()
+        standardCount = app.buttons["6 strings (standard)"].firstMatch
+        XCTAssertTrue(standardCount.waitForExistence(timeout: 5))
+        standardCount.tap()
+        let create = app.buttons["Create"].firstMatch
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        create.tap()
+        // Rows surface as buttons labelled with the instrument's name.
         XCTAssertTrue(secondGuitar.waitForExistence(timeout: 5))
 
         // Duplicate the violin by swiping its row.
@@ -198,6 +212,11 @@ final class NitpitchUITests: XCTestCase {
         let custom = app.buttons["Custom…"].firstMatch
         XCTAssertTrue(custom.waitForExistence(timeout: 5))
         custom.tap()
+
+        // Custom… stages the creation like any add; Create opens the editor.
+        let create = app.buttons["Create"].firstMatch
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        create.tap()
 
         // The editor sheet opens on the new instance.
         let addHigh = app.buttons["editor.add.high"].firstMatch

@@ -222,5 +222,18 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// The templates the + menu offers: one per instrument KIND. The
+    /// N-string variants stay off this list — the string count is the next
+    /// step's question, so "7-string Guitar" beside "Guitar" would ask it
+    /// twice — while they remain `choosable`, where each is a ready-made
+    /// instrument to open.
+    public static var addable: [(family: InstrumentFamily, instruments: [Instrument])] {
+        let variants: Set<String> = [guitar7.id, guitar8.id, bassGuitar5.id]
+        return choosable.compactMap { group in
+            let kept = group.instruments.filter { !variants.contains($0.id) }
+            return kept.isEmpty ? nil : (group.family, kept)
+        }
+    }
+
     public static func named(_ id: String) -> Instrument? { all.first { $0.id == id } }
 }

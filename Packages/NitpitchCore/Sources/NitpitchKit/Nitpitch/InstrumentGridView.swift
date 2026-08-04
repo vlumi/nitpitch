@@ -129,7 +129,7 @@ struct InstrumentGridView: View {
                 detection: detection, strings: strings, naming: settings.naming)
         }
         .sheet(isPresented: $isManagingPresets) {
-            PresetManager(presets: presets, templateID: instance.templateID)
+            PresetManager(presets: presets, settings: settings, instance: instance)
         }
         .alert(Text("Save preset", bundle: .module), isPresented: $isSavingPreset) {
             TextField(text: $presetName) { Text("Name", bundle: .module) }

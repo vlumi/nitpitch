@@ -38,10 +38,22 @@ struct LaunchRack: View {
         let template: Instrument?
         let tuningName: String?
         let isLocked: Bool
+        /// Setup shortcuts riding under this instrument's row — resolved
+        /// pins; a pin whose preset was deleted simply isn't here.
+        var pins: [PinEntry] = []
+    }
+
+    struct PinEntry: Identifiable {
+        let presetID: String
+        let name: String
+        var id: String { presetID }
     }
 
     let entries: [Entry]
     let onChoose: (String) -> Void
+    /// A pin's tap: open the instrument INTO the preset (or, locked, just
+    /// open it — the navigation half of a pin is not a change).
+    let onChoosePin: (String, String) -> Void
     let onOpenChooser: () -> Void
 
     /// Rows shown before deferring to the chooser.
@@ -50,21 +62,67 @@ struct LaunchRack: View {
     static let rowHeight: CGFloat = 40
     static let rowSpacing: CGFloat = 6
 
-    /// The rack's exact design height for `count` pinned instruments (plus
-    /// the All instruments row) — the canvas grows by precisely this much,
-    /// so the fill stays honest instead of guessing.
-    static func height(forPinned count: Int) -> CGFloat {
-        let rows = CGFloat(min(count, rowCap) + 1)
-        return rows * rowHeight + (rows - 1) * rowSpacing
+    /// One chips line's design height, where an instrument has pins.
+    static let chipRowHeight: CGFloat = 30
+
+    /// The rack's exact design height — instrument rows, the All
+    /// instruments row, and a chips line per pinned-into instrument — so
+    /// the canvas grows by precisely this much and the fill stays honest.
+    static func height(for entries: [Entry]) -> CGFloat {
+        let shown = entries.prefix(rowCap)
+        let rows = CGFloat(shown.count + 1)
+        let chipRows = CGFloat(shown.filter { !$0.pins.isEmpty }.count)
+        return rows * rowHeight + (rows - 1) * rowSpacing + chipRows * chipRowHeight
     }
 
     var body: some View {
         VStack(spacing: Self.rowSpacing) {
             ForEach(entries.prefix(Self.rowCap)) { entry in
                 row(for: entry)
+                if !entry.pins.isEmpty {
+                    pinChips(for: entry)
+                }
             }
             allInstrumentsRow
         }
+    }
+
+    /// The instrument's setup shortcuts, indented under its row — the
+    /// placement is what teaches the binding: pins live with their
+    /// instrument, never floating free. On a locked instrument they dim
+    /// and wear the lock; tapping still navigates, but loads nothing —
+    /// only the load half of a pin is a change.
+    private func pinChips(for entry: Entry) -> some View {
+        HStack(spacing: 6) {
+            ForEach(entry.pins) { pin in
+                Button {
+                    onChoosePin(entry.id, pin.presetID)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pin.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                        Text(verbatim: pin.name)
+                            .font(.caption.weight(.medium))
+                        if entry.isLocked {
+                            Image(systemName: "lock.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(height: Self.chipRowHeight - 6)
+                    .background(Capsule().fill(Color.secondary.opacity(0.1)))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .opacity(entry.isLocked ? 0.45 : 1)
+                .accessibilityIdentifier("pin.\(entry.id).\(pin.name)")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, 26)
+        .frame(height: Self.chipRowHeight - 6)
     }
 
     private func row(for entry: Entry) -> some View {

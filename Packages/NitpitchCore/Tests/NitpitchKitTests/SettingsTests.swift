@@ -34,6 +34,22 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(second.favorites, ["violin", "guitar"])
     }
 
+    /// A pin is the (instrument, preset) pair — toggling is idempotent and
+    /// the pins survive a relaunch like everything else.
+    func testPresetPinsToggleAndPersist() {
+        let first = Settings(defaults: defaults)
+        first.togglePin(instrumentID: "guitar", presetID: "p1")
+        XCTAssertTrue(first.isPinned(instrumentID: "guitar", presetID: "p1"))
+        XCTAssertFalse(
+            first.isPinned(instrumentID: "guitar-2", presetID: "p1"),
+            "the pin binds one instrument, not the template")
+
+        let second = Settings(defaults: defaults)
+        XCTAssertTrue(second.isPinned(instrumentID: "guitar", presetID: "p1"))
+        second.togglePin(instrumentID: "guitar", presetID: "p1")
+        XCTAssertFalse(second.isPinned(instrumentID: "guitar", presetID: "p1"))
+    }
+
     func testMissingReferenceDoesNotClampToLowBound() {
         // `double(forKey:)` returns 0 for an absent key; taken literally that
         // would clamp to 390 Hz and silently mistune a fresh install.

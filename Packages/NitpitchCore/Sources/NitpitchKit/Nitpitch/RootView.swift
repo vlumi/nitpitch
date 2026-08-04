@@ -46,9 +46,10 @@ public struct RootView: View {
     public var body: some View {
         NavigationStack(path: $path) {
             ChromaticTunerView(
-                settings: settings, audio: audio, store: store,
+                settings: settings, audio: audio, store: store, presets: presets,
                 onOpenChooser: { path.append(.chooser) },
-                onChooseInstance: { id in path.append(.instrument(id)) }
+                onChooseInstance: { id in path.append(.instrument(id)) },
+                onChoosePin: { id, presetID in openPin(instrument: id, preset: presetID) }
             )
             .navigationDestination(for: TunerRoute.self) { route in
                 switch route {
@@ -86,6 +87,19 @@ public struct RootView: View {
         // Forced onto the whole hierarchy, destinations included; nil follows
         // the system.
         .preferredColorScheme(settings.appearance.colorScheme)
+    }
+
+    /// A pin's tap: load the preset — an explicit pick, exactly as if
+    /// chosen from the tuning menu — then open the instrument. A locked
+    /// instrument only opens: the navigation half of a pin is not a
+    /// change, and the toolbar padlock explains on arrival.
+    private func openPin(instrument id: String, preset presetID: String) {
+        if let instance = resolve(id), !instance.isLocked,
+            let preset = presets.presets.first(where: { $0.id == presetID })
+        {
+            presets.load(preset, onto: instance, in: store)
+        }
+        path.append(.instrument(id))
     }
 
     /// An instance by id, materializing the default one when the id names a

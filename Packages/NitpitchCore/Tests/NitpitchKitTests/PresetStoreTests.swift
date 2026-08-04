@@ -3,6 +3,30 @@ import XCTest
 
 @testable import NitpitchKit
 
+// MARK: - Favorites and fitting order
+
+extension PresetStoreTests {
+    /// Preset favorites float to the top of every fitting list, and the
+    /// flag lives beside the presets — deleting one takes its flag along.
+    @MainActor
+    func testFavoritesFloatAndFollowDeletion() {
+        let (store, instruments) = makeStores()
+        let guitar = instruments.defaultInstance(for: .guitar)
+        let first = store.save(guitar, named: "Alpha", includeReference: false)!
+        let second = store.save(guitar, named: "Beta", includeReference: false)!
+
+        XCTAssertEqual(store.presets(fitting: guitar).map(\.id), [first.id, second.id])
+        store.toggleFavorite(second.id)
+        XCTAssertTrue(store.isFavorite(second.id))
+        XCTAssertEqual(
+            store.presets(fitting: guitar).map(\.id), [second.id, first.id],
+            "favorites lead")
+
+        store.remove(id: second.id)
+        XCTAssertFalse(store.isFavorite(second.id), "the flag dies with the preset")
+    }
+}
+
 /// The preset design in tests: a frozen setup under the user's name, carrying
 /// only the fields it was saved with, applied to instruments it fits.
 @MainActor

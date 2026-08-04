@@ -43,6 +43,9 @@
     "All instruments…" : {
       "comment" : "Launch rack: the row into the full instrument list"
     },
+    "All presets" : {
+      "comment" : "Presets sheet: the non-favorited presets' section"
+    },
     "Appearance" : {
       "comment" : "Setting: follow the system appearance, or force light\/dark"
     },
@@ -96,6 +99,12 @@
     },
     "Edit strings…" : {
       "comment" : "Instrument management action opening the string editor"
+    },
+    "Favorite" : {
+      "comment" : "Accessibility label for the preset favorite star"
+    },
+    "Favorites" : {
+      "comment" : "Presets sheet: the favorited presets' section"
     },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments"
@@ -162,6 +171,9 @@
     },
     "Other" : {
       "comment" : "Instrument picker section: everything else (chromatic mode)"
+    },
+    "Pin to launch screen" : {
+      "comment" : "Accessibility label for the preset pin toggle"
     },
     "Play a note" : {
       "comment" : "Shown while listening but no pitch is confident enough to display"

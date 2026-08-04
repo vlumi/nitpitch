@@ -14,6 +14,7 @@ public final class Settings: ObservableObject {
         static let favorites = "favoriteInstruments"
         static let stripsOnMac = "stripsOnMac"
         static let stripsLowOnTop = "stripsLowOnTop"
+        static let presetPins = "presetPins.v1"
     }
 
     private let defaults: UserDefaults
@@ -57,6 +58,30 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(stripsLowOnTop, forKey: Key.stripsLowOnTop) }
     }
 
+    /// Launch-screen shortcuts to a setup: THIS instrument, THAT preset.
+    /// Deliberately a pair — a preset alone is a template-wide stamp, so a
+    /// bare preset favorite would surface on every same-shaped instrument;
+    /// the pin is what binds it to one (AGENTS.md, "The tuning flow").
+    @Published public var presetPins: [PresetPin] {
+        didSet {
+            guard let data = try? JSONEncoder().encode(presetPins) else { return }
+            defaults.set(data, forKey: Key.presetPins)
+        }
+    }
+
+    public func togglePin(instrumentID: String, presetID: String) {
+        let pin = PresetPin(instrumentID: instrumentID, presetID: presetID)
+        if let index = presetPins.firstIndex(of: pin) {
+            presetPins.remove(at: index)
+        } else {
+            presetPins.append(pin)
+        }
+    }
+
+    public func isPinned(instrumentID: String, presetID: String) -> Bool {
+        presetPins.contains(PresetPin(instrumentID: instrumentID, presetID: presetID))
+    }
+
     public func toggleFavorite(_ id: String) {
         if let index = favorites.firstIndex(of: id) {
             favorites.remove(at: index)
@@ -83,5 +108,26 @@ public final class Settings: ObservableObject {
         self.favorites = defaults.stringArray(forKey: Key.favorites) ?? [Instrument.violin.id]
         self.stripsOnMac = defaults.bool(forKey: Key.stripsOnMac)
         self.stripsLowOnTop = defaults.bool(forKey: Key.stripsLowOnTop)
+        if let data = defaults.data(forKey: Key.presetPins),
+            let stored = try? JSONDecoder().decode([PresetPin].self, from: data)
+        {
+            self.presetPins = stored
+        } else {
+            self.presetPins = []
+        }
+    }
+}
+
+/// One launch-screen shortcut: an instrument opened INTO a preset. The pin
+/// is the pair — presets stay instrument-agnostic stamps.
+public struct PresetPin: Codable, Equatable, Hashable, Identifiable, Sendable {
+    public let instrumentID: String
+    public let presetID: String
+
+    public var id: String { "\(instrumentID)→\(presetID)" }
+
+    public init(instrumentID: String, presetID: String) {
+        self.instrumentID = instrumentID
+        self.presetID = presetID
     }
 }

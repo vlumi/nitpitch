@@ -296,6 +296,8 @@ public struct ChromaticTunerView: View {
             status("Play a note", id: "tuner.status")
         case .permissionDenied:
             status("Microphone access is off", id: "tuner.status")
+        case .noInput:
+            status("No audio input device", id: "tuner.status")
         case .idle:
             status("Not listening", id: "tuner.status")
         }

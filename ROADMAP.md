@@ -4,17 +4,13 @@ Planned work only — if it's not planned, it's not here. Settled decisions and
 their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
 in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.1.0 (build 1) is released on both platforms;
-v0.2.0 is being cut.
+**Where things stand:** v0.2.0 is feature-complete and being cut for beta;
+v0.3 — tuning the tuning — is the next milestone.
 
 ## 1. Finishing v0.2
 
-- **Preset share + import.** A preset serializes into a URL fragment (small
-  enough; no server) and renders as a QR code. Importing — from a link or
-  the camera — shows a preview ("Guitar · Open G · A=442") with *Load once*
-  and *Save*. nitpitch.app hosts the long tail — scordatura, historical
-  setups — as those same links, so the collection grows without app updates
-  or App Review, and the in-app picker stays uncluttered.
+Feature-complete; what remains is release work, not product.
+
 - **Beta verification of unowned instruments.** On hand: violin, electric
   guitar, electric bass, digital piano; not on hand: viola, cello, double
   bass. The functional check is the piano — an instrument definition is a
@@ -37,7 +33,33 @@ v0.2.0 is being cut.
   screenshot sync) for the App Store submission, minus the achievements
   parts, which are game-specific.
 
-## 2. Interval tuning — the remaining half of double stops
+## 2. v0.3 — tuning the tuning (violin, guitar, bass)
+
+The next milestone: improvements to the act of tuning itself, for the
+instruments actually on hand. Build order follows dependency: the seam is
+tiny and unblocks everything.
+
+### The temperament seam
+
+The equal-temperament assumption lives in exactly two places, both in
+`Pitch.swift`: `Note.frequency(reference:)` and
+`PitchReading.init(frequency:reference:)`. A **temperament** becomes a
+function from note to expected frequency, with equal temperament the
+identity, and both call sites route through it. One small abstraction
+covers the just fifths below, the temperaments entry, and piano stretch
+later (§ 3) — worth building first, deliberately.
+
+### Tone generator
+
+Play a reference pitch to tune against by ear — set the A from the app,
+tune the rest by fifths the way violinists actually work; also the
+fallback in a noisy room. Needs no DSP (`AVAudioSourceNode` and the
+existing targets). The design question is playback against capture: either
+detection suspends while a tone sounds, or the detector hears the app's
+own output and locks onto it.
+
+### Interval tuning — the remaining half of double stops
+
 
 The DSP shipped: `HarmonicEstimator` reads both strings of a double stop to
 sub-cent accuracy (see AGENTS.md). What hasn't been built is the *display*
@@ -52,8 +74,8 @@ fifth, not either note alone. No mainstream tuner shows this.
   envelope more precisely than either pitch. "3 beats/sec, slowing" is
   closer to what the ear does than two cent readings side by side.
 - **Pure, not equal-tempered.** A violinist tuning by ear produces the just
-  3:2 fifth, ~2 cents wider than equal-tempered — so this display needs the
-  temperament seam (§ 3) for its reference.
+  3:2 fifth, ~2 cents wider than equal-tempered — which is what the
+  temperament seam above exists for.
 - **The UI is the genuine unknown** — two needles? a beat display? an
   interval-width indicator? Wants trying against the instrument, not
   designing on paper.
@@ -61,6 +83,24 @@ fifth, not either note alone. No mainstream tuner shows this.
   is a bowing skill. The per-string signal bars already show when the bow
   favors one string; whether that's nuisance or dealbreaker is a
   real-instrument question.
+
+### Intonation, for fretted instruments
+
+Whether a string plays in tune *along its length*, not just open: compare
+the open string against the 12th-fret note or harmonic, move the saddle,
+repeat. A display question, not DSP — the missing piece is showing two
+readings for one string (open target and what's being played now). Belongs
+in the string view.
+
+### Fine-tuning display
+
+A strobe or beat-frequency view, how professionals tune to a fraction of a
+cent. Shares machinery with the interval display.
+
+### Temperaments
+
+Just intonation and Pythagorean, for ensembles tuning fifths pure — a
+genuine violin concern, riding the seam above.
 
 ## 3. Piano — and why the target isn't always 2^(n/12)
 
@@ -78,17 +118,8 @@ from the piano in front of you; a published average is a starting point.
 
 ### The seam is small
 
-The equal-temperament assumption lives in exactly two places, both in
-`Pitch.swift`:
-
-- `Note.frequency(reference:)` — `reference.hz * pow(2, (midi - 69) / 12)`
-- `PitchReading.init(frequency:reference:)` — `12 * log2(frequency / reference.hz)`
-
-Everything else is downstream. So a **temperament** becomes a function from
-note to expected frequency, with equal temperament as the identity, and both
-call sites route through it. That one abstraction covers three roadmap items
-at once — piano stretch, the just-intonation reference for fifths (§ 2), and
-the temperaments entry (§ 4) — so it's worth building once, deliberately.
+Covered by the temperament seam in § 2 — piano stretch is exactly a
+temperament: a per-instrument function from note to expected frequency.
 
 ### What a piano mode needs beyond that
 
@@ -115,21 +146,12 @@ everything else depends on, and worth putting in early.
 
 ## 4. Other features worth considering
 
-- **Tone generator** — play a reference pitch to tune against by ear; the
-  fallback when a room is too noisy. Needs no DSP (`AVAudioSourceNode` and
-  the existing targets). The design question is playback against capture:
-  either detection suspends while a tone sounds, or the detector hears the
-  app's own output and locks onto it.
-- **Intonation, for fretted instruments** — whether a string plays in tune
-  *along its length*, not just open: compare the open string against the
-  12th-fret note or harmonic, move the saddle, repeat. A display question,
-  not DSP — the missing piece is showing two readings for one string (open
-  target and what's being played now). Belongs in the string view.
-- **Fine-tuning display** — a strobe or beat-frequency view, how
-  professionals tune to a fraction of a cent. Shares machinery with § 2.
-- **Temperaments** — just intonation and Pythagorean, for ensembles tuning
-  fifths pure. A genuine violin concern and a prerequisite for § 2; shares
-  the seam described in § 3.
+- **Preset share + import** — a preset serializes into a URL fragment
+  (small enough; no server) and renders as a QR code; importing shows a
+  preview ("Guitar · Open G · A=442") with *Load once* and *Save*.
+  nitpitch.app hosts the long tail — scordatura, historical setups — as
+  those same links, so the collection grows without app updates.
+
 - **iCloud sync** — instruments, presets, pins and order between devices.
   The design is settled: per-record last-writer-wins over
   `NSUbiquitousKeyValueStore` (one key per instrument/preset, `modifiedAt`

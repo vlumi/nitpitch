@@ -23,6 +23,10 @@ ride.
 - **Adjustable reference pitch**, A=390 through 466, a hertz at a time.
   Defaults to A=440; European orchestras commonly sit at 442 or 443, and
   baroque ensembles at 415.
+- **Instruments you own.** Each remembers its tuning, reference and padlock
+  exactly as you left it; favorites sit on the launch screen with one-tap
+  preset pins ("Strat → Gig"), and any shape can be strung up — a 9-string
+  guitar is a creation choice, not a missing feature.
 - **Nothing leaves the device.** Audio is analyzed frame by frame in memory and
   discarded. No recording, no network — the macOS build doesn't even carry the
   network entitlement, so the sandbox enforces it rather than merely documenting

@@ -5,135 +5,79 @@ All notable changes to this project are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **How this file is maintained:** a user-facing PR writes its own bullet under
-`### Unreleased (next build)` as part of that PR. The release lane
-(`make release`) only *stamps* that heading with the build number it cuts and
-opens a fresh empty `Unreleased` above it — it never writes entries itself. The
-`### Unreleased (next build)` heading is therefore load-bearing: the stamping
-script (`Scripts/release-lib.sh`) matches it exactly, and expects its list items
-to follow immediately with nothing in between.
+`### Unreleased (next build)
 
-Apple builds are identified as `version (build)`; the build number is shared
-across iOS and macOS and bumped on every release so the two never diverge.
-
-## [0.2.0] — unreleased
-
-The per-string version: choosing an instrument now means something — every
-string gets its own dial, the detection genuinely reads them (two at once
-included), and the instruments themselves become yours: named, tuned, locked,
-and remembered exactly as you left them.
-
-### Unreleased (next build)
-
-- The factory tunings are pinnable like any preset — Standard included:
-  the presets sheet gained a Tunings section with the same 📌, a pinned
-  tuning's chip applies it exactly as the menu would, and pinned things
-  float to the top of the tuning menu whether or not the instrument is
-  on the launch screen — a pin means "I reach for this HERE". Manage
-  presets… (renamed from Edit — the sheet stars, pins and deletes) is
-  always in the tuning menu now, saved presets or not: it's where the
-  pins live, so it can't hide behind having saved one.
-- The instrument's own screen manages the instrument now: the layout
-  menu grew into an … menu carrying Rename, Duplicate (into the
-  prefilled creation sheet), Edit strings and Delete alongside the
-  column picker — the chooser's swipe and long-press carry the same
-  actions for those who find them, but the … is findable by everyone,
-  and Edit strings stops being a Mac-menu secret on iPhone.
-
-- A preset can be pinned to an instrument as a launch shortcut: light the
-  📌 beside "Gig" in the Strat's presets sheet, and a pin chip appears
-  under the Strat's row on the launch screen — tap it and the Strat opens
-  with Gig loaded, an explicit pick that overwrites any drift (the plain
-  row still opens the instrument exactly as you left it). The pin is the
-  (instrument, preset) pair, so pinning Gig to one guitar never surfaces
-  it on another; on a locked instrument the chips dim and only navigate.
-  Presets also gained favorites of their own — the ★ beside each preset
-  floats it into a Favorites block atop every preset list, template-wide.
-- The launch screen's chips grew into a rack: your pinned instruments as
-  full rows — kind tag, name, current tuning, padlock — that say what
-  they'll open into before the tap, with "All instruments…" one row
-  below. No more names truncating into "Epiphone Thunderb…"; the dial
-  stays the headline, and the rack is capped at four rows with the rest
-  a tap away.
 - Instruments are deliberate now, and the factory list is real: first
   launch seeds one ordinary, fully editable instrument per catalog kind —
   browse and tune immediately, rename the violin "Guarneri", delete the
   ones you'll never touch (all of them, if you like: the list can be
-  empty, and a big Add button takes their place). Starred instruments form
-  a Favorites section on top — drag-ordered, and that order IS the launch
-  screen's — while everything unstarred sits below, family-grouped and
-  stable. Nothing joins or leaves anywhere by side effect: opening an
-  instrument is just opening it. Duplicate became a shortcut into the
-  creation sheet, prefilled from the source — name suggested, strings and
-  reference copied, everything editable, Cancel creates nothing. Each row
-  carries a small kind tag (Vln, Gtr, Bass…) and its current tuning, so
-  which is which reads at a glance without renaming anything.
-
-- Rotating an iPhone to the strips and back no longer lands on a different
-  grid than you left: the title bar quietly kept its collapsed landscape
-  height after returning to portrait, and the auto layout honestly picked
-  a different column count for the taller viewport — an SE's guitar read
-  two columns, then one, either side of a rotation. The title stays large
-  in portrait now, so the viewport, and the layout, hold still.
-
-- Every readout leads with your own name for the note now — the chromatic
-  tuner included, which used to insist on scientific-first. In German
-  naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄ everywhere; the string view's
-  target keeps the scientific spelling in parens for cross-referencing,
-  and the chromatic readout dropped it — "(A4)" under "La₄" said the same
-  thing twice. The note itself grew to fill what the parens and the arc's
-  hollow gave back: the headline of the screen, sized like one.
-- Grid cells stack the name over the cents, each centred on its own line —
-  side by side the pair wobbled with every reading's width — with the name
-  risen into the arc's empty hollow, so the cell spends the pixels it has.
-  The octave rides the name as a subscript in the cells and the strips
-  alike (E₂ and E₄, not two Es), which is how a guitar's outer strings
-  stop being a coin flip. The dials pulled their readouts deeper into the
-  hollow on every screen — the band of nothing between the arc and the
-  note is gone, on the chromatic dial too — and the cell's name grew into
-  the reclaimed space, so an SE's six height-bound rows stay legible.
-
+  empty, and a big Add button takes their place). Nothing joins or leaves
+  anything by side effect — opening an instrument is just opening it.
+  Each row carries a small kind tag (Vln, Gtr, Bass…) and its current
+  tuning, so which is which reads at a glance without renaming anything.
+- The star is the launch screen: starred instruments form a Favorites
+  section at the top of the list — drag-ordered, and that order IS the
+  home screen's — while everything unstarred sits below, family-grouped
+  and stable. On the launch screen the old truncating chips grew into a
+  rack of full rows (kind tag, name, current tuning, padlock) that say
+  what they'll open into before the tap, with "All instruments…" one row
+  below; the dial stays the headline, the rack caps at four.
+- Presets and tunings can be pinned to an instrument — Standard included:
+  light the 📌 beside "Gig" (or Drop D) in Manage presets…, and a chip
+  appears under that instrument's launch row — tap it and the instrument
+  opens with that setup loaded, an explicit pick that overwrites any
+  drift, while the plain row still opens it exactly as you left it. The
+  pin is the (instrument, preset) pair, so pinning Gig to one guitar
+  never surfaces it on another; pinned entries also float to the top of
+  the tuning menu whether or not the instrument is on the launch screen,
+  and on a locked instrument the chips dim and only navigate. Presets
+  gained template-wide favorites of their own (the ★ floats them into a
+  Favorites block atop every preset list), and Manage presets… is always
+  in the tuning menu — it's where the pins live.
 - Adding an instrument is one sheet: pick the kind from the + menu (one
   entry per kind, grouped by family) and everything else — the name,
   ready to edit, and the strings — is decided together, with Create the
   moment anything comes to exist and Cancel leaving no trace. Kinds that
-  really come in sizes offer their common counts as one-tap chips
-  (double bass 4/5, guitar 6/7/8, bass 4/5/6 — violins offer nothing,
-  being violins), and the full string list waits behind a disclosure for
-  the genuinely odd shapes. Nothing is ever labelled "custom": touch the
-  list and the chips simply stop matching, the same way tunings work.
-  The common case is two taps. On the Mac the sheet is a plain form that
-  fits its content exactly — the strings always visible, growing as they're
-  added, no accordion to hunt and no leftover margins — while the iPhone
-  keeps the tidy disclosure. Rename now genuinely presents the current
-  name to edit, the favorite star leads each list row, and the do-nothing
-  chevron is gone.
-- The strips look like strings now: each row is a compact card — name, dots,
-  cents — threaded on a line that runs to both screen edges at the string's
-  own gauge, the lowest fattest, so which string is which reads the way it
-  does in your hand. The cents got bigger and lost their symbol, and sit on
-  the side the pitch leans — left of the dots when flat, right when sharp —
-  in a reserved slot, so which way to turn the peg is visible before the
-  number is even read. The signal bar tucked in under the dots.
-- On the Mac, the grid's menus no longer snap shut the moment the microphone
-  hears anything — picking a column count or a tuning mid-note works. The
-  level meter's ticking was re-rendering the whole screen, toolbar included,
-  and macOS closes an open menu whenever its anchor rebuilds; the meter now
-  ticks alone.
-- Every instrument's strings can be edited as a list: add a string at either
-  end — the proposed pitch continues the instrument's own pattern, so a
-  violin grows a viola's C3 below or a B5 above — nudge any target in place,
-  or remove strings. Reachable from Edit strings… on the instrument's row —
-  and the same string list lives inside the creation sheet, editing the
-  draft before anything exists. Rows stack the shared way (lowest at the
-  bottom), so the row numbers read like a string set's: the 1st string on
-  top.
+  come in sizes offer their common counts as one-tap chips (double bass
+  4/5, guitar 6/7/8, bass 4/5/6 — violins offer nothing, being violins),
+  the full string list waits behind a disclosure (always visible on the
+  Mac, whose sheet fits its content exactly), and nothing is ever
+  labelled "custom" — touch the list and the chips simply stop matching.
+  Duplicate opens the same sheet prefilled from the source: name
+  suggested, strings and reference copied, everything editable.
+- The instrument's own screen manages the instrument: an … menu carries
+  Rename, Duplicate, Edit strings and Delete alongside the column picker —
+  the chooser's swipe and long-press have the same actions for those who
+  find them, but the … is findable by everyone. The string list itself is
+  editable everywhere it appears: add a string at either end (the
+  proposed pitch continues the instrument's own pattern — a violin grows
+  a viola's C3 below), nudge targets in place, remove down to the last;
+  rows stack lowest-at-bottom, so the numbers read like a string set's.
+- The strips look like strings now: each row is a compact card — name,
+  dots, cents — threaded on a line that runs to both screen edges at the
+  string's own gauge, the lowest fattest. The cents got bigger, lost
+  their symbol, and sit on the side the pitch leans — left of the dots
+  when flat, right when sharp, in reserved slots — so which way to turn
+  the peg is visible before the number is read.
 - The dial grid follows the strips' order: the lowest string sits at the
-  bottom, rows reading left to right and climbing upward — so a one-column
-  grid and the strips finally agree on which way is down. The "Low string
-  on top" switch in Settings flips both views together. When the strings
-  don't divide evenly into the columns, the leftover row sits at the
-  bottom, so up-and-right always means higher — a violin in three columns
-  is G alone at bottom-left with D A E above it.
+  bottom, rows reading left to right and climbing upward, leftover rows
+  at the bottom so up-and-right always means higher. The "Low string on
+  top" switch in Settings flips both views together.
+- Every readout leads with your own name for the note — the chromatic
+  tuner included: in German naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄
+  everywhere, with the octave as a subscript (E₂ and E₄, not two Es).
+  The chromatic note grew into the space its parens and the arc's hollow
+  gave back; grid cells stack the name over the cents (no more sideways
+  wobble) and rose into the hollow too, so an SE's six height-bound rows
+  stay legible.
+- On the Mac, the grid's menus no longer snap shut the moment the
+  microphone hears anything — the level meter's ticking was re-rendering
+  the whole screen, and macOS closes an open menu whenever its anchor
+  rebuilds; the meter now ticks alone.
+- Rotating an iPhone to the strips and back lands on the same grid you
+  left: the collapsed title bar was quietly handing the return trip a
+  taller viewport, for which the auto layout honestly picked a different
+  column count. The title stays large in portrait now.
 
 ### build 2 — 2026-08-03
 

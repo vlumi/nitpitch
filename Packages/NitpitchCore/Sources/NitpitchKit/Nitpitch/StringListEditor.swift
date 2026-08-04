@@ -73,9 +73,7 @@ struct StringListEditor: View {
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.tertiary)
                 .frame(width: 20)
-            NoteNameLabel(
-                note: note, naming: naming, fontSize: 24,
-                order: .localizedFirst)
+            NoteNameLabel(note: note, naming: naming, fontSize: 24)
             Spacer()
             step(systemName: "minus", id: "editor.down.\(index)", index: index, by: -1)
             step(systemName: "plus", id: "editor.up.\(index)", index: index, by: 1)

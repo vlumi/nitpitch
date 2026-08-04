@@ -51,9 +51,14 @@ struct TunerDial<Readout: View>: View {
     /// Dead height between the band's inner edge at the apex and the bottom of
     /// the arc's box, which the ends' sag forces it to reserve.
     ///
+    /// 40, measured against the geometry: the band's inner edge sits ~48
+    /// into the 110pt box, and the readout risen to 70 still clears the
+    /// arc's sagging line horizontally at the widest note form. (30 left a
+    /// visible band of nothing between the arc and the note.)
+    ///
     /// Computed, not stored: the type is generic over its readout, and Swift
     /// has no static stored properties on generic types.
-    private static var apexSlack: CGFloat { 30 }
+    private static var apexSlack: CGFloat { 40 }
 }
 
 /// The dial: a fixed needle standing at vertical, and the gap between it and

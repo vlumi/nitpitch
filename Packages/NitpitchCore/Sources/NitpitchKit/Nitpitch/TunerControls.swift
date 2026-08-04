@@ -212,20 +212,15 @@ struct LevelMeter: View {
 /// the string view. See `Note.readoutLabel(in:)` for why the scientific name
 /// and the localized one are kept apart rather than combined.
 struct NoteNameLabel: View {
-    /// Which spelling leads. Detections read scientific-first ("A4 (イ)") —
-    /// the settled chromatic convention — but a *target* is something the
-    /// player asked for by its own name, so the string view leads with the
-    /// local spelling: "H₀ (B0)", not "B0 (H)". The grid cells show the local
-    /// name alone; this keeps the detail view consistent with them.
-    enum Order {
-        case scientificFirst
-        case localizedFirst
-    }
-
+    /// Every readout leads with the LOCAL spelling — a note is something
+    /// the player knows by their own name for it ("H₃", "Si₃"), targets and
+    /// detections alike, with the scientific spelling in parens for
+    /// cross-referencing ("(B3)"). English has no separate local spelling,
+    /// so it reads plain ("A₄"). (Scientific-first detections were the
+    /// original convention; wearing both forms in use settled it.)
     let note: Note
     let naming: NoteNaming
     let fontSize: CGFloat
-    var order: Order = .scientificFirst
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -249,15 +244,12 @@ struct NoteNameLabel: View {
 
     private var primaryName: String {
         let readout = note.readoutLabel(in: naming)
-        if order == .localizedFirst, readout.alternate != nil {
-            return note.name(in: naming)
-        }
-        return readout.name
+        return readout.alternate != nil ? note.name(in: naming) : readout.name
     }
 
     private var alternate: String? {
         let readout = note.readoutLabel(in: naming)
-        guard let localized = readout.alternate else { return nil }
-        return order == .localizedFirst ? "\(readout.name)\(readout.octave)" : localized
+        guard readout.alternate != nil else { return nil }
+        return "\(readout.name)\(readout.octave)"
     }
 }

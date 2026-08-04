@@ -24,12 +24,18 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Every readout leads with your own name for the note now — the chromatic
+  tuner included, which used to insist on scientific-first. In German
+  naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄ everywhere, with the scientific
+  spelling in parens on the full-size dials for cross-referencing.
 - Grid cells stack the name over the cents, each centred on its own line —
   side by side the pair wobbled with every reading's width — with the name
   risen into the arc's empty hollow, so the cell spends the pixels it has.
   The octave rides the name as a subscript in the cells and the strips
   alike (E₂ and E₄, not two Es), which is how a guitar's outer strings
-  stop being a coin flip.
+  stop being a coin flip. The dials pulled their readouts deeper into the
+  hollow on every screen — the band of nothing between the arc and the
+  note is gone, on the chromatic dial too.
 
 - Adding an instrument is one sheet: pick the kind from the + menu (one
   entry per kind, grouped by family) and everything else — the name,

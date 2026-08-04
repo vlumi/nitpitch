@@ -92,6 +92,14 @@ the temperaments entry (§ 4) — so it's worth building once, deliberately.
 
 ### What a piano mode needs beyond that
 
+- **The detection band itself.** The chromatic band (30–2100 Hz) was
+  chosen for strings — the floor just under a 5-string bass's B0, the
+  ceiling past a violin's E string — and a piano overhangs it at both
+  ends: A0 and A♯0 duck under, C♯7…C8 sail over (confirmed on the
+  digital piano). Neither end is a constants tweak: 27.5 Hz means too
+  few periods in the ~93 ms window for MPM, and at 4 kHz its period is
+  ~10 samples, where interpolation's cent resolution collapses — the
+  top octave likely belongs to the spectral path.
 - **88 notes, not N strings.** The grid doesn't scale to a keyboard; a piano
   wants different navigation — and the strips view already sketches its
   display: the keyboard is the strips bent into keys. Real key geometry,

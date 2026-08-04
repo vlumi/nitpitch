@@ -36,8 +36,11 @@ struct CompactDial: View {
                 .frame(height: Self.arcHeight * scale)
                 // The hollow under the arc's apex is real estate — the name
                 // rises into it, the same move the full dial makes with its
-                // readout (`TunerDial.apexSlack`).
-                .padding(.bottom, -14 * scale)
+                // readout (`TunerDial.apexSlack`). 24 measured against the
+                // compact geometry: the band's inner edge sits ~25 into the
+                // 58pt box, and the name at 34 clears the arc's line at its
+                // own width.
+                .padding(.bottom, -24 * scale)
             // Name and cents stacked, each centred on its own line: side by
             // side, the pair wobbled left and right as the number's width
             // changed with every reading.

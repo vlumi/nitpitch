@@ -2,6 +2,10 @@ import AVFoundation
 import Foundation
 import NitpitchCore
 
+#if os(macOS)
+import CoreAudio
+#endif
+
 /// Microphone (or line-in) capture, converted to the detector's expected format
 /// and delivered one analysis window at a time.
 ///
@@ -13,10 +17,19 @@ import NitpitchCore
 ///   device or interface provides (48 kHz on most Macs, 44.1 or 48 on iPhones),
 ///   so an `AVAudioConverter` normalizes it and the detector is constructed for
 ///   the *converted* rate.
-public final class AudioInput {
+public final class AudioInput: NSObject {
     /// Delivered on `analysisQueue`, not the main queue — the consumer hops to
     /// main itself so the UI update is one hop, not two.
     public var onWindow: (([Float]) -> Void)?
+
+    /// Fired when the input hardware changes underneath the engine — a device
+    /// unplugged, plugged in, or reconfigured. Delivered on whatever thread
+    /// the system posts from; the owner decides the response (a restart).
+    ///
+    /// An unplug does NOT fail loudly: the engine just stops delivering, taps
+    /// go quiet, and `isRunning` would stay `true` forever. This signal is
+    /// the only way to know.
+    public var onDeviceChange: (() -> Void)?
 
     private let engine = AVAudioEngine()
     private let analysisQueue = DispatchQueue(
@@ -41,7 +54,41 @@ public final class AudioInput {
         self.targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1,
             interleaved: false)!
+        super.init()
+        // Never removed: this object lives as long as the app's one capture
+        // session does.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(hardwareChanged),
+            name: .AVAudioEngineConfigurationChange, object: engine)
+        #if os(macOS)
+        installDefaultInputListener()
+        #endif
     }
+
+    @objc private func hardwareChanged(_ note: Notification) {
+        onDeviceChange?()
+    }
+
+    #if os(macOS)
+    /// The replug detector. The engine's configuration-change notification
+    /// covers hardware changing under a RUNNING engine, but a device
+    /// appearing while the engine is stopped — the mic-less Mac waiting for
+    /// its microphone, or capture torn down after an unplug — posts nothing
+    /// on it. What actually moves is the system's default-input property,
+    /// so listen there. (iOS needs no equivalent: the session reroutes
+    /// itself and the engine notification fires.)
+    private func installDefaultInputListener() {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        AudioObjectAddPropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject), &address, nil
+        ) { [weak self] _, _ in
+            self?.onDeviceChange?()
+        }
+    }
+    #endif
 
     /// Ask for microphone permission. iOS and macOS diverge here: iOS routes it
     /// through `AVAudioSession`, macOS through `AVCaptureDevice`.

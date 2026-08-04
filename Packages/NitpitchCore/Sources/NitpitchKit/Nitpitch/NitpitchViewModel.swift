@@ -93,10 +93,18 @@ public final class NitpitchViewModel: ObservableObject {
     }
 
     private func apply(_ status: AudioSessionController.Status) {
+        // Anything but running also clears the meter: an unplugged mic left
+        // the volume bar frozen at its last reading, which looked like life.
         switch status {
-        case .permissionDenied: state = .permissionDenied
-        case .unavailable: state = .noInput
-        case .idle: state = .idle
+        case .permissionDenied:
+            state = .permissionDenied
+            level = 0
+        case .unavailable:
+            state = .noInput
+            level = 0
+        case .idle:
+            state = .idle
+            level = 0
         case .running:
             // Activation re-fires on every foreground pass; a republished
             // `.running` must not knock a live reading back to "listening".

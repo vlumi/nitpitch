@@ -88,6 +88,15 @@ struct InstrumentGridView: View {
         }
         .safeAreaInset(edge: .bottom) { footer }
         .navigationTitle(instance.nameText)
+        // Pinned large on purpose: with .automatic, rotating to landscape
+        // collapses the large title and it STAYS collapsed back in portrait
+        // (until a scroll) — the viewport quietly gains ~50pt, and the auto
+        // layout honestly picks a different column count for it. An SE's
+        // guitar flipped 2 columns → strips → 1 column on a rotation
+        // round-trip; same screen, three layouts.
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+        #endif
         .toolbar {
             ToolbarItem(placement: .principal) { tuningMenu }
             ToolbarItem(placement: .primaryAction) { lockButton }

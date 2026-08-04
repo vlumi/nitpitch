@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Rotating an iPhone to the strips and back no longer lands on a different
+  grid than you left: the title bar quietly kept its collapsed landscape
+  height after returning to portrait, and the auto layout honestly picked
+  a different column count for the taller viewport — an SE's guitar read
+  two columns, then one, either side of a rotation. The title stays large
+  in portrait now, so the viewport, and the layout, hold still.
+
 - Every readout leads with your own name for the note now — the chromatic
   tuner included, which used to insist on scientific-first. In German
   naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄ everywhere; the string view's

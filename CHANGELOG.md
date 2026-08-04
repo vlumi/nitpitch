@@ -29,8 +29,14 @@ and remembered exactly as you left them.
   hardware that doesn't exist, so the app now checks for input devices
   before asking — and says so: the tuner reads "No audio input device"
   instead of sitting silent or asking you to play a note it could never
-  hear — with a Retry button for when the microphone arrives. (The device check also stays inside the audio stack now, keeping
-  the camera subsystem's entitlement complaints out of the console.)
+  hear — with a Retry button for when the microphone arrives. (The device
+  check also stays inside the audio stack now, keeping the camera
+  subsystem's entitlement complaints out of the console.)
+- …and the message actually appears: the tuner sampled the audio status
+  once, in a race it usually lost against activation, so a mic-less Mac
+  showed a stale "Not listening" forever. It now observes the status, so
+  the display follows activation whenever it finishes — including after
+  Retry.
 
 ### build 3 — 2026-08-04
 

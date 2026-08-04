@@ -13,83 +13,6 @@ extension InstrumentInstance {
     }
 }
 
-/// The way from the chromatic tuner into an instrument.
-///
-/// Large and below the dial rather than a menu in the corner: choosing an
-/// instrument decides which screen you're on, so it wants the weight of a
-/// destination rather than the weight of a setting. It only *requests* the
-/// navigation — the chooser is a pushed screen owned by `RootView`, so back
-/// from a grid lands on the list you chose from.
-struct InstrumentButton: View {
-    let onOpen: () -> Void
-
-    var body: some View {
-        Button(action: onOpen) {
-            HStack(spacing: 8) {
-                Image(systemName: "guitars")
-                    .font(.body)
-                Text("Tune an instrument", bundle: .module)
-                    .font(.body.weight(.medium))
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.secondary.opacity(0.14))
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("tuner.instrument")
-    }
-}
-
-/// Pinned instruments as one-tap chips on the launch screen.
-///
-/// This is what retires "two taps to reach the violin": a favourite is a
-/// repeated setup converted into one tap — and since an instance remembers
-/// its state, the chip lands exactly where you left off. Pinning lives in
-/// the chooser (the star on each row); the row hides itself when nothing is
-/// pinned.
-struct FavoritesRow: View {
-    struct Chip: Identifiable {
-        let id: String
-        let label: Text
-    }
-
-    let chips: [Chip]
-    let onChoose: (String) -> Void
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(chips) { chip in
-                    Button {
-                        onChoose(chip.id)
-                    } label: {
-                        chip.label
-                            .font(.callout.weight(.medium))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(Color.accentColor.opacity(0.14)))
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("favorite.\(chip.id)")
-                }
-            }
-            // Breathing room so the capsules' edges aren't clipped by the
-            // scroll view at rest.
-            .padding(.horizontal, 2)
-        }
-    }
-}
-
 /// The instance whose strings are open in the editor sheet.
 struct EditingStrings: Identifiable {
     let id: String
@@ -202,7 +125,7 @@ struct InstrumentChooser: View {
             onChoose(template.id)
         } label: {
             HStack(spacing: 10) {
-                kindTag(for: template)
+                KindTag(template: template)
                 Text(LocalizedStringKey(template.name), bundle: .module)
                 Spacer()
             }
@@ -212,24 +135,6 @@ struct InstrumentChooser: View {
         .accessibilityIdentifier("chooser.\(template.id)")
     }
 
-    /// "Which instrument is which" without renaming or grouping headers: a
-    /// small kind tag leads the row, quiet enough to ignore at one
-    /// instrument and load-bearing at ten.
-    @ViewBuilder
-    func kindTag(for template: Instrument) -> some View {
-        if !template.kindTag.isEmpty {
-            Text(LocalizedStringKey(template.kindTag), bundle: .module)
-                .font(.caption2.weight(.medium))
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
-                )
-                .foregroundStyle(.secondary)
-        }
-    }
-
     private func row(for entry: InstrumentInstance, template: Instrument) -> some View {
         // The star leads the row — favorites read as a column at a glance —
         // and there's no chevron: it promised nothing the whole row doesn't
@@ -237,7 +142,7 @@ struct InstrumentChooser: View {
         HStack(spacing: 12) {
             star(for: entry)
 
-            kindTag(for: template)
+            KindTag(template: template)
 
             Button {
                 onChoose(entry.id)

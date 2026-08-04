@@ -12,7 +12,8 @@ import SwiftUI
 /// is the only thing that tells them apart, and the only way to watch progress
 /// while a badly slack string is still far out.
 struct CompactDial: View {
-    let name: String
+    let note: Note
+    let naming: NoteNaming
     /// Cents from *this string's* target, or nil when it isn't sounding.
     /// Unbounded: −340 is a legitimate reading for a very slack string.
     let cents: Double?
@@ -33,16 +34,20 @@ struct CompactDial: View {
                 .padding(.horizontal, 22 * scale)
             CompactArc(cents: cents, inTune: isInTune)
                 .frame(height: Self.arcHeight * scale)
-            HStack(alignment: .firstTextBaseline, spacing: 6 * scale) {
-                Text(verbatim: name)
-                    .font(.system(size: 20 * scale, weight: .semibold, design: .rounded))
-                    .foregroundStyle(
-                        cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                Text(verbatim: centsLabel)
-                    .font(.system(size: 12 * scale).monospacedDigit())
-                    .foregroundStyle(
-                        isInTune ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
-            }
+                // The hollow under the arc's apex is real estate — the name
+                // rises into it, the same move the full dial makes with its
+                // readout (`TunerDial.apexSlack`).
+                .padding(.bottom, -14 * scale)
+            // Name and cents stacked, each centred on its own line: side by
+            // side, the pair wobbled left and right as the number's width
+            // changed with every reading.
+            CompactNoteName(
+                note: note, naming: naming, fontSize: 20 * scale,
+                color: cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+            Text(verbatim: centsLabel)
+                .font(.system(size: 12 * scale).monospacedDigit())
+                .foregroundStyle(
+                    isInTune ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
             LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 0.55 * scale)
         }
         .frame(maxWidth: .infinity)
@@ -52,7 +57,7 @@ struct CompactDial: View {
                 .fill(Color.secondary.opacity(0.08))
         )
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: name))
+        .accessibilityLabel(Text(verbatim: note.accessibleName(in: naming)))
         .accessibilityValue(Text(verbatim: accessibleValue))
     }
 

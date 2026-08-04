@@ -65,6 +65,28 @@ struct ObservedLevelMeter: View {
     }
 }
 
+/// The compact target name: the letter with the octave subscripted — just
+/// enough to tell a guitar's two E strings apart at a glance. The grid
+/// cells and the strips share it; the full-size views use `NoteNameLabel`.
+struct CompactNoteName: View {
+    let note: Note
+    let naming: NoteNaming
+    let fontSize: CGFloat
+    var color: AnyShapeStyle = AnyShapeStyle(.primary)
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 1) {
+            Text(verbatim: note.name(in: naming))
+                .font(.system(size: fontSize, weight: .semibold, design: .rounded))
+                .foregroundStyle(color)
+            Text(verbatim: "\(note.octave)")
+                .font(.system(size: fontSize * 0.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .baselineOffset(-fontSize * 0.06)
+        }
+    }
+}
+
 /// The light strip: logarithmically spaced dots, centre lit when in tune.
 ///
 /// Spacing doubles outward (±2, 4, 8, 16, 32¢) because the ear responds to

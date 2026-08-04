@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Grid cells stack the name over the cents, each centred on its own line —
+  side by side the pair wobbled with every reading's width — with the name
+  risen into the arc's empty hollow, so the cell spends the pixels it has.
+  The octave rides the name as a subscript in the cells and the strips
+  alike (E₂ and E₄, not two Es), which is how a guitar's outer strings
+  stop being a coin flip.
+
 - Adding an instrument is one sheet: pick the kind from the + menu (one
   entry per kind, grouped by family) and everything else — the name,
   ready to edit, and the strings — is decided together, with Create the

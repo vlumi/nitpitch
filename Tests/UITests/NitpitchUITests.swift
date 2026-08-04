@@ -356,7 +356,7 @@ final class NitpitchUITests: XCTestCase {
         app.buttons["Tuning only"].firstMatch.tap()
 
         tuningMenu.tap()
-        app.buttons["Edit presets…"].firstMatch.tap()
+        app.buttons["Manage presets…"].firstMatch.tap()
         let pin = app.descendants(matching: .any)["presets.pin.Gig"].firstMatch
         XCTAssertTrue(pin.waitForExistence(timeout: 5))
         pin.tap()

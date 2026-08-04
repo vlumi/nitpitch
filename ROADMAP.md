@@ -15,10 +15,6 @@ v0.2.0 is being cut.
   and *Save*. nitpitch.app hosts the long tail — scordatura, historical
   setups — as those same links, so the collection grows without app updates
   or App Review, and the in-app picker stays uncluttered.
-- **An instrument editor** — a string list, nothing else: add a string at
-  either end with a proposed pitch from the template's own interval rule,
-  edit targets in place. Reachable at creation, from Edit…, and after
-  Duplicate; it replaces the count question for the odd shapes.
 - **Beta verification of unowned instruments.** On hand: violin, electric
   guitar, electric bass, digital piano; not on hand: viola, cello, double
   bass. The functional check is the piano — an instrument definition is a

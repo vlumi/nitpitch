@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Every instrument's strings can be edited as a list: add a string at either
+  end — the proposed pitch continues the instrument's own pattern, so a
+  violin grows a viola's C3 below or a B5 above — nudge any target in place,
+  or remove strings. Reachable from Edit strings… on the instrument's row,
+  and from Custom… in the + menu, which creates the instrument and opens the
+  editor in one move. Rows stack the shared way (lowest at the bottom), so
+  the row numbers read like a string set's: the 1st string on top.
 - The dial grid follows the strips' order: the lowest string sits at the
   bottom, rows reading left to right and climbing upward — so a one-column
   grid and the strips finally agree on which way is down. The "Low string

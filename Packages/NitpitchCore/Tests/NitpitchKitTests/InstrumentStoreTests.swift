@@ -221,6 +221,77 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertNil(store.instance(id: second.id))
     }
 
+    /// The editor's grow verb continues the outermost interval: a violin
+    /// grows a viola's C3 below, or a B5 above.
+    func testAddStringContinuesTheOutermostInterval() {
+        let store = makeStore()
+        let violin = store.defaultInstance(for: .violin)  // G3 D4 A4 E5
+        store.addString(id: violin.id, lowEnd: true)
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, [48, 55, 62, 69, 76])
+        store.addString(id: violin.id, lowEnd: false)
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, [48, 55, 62, 69, 76, 83])
+        // Guitar's low end continues in fourths: E2 grows a 7-string's B1.
+        let guitar = store.defaultInstance(for: .guitar)
+        store.addString(id: guitar.id, lowEnd: true)
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings.first, 35)
+    }
+
+    /// No room past the outermost pitch means no string: a duplicated
+    /// outermost target would give two dials one zero-width band.
+    func testAddStringRefusesAtTheRangeEdge() {
+        let store = makeStore()
+        let bass = store.add(of: .bassGuitar5)  // low B0 — the range floor
+        XCTAssertFalse(store.canAddString(id: bass.id, lowEnd: true))
+        store.addString(id: bass.id, lowEnd: true)
+        XCTAssertEqual(store.instance(id: bass.id)?.strings.count, 5)
+        // And a long way from the ceiling, adding clamps rather than refuses.
+        XCTAssertTrue(store.canAddString(id: bass.id, lowEnd: false))
+    }
+
+    /// Removing works anywhere but never below one string.
+    func testRemoveStringKeepsAtLeastOne() {
+        let store = makeStore()
+        let violin = store.defaultInstance(for: .violin)
+        store.removeString(id: violin.id, index: 0)
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, [62, 69, 76])
+        store.removeString(id: violin.id, index: 1)
+        store.removeString(id: violin.id, index: 0)
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, [76])
+        store.removeString(id: violin.id, index: 0)
+        XCTAssertEqual(
+            store.instance(id: violin.id)?.strings, [76],
+            "the last string never goes")
+    }
+
+    /// Structural edits are a new shape: the loaded preset's claim clears,
+    /// where a pitch nudge (setString) keeps it.
+    func testStructuralEditsClearThePresetClaim() {
+        let store = makeStore()
+        let guitar = store.defaultInstance(for: .guitar)
+        store.presetApplied(id: guitar.id, presetID: "p1")
+        store.setString(id: guitar.id, index: 0, midi: 38)
+        XCTAssertEqual(
+            store.instance(id: guitar.id)?.loadedPresetID, "p1",
+            "a pitch nudge is drift, not a new pick")
+        store.addString(id: guitar.id, lowEnd: true)
+        XCTAssertNil(store.instance(id: guitar.id)?.loadedPresetID)
+
+        store.presetApplied(id: guitar.id, presetID: "p2")
+        store.removeString(id: guitar.id, index: 0)
+        XCTAssertNil(store.instance(id: guitar.id)?.loadedPresetID)
+    }
+
+    /// A one-string instrument has no interval to continue; growing it
+    /// guesses a fifth rather than freezing.
+    func testAddStringToASingleStringGuessesAFifth() {
+        let store = makeStore()
+        let violin = store.defaultInstance(for: .violin)
+        for _ in 0..<3 { store.removeString(id: violin.id, index: 0) }
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, [76])
+        store.addString(id: violin.id, lowEnd: true)
+        XCTAssertEqual(store.instance(id: violin.id)?.strings, [69, 76])
+    }
+
     /// The effective instrument the detection stack sees carries the
     /// instance's strings and the template's family.
     func testEffectiveInstrumentReflectsTheInstance() {

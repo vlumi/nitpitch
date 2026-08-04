@@ -31,8 +31,14 @@
     "About Nitpitch" : {
       "comment" : "Row that opens the about screen"
     },
+    "Add high string" : {
+      "comment" : "String editor: add a string above the highest"
+    },
     "Add instrument" : {
       "comment" : "Toolbar + on the instrument list: add one, picking its type"
+    },
+    "Add low string" : {
+      "comment" : "String editor: add a string below the lowest"
     },
     "Add to favorites" : {
       "comment" : "Star on an instrument row: pin it to the launch screen"
@@ -58,6 +64,9 @@
     "Custom" : {
       "comment" : "Tuning name shown when the pitches match no known tuning"
     },
+    "Custom…" : {
+      "comment" : "Add-menu row: create an instrument and open the string editor"
+    },
     "DADGAD" : {
       "comment" : "Tuning name (guitar)"
     },
@@ -78,6 +87,9 @@
     },
     "Edit presets…" : {
       "comment" : "Tuning menu: open the preset list for deleting"
+    },
+    "Edit strings…" : {
+      "comment" : "Instrument management action opening the string editor"
     },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments"
@@ -153,6 +165,9 @@
     },
     "Remove from favorites" : {
       "comment" : "Star on an instrument row: unpin it from the launch screen"
+    },
+    "Remove string" : {
+      "comment" : "Accessibility label for the string editor's per-row delete"
     },
     "Rename" : {
       "comment" : "Context menu action and dialog title: rename an instrument"

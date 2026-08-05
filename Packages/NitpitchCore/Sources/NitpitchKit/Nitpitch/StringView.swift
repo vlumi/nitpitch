@@ -147,12 +147,21 @@ struct StringView: View {
                 monitor: single.intonation,
                 target: single.tuner.target,
                 naming: settings.naming)
-            ReferencePitchStepper(
-                reference: Binding(
-                    get: { instance.reference },
-                    set: { store.setReference(id: instance.id, $0) }),
-                naming: settings.naming
-            )
+            HStack(spacing: 20) {
+                ReferencePitchStepper(
+                    reference: Binding(
+                        get: { instance.reference },
+                        set: { store.setReference(id: instance.id, $0) }),
+                    naming: settings.naming
+                )
+                if instrument.family == .bowed {
+                    TemperamentChip(temperament: instance.appliedTemperament) {
+                        store.setTemperament(
+                            id: instance.id,
+                            instance.appliedTemperament == .pure ? .equal : .pure)
+                    }
+                }
+            }
             .disabled(instance.isLocked)
         }
     }

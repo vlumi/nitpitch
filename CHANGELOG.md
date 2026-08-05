@@ -24,9 +24,9 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
-- Bowed instruments can tune the way orchestras do: a Temperament row
-  in the tuning menu — Equal or Pure fifths (Pure fourths on the double
-  bass) — retunes the open-string targets to beatless intervals,
+- Bowed instruments tune the way orchestras do, by default: pure
+  fifths (fourths on the double bass) retune the open-string targets to
+  beatless intervals,
   anchored at the A string: A from the oboe, pure fifths outward, so a
   violin's E sits +2¢ and G −4¢ against equal temperament. Presets
   carry the choice as part of the situation ("quartet, pure" is one
@@ -34,7 +34,10 @@ and remembered exactly as you left them.
   leave it alone. Fretted instruments never see the row — frets are
   equal temperament cast in metal — the chromatic screen keeps naming
   equal-tempered notes, and the intonation layer is untouched by
-  construction: octaves are 2:1 in every temperament.
+  construction: octaves are 2:1 in every temperament. The state is worn
+  where you look while tuning: an Equal/Pure chip beside the reference
+  stepper (grid and string view alike) — one tap flips it, and the
+  tuning menu keeps the long-form picker.
 - Mac: ← and → walk the strings in the string view — the same move as the
   on-screen arrows, without reaching for the mouse. The keys land there
   the moment the screen opens, and fall silent past the outermost string.

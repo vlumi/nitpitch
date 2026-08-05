@@ -227,10 +227,16 @@ one of the drafts that lost.
   neither — the player chose generous display twice; consensus and
   latest-wins guard the record.
 - **Temperament is a property of the targets, offered only where the
-  instrument allows a choice.** Bowed instruments tune beatless fifths
-  by ear (pure 3:2, ~2¢ wide of equal), so they get Equal/Pure in the
-  tuning menu — anchored at the A string, pure fifths and fourths
-  outward, exotic intervals stepping equal. Frets ARE equal temperament,
+  instrument allows a choice — and pure is the bowed DEFAULT.** Beatless
+  fifths by ear ARE pure (3:2, ~2¢ wide of equal); defaulting to equal
+  was a keyboard convention imposed on instruments that never used it.
+  Anchored at the A string, pure fifths and fourths outward, exotic
+  intervals stepping equal. Worn beside the reference stepper as an
+  Equal/Pure chip (tap flips; the tuning menu keeps the long-form
+  picker) — the state must be readable on the tuning screens, since a
+  ±2¢ target shift redraws nothing a dial would show. Storage: nil =
+  never chosen = family default; explicit choices verbatim, so Equal on
+  a violin sticks. Frets ARE equal temperament,
   so fretted instruments never see the row; the chromatic screen keeps
   naming equal-tempered notes (re-tempering all twelve needs a root — a
   different feature); the intonation layer needs nothing (octaves are

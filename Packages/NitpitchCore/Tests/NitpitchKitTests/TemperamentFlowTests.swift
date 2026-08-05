@@ -20,26 +20,31 @@ final class TemperamentFlowTests: XCTestCase {
         InstrumentStore(defaults: defaults) { .standard }
     }
 
+    /// The family default: bowed instruments tune beatless fifths by ear —
+    /// pure IS how they tune — so an untouched violin defaults pure, while
+    /// a guitar's frets keep it equal. Old JSON (nil) lands on the same
+    /// defaults.
+    func testFamilyDefaults() {
+        let store = makeStore()
+        XCTAssertEqual(
+            store.instance(id: Instrument.violin.id)!.appliedTemperament, .pure)
+        XCTAssertEqual(
+            store.instance(id: Instrument.doubleBass.id)!.appliedTemperament, .pure)
+        XCTAssertEqual(
+            store.instance(id: Instrument.guitar.id)!.appliedTemperament, .equal)
+    }
+
     func testSettingTemperamentPersistsAndStamps() {
         let store = makeStore()
         let violin = store.instance(id: Instrument.violin.id)!
-        XCTAssertEqual(violin.appliedTemperament, .equal, "equal is the default")
 
-        store.setTemperament(id: violin.id, .pure)
+        store.setTemperament(id: violin.id, .equal)
         let reloaded = makeStore()
         let after = reloaded.instance(id: violin.id)!
-        XCTAssertEqual(after.appliedTemperament, .pure)
+        XCTAssertEqual(
+            after.appliedTemperament, .equal,
+            "an explicit choice overrides the family default and persists")
         XCTAssertNotNil(after.modifiedAt, "the chokepoint stamps")
-    }
-
-    func testEqualStoresAsNilForOldJSONCompatibility() {
-        let store = makeStore()
-        let violin = store.instance(id: Instrument.violin.id)!
-        store.setTemperament(id: violin.id, .pure)
-        store.setTemperament(id: violin.id, .equal)
-        XCTAssertNil(
-            store.instance(id: violin.id)!.temperament,
-            "equal is spelled as absence, like every pre-temperament instance")
     }
 
     /// A preset is a situation: it captures the temperament explicitly —
@@ -83,10 +88,10 @@ final class TemperamentFlowTests: XCTestCase {
         let store = makeStore()
         let presets = PresetStore(defaults: defaults)
         let violin = store.instance(id: Instrument.violin.id)!
-        store.setTemperament(id: violin.id, .pure)
+        store.setTemperament(id: violin.id, .equal)
         presets.load(decoded[0], onto: store.instance(id: violin.id)!, in: store)
         XCTAssertEqual(
-            store.instance(id: violin.id)!.appliedTemperament, .pure,
+            store.instance(id: violin.id)!.appliedTemperament, .equal,
             "nil payload means leave alone")
     }
 

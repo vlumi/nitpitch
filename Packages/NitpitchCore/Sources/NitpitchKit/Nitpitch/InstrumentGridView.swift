@@ -295,12 +295,23 @@ struct InstrumentGridView: View {
     /// reference — this instrument stays at 442 without dragging the rest of
     /// the app there.
     private var footer: some View {
-        ReferencePitchStepper(
-            reference: Binding(
-                get: { instance.reference },
-                set: { store.setReference(id: instance.id, $0) }),
-            naming: settings.naming
-        )
+        HStack(spacing: 20) {
+            ReferencePitchStepper(
+                reference: Binding(
+                    get: { instance.reference },
+                    set: { store.setReference(id: instance.id, $0) }),
+                naming: settings.naming
+            )
+            // The temperament beside the reference — the same kind of
+            // fact, worn where you look while tuning. Bowed only.
+            if instance.template?.family == .bowed {
+                TemperamentChip(temperament: instance.appliedTemperament) {
+                    store.setTemperament(
+                        id: instance.id,
+                        instance.appliedTemperament == .pure ? .equal : .pure)
+                }
+            }
+        }
         .disabled(instance.isLocked)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)

@@ -125,6 +125,22 @@ final class GridIntonationTests: XCTestCase {
             1200 * log2((routed[2].frequency ?? 1) / bass[2]), 4, accuracy: 0.1)
     }
 
+    /// The octave-tuning degeneracy, guarded: in Drop D the low string's 2f
+    /// IS the open D3 — the reading stays on the D3 dial, and the low
+    /// string's octave slot honestly stays empty rather than guessing.
+    func testDropDNeverClaimsTheOpenDString() {
+        let dropD = [38, 45, 50, 55, 59, 64].map { Note(midi: $0).frequency() }
+        let openD3 = dropD[2] * pow(2, 2.0 / 1200)
+        let routed = GridIntonationRouting.route(
+            results: [
+                silent, silent, mpmReading(openD3), silent, silent, silent,
+            ],
+            targets: dropD)
+        XCTAssertEqual(routed[2].frequency, openD3, "the D3 dial keeps its reading")
+        XCTAssertFalse(routed[0].evenPartialsOnly, "the low D claims nothing")
+        XCTAssertNil(routed[0].frequency)
+    }
+
     /// Spectral parity frames are already shaped and keep their dial slot —
     /// the router only claims unflagged readings.
     func testParityFramesPassUntouched() {

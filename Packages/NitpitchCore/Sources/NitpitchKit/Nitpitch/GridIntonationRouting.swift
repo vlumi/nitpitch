@@ -68,7 +68,19 @@ enum GridIntonationRouting {
 
     /// The string whose octave this reading is — the nearest 2f within the
     /// window — or nil when it's nobody's.
+    ///
+    /// A reading that is plausibly an OPEN string is never claimed: in an
+    /// octave tuning like Drop D, the low string's 2f IS the open D3 — one
+    /// frequency, two meanings — and claiming it would dark the D3 dial
+    /// whenever it plays and record fake octave samples besides. That
+    /// octave slot honestly stays empty instead (the roadmap's promise).
+    /// Standard tunings never trip this: every 2f sits ≥200¢ from every
+    /// fundamental.
     private static func octaveOwner(of hz: Double, targets: [Double]) -> Int? {
+        let nearAFundamental = targets.contains { target in
+            target > 0 && abs(1200 * log2(hz / target)) <= octaveWindowCents
+        }
+        guard !nearAFundamental else { return nil }
         var best: (index: Int, cents: Double)?
         for (index, target) in targets.enumerated() where target > 0 {
             let cents = abs(1200 * log2(hz / (2 * target)))

@@ -61,13 +61,15 @@ fifth, not either note alone. No mainstream tuner shows this.
   favors one string; whether that's nuisance or dealbreaker is a
   real-instrument question.
 
-### Intonation, for fretted instruments
+### Intonation on the grid, maybe
 
-Whether a string plays in tune *along its length*, not just open: compare
-the open string against the 12th-fret note or harmonic, move the saddle,
-repeat. A display question, not DSP — the missing piece is showing two
-readings for one string (open target and what's being played now). Belongs
-in the string view.
+The per-string intonation workbench shipped (the string view's tuning-fork
+toggle). An open question stays: the same capture on the *main grid*, every
+string listening for both its notes at once. The bands would re-split over
+the merged target set — no exact collisions in standard tunings, but octave
+tunings like Drop D share a frequency between two meanings, and the display
+has to earn two values per 230×129 cell. Decide after the workbench has
+seen real saddle work.
 
 ### Fine-tuning display
 

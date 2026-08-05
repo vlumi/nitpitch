@@ -45,6 +45,14 @@ public final class HarmonicEstimator {
         /// This is per *string*, not per frame: with two strings sounding, each
         /// reading reports its own string's strength.
         public let strength: Double
+        /// Whether every partial behind the estimate sat at an even multiple
+        /// of the target. That's the fingerprint of the note an octave UP:
+        /// a string sounding at 2f has partials at 2f, 4f, 6f — exclusively
+        /// the target's even slots — while the open string itself always
+        /// brings odd evidence (3f and 5f survive even where a microphone
+        /// rolls the fundamental off). Intonation checking is built on this
+        /// parity: one target, and the octave recognized by what's missing.
+        public let evenPartialsOnly: Bool
     }
 
     /// How many harmonics of each target to measure. Beyond the 6th there's
@@ -227,7 +235,8 @@ public final class HarmonicEstimator {
             frequency: mean,
             agreement: max(0, 1 - spread / Self.agreementCents),
             partials: estimates.count,
-            strength: strength)
+            strength: strength,
+            evenPartialsOnly: orders.allSatisfy { $0.isMultiple(of: 2) })
     }
 
     /// Whether a partial at `hz` sits on any harmonic of any other target.

@@ -127,6 +127,9 @@
     "Instrument options" : {
       "comment" : "Accessibility label for the grid's … menu"
     },
+    "Intonation" : {
+      "comment" : "Toolbar toggle for the intonation-check mode in the string view"
+    },
     "Light" : {
       "comment" : "Appearance option: always light"
     },
@@ -174,6 +177,15 @@
     },
     "Notation" : {
       "comment" : "Label for the note-naming convention picker (A B C \/ A H C \/ Do Re Mi \/ iroha)"
+    },
+    "Octave" : {
+      "comment" : "Intonation: the octave sample's label (fretted 12th, fingered octave, or harmonic)"
+    },
+    "Octave versus open" : {
+      "comment" : "Accessibility label for the intonation delta readout"
+    },
+    "Open" : {
+      "comment" : "Intonation: the open-string sample's label"
     },
     "Open G" : {
       "comment" : "Tuning name (guitar)"

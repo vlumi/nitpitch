@@ -194,7 +194,13 @@ one of the drafts that lost.
   the OPEN string" and stands down while the octave plays (the bank's
   2nd-harmonic anchor would misread a fretted 12th as the open string,
   roughly in tune); the octave gets its own compact tuner below, beside
-  the captures and Δ. A toggle mode was shipped first and unshipped:
+  the captures and Δ. Two classifiers route frames, because each catches
+  what the other can't: parity unmasks spectral's even-anchor misread,
+  and *proximity* (any reading within 150¢ of +1200) reroutes the frames
+  parity can't see — MPM finds the octave exactly when spectral's gates
+  failed, and the analyzer rides the same gates (the bass field case:
+  55 Hz spans one FFT bin, MPM carries the frames, the 12th fret slammed
+  the dial to +1200). A toggle mode was shipped first and unshipped:
   pane identity removes the ambiguity a mode would guard against, and
   nobody tunes a string an octave sharp. Captures record only from held
   runs (six consecutive frames within 4¢), latest wins; live cross-talk

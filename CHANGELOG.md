@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 4 — 2026-08-05
+
 - The presets sheet fits phones again: its Mac minimum width (400pt)
   was forced onto a 375pt iPhone screen, and the missing width came out
   of the list's horizontal margins — rows flush to both edges. The

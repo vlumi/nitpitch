@@ -78,7 +78,27 @@ public final class AudioSessionController: ObservableObject {
             for receive in receivers.all() { receive(window) }
         }
         self.input.onDeviceChange = { [weak self] in
-            Task { @MainActor in await self?.reactivate() }
+            Task { @MainActor in self?.deviceChanged() }
+        }
+    }
+
+    private var pendingReactivation: Task<Void, Never>?
+    private var isReactivating = false
+
+    /// Device events arrive in storms: a replug fires the default-input
+    /// listener and the engine's notification several times while the device
+    /// initializes, and answering each with its own engine stop/start
+    /// thrashed the audio stack and flapped the UI mid-click. Coalesce —
+    /// every event restarts a short fuse, and the rebuild happens once, when
+    /// the hardware has settled. Events raised by our own restart are
+    /// dropped outright.
+    private func deviceChanged() {
+        guard !isReactivating else { return }
+        pendingReactivation?.cancel()
+        pendingReactivation = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.reactivate()
         }
     }
 
@@ -93,6 +113,8 @@ public final class AudioSessionController: ObservableObject {
     /// restarting would answer a question nobody asked.
     private func reactivate() async {
         guard status == .running || status == .unavailable else { return }
+        isReactivating = true
+        defer { isReactivating = false }
         input.stop()
         await activate()
     }

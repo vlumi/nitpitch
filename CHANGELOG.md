@@ -42,7 +42,10 @@ and remembered exactly as you left them.
   and plugging back in resumed nothing. The capture now listens for the
   hardware coming and going and rebuilds itself around whatever the input
   is — unplug drops to "No audio input device" (meter cleared), replug
-  picks the tuning back up on its own.
+  picks the tuning back up on its own. Device events arrive in storms and
+  on threads of the hardware layer's choosing, so they're funneled to the
+  main queue and coalesced into a single rebuild once the hardware
+  settles — answering each one directly crashed the app mid-replug.
 
 ### build 3 — 2026-08-04
 

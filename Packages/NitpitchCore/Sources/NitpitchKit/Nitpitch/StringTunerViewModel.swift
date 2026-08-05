@@ -58,6 +58,23 @@ public final class StringTunerViewModel: ObservableObject {
     /// it's visible, so the cost is paid only when someone is watching.
     public var isReportingRaw = false
 
+    /// Whether this string joins the grid's intonation check — set through
+    /// `setIntonating`, for every sibling at once. Off by default: the grid
+    /// is a tuning surface first, and the octave display is a chosen layer.
+    public private(set) var isIntonating = false
+
+    /// The octave sounding right now, in cents against 2f — the tiny
+    /// strip's live reading. Nil while it isn't. Only moves while
+    /// `isIntonating`.
+    @Published public private(set) var octaveCents: Double?
+    /// The captured samples and the verdict, tenth-quantized — the same
+    /// consensus rules as the string view's panel (`IntonationCapture`).
+    @Published public private(set) var openSample: Double?
+    @Published public private(set) var octaveSample: Double?
+    @Published public private(set) var delta: Double?
+
+    private var capture = IntonationCapture()
+
     /// The band this dial's detector searches, for the diagnostics readout.
     /// Owned and used by `DetectorBank`; this copy is display only.
     public private(set) var band: ClosedRange<Double>
@@ -87,6 +104,12 @@ public final class StringTunerViewModel: ObservableObject {
     /// Re-tune when the reference or the band moves. The detector itself lives
     /// in the bank; here only the display copy and the smoothing reset.
     public func configure(band: ClosedRange<Double>, reference: ReferencePitch) {
+        // A moved reference moves the target's frequency: captures answered
+        // for the old one. Incidental re-configures (a lock toggle passing
+        // through) keep them.
+        if reference != self.reference {
+            resetIntonation()
+        }
         self.reference = reference
         self.band = band
         smoother.reset()
@@ -98,6 +121,7 @@ public final class StringTunerViewModel: ObservableObject {
     public func retarget(_ note: Note) {
         target = note
         smoother.reset()
+        resetIntonation()
         if state != .idle { state = .waiting }
     }
 
@@ -128,26 +152,92 @@ public final class StringTunerViewModel: ObservableObject {
         let quantized = (result.level * 20).rounded() / 20
         if quantized != level { level = quantized }
         guard let hz = result.frequency else {
+            feedIntonation(.nothing, level: result.displayLevel)
             quietFrames += 1
             if quietFrames >= Self.quietFramesBeforeIdle, audio.status == .running {
                 smoother.reset()
                 state = .waiting
+                if octaveCents != nil { octaveCents = nil }
             }
             return
         }
+
+        let raw = PitchReading(frequency: hz, reference: reference)
+        let absolute = Double(raw.note.midi) * 100 + raw.cents
+        // Against *this string*, not the nearest note. No re-rounding: the
+        // answer to "how far is the G string from G" is allowed to be 340.
+        let epsilon = absolute - Double(target.midi) * 100
+
+        if isIntonating, result.evenPartialsOnly {
+            ingestOctave(epsilon: epsilon, result: result)
+            return
+        }
         quietFrames = 0
+
+        feedIntonation(
+            .note(slot: .open, cents: epsilon, clarity: result.clarity),
+            level: result.displayLevel)
+        if octaveCents != nil { octaveCents = nil }
 
         // Smooth in absolute cents (MIDI×100 + offset) so the filter sees a
         // continuous line rather than a sawtooth at note boundaries — the same
         // reason the chromatic model does it, and the smoother is already
         // target-agnostic.
-        let raw = PitchReading(frequency: hz, reference: reference)
-        let absolute = Double(raw.note.midi) * 100 + raw.cents
         let smoothed = smoother.update(cents: absolute)
-        // Against *this string*, not the nearest note. No re-rounding: the
-        // answer to "how far is the G string from G" is allowed to be 340.
         let cents = smoothed - Double(target.midi) * 100
         state = .reading(cents: cents, clarity: result.clarity)
+    }
+
+    /// The octave, recognized by parity through this string's own slots:
+    /// the estimate lands at f(1+ε) where ε is the octave's deviation from
+    /// 2f, so one number serves both scales. The open display stands down
+    /// softly — a held reading survives a flicker, sustained octave play
+    /// fades it through the quiet path.
+    private func ingestOctave(epsilon: Double, result: DetectionResult) {
+        feedIntonation(
+            .note(slot: .octave, cents: epsilon, clarity: result.clarity),
+            level: result.displayLevel)
+        let half = (epsilon * 2).rounded() / 2
+        if half != octaveCents { octaveCents = half }
+        quietFrames += 1
+        if quietFrames >= Self.quietFramesBeforeIdle {
+            smoother.reset()
+            state = .waiting
+        }
+    }
+
+    /// The capture's diet, gated on the layer being on at all.
+    private func feedIntonation(_ sounding: IntonationSounding, level: Double) {
+        guard isIntonating else { return }
+        capture.ingest(IntonationAnalyzer.Frame(sounding: sounding, level: level))
+        publishSamples()
+    }
+
+    /// Join or leave the intonation check. Captures do not survive the
+    /// flip in either direction: a stale measurement reappearing later
+    /// would look authoritative and be anything but.
+    public func setIntonating(_ on: Bool) {
+        guard isIntonating != on else { return }
+        isIntonating = on
+        resetIntonation()
+    }
+
+    private func resetIntonation() {
+        capture.reset()
+        octaveCents = nil
+        openSample = nil
+        octaveSample = nil
+        delta = nil
+    }
+
+    private func publishSamples() {
+        let tenth = { (value: Double) in (value * 10).rounded() / 10 }
+        let nextOpen = capture.open.map(tenth)
+        let nextOctave = capture.octave.map(tenth)
+        let nextDelta = capture.delta.map(tenth)
+        if nextOpen != openSample { openSample = nextOpen }
+        if nextOctave != octaveSample { octaveSample = nextOctave }
+        if nextDelta != delta { delta = nextDelta }
     }
 
     /// Drives this dial from a synthetic reading where there's no usable
@@ -167,6 +257,16 @@ public final class StringTunerViewModel: ObservableObject {
             let cents = swing * TuningDisplay.fullScaleCents
             state = .reading(cents: cents, clarity: 0.98)
             level = ((0.55 + 0.25 * sin(tick * 1.7)) * 20).rounded() / 20
+            // A finished measurement per string, values varied by target so
+            // the layout is judged with cells disagreeing. Modulo 11, which
+            // no regular tuning defeats: fifths collapsed mod 7 (a violin's
+            // four cells all read the same Δ) and fourths would mod 5.
+            if isIntonating, openSample == nil {
+                openSample = -1.5
+                octaveSample = Double(target.midi % 11) - 3.5
+                delta = (octaveSample ?? 0) - (openSample ?? 0)
+                octaveCents = octaveSample
+            }
             // A plausible raw result too, so the diagnostics screen shows
             // moving numbers rather than a column of dashes.
             if isReportingRaw {

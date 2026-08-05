@@ -39,6 +39,11 @@ struct InstrumentGridView: View {
     @State var instrumentRenameText = ""
     @State var duplicating: Creation?
     @State var isEditingStrings = false
+    /// The intonation check across every string — behind a toggle here,
+    /// unlike the string view's ambient panel: the grid is a tuning surface
+    /// first, and the octave layer is a chosen session. Screen state, not
+    /// a setting: a measuring session belongs to the visit that ran it.
+    @State var isIntonating = false
     @Environment(\.dismiss) var dismissGrid
 
     /// The instance as constructed, for while the store catches up and as the
@@ -130,6 +135,9 @@ struct InstrumentGridView: View {
         }
         .onChangeCompat(of: detection.tuning) { tuning in
             strings.retune(tuning)
+        }
+        .onChangeCompat(of: isIntonating) { on in
+            strings.setIntonating(on)
         }
         .sheet(isPresented: $isShowingDebug) {
             DetectorDebugView(

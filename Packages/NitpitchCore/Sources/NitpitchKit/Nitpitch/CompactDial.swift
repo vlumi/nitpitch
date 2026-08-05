@@ -12,6 +12,14 @@ import SwiftUI
 /// is the only thing that tells them apart, and the only way to watch progress
 /// while a badly slack string is still far out.
 struct CompactDial: View {
+    /// The intonation layer's slice of a cell: the octave's live cents and
+    /// the captured verdict. Present at all (non-nil) means the layer is
+    /// on and the tiny row is drawn, populated or not.
+    struct OctaveReadout {
+        let cents: Double?
+        let delta: Double?
+    }
+
     let note: Note
     let naming: NoteNaming
     /// Cents from *this string's* target, or nil when it isn't sounding.
@@ -23,6 +31,7 @@ struct CompactDial: View {
     /// dial rather than a postage stamp centred in a prairie — you stand
     /// further from a big window. Capped by the caller.
     var scale: CGFloat = 1
+    var octave: OctaveReadout?
 
     var body: some View {
         VStack(spacing: 4 * scale) {
@@ -53,6 +62,18 @@ struct CompactDial: View {
                 .font(.system(size: 12 * scale).monospacedDigit())
                 .foregroundStyle(
                     isInTune ? AnyShapeStyle(Color.green) : AnyShapeStyle(.secondary))
+            // The octave's own row, squeezed above the string's dots: the
+            // tiniest strip for its live reading, the verdict beside it.
+            if let octave {
+                HStack(spacing: 5 * scale) {
+                    LightStrip(
+                        cents: octave.cents ?? 0, isReading: octave.cents != nil,
+                        scale: 0.3 * scale)
+                    Text(verbatim: deltaLabel(octave.delta))
+                        .font(.system(size: 9 * scale, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(deltaStyle(octave.delta))
+                }
+            }
             LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 0.55 * scale)
         }
         .frame(maxWidth: .infinity)
@@ -80,10 +101,32 @@ struct CompactDial: View {
     }
 
     private var accessibleValue: String {
-        guard let cents else { return "not heard" }
-        if isInTune { return "in tune" }
-        let rounded = abs(Int(cents.rounded()))
-        return cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
+        var value: String
+        if let cents {
+            if isInTune {
+                value = "in tune"
+            } else {
+                let rounded = abs(Int(cents.rounded()))
+                value = cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
+            }
+        } else {
+            value = "not heard"
+        }
+        if let delta = octave?.delta {
+            value += String(format: ", octave delta %+.1f cents", delta)
+        }
+        return value
+    }
+
+    private func deltaLabel(_ delta: Double?) -> String {
+        guard let delta else { return "Δ —" }
+        return String(format: "Δ %+.1f", delta)
+    }
+
+    private func deltaStyle(_ delta: Double?) -> AnyShapeStyle {
+        guard let delta else { return AnyShapeStyle(.secondary) }
+        return TuningDisplay.isInTune(cents: delta)
+            ? AnyShapeStyle(Color.green) : AnyShapeStyle(Color.orange)
     }
 }
 

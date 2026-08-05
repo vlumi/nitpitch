@@ -67,6 +67,9 @@
     "Cancel" : {
       "comment" : "Dismisses a dialog without doing anything"
     },
+    "Check intonation" : {
+      "comment" : "Menu toggle: the octave layer across all string cells\/strips"
+    },
     "Columns" : {
       "comment" : "Label for the control setting how many string dials fit across the grid"
     },

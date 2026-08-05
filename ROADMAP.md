@@ -61,32 +61,6 @@ fifth, not either note alone. No mainstream tuner shows this.
   favors one string; whether that's nuisance or dealbreaker is a
   real-instrument question.
 
-### Intonation on the grid
-
-Wanted: the string view's capture on the *main grid*, so checking a whole
-instrument doesn't mean switching strings — play any string's octave and
-its cell records it.
-
-Parity made this far simpler than the old merged-band plan (which is why
-that plan is gone from here). No octave targets, no re-split bands: the
-spectral engine already measures every string from one FFT, and each
-string's reading carries its own parity — even-only evidence at string
-k's slots IS string k's octave, attributed with no ambiguity. The pieces:
-
-- Surface the parity bit through `DetectionResult` (the estimator's
-  `Reading.evenPartialsOnly` already exists; the bank drops it today).
-- One `IntonationCapture` per string; same consensus rules.
-- Display: the cell has no room for the panel, so likely a small Δ badge
-  once a string has both samples, with the panel's detail on tap-through
-  to the string view.
-
-Known limits, both acceptable: spectral-parity only (the single-string
-screen's MPM proximity rule is ambiguous on a grid, where a reading near
-2f of one string is legitimately a flat neighbour — careful bass work
-stays in the string view); and octave tunings like Drop D, where the low
-string's octave IS the open D3 — physics says one frequency genuinely
-means both, so that cell's octave slot honestly stays empty.
-
 ### Fine-tuning display
 
 A strobe or beat-frequency view, how professionals tune to a fraction of a

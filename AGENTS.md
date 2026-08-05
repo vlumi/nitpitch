@@ -211,6 +211,21 @@ one of the drafts that lost.
   locked instruments. Bowed instruments keep it: fingered-octave practice
   and the traditional false-string check (a harmonic consistently off the
   open string's promise).
+- **The grid's intonation layer is claims, not new detectors** — and
+  behind a toggle, unlike the string view's ambient panel: the grid is
+  a tuning surface first. A string's own octave NEVER lands on its own
+  dial (bands top out a few semitones past their string), so octave
+  findings are claimed where they land: parity-flagged spectral frames
+  on the string's own result; MPM strays within ±75¢ of some string's
+  2f on a neighbour's dial; above every band, the sentinel's reading —
+  which the hybrid consults even on spectral-won frames, or the top
+  strings starve on exactly the instruments where spectral is healthy
+  (guitar B and e, field-found). Claims normalize into parity shape so
+  the view models keep one octave path, and a claim never overwrites a
+  dial's live evidence. A reading that is also plausibly an OPEN string
+  (Drop D's D3 is the low string's 2f) lights BOTH meanings rather than
+  neither — the player chose generous display twice; consensus and
+  latest-wins guard the record.
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

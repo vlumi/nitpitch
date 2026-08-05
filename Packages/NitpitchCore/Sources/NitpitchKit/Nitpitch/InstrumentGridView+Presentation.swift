@@ -11,7 +11,11 @@ extension InstrumentGridView {
     /// + four 4pt gaps + 24pt vertical padding ≈ 129 — not a round guess:
     /// overstating it makes every height-bound layout underfill (observed
     /// as a third of the window left empty below the dials).
-    private static var cellDesign: CGSize { CGSize(width: 230, height: 129) }
+    /// The intonation layer adds its tiny row (~11 with its gap), so the
+    /// footprint is honest in both states.
+    private var cellDesign: CGSize {
+        CGSize(width: 230, height: isIntonating ? 140 : 129)
+    }
 
     /// What the viewport spends around the dials: the level-meter row (4pt
     /// meter + 6pt top padding) above the grid, and the grid's own 8pt top
@@ -37,7 +41,7 @@ extension InstrumentGridView {
         // scaling, floored low so three-across on an SE shrinks to fit.
         if columns > 0 {
             let cellWidth = (size.width - 32 - CGFloat(columns - 1) * 12) / CGFloat(columns)
-            return (columns, min(1.8, max(0.5, cellWidth / Self.cellDesign.width)))
+            return (columns, min(1.8, max(0.5, cellWidth / cellDesign.width)))
         }
         // Auto, the default on both platforms: try every count, and each
         // added column must EARN its place by making the dials noticeably
@@ -52,7 +56,7 @@ extension InstrumentGridView {
                 (size.width - 32 - CGFloat(candidate - 1) * 12) / CGFloat(candidate)
             let cellHeight = (size.height - Self.gridChrome - (rows - 1) * 12) / rows
             let scale = min(
-                cellWidth / Self.cellDesign.width, cellHeight / Self.cellDesign.height)
+                cellWidth / cellDesign.width, cellHeight / cellDesign.height)
             let score = scale / pow(1.35, CGFloat(candidate - 1))
             if score > best.score { best = (candidate, scale, score) }
         }
@@ -71,7 +75,9 @@ extension InstrumentGridView {
                 // A cell is a link into its string's full-screen view — the
                 // grid shows all of them, the string view holds one.
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
-                    StringCell(tuner: entry.tuner, naming: settings.naming, scale: cellScale)
+                    StringCell(
+                        tuner: entry.tuner, naming: settings.naming, scale: cellScale,
+                        isIntonating: isIntonating)
                 }
                 .buttonStyle(.plain)
                 // Identified by STRING, not by visual position: cell 0 is the
@@ -170,7 +176,8 @@ extension InstrumentGridView {
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
                     StringStrip(
                         tuner: entry.tuner, naming: settings.naming, scale: scale,
-                        gauge: 1.5 + CGFloat(total - entry.index) / CGFloat(total) * 3.5)
+                        gauge: 1.5 + CGFloat(total - entry.index) / CGFloat(total) * 3.5,
+                        isIntonating: isIntonating)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("strips.row.\(position)")
@@ -271,11 +278,15 @@ struct StringCell: View {
     @ObservedObject var tuner: StringTunerViewModel
     let naming: NoteNaming
     var scale: CGFloat = 1
+    var isIntonating = false
 
     var body: some View {
         CompactDial(
             note: tuner.target, naming: naming, cents: cents, level: tuner.level,
-            scale: scale)
+            scale: scale,
+            octave: isIntonating
+                ? CompactDial.OctaveReadout(cents: tuner.octaveCents, delta: tuner.delta)
+                : nil)
     }
 
     private var cents: Double? {

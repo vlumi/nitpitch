@@ -22,6 +22,10 @@ struct StringStrip: View {
     /// The string's drawn thickness in design points — the caller grades it
     /// by pitch, lowest fattest, like the strings in your hand.
     var gauge: CGFloat = 3
+    /// The intonation layer: the octave's tiny dots squeezed above the
+    /// string's own, the verdict in a slot of its own — there's width to
+    /// spare in a strip.
+    var isIntonating = false
 
     var body: some View {
         HStack(spacing: 12 * scale) {
@@ -55,6 +59,12 @@ struct StringStrip: View {
             .frame(width: 60 * scale, alignment: .leading)
             centsSlot(flatSide: true)
             VStack(spacing: 5 * scale) {
+                if isIntonating {
+                    LightStrip(
+                        cents: tuner.octaveCents ?? 0,
+                        isReading: tuner.octaveCents != nil,
+                        scale: 0.55 * scale)
+                }
                 LightStrip(cents: cents ?? 0, isReading: cents != nil, scale: 1.4 * scale)
                 // The signal, squeezed under the dots: worth a glance, not a
                 // column of its own.
@@ -62,6 +72,9 @@ struct StringStrip: View {
                     .frame(width: 80 * scale, height: 2)
             }
             centsSlot(flatSide: false)
+            if isIntonating {
+                deltaSlot
+            }
         }
         .padding(.horizontal, 16 * scale)
         .padding(.vertical, 12 * scale)
@@ -92,6 +105,21 @@ struct StringStrip: View {
         return belongsHere ? "\(abs(rounded))" : ""
     }
 
+    /// The intonation verdict, in a reserved slot like the cents': the
+    /// number arriving must not shift the row.
+    private var deltaSlot: some View {
+        Text(verbatim: tuner.delta.map { String(format: "Δ %+.1f", $0) } ?? "Δ —")
+            .font(.system(size: 14 * scale, weight: .medium).monospacedDigit())
+            .foregroundStyle(deltaStyle)
+            .frame(width: 64 * scale, alignment: .leading)
+    }
+
+    private var deltaStyle: AnyShapeStyle {
+        guard let delta = tuner.delta else { return AnyShapeStyle(.secondary) }
+        return TuningDisplay.isInTune(cents: delta)
+            ? AnyShapeStyle(Color.green) : AnyShapeStyle(Color.orange)
+    }
+
     private var cents: Double? {
         if case .reading(let cents, _) = tuner.state { return cents }
         return nil
@@ -103,9 +131,20 @@ struct StringStrip: View {
     }
 
     private var accessibleValue: String {
-        guard let cents else { return "not heard" }
-        if isInTune { return "in tune" }
-        let rounded = abs(Int(cents.rounded()))
-        return cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
+        var value: String
+        if let cents {
+            if isInTune {
+                value = "in tune"
+            } else {
+                let rounded = abs(Int(cents.rounded()))
+                value = cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
+            }
+        } else {
+            value = "not heard"
+        }
+        if isIntonating, let delta = tuner.delta {
+            value += String(format: ", octave delta %+.1f cents", delta)
+        }
+        return value
     }
 }

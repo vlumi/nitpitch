@@ -82,15 +82,27 @@ public final class DetectorBank: @unchecked Sendable {
     /// under MPM can mean its reading was recognized as another string's
     /// subharmonic and suppressed.
     public func analyze(_ window: [Float]) -> [DetectionResult] {
+        analyzeWithAbove(window).strings
+    }
+
+    /// `analyze`, plus what sounded ABOVE every band: the sentinel's
+    /// reading, which normally exists only to kill subharmonic shadows and
+    /// is never shown. The intonation layer is its second honest consumer —
+    /// the upper strings' octaves live exactly there, above every band by
+    /// construction (a band tops out a few semitones past its string).
+    /// MPM frames only; the spectral engine has no detector up there.
+    public func analyzeWithAbove(
+        _ window: [Float]
+    ) -> (strings: [DetectionResult], above: DetectionResult?) {
         lock.lock()
         defer { lock.unlock() }
-        let results: [DetectionResult]
+        let outcome: (results: [DetectionResult], above: DetectionResult?)
         switch tuning.engine {
-        case .mpm: results = analyzeMPM(window)
-        case .spectral: results = analyzeSpectral(window)
-        case .hybrid: results = analyzeHybrid(window)
+        case .mpm: outcome = analyzeMPM(window)
+        case .spectral: outcome = (analyzeSpectral(window), nil)
+        case .hybrid: outcome = analyzeHybrid(window)
         }
-        return confirmed(results)
+        return (confirmed(outcome.results), outcome.above)
     }
 
     /// The confirmation rule. A reading only reaches the screen once it has
@@ -159,15 +171,28 @@ public final class DetectorBank: @unchecked Sendable {
     /// spectral exists to prevent. If spectral heard *anything*, its frame
     /// stands; MPM speaks only when spectral was silent — the slack-string and
     /// missing-fundamental territory where MPM is the right tool.
-    private func analyzeHybrid(_ window: [Float]) -> [DetectionResult] {
+    private func analyzeHybrid(_ window: [Float]) -> ([DetectionResult], DetectionResult?) {
         let spectral = analyzeSpectral(window)
-        if spectral.contains(where: { $0.frequency != nil }) { return spectral }
+        if spectral.contains(where: { $0.frequency != nil }) {
+            // Spectral won the frame — but it has no detector above the
+            // bands, so the sentinel still answers for that territory.
+            // Without this, the top strings' octaves starve on exactly the
+            // instruments where spectral is healthy: a guitar always has
+            // SOMETHING ringing for spectral to read, so MPM frames — the
+            // sentinel's only other outing — barely happen, and B4/E5 live
+            // above every band with no other route. MPM's own clarity gate
+            // does the vetting up there: a real note at 2f fits its period
+            // cleanly, while an open string's mere 2nd harmonic is vetoed
+            // by the odd partials it drags along.
+            let above = sentinel?.analyze(window)
+            return (spectral, above?.frequency != nil ? above : nil)
+        }
         return analyzeMPM(window)
     }
 
     // MARK: - MPM: N detectors, then arbitration
 
-    private func analyzeMPM(_ window: [Float]) -> [DetectionResult] {
+    private func analyzeMPM(_ window: [Float]) -> ([DetectionResult], DetectionResult?) {
         let raw = detectors.map { $0.analyze(window) }
         // Which readings are shadows of another string's reading — the "play A,
         // G lights up" bug. The filter keeps the highest of any octave chain.
@@ -175,13 +200,16 @@ public final class DetectorBank: @unchecked Sendable {
             result.frequency.map { SubharmonicFilter.Candidate(id: index, frequency: $0) }
         }
         // The sentinel joins the comparison — so a note above every band still
-        // kills the shadows it casts into them — but is never itself shown;
-        // its id maps to no string.
-        if let above = sentinel?.analyze(window).frequency {
+        // kills the shadows it casts into them — but never lights a dial; its
+        // id maps to no string. Its reading rides out separately for the one
+        // consumer allowed to care (`analyzeWithAbove`).
+        let sentinelResult = sentinel?.analyze(window)
+        if let above = sentinelResult?.frequency {
             candidates.append(SubharmonicFilter.Candidate(id: -1, frequency: above))
         }
         let real = Set(SubharmonicFilter.real(among: candidates).map(\.id))
-        return raw.enumerated().map { index, result in
+        let above = real.contains(-1) ? sentinelResult : nil
+        let strings = raw.enumerated().map { index, result in
             guard result.frequency != nil else { return result }
             guard real.contains(index) else {
                 // Suppressed: keep the clarity so the diagnostics screen can
@@ -194,6 +222,7 @@ public final class DetectorBank: @unchecked Sendable {
                 frequency: result.frequency, clarity: result.clarity, rms: result.rms,
                 level: result.displayLevel)
         }
+        return (strings, above)
     }
 
     // MARK: - Spectral: one FFT, every string measured from it
@@ -243,7 +272,7 @@ public final class DetectorBank: @unchecked Sendable {
             }
             return DetectionResult(
                 frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms),
-                level: reading.strength)
+                level: reading.strength, evenPartialsOnly: reading.evenPartialsOnly)
         }
     }
 }

@@ -40,10 +40,16 @@ enum GridIntonationRouting {
             // readings (MPM's, in practice) need claiming.
             guard let hz = result.frequency, !result.evenPartialsOnly else { continue }
             guard let owner = octaveOwner(of: hz, targets: targets) else { continue }
-            // The dial the reading landed on goes quiet — its clarity and
-            // rms stay for diagnostics.
-            routed[index] = DetectionResult(
-                frequency: nil, clarity: result.clarity, rms: result.rms)
+            // One frequency, two meanings, in octave tunings: a reading
+            // that is also plausibly an OPEN string — Drop D's D3 is the
+            // low string's 2f — keeps lighting its own dial (the player
+            // knows which string they played) while the octave slot hears
+            // it too. Only an unambiguous stray goes quiet where it
+            // landed; its clarity and rms stay for diagnostics.
+            if !isNearAFundamental(hz, targets: targets) {
+                routed[index] = DetectionResult(
+                    frequency: nil, clarity: result.clarity, rms: result.rms)
+            }
             claim(hz, from: result, for: owner, in: &routed)
         }
         if let above, let hz = above.frequency,
@@ -68,19 +74,7 @@ enum GridIntonationRouting {
 
     /// The string whose octave this reading is — the nearest 2f within the
     /// window — or nil when it's nobody's.
-    ///
-    /// A reading that is plausibly an OPEN string is never claimed: in an
-    /// octave tuning like Drop D, the low string's 2f IS the open D3 — one
-    /// frequency, two meanings — and claiming it would dark the D3 dial
-    /// whenever it plays and record fake octave samples besides. That
-    /// octave slot honestly stays empty instead (the roadmap's promise).
-    /// Standard tunings never trip this: every 2f sits ≥200¢ from every
-    /// fundamental.
     private static func octaveOwner(of hz: Double, targets: [Double]) -> Int? {
-        let nearAFundamental = targets.contains { target in
-            target > 0 && abs(1200 * log2(hz / target)) <= octaveWindowCents
-        }
-        guard !nearAFundamental else { return nil }
         var best: (index: Int, cents: Double)?
         for (index, target) in targets.enumerated() where target > 0 {
             let cents = abs(1200 * log2(hz / (2 * target)))
@@ -90,5 +84,15 @@ enum GridIntonationRouting {
             }
         }
         return best?.index
+    }
+
+    /// Whether a reading is plausibly some string's OPEN note — the octave
+    /// tunings' ambiguity (Drop D: the low string's 2f IS the open D3).
+    /// Standard tunings never come close: every 2f sits ≥200¢ from every
+    /// fundamental.
+    private static func isNearAFundamental(_ hz: Double, targets: [Double]) -> Bool {
+        targets.contains { target in
+            target > 0 && abs(1200 * log2(hz / target)) <= octaveWindowCents
+        }
     }
 }

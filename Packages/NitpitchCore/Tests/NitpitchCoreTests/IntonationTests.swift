@@ -251,6 +251,32 @@ final class IntonationTests: XCTestCase {
         XCTAssertGreaterThan(litFrames, 0)
     }
 
+    /// The note above every band — a bass D string's 12th fret, higher than
+    /// the top of the top string's band — surfaces through the sentinel,
+    /// which otherwise exists only to kill subharmonic shadows. This is the
+    /// grid's only sight of that octave: too high for any dial's band, too
+    /// low for the spectral estimator's bins.
+    func testTheBankSurfacesTheNoteAboveEveryBand() {
+        let bass = Instrument.bassGuitar
+        let targets = bass.notes.map { $0.frequency() }
+        let bank = DetectorBank(
+            sampleRate: sampleRate, targets: targets, bands: bass.stringBands(),
+            tuning: DetectionTuning(engine: .mpm))
+        let d12th = 2 * targets[2] * pow(2, 5.0 / 1200)
+        let signal = tone(d12th, count: signalLength(hops: 3), harmonics: [1.0, 0.6, 0.4])
+        var seen = false
+        for hop in 0..<3 {
+            let start = hop * Detection.hopSize
+            let frame = bank.analyzeWithAbove(
+                Array(signal[start..<(start + Detection.windowSize)]))
+            if let above = frame.above?.frequency {
+                XCTAssertEqual(1200 * log2(above / d12th), 0, accuracy: 10)
+                seen = true
+            }
+        }
+        XCTAssertTrue(seen, "the sentinel must surface the above-band note")
+    }
+
     // MARK: - End to end: signal in, samples out
 
     func testAHeldOctaveReachesTheCapture() {

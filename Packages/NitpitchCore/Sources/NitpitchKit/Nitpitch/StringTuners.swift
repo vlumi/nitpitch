@@ -69,16 +69,19 @@ final class StringTuners: ObservableObject {
         subscription = audio.subscribe { [weak self, bank] window in
             // Runs on the analysis queue. All the DSP happens here; only the
             // finished results hop to main.
-            let results = bank.analyze(window)
+            let frame = bank.analyzeWithAbove(window)
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                let results = frame.strings
                 // With the intonation layer on, octave findings get claimed
                 // by their owners first — MPM puts a fretted 12th on a
-                // NEIGHBOUR's dial, because a string's own octave is always
-                // outside its own band (see `GridIntonationRouting`).
+                // NEIGHBOUR's dial or above every band entirely (the
+                // sentinel's territory), because a string's own octave is
+                // always outside its own band (see `GridIntonationRouting`).
                 let routed =
                     self.isIntonating
-                    ? GridIntonationRouting.route(results: results, targets: self.targets)
+                    ? GridIntonationRouting.route(
+                        results: results, targets: self.targets, above: frame.above)
                     : results
                 for (tuner, result) in zip(self.tuners, routed) {
                     tuner.ingest(result)

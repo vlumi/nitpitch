@@ -112,6 +112,19 @@ final class GridIntonationTests: XCTestCase {
         XCTAssertNil(routed[2].frequency, "the stray landing still quiets")
     }
 
+    /// The D string's octave sits ABOVE every band — only the bank's
+    /// sentinel ever sees it (the second field report: 12th fret on D
+    /// registered nothing at all). The sentinel's reading joins the claims.
+    func testAnAboveBandOctaveIsClaimedThroughTheSentinel() {
+        let d12th = DetectionResult(
+            frequency: 2 * bass[2] * pow(2, 4.0 / 1200), clarity: 0.9, rms: 0.1, level: 0.7)
+        let routed = GridIntonationRouting.route(
+            results: [silent, silent, silent, silent], targets: bass, above: d12th)
+        XCTAssertTrue(routed[2].evenPartialsOnly, "D claims its octave from the sentinel")
+        XCTAssertEqual(
+            1200 * log2((routed[2].frequency ?? 1) / bass[2]), 4, accuracy: 0.1)
+    }
+
     /// Spectral parity frames are already shaped and keep their dial slot —
     /// the router only claims unflagged readings.
     func testParityFramesPassUntouched() {

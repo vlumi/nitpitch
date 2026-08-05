@@ -27,8 +27,13 @@ enum GridIntonationRouting {
     static let octaveWindowCents = 75.0
 
     /// One frame in, one frame out: per-string results with octave findings
-    /// claimed by their owners and silenced where they landed.
-    static func route(results: [DetectionResult], targets: [Double]) -> [DetectionResult] {
+    /// claimed by their owners and silenced where they landed. `above` is
+    /// the bank's sentinel reading — the note above every band, which is
+    /// where the TOP strings' octaves live by construction (a band tops out
+    /// a few semitones past its string, and an octave is twelve).
+    static func route(
+        results: [DetectionResult], targets: [Double], above: DetectionResult? = nil
+    ) -> [DetectionResult] {
         var routed = results
         for (index, result) in results.enumerated() {
             // Spectral parity frames are already shaped; only unflagged
@@ -39,14 +44,26 @@ enum GridIntonationRouting {
             // rms stay for diagnostics.
             routed[index] = DetectionResult(
                 frequency: nil, clarity: result.clarity, rms: result.rms)
-            // The owner claims it in parity shape — unless its own dial has
-            // live evidence this frame, which a claim never overwrites.
-            guard routed[owner].frequency == nil else { continue }
-            routed[owner] = DetectionResult(
-                frequency: hz / 2, clarity: result.clarity, rms: result.rms,
-                level: result.displayLevel, evenPartialsOnly: true)
+            claim(hz, from: result, for: owner, in: &routed)
+        }
+        if let above, let hz = above.frequency,
+            let owner = octaveOwner(of: hz, targets: targets)
+        {
+            claim(hz, from: above, for: owner, in: &routed)
         }
         return routed
+    }
+
+    /// The owner takes the reading in parity shape — unless its own dial
+    /// has live evidence this frame, which a claim never overwrites.
+    private static func claim(
+        _ hz: Double, from result: DetectionResult, for owner: Int,
+        in routed: inout [DetectionResult]
+    ) {
+        guard routed[owner].frequency == nil else { return }
+        routed[owner] = DetectionResult(
+            frequency: hz / 2, clarity: result.clarity, rms: result.rms,
+            level: result.displayLevel, evenPartialsOnly: true)
     }
 
     /// The string whose octave this reading is — the nearest 2f within the

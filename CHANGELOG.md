@@ -27,16 +27,19 @@ and remembered exactly as you left them.
 - Mac: ← and → walk the strings in the string view — the same move as the
   on-screen arrows, without reaching for the mouse. The keys land there
   the moment the screen opens, and fall silent past the outermost string.
-- The intonation workbench: a tuning-fork toggle in the string view checks
-  whether a string plays in tune along its length. Play the open string,
-  then the octave — fretted 12th, fingered octave, or the natural
-  harmonic — and each is captured once it holds steady; the verdict is the
-  delta between them (positive = octave sharp; on a guitar the saddle
-  wants to move back). One detector serves both notes: an open string
-  always sounds odd partials while the octave sounds only even ones, so
-  the two are told apart by what's missing, not by where they are — which
-  is also why a phone microphone rolling off a low string's fundamental
-  can't fool it. Measurement only, so it works on locked instruments.
+- The string view checks intonation, ambiently — no mode to find. Below
+  the switcher sits the octave's own tuner, lit whenever the octave
+  sounds (fretted 12th, fingered octave, or the natural harmonic — they
+  all count), beside both captured samples and the verdict between them:
+  Δ positive = octave sharp; on a guitar the saddle wants to move back.
+  Each value records once its note holds steady, and the latest hold
+  wins. One detector serves both notes: an open string always sounds odd
+  partials while the octave sounds only even ones, so the two are told
+  apart by what's missing — which is also why a phone microphone rolling
+  off a low string's fundamental can't fool it. The main dial now stands
+  down honestly while the octave plays (it used to misread a fretted
+  12th as the open string, roughly in tune) — the open string's answer
+  stays the open string's.
 - A Mac with no microphone at all no longer crashes at launch: the audio
   engine throws an uncatchable exception the moment it's asked about input
   hardware that doesn't exist, so the app now checks for input devices

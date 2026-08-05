@@ -20,11 +20,6 @@ struct StringView: View {
 
     @StateObject private var single: SingleStringTuner
     @State private var index: Int
-    /// Whether the pane is the intonation workbench rather than the tuner.
-    /// View state, not store state: a measuring session belongs to the
-    /// screen that's running it, and it's read-only — which is also why the
-    /// toggle stays enabled on a locked instrument.
-    @State private var isIntonating = false
     /// Finger-following displacement of the dial pane while a swipe is in
     /// flight — zero whenever the pane is at rest.
     @State private var dragOffset: CGFloat = 0
@@ -55,11 +50,11 @@ struct StringView: View {
     private var instrument: Instrument { instance.instrument }
 
     /// The measured content: meter 10, dial pane 173 (arc 70 after the
-    /// readout's rise + readout 77 + strip 14 + gaps), switcher 40,
-    /// reference row ~30, three 16pt gaps. Measured, not padded — an
-    /// overstated canvas is empty window (the chromatic root and the grid
-    /// cells both had that disease).
-    private static let design = CGSize(width: 400, height: 305)
+    /// readout's rise + readout 77 + strip 14 + gaps), switcher 40, the
+    /// intonation panel 104, reference row ~30, four 16pt gaps. Measured,
+    /// not padded — an overstated canvas is empty window (the chromatic
+    /// root and the grid cells both had that disease).
+    private static let design = CGSize(width: 400, height: 427)
 
     var body: some View {
         GeometryReader { geo in
@@ -93,7 +88,6 @@ struct StringView: View {
         .padding(24)
         .navigationTitle(instance.nameText)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) { intonationButton }
             ToolbarItem(placement: .primaryAction) { lockButton }
         }
         // No identifier on the container: applied here it stamps every child
@@ -105,9 +99,6 @@ struct StringView: View {
         }
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
-        }
-        .onChangeCompat(of: isIntonating) { on in
-            single.setIntonating(on)
         }
         #if os(macOS)
         // The keyboard walks the strings: ← and → are the arrows beside the
@@ -147,20 +138,20 @@ struct StringView: View {
                 .padding(.top, 6)
             dialCarousel
             stringSwitcher
-            // The bottom row is the mode's row: the reference stepper while
-            // tuning, the captured measurement while intonating — the
-            // reference is exactly what must NOT move mid-measurement.
-            if isIntonating {
-                IntonationReadout(monitor: single.intonation)
-            } else {
-                ReferencePitchStepper(
-                    reference: Binding(
-                        get: { instance.reference },
-                        set: { store.setReference(id: instance.id, $0) }),
-                    naming: settings.naming
-                )
-                .disabled(instance.isLocked)
-            }
+            // The octave's tuner and the intonation verdict, ambient — no
+            // mode. This screen has the room, and the measurement is only
+            // ever what the microphone already established.
+            IntonationPanel(
+                monitor: single.intonation,
+                target: single.tuner.target,
+                naming: settings.naming)
+            ReferencePitchStepper(
+                reference: Binding(
+                    get: { instance.reference },
+                    set: { store.setReference(id: instance.id, $0) }),
+                naming: settings.naming
+            )
+            .disabled(instance.isLocked)
         }
     }
 
@@ -194,12 +185,7 @@ struct StringView: View {
 
     @ViewBuilder
     private func pane(at position: Int) -> some View {
-        if position == index, isIntonating {
-            IntonationDialPane(
-                monitor: single.intonation,
-                target: single.tuner.target,
-                naming: settings.naming)
-        } else if position == index {
+        if position == index {
             StringDialPane(
                 tuner: single.tuner,
                 naming: settings.naming,
@@ -259,23 +245,6 @@ struct StringView: View {
                 }
                 animatedStep(delta)
             }
-    }
-
-    /// The intonation workbench's door: check the octave — fretted 12th,
-    /// fingered octave, or the harmonic — against the open string. Filled
-    /// and tinted while the mode is on, the same on/off vocabulary as the
-    /// padlock beside it. Measurement only, so a locked instrument keeps it.
-    private var intonationButton: some View {
-        Button {
-            isIntonating.toggle()
-        } label: {
-            Image(systemName: "tuningfork")
-                .foregroundStyle(
-                    isIntonating ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-        }
-        .accessibilityIdentifier("string.intonation")
-        .accessibilityLabel(Text("Intonation", bundle: .module))
-        .accessibilityAddTraits(isIntonating ? [.isSelected] : [])
     }
 
     /// The same ambient padlock as the grid's — the lock follows the

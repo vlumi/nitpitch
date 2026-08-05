@@ -16,6 +16,9 @@ final class IntonationMonitor: ObservableObject {
         /// Display-smoothed cents against the slot's own target.
         let cents: Double
         let clarity: Double
+        /// Meter drive behind the reading, quantized to twentieths like
+        /// every other published level.
+        let level: Double
     }
 
     @Published private(set) var live: Live?
@@ -54,7 +57,9 @@ final class IntonationMonitor: ObservableObject {
                 lastSlot = slot
             }
             let smoothed = (smoother.update(cents: cents) * 10).rounded() / 10
-            let next = Live(slot: slot, cents: smoothed, clarity: clarity)
+            let next = Live(
+                slot: slot, cents: smoothed, clarity: clarity,
+                level: (frame.level * 20).rounded() / 20)
             if next != live { live = next }
         }
     }

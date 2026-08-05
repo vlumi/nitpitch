@@ -63,8 +63,8 @@ fifth, not either note alone. No mainstream tuner shows this.
 
 ### Intonation on the grid, maybe
 
-The per-string intonation workbench shipped (the string view's tuning-fork
-toggle). An open question stays: the same capture on the *main grid*, every
+The per-string intonation panel shipped (ambient in the string view). An
+open question stays: the same capture on the *main grid*, every
 string listening for both its notes at once. The bands would re-split over
 the merged target set — no exact collisions in standard tunings, but octave
 tunings like Drop D share a frequency between two meanings, and the display

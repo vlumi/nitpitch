@@ -41,7 +41,8 @@ final class SingleStringTuner: ObservableObject {
 
     init(
         instrument: Instrument, index: Int, audio: AudioSessionController,
-        reference: ReferencePitch, tuning: DetectionTuning = .default
+        reference: ReferencePitch, temperament: Temperament = .equal,
+        tuning: DetectionTuning = .default
     ) {
         self.instrument = instrument
         self.audio = audio
@@ -49,14 +50,17 @@ final class SingleStringTuner: ObservableObject {
         self.tuning = tuning
         let band = instrument.band(reference: reference)
         let note = instrument.notes[index]
+        let offset = temperament.offsets(for: instrument.strings)[index]
         tuner = StringTunerViewModel(
-            audio: audio, target: note, band: band, reference: reference)
+            audio: audio, target: note, band: band, reference: reference,
+            targetOffsetCents: offset)
+        analyzerTarget =
+            note.frequency(reference: reference) * pow(2, offset / 1200)
         bank = DetectorBank(
             sampleRate: audio.sampleRate,
-            targets: [note.frequency(reference: reference)],
+            targets: [analyzerTarget],
             bands: [band],
             tuning: tuning)
-        analyzerTarget = note.frequency(reference: reference)
         analyzer = IntonationAnalyzer(
             sampleRate: audio.sampleRate, target: analyzerTarget, tuning: tuning)
     }
@@ -112,18 +116,19 @@ final class SingleStringTuner: ObservableObject {
         guard instrument.notes.indices.contains(index) else { return }
         let note = instrument.notes[index]
         let band = instrument.band(reference: reference)
+        let offset = instance.appliedTemperament.offsets(for: instrument.strings)[index]
+        let hz = note.frequency(reference: reference) * pow(2, offset / 1200)
         bank.configure(
-            targets: [note.frequency(reference: reference)],
+            targets: [hz],
             bands: [band],
             tuning: tuning)
-        tuner.configure(band: band, reference: reference)
+        tuner.configure(band: band, reference: reference, targetOffsetCents: offset)
         if tuner.target != note {
             tuner.retarget(note)
         }
         // The intonation captures answer for one specific target; a real
         // retarget invalidates them. An incidental instance change — the
         // lock toggling — moves nothing and must not wipe a measurement.
-        let hz = note.frequency(reference: reference)
         analyzer.configure(target: hz, tuning: tuning)
         if hz != analyzerTarget {
             analyzerTarget = hz

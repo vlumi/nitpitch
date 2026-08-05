@@ -63,7 +63,9 @@ struct InstrumentGridView: View {
         _strings = StateObject(
             wrappedValue: StringTuners(
                 instrument: instance.instrument, audio: audio,
-                reference: instance.reference, tuning: detection.tuning))
+                reference: instance.reference,
+                temperament: instance.appliedTemperament,
+                tuning: detection.tuning))
         _columns = State(initialValue: Self.defaultColumns(strings: instance.strings.count))
     }
 
@@ -267,6 +269,7 @@ struct InstrumentGridView: View {
     private func reconfigure() {
         strings.configure(
             instrument: instance.instrument, reference: instance.reference,
+            temperament: instance.appliedTemperament,
             tuning: detection.tuning)
     }
 

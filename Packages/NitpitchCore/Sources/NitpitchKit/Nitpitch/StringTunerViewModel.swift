@@ -93,25 +93,35 @@ public final class StringTunerViewModel: ObservableObject {
         audio: AudioSessionController,
         target: Note,
         band: ClosedRange<Double>,
-        reference: ReferencePitch = .standard
+        reference: ReferencePitch = .standard,
+        targetOffsetCents: Double = 0
     ) {
         self.audio = audio
         self.target = target
         self.reference = reference
         self.band = band
+        self.targetOffsetCents = targetOffsetCents
     }
+
+    /// The temperament's shift of this string's target, in cents from equal
+    /// — a violin E's +1.955 under pure fifths. Every cents answer measures
+    /// against the shifted target.
+    public private(set) var targetOffsetCents: Double
 
     /// Re-tune when the reference or the band moves. The detector itself lives
     /// in the bank; here only the display copy and the smoothing reset.
-    public func configure(band: ClosedRange<Double>, reference: ReferencePitch) {
-        // A moved reference moves the target's frequency: captures answered
-        // for the old one. Incidental re-configures (a lock toggle passing
-        // through) keep them.
-        if reference != self.reference {
+    public func configure(
+        band: ClosedRange<Double>, reference: ReferencePitch, targetOffsetCents: Double = 0
+    ) {
+        // A moved reference — or a temperament shifting the target — moves
+        // the target's frequency: captures answered for the old one.
+        // Incidental re-configures (a lock toggle passing through) keep them.
+        if reference != self.reference || targetOffsetCents != self.targetOffsetCents {
             resetIntonation()
         }
         self.reference = reference
         self.band = band
+        self.targetOffsetCents = targetOffsetCents
         smoother.reset()
     }
 
@@ -164,9 +174,11 @@ public final class StringTunerViewModel: ObservableObject {
 
         let raw = PitchReading(frequency: hz, reference: reference)
         let absolute = Double(raw.note.midi) * 100 + raw.cents
-        // Against *this string*, not the nearest note. No re-rounding: the
-        // answer to "how far is the G string from G" is allowed to be 340.
-        let epsilon = absolute - Double(target.midi) * 100
+        // Against *this string's* TEMPERED target, not the nearest note. No
+        // re-rounding: the answer to "how far is the G string from G" is
+        // allowed to be 340 — and under pure fifths, "G" sits 3.9¢ below
+        // equal's.
+        let epsilon = absolute - Double(target.midi) * 100 - targetOffsetCents
 
         if isIntonating, result.evenPartialsOnly {
             ingestOctave(epsilon: epsilon, result: result)
@@ -184,7 +196,7 @@ public final class StringTunerViewModel: ObservableObject {
         // reason the chromatic model does it, and the smoother is already
         // target-agnostic.
         let smoothed = smoother.update(cents: absolute)
-        let cents = smoothed - Double(target.midi) * 100
+        let cents = smoothed - Double(target.midi) * 100 - targetOffsetCents
         state = .reading(cents: cents, clarity: result.clarity)
     }
 

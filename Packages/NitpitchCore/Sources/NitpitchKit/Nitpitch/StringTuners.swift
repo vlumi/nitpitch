@@ -42,20 +42,34 @@ final class StringTuners: ObservableObject {
 
     init(
         instrument: Instrument, audio: AudioSessionController, reference: ReferencePitch,
-        tuning: DetectionTuning = .default
+        temperament: Temperament = .equal, tuning: DetectionTuning = .default
     ) {
         self.audio = audio
         let bands = instrument.stringBands(
             reference: reference, maxSemitones: tuning.maxSemitonesFromString)
-        tuners = zip(instrument.notes, bands).map { note, band in
-            StringTunerViewModel(audio: audio, target: note, band: band, reference: reference)
+        // The temperament shifts the targets a few cents; the bands stay
+        // MIDI-derived — they're semitones wide, and 2¢ moves nothing.
+        let offsets = temperament.offsets(for: instrument.strings)
+        tuners = zip(zip(instrument.notes, bands), offsets).map { pair, offset in
+            StringTunerViewModel(
+                audio: audio, target: pair.0, band: pair.1, reference: reference,
+                targetOffsetCents: offset)
         }
-        targets = instrument.notes.map { $0.frequency(reference: reference) }
+        targets = Self.temperedTargets(
+            notes: instrument.notes, offsets: offsets, reference: reference)
         bank = DetectorBank(
             sampleRate: audio.sampleRate,
             targets: targets,
             bands: bands,
             tuning: tuning)
+    }
+
+    private static func temperedTargets(
+        notes: [Note], offsets: [Double], reference: ReferencePitch
+    ) -> [Double] {
+        zip(notes, offsets).map { note, offset in
+            note.frequency(reference: reference) * pow(2, offset / 1200)
+        }
     }
 
     func attachAll() {
@@ -117,20 +131,25 @@ final class StringTuners: ObservableObject {
         for tuner in tuners { tuner.end() }
     }
 
-    /// Re-tune every band when the reference or the band width moves — they all
-    /// shift together.
+    /// Re-tune every band when the reference, the temperament or the band
+    /// width moves — they all shift together.
     func configure(
-        instrument: Instrument, reference: ReferencePitch, tuning: DetectionTuning = .default
+        instrument: Instrument, reference: ReferencePitch,
+        temperament: Temperament = .equal, tuning: DetectionTuning = .default
     ) {
         let bands = instrument.stringBands(
             reference: reference, maxSemitones: tuning.maxSemitonesFromString)
-        targets = instrument.notes.map { $0.frequency(reference: reference) }
+        let offsets = temperament.offsets(for: instrument.strings)
+        targets = Self.temperedTargets(
+            notes: instrument.notes, offsets: offsets, reference: reference)
         bank.configure(
             targets: targets,
             bands: bands,
             tuning: tuning)
-        for (tuner, (note, band)) in zip(tuners, zip(instrument.notes, bands)) {
-            tuner.configure(band: band, reference: reference)
+        for (tuner, ((note, band), offset)) in zip(
+            tuners, zip(zip(instrument.notes, bands), offsets))
+        {
+            tuner.configure(band: band, reference: reference, targetOffsetCents: offset)
             // The tuning may have moved this string to a different note —
             // Drop D turns E2's dial into D2's. Rebanding alone would leave
             // the cell measuring (and labelled) against the old target.

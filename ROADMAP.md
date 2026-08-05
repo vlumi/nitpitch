@@ -13,18 +13,9 @@ stay unbuilt. Next milestone: v0.3, tuning the tuning.
 ## 1. v0.3 — tuning the tuning (violin, guitar, bass)
 
 The next milestone: improvements to the act of tuning itself, for the
-instruments actually on hand. Build order follows dependency: the seam is
-tiny and unblocks everything.
-
-### The temperament seam
-
-The equal-temperament assumption lives in exactly two places, both in
-`Pitch.swift`: `Note.frequency(reference:)` and
-`PitchReading.init(frequency:reference:)`. A **temperament** becomes a
-function from note to expected frequency, with equal temperament the
-identity, and both call sites route through it. One small abstraction
-covers the just fifths below, the temperaments entry, and piano stretch
-later (§ 2) — worth building first, deliberately.
+instruments actually on hand. The temperament seam
+shipped (pure fifths/fourths on bowed instruments, preset-carried); what
+remains builds on it.
 
 ### Tone generator
 
@@ -51,8 +42,8 @@ fifth, not either note alone. No mainstream tuner shows this.
   envelope more precisely than either pitch. "3 beats/sec, slowing" is
   closer to what the ear does than two cent readings side by side.
 - **Pure, not equal-tempered.** A violinist tuning by ear produces the just
-  3:2 fifth, ~2 cents wider than equal-tempered — which is what the
-  temperament seam above exists for.
+  3:2 fifth, ~2 cents wider than equal-tempered — which the shipped pure
+  temperament already encodes in the targets.
 - **The UI is the genuine unknown** — two needles? a beat display? an
   interval-width indicator? Wants trying against the instrument, not
   designing on paper.
@@ -65,11 +56,6 @@ fifth, not either note alone. No mainstream tuner shows this.
 
 A strobe or beat-frequency view, how professionals tune to a fraction of a
 cent. Shares machinery with the interval display.
-
-### Temperaments
-
-Just intonation and Pythagorean, for ensembles tuning fifths pure — a
-genuine violin concern, riding the seam above.
 
 ## 2. Piano — and why the target isn't always 2^(n/12)
 

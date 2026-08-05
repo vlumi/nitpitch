@@ -47,6 +47,29 @@ extension InstrumentGridView {
                 }
             }
 
+            // Only where the instrument's construction allows a choice:
+            // string players tune beatless fifths (the pure 3:2, ~2¢ wide
+            // of equal); frets ARE equal temperament, so fretted
+            // instruments never see this row. Lives in the tuning menu
+            // because it's part of what the targets ARE — and presets
+            // carry it, like the reference.
+            if instance.template?.family == .bowed {
+                Picker(
+                    selection: Binding(
+                        get: { instance.appliedTemperament },
+                        set: { store.setTemperament(id: instance.id, $0) })
+                ) {
+                    Text("Equal", bundle: .module).tag(Temperament.equal)
+                    if instance.template?.id == "double-bass" {
+                        Text("Pure fourths", bundle: .module).tag(Temperament.pure)
+                    } else {
+                        Text("Pure fifths", bundle: .module).tag(Temperament.pure)
+                    }
+                } label: {
+                    Text("Temperament", bundle: .module)
+                }
+            }
+
             Divider()
             Button {
                 presetName = ""

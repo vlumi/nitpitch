@@ -26,6 +26,11 @@ public struct Preset: Equatable, Hashable, Codable, Identifiable, Sendable {
     /// The reference payload, or nil when the preset deliberately doesn't
     /// carry one.
     public let referenceHz: Double?
+    /// The temperament payload. New saves always carry it — a preset is a
+    /// situation, and "quartet, pure fifths" is as much the situation as
+    /// A=442 — while nil (every preset saved before temperaments existed)
+    /// means "leave the instrument's alone".
+    public let temperament: Temperament?
 
     public var reference: ReferencePitch? { referenceHz.map(ReferencePitch.init(hz:)) }
 
@@ -113,7 +118,11 @@ public final class PresetStore: ObservableObject {
             name: trimmed,
             templateID: instance.templateID,
             strings: instance.strings,
-            referenceHz: includeReference ? instance.referenceHz : nil)
+            referenceHz: includeReference ? instance.referenceHz : nil,
+            // Always captured, explicitly — an equal-temperament preset must
+            // RESTORE equal when loaded onto a pure instrument, so "equal"
+            // and "unspecified" cannot share a spelling.
+            temperament: instance.appliedTemperament)
         if let index = presets.firstIndex(where: { $0.id == preset.id }) {
             presets[index] = preset
         } else {
@@ -136,6 +145,9 @@ public final class PresetStore: ObservableObject {
         store.setTuning(id: instance.id, strings: preset.strings)
         if let reference = preset.reference {
             store.setReference(id: instance.id, reference)
+        }
+        if let temperament = preset.temperament {
+            store.setTemperament(id: instance.id, temperament)
         }
         store.presetApplied(id: instance.id, presetID: preset.id)
     }

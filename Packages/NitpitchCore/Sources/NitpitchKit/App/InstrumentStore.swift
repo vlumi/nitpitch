@@ -25,6 +25,12 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// The padlock: a locked instrument's setup is frozen behind the toolbar
     /// toggle.
     public var isLocked: Bool
+    /// How the open-string targets divide their intervals — pure fifths for
+    /// a violin tuned the orchestra's way. Optional storage: nil means
+    /// `.equal` and is what old stored JSON decodes to; read through
+    /// `appliedTemperament`. Only ever non-nil on bowed instruments (the UI
+    /// offers it nowhere else — frets are equal temperament cast in metal).
+    public var temperament: Temperament?
     /// The preset last applied — the setup's *provenance*. An explicit pick
     /// (another preset, or a tuning from the menu) replaces it; granular
     /// edits (a string stepper, a reference step) keep it, and the pill shows
@@ -42,6 +48,9 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     public var modifiedAt: Date?
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
+
+    /// The temperament in force — nil storage reads as equal.
+    public var appliedTemperament: Temperament { temperament ?? .equal }
 
     public var template: Instrument? { Instrument.named(templateID) }
 
@@ -302,6 +311,13 @@ public final class InstrumentStore: ObservableObject {
         // Keeps the preset claim: drift shows as "(edited)", scope-aware —
         // a tuning-only preset never claimed the reference at all.
         update(id: id) { $0.referenceHz = reference.hz }
+    }
+
+    /// Change how the targets divide their intervals — a granular edit like
+    /// a reference step, so the preset claim stays and shows "(edited)"
+    /// while drifted.
+    public func setTemperament(id: String, _ temperament: Temperament) {
+        update(id: id) { $0.temperament = temperament == .equal ? nil : temperament }
     }
 
     /// Called by `PresetStore.load` after applying a preset's fields, so the

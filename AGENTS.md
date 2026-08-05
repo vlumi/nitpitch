@@ -226,6 +226,20 @@ one of the drafts that lost.
   (Drop D's D3 is the low string's 2f) lights BOTH meanings rather than
   neither — the player chose generous display twice; consensus and
   latest-wins guard the record.
+- **Temperament is a property of the targets, offered only where the
+  instrument allows a choice.** Bowed instruments tune beatless fifths
+  by ear (pure 3:2, ~2¢ wide of equal), so they get Equal/Pure in the
+  tuning menu — anchored at the A string, pure fifths and fourths
+  outward, exotic intervals stepping equal. Frets ARE equal temperament,
+  so fretted instruments never see the row; the chromatic screen keeps
+  naming equal-tempered notes (re-tempering all twelve needs a root — a
+  different feature); the intonation layer needs nothing (octaves are
+  2:1 everywhere). Presets carry temperament explicitly — a preset is a
+  situation, and an equal preset must RESTORE equal onto a pure
+  instrument, so "equal" and "unspecified" have different spellings
+  (nil = legacy = leave alone). Just-vs-Pythagorean is moot for adjacent
+  open strings — fifths and fourths are pure in both — which is why the
+  one non-equal choice is just called "pure".
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

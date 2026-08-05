@@ -54,7 +54,12 @@ struct PresetManager: View {
                 }
             }
         }
+        // Mac sheet sizing only: on an iPhone this minimum EXCEEDS a 375pt
+        // screen, and the missing width came out of the list's horizontal
+        // margins — rows flush to both edges.
+        #if os(macOS)
         .frame(minWidth: 400, minHeight: 300)
+        #endif
     }
 
     /// The catalog tunings this instrument can wear — pinnable like any
@@ -174,13 +179,18 @@ struct PresetManager: View {
         .accessibilityLabel(Text("Delete", bundle: .module))
     }
 
-    /// What loading would do, spelled out: the pitches, and the reference if
-    /// it carries one.
+    /// What loading would do, spelled out: the pitches, the reference if it
+    /// carries one, and a pure temperament — the same vocabulary as the
+    /// tuning menu's rows. (An explicitly-equal payload stays unspelled,
+    /// like there: "· equal" on every fretted preset would be noise.)
     private func payloadSummary(_ preset: Preset) -> String {
-        let notes = preset.strings.map { Note(midi: $0).fullName }.joined(separator: " ")
+        var summary = preset.strings.map { Note(midi: $0).fullName }.joined(separator: " ")
         if let reference = preset.reference {
-            return "\(notes) · A=\(Int(reference.hz))"
+            summary += " · A=\(Int(reference.hz))"
         }
-        return notes
+        if preset.temperament == .pure {
+            summary += " · pure"
+        }
+        return summary
     }
 }

@@ -61,15 +61,31 @@ fifth, not either note alone. No mainstream tuner shows this.
   favors one string; whether that's nuisance or dealbreaker is a
   real-instrument question.
 
-### Intonation on the grid, maybe
+### Intonation on the grid
 
-The per-string intonation panel shipped (ambient in the string view). An
-open question stays: the same capture on the *main grid*, every
-string listening for both its notes at once. The bands would re-split over
-the merged target set — no exact collisions in standard tunings, but octave
-tunings like Drop D share a frequency between two meanings, and the display
-has to earn two values per 230×129 cell. Decide after the workbench has
-seen real saddle work.
+Wanted: the string view's capture on the *main grid*, so checking a whole
+instrument doesn't mean switching strings — play any string's octave and
+its cell records it.
+
+Parity made this far simpler than the old merged-band plan (which is why
+that plan is gone from here). No octave targets, no re-split bands: the
+spectral engine already measures every string from one FFT, and each
+string's reading carries its own parity — even-only evidence at string
+k's slots IS string k's octave, attributed with no ambiguity. The pieces:
+
+- Surface the parity bit through `DetectionResult` (the estimator's
+  `Reading.evenPartialsOnly` already exists; the bank drops it today).
+- One `IntonationCapture` per string; same consensus rules.
+- Display: the cell has no room for the panel, so likely a small Δ badge
+  once a string has both samples, with the panel's detail on tap-through
+  to the string view.
+
+Known limits, both acceptable: spectral-parity only (the single-string
+screen's MPM proximity rule is ambiguous on a grid, where a reading near
+2f of one string is legitimately a flat neighbour — careful bass work
+stays in the string view); and octave tunings like Drop D, where the low
+string's octave IS the open D3 — physics says one frequency genuinely
+means both, so that cell's octave slot honestly stays empty.
 
 ### Fine-tuning display
 
@@ -162,7 +178,10 @@ Store release does.
 - **Bass through the phone microphone** — a minutes-long field check:
   iOS already runs `.measurement` mode (AGC and processing off), so this
   is purely playing the bass at the iPhone, single strings and the
-  D+G / E+A double stops.
+  D+G / E+A double stops. Also through an iRig-style interface: line
+  level should be the happy path (no mic rolloff, no gate flicker), and
+  the device hot-plug handling should swap capture over live — confirm
+  both.
 
 ## 5. Owed upstream to donpa
 

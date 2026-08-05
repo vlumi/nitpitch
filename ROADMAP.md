@@ -132,8 +132,17 @@ everything else depends on, and worth putting in early.
   would be MPM-only from harmonics 3+. Screen: the strips' light-dot
   vocabulary is already watch-sized. CPU: per-hop cost is measured in
   single-digit milliseconds on a desktop core against the 46 ms hop.
-  Remaining unknowns: the real response curve versus the spec, watchOS
-  session/measurement modes, and whether MPM alone carries a bass.
+  The killer interaction is **haptic**: on the wrist you tune without
+  looking at anything — both hands stay on the instrument, and taps say
+  flat, sharp, in tune. Existing watch tuners prove the pattern. The
+  natural vocabulary is the beat rate (taps slowing as you approach,
+  stopping when pure — the same physics the interval display renders
+  visually), within watchOS's preset-haptic palette; no custom waveform
+  engine there. Phone haptics stay irrelevant: haptics need contact,
+  and while tuning, the phone is by definition the thing not being
+  held. Remaining unknowns: the real response curve versus the spec,
+  watchOS session/measurement modes, and whether MPM alone carries a
+  bass.
 
 ## 4. Toward 1.0
 

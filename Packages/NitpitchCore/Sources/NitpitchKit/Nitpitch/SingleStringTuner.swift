@@ -77,23 +77,14 @@ final class SingleStringTuner: ObservableObject {
             let frame = analyzer.analyze(window)
             Task { @MainActor [weak self] in
                 guard let self, let result = results.first else { return }
-                // The bank can't tell the octave from the open string — its
-                // estimator accepts 2nd-harmonic anchors by design (a phone
-                // mic's rolled-off low E), so a fretted 12th reads back as
-                // the open target, roughly in tune. Parity can tell. When
-                // the frame says octave, the main dial gets silence instead
-                // of the misread: this screen's promise is "how far is the
-                // OPEN string from its target", and the octave's own tuner
-                // sits right below.
-                if let frame, frame.soundsOctave {
-                    self.tuner.ingest(
-                        DetectionResult(
-                            frequency: nil, clarity: result.clarity, rms: result.rms))
-                } else {
-                    self.tuner.ingest(result)
-                }
+                // Who gets this frame — the main dial or the octave's tuner —
+                // is a real decision with two classifiers behind it; see
+                // `IntonationRouting` for why either alone leaks.
+                let routed = IntonationRouting.route(
+                    result: result, frame: frame, target: self.analyzerTarget)
+                self.tuner.ingest(routed.dial)
                 self.inputLevel.set((result.displayLevel * 20).rounded() / 20)
-                if let frame { self.intonation.ingest(frame) }
+                if let frame = routed.intonation { self.intonation.ingest(frame) }
             }
         }
     }

@@ -39,7 +39,11 @@ and remembered exactly as you left them.
   off a low string's fundamental can't fool it. The main dial now stands
   down honestly while the octave plays (it used to misread a fretted
   12th as the open string, roughly in tune) — the open string's answer
-  stays the open string's.
+  stays the open string's. And any reading near +1200¢ routes to the
+  octave's tuner whatever engine found it: on a bass — where a 55 Hz
+  fundamental spans one FFT bin and the time-domain engine carries more
+  of the frames — the 12th fret used to slam the main dial to +1200,
+  and the open string flickered between in-tune and full-right.
 - A Mac with no microphone at all no longer crashes at launch: the audio
   engine throws an uncatchable exception the moment it's asked about input
   hardware that doesn't exist, so the app now checks for input devices

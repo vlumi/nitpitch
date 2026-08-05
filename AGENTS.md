@@ -203,7 +203,9 @@ one of the drafts that lost.
   the dial to +1200). A toggle mode was shipped first and unshipped:
   pane identity removes the ambiguity a mode would guard against, and
   nobody tunes a string an octave sharp. Captures record only from held
-  runs (six consecutive frames within 4¢), latest wins; live cross-talk
+  runs (six same-slot frames within 4¢ after one forgiven outlier, two
+  quiet frames of grace — bass wobble and gate flicker demanded both),
+  latest wins; live cross-talk
   may flicker, recorded numbers must not. Measurement only — works on
   locked instruments. Bowed instruments keep it: fingered-octave practice
   and the traditional false-string check (a harmonic consistently off the

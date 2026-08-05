@@ -137,12 +137,41 @@ final class IntonationTests: XCTestCase {
         XCTAssertNil(capture.open, "a spread past the window is a note still settling")
     }
 
-    func testSilenceBreaksARun() {
+    /// A decaying note hovers at the strength gate and flickers
+    /// note/nothing — a brief dropout must not restart the clock.
+    func testABriefDropoutDoesNotBreakARun() {
         var capture = IntonationCapture()
         for _ in 0..<5 { capture.ingest(note(.open, -2)) }
-        capture.ingest(nothing)
+        for _ in 0..<IntonationCapture.quietGraceFrames { capture.ingest(nothing) }
         capture.ingest(note(.open, -2))
-        XCTAssertNil(capture.open, "a run is consecutive frames, not frames eventually")
+        XCTAssertEqual(capture.open ?? .nan, -2, accuracy: 0.01)
+    }
+
+    func testSustainedSilenceBreaksARun() {
+        var capture = IntonationCapture()
+        for _ in 0..<5 { capture.ingest(note(.open, -2)) }
+        for _ in 0..<(IntonationCapture.quietGraceFrames + 1) { capture.ingest(nothing) }
+        capture.ingest(note(.open, -2))
+        XCTAssertNil(capture.open, "past the grace, the run starts over")
+    }
+
+    /// One wild frame per window must not veto a lock the median — the
+    /// recorded value — never felt. Bass strings wobble: beating partials,
+    /// pluck pitch drift.
+    func testOneOutlierDoesNotBlockTheLock() {
+        var capture = IntonationCapture()
+        for cents in [-2.0, -1.8, -2.2, 6.0, -2.0, -1.9] {
+            capture.ingest(note(.open, cents))
+        }
+        XCTAssertEqual(capture.open ?? .nan, -1.95, accuracy: 0.1)
+    }
+
+    func testTwoOutliersStillBlockTheLock() {
+        var capture = IntonationCapture()
+        for cents in [-2.0, 6.0, -2.2, 6.0, -2.0, -1.9] {
+            capture.ingest(note(.open, cents))
+        }
+        XCTAssertNil(capture.open, "one outlier is forgiven, a wobble is not")
     }
 
     func testASlotSwitchStartsANewRun() {

@@ -138,21 +138,34 @@ public final class IntonationAnalyzer: @unchecked Sendable {
 /// a time. Pure state — no audio, no clocks — so the gating rules are
 /// testable as arithmetic.
 ///
-/// A sample records only from a **stable run**: `stableFrames` consecutive
-/// frames in the same slot, spread within `stabilityWindowCents`. That's
-/// what keeps a sympathetic resonance, a transient octave-jump, or the tail
-/// of a decaying pluck out of the record — cross-talk may flicker on the
-/// live display all it wants, but a captured number has to have been *held*.
-/// Within a continuing run the sample keeps refreshing, and a later stable
-/// run simply replaces the value: latest wins, so a polluted capture costs
-/// one deliberate re-play, not a reset ritual.
+/// A sample records only from a **stable run**: `stableFrames` frames in the
+/// same slot, spread within `stabilityWindowCents`. That's what keeps a
+/// sympathetic resonance, a transient octave-jump, or the tail of a decaying
+/// pluck out of the record — cross-talk may flicker on the live display all
+/// it wants, but a captured number has to have been *held*. Within a
+/// continuing run the sample keeps refreshing, and a later stable run simply
+/// replaces the value: latest wins, so a polluted capture costs one
+/// deliberate re-play, not a reset ritual.
+///
+/// Two honest allowances, both bought by a bass in the field:
+/// - The spread check may discard **one outlier** frame. Low-string
+///   estimates wobble more (beating partials, pluck pitch drift), and a
+///   single 6¢ frame was vetoing locks the median — the recorded value —
+///   was already immune to.
+/// - Silence gets `quietGraceFrames` of grace before the run resets. A
+///   decaying note hovers at the strength gate and flickers note/nothing;
+///   demanding literally consecutive frames kept restarting the clock on a
+///   note that was, by ear, plainly being held.
 public struct IntonationCapture: Equatable, Sendable {
-    /// Consecutive same-slot frames a sample needs — just over a quarter
-    /// second at the ~21 Hz analysis rate.
+    /// Same-slot frames a sample needs — just over a quarter second at the
+    /// ~21 Hz analysis rate.
     public static let stableFrames = 6
-    /// The most those frames may span, in cents, before the run is judged
-    /// to be a note still settling rather than one being held.
+    /// The most those frames may span, in cents — after the one allowed
+    /// outlier is discarded — before the run is judged to be a note still
+    /// settling rather than one being held.
     public static let stabilityWindowCents = 4.0
+    /// How many below-gate frames a run survives before it resets.
+    public static let quietGraceFrames = 2
 
     /// The open string's deviation from its target, in cents.
     public private(set) var open: Double?
@@ -168,18 +181,20 @@ public struct IntonationCapture: Equatable, Sendable {
 
     private var runSlot: IntonationSlot?
     private var run: [Double] = []
+    private var quietRun = 0
 
     public init() {}
 
     public mutating func ingest(_ frame: IntonationAnalyzer.Frame) {
         guard case .note(let slot, let cents, _) = frame.sounding else {
-            // Strict: a run is CONSECUTIVE frames, same as the bank's
-            // confirmation streaks. A pluck sustains far past the window,
-            // so demanding continuity costs nothing real.
-            runSlot = nil
-            run.removeAll(keepingCapacity: true)
+            quietRun += 1
+            if quietRun > Self.quietGraceFrames {
+                runSlot = nil
+                run.removeAll(keepingCapacity: true)
+            }
             return
         }
+        quietRun = 0
         if slot != runSlot {
             runSlot = slot
             run.removeAll(keepingCapacity: true)
@@ -188,13 +203,18 @@ public struct IntonationCapture: Equatable, Sendable {
         if run.count > Self.stableFrames {
             run.removeFirst()
         }
-        guard run.count == Self.stableFrames,
-            let low = run.min(), let high = run.max(),
-            high - low <= Self.stabilityWindowCents
-        else { return }
+        guard run.count == Self.stableFrames else { return }
+        let sorted = run.sorted()
+        // The spread with one outlier forgiven: the tightest span among
+        // "all", "all but the highest" and "all but the lowest". One wild
+        // frame per window must not veto a lock the median never felt.
+        let spread = min(
+            sorted[sorted.count - 1] - sorted[0],
+            sorted[sorted.count - 2] - sorted[0],
+            sorted[sorted.count - 1] - sorted[1])
+        guard spread <= Self.stabilityWindowCents else { return }
         // The median of the run, not the last frame: the middle of a held
         // note, immune to whichever end wobbled most.
-        let sorted = run.sorted()
         let value = (sorted[sorted.count / 2] + sorted[(sorted.count - 1) / 2]) / 2
         switch slot {
         case .open: open = value
@@ -207,5 +227,6 @@ public struct IntonationCapture: Equatable, Sendable {
         octave = nil
         runSlot = nil
         run.removeAll(keepingCapacity: true)
+        quietRun = 0
     }
 }

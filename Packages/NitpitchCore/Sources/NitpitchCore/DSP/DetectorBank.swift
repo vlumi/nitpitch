@@ -173,7 +173,20 @@ public final class DetectorBank: @unchecked Sendable {
     /// missing-fundamental territory where MPM is the right tool.
     private func analyzeHybrid(_ window: [Float]) -> ([DetectionResult], DetectionResult?) {
         let spectral = analyzeSpectral(window)
-        if spectral.contains(where: { $0.frequency != nil }) { return (spectral, nil) }
+        if spectral.contains(where: { $0.frequency != nil }) {
+            // Spectral won the frame — but it has no detector above the
+            // bands, so the sentinel still answers for that territory.
+            // Without this, the top strings' octaves starve on exactly the
+            // instruments where spectral is healthy: a guitar always has
+            // SOMETHING ringing for spectral to read, so MPM frames — the
+            // sentinel's only other outing — barely happen, and B4/E5 live
+            // above every band with no other route. MPM's own clarity gate
+            // does the vetting up there: a real note at 2f fits its period
+            // cleanly, while an open string's mere 2nd harmonic is vetoed
+            // by the odd partials it drags along.
+            let above = sentinel?.analyze(window)
+            return (spectral, above?.frequency != nil ? above : nil)
+        }
         return analyzeMPM(window)
     }
 

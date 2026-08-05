@@ -277,6 +277,37 @@ final class IntonationTests: XCTestCase {
         XCTAssertTrue(seen, "the sentinel must surface the above-band note")
     }
 
+    /// The guitar field case: B4 and E5 live above every band, so their
+    /// only route is the sentinel — and on a guitar something is always
+    /// ringing for spectral to read, so spectral wins nearly every frame.
+    /// The sentinel must answer on those frames too, or the top strings'
+    /// octaves starve on exactly the instruments where spectral is healthy.
+    func testTheSentinelAnswersOnSpectralFramesToo() {
+        let guitar = Instrument.guitar
+        let targets = guitar.notes.map { $0.frequency() }
+        let bank = DetectorBank(
+            sampleRate: sampleRate, targets: targets, bands: guitar.stringBands(),
+            tuning: .default)
+        // A fretted B4 (the B string's 12th, +5¢) over the open G string
+        // ringing quietly underneath — the mix a real guitar hands the mic.
+        let b12th = 2 * targets[4] * pow(2, 5.0 / 1200)
+        let fretted = tone(b12th, count: signalLength(hops: 4), harmonics: [1.0, 0.5, 0.25])
+        let ringing = tone(targets[3], count: signalLength(hops: 4))
+        let signal = zip(fretted, ringing).map { $0 * 0.9 + $1 * 0.25 }
+
+        var claimed = false
+        for hop in 0..<4 {
+            let start = hop * Detection.hopSize
+            let frame = bank.analyzeWithAbove(
+                Array(signal[start..<(start + Detection.windowSize)]))
+            if let above = frame.above?.frequency {
+                XCTAssertEqual(1200 * log2(above / b12th), 0, accuracy: 12)
+                claimed = true
+            }
+        }
+        XCTAssertTrue(claimed, "the octave above every band must surface")
+    }
+
     // MARK: - End to end: signal in, samples out
 
     func testAHeldOctaveReachesTheCapture() {

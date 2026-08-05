@@ -4,18 +4,20 @@ Planned work only — if it's not planned, it's not here. Settled decisions and
 their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
 in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.2.0 is feature-complete, build 3 cut for beta.
-Per-hop CPU was measured and retired as a concern — a 6-dial guitar costs
-~4.5 ms of the 46 ms hop on a desktop core, ~8 dials ~6.4 ms (pinned by
-`DetectorBankPerformanceTests`) — so the once-planned lazy-tracking levers
-stay unbuilt. Next milestone: v0.3, tuning the tuning.
+**Where things stand:** v0.2.0 build 4 cut for beta, carrying far more than
+v0.2 planned: the no-microphone survival story, the whole intonation arc
+(string-view panel, grid layer), and temperaments (pure by default on bowed,
+preset-carried). The "tuning the tuning" milestone's headline features
+therefore shipped under 0.2.0 — the version number waits for a release that
+earns it. Per-hop CPU was measured and retired as a concern — a 6-dial
+guitar costs ~4.5 ms of the 46 ms hop on a desktop core (pinned by
+`DetectorBankPerformanceTests`).
 
-## 1. v0.3 — tuning the tuning (violin, guitar, bass)
+## 1. Tuning the tuning — what remains (violin, guitar, bass)
 
-The next milestone: improvements to the act of tuning itself, for the
-instruments actually on hand. The temperament seam
-shipped (pure fifths/fourths on bowed instruments, preset-carried); what
-remains builds on it.
+Improvements to the act of tuning itself, for the instruments actually on
+hand. Intonation and temperaments shipped in 0.2.0 b4; what remains builds
+on them, and is cohesive enough to be the next version when it ships.
 
 ### Tone generator
 

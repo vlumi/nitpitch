@@ -82,8 +82,14 @@ public final class AudioInput: NSObject {
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain)
+        // Delivered on the main queue, NOT the HAL's default (nil), which
+        // hands the block to a thread the HAL owns — no place for Swift
+        // closures and task creation. A replug crashed in the concurrency
+        // runtime with a corrupted executor reference; this listener was
+        // the one piece of the app running Swift from a thread Swift had
+        // never seen.
         AudioObjectAddPropertyListenerBlock(
-            AudioObjectID(kAudioObjectSystemObject), &address, nil
+            AudioObjectID(kAudioObjectSystemObject), &address, .main
         ) { [weak self] _, _ in
             self?.onDeviceChange?()
         }

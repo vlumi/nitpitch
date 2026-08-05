@@ -30,8 +30,14 @@ struct InstrumentGridView: View {
     @State var isSavingPreset = false
     @State var presetName = ""
     /// A save waiting on the "replace?" confirmation: the preset it would
-    /// overwrite, and whether the reference rides along.
-    @State var pendingReplace: (preset: Preset, includeReference: Bool)?
+    /// overwrite, and which payloads ride along.
+    struct PendingReplace {
+        let preset: Preset
+        let includeReference: Bool
+        let includeTemperament: Bool
+    }
+
+    @State var pendingReplace: PendingReplace?
     @State var isManagingPresets = false
     /// The grid's own management flows — the chooser's swipe actions were
     /// findable by the initiated; the … menu is findable by everyone.
@@ -174,24 +180,13 @@ struct InstrumentGridView: View {
                 Text("Cancel", bundle: .module)
             }
         }
-        .alert(Text("Save preset", bundle: .module), isPresented: $isSavingPreset) {
-            TextField(text: $presetName) { Text("Name", bundle: .module) }
-            // The payload choice IS the save button (AGENTS.md): a preset
-            // carries only what it was saved with, decided right here.
-            Button {
-                attemptSave(includeReference: false)
-            } label: {
-                Text("Tuning only", bundle: .module)
-            }
-            Button {
-                attemptSave(includeReference: true)
-            } label: {
-                Text("Tuning and reference", bundle: .module)
-            }
-            Button(role: .cancel) {
-            } label: {
-                Text("Cancel", bundle: .module)
-            }
+        .sheet(isPresented: $isSavingPreset) {
+            // The payload is chosen right where the save happens: pitches
+            // always (they're what a preset IS), reference and temperament
+            // each a checkbox — the alert's one-button-per-combination
+            // pattern stopped scaling at the third dimension.
+            PresetSaver(
+                instance: instance, naming: settings.naming, onSave: savePreset)
         }
         .alert(
             Text("Replace preset", bundle: .module),
@@ -203,7 +198,8 @@ struct InstrumentGridView: View {
                 if let pending = pendingReplace,
                     let saved = presets.save(
                         instance, named: presetName,
-                        includeReference: pending.includeReference)
+                        includeReference: pending.includeReference,
+                        includeTemperament: pending.includeTemperament)
                 {
                     store.presetApplied(id: instance.id, presetID: saved.id)
                 }
@@ -250,15 +246,27 @@ struct InstrumentGridView: View {
         }
     }
 
+    /// The sheet's choices arriving: remember the name (the replace confirm
+    /// needs it) and attempt the save.
+    private func savePreset(
+        named name: String, includeReference: Bool, includeTemperament: Bool
+    ) {
+        presetName = name
+        attemptSave(includeReference: includeReference, includeTemperament: includeTemperament)
+    }
+
     /// Save, or ask first when the name would overwrite — updating a preset
     /// is a deliberate save, never an accident.
-    private func attemptSave(includeReference: Bool) {
+    private func attemptSave(includeReference: Bool, includeTemperament: Bool) {
         let trimmed = presetName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         if let existing = presets.existing(named: trimmed, templateID: instance.templateID) {
-            pendingReplace = (existing, includeReference)
+            pendingReplace = PendingReplace(
+                preset: existing, includeReference: includeReference,
+                includeTemperament: includeTemperament)
         } else if let saved = presets.save(
-            instance, named: trimmed, includeReference: includeReference)
+            instance, named: trimmed, includeReference: includeReference,
+            includeTemperament: includeTemperament)
         {
             // "This setup is called Gig" — so the claim follows the save:
             // the pill and the checkmark move to it immediately.

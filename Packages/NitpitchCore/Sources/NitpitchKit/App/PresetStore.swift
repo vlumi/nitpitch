@@ -108,7 +108,8 @@ public final class PresetStore: ObservableObject {
     /// — the caller confirms that intent first (`existing(named:templateID:)`).
     @discardableResult
     public func save(
-        _ instance: InstrumentInstance, named name: String, includeReference: Bool
+        _ instance: InstrumentInstance, named name: String, includeReference: Bool,
+        includeTemperament: Bool = true
     ) -> Preset? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -119,10 +120,11 @@ public final class PresetStore: ObservableObject {
             templateID: instance.templateID,
             strings: instance.strings,
             referenceHz: includeReference ? instance.referenceHz : nil,
-            // Always captured, explicitly — an equal-temperament preset must
-            // RESTORE equal when loaded onto a pure instrument, so "equal"
-            // and "unspecified" cannot share a spelling.
-            temperament: instance.appliedTemperament)
+            // When carried, carried explicitly — an equal-temperament preset
+            // must RESTORE equal when loaded onto a pure instrument, so
+            // "equal" and "unspecified" cannot share a spelling. Left out,
+            // loading leaves the instrument's temperament alone.
+            temperament: includeTemperament ? instance.appliedTemperament : nil)
         if let index = presets.firstIndex(where: { $0.id == preset.id }) {
             presets[index] = preset
         } else {

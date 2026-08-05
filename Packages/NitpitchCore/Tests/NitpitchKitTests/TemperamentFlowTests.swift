@@ -74,6 +74,26 @@ final class TemperamentFlowTests: XCTestCase {
             "an equal preset restores equal")
     }
 
+    /// The save sheet's checkbox: unticked, the preset carries no
+    /// temperament and loading leaves the instrument's alone — same
+    /// spelling as legacy.
+    func testUntickedTemperamentIsLeftOutOfThePayload() {
+        let store = makeStore()
+        let presets = PresetStore(defaults: defaults)
+        let violin = store.instance(id: Instrument.violin.id)!
+
+        let narrow = presets.save(
+            violin, named: "Pitches only", includeReference: false,
+            includeTemperament: false)!
+        XCTAssertNil(narrow.temperament)
+
+        store.setTemperament(id: violin.id, .equal)
+        presets.load(narrow, onto: store.instance(id: violin.id)!, in: store)
+        XCTAssertEqual(
+            store.instance(id: violin.id)!.appliedTemperament, .equal,
+            "loading a temperament-less preset changes nothing")
+    }
+
     /// A legacy preset (saved before temperaments existed) decodes with nil
     /// and leaves the instrument's temperament alone on load.
     func testLegacyPresetsLeaveTemperamentAlone() throws {

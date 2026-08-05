@@ -243,7 +243,10 @@ one of the drafts that lost.
   2:1 everywhere). Presets carry temperament explicitly — a preset is a
   situation, and an equal preset must RESTORE equal onto a pure
   instrument, so "equal" and "unspecified" have different spellings
-  (nil = legacy = leave alone). Just-vs-Pythagorean is moot for adjacent
+  (nil = legacy or unticked = leave alone). The save sheet chooses the
+  payload with checkboxes — pitches always, reference and temperament
+  each opt-out, labels showing the values they'd capture; the alert's
+  one-button-per-combination stopped scaling at three dimensions. Just-vs-Pythagorean is moot for adjacent
   open strings — fifths and fourths are pure in both — which is why the
   one non-equal choice is just called "pure".
 - **Navigation is a pushed path; favorites are instruments.** Chromatic

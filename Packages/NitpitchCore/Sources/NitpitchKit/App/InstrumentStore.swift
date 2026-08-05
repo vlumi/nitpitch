@@ -26,10 +26,13 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// toggle.
     public var isLocked: Bool
     /// How the open-string targets divide their intervals — pure fifths for
-    /// a violin tuned the orchestra's way. Optional storage: nil means
-    /// `.equal` and is what old stored JSON decodes to; read through
-    /// `appliedTemperament`. Only ever non-nil on bowed instruments (the UI
-    /// offers it nowhere else — frets are equal temperament cast in metal).
+    /// a violin tuned the orchestra's way. Optional storage: nil means "the
+    /// family's default" (pure on bowed instruments, where beatless fifths
+    /// by ear ARE pure — equal was a keyboard convention imposed on them;
+    /// equal everywhere else) and is what old stored JSON decodes to. An
+    /// explicit choice is stored verbatim, so picking Equal on a violin
+    /// sticks. Read through `appliedTemperament`; the UI offers a choice on
+    /// bowed instruments only — frets are equal temperament cast in metal.
     public var temperament: Temperament?
     /// The preset last applied — the setup's *provenance*. An explicit pick
     /// (another preset, or a tuning from the menu) replaces it; granular
@@ -49,8 +52,10 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
 
-    /// The temperament in force — nil storage reads as equal.
-    public var appliedTemperament: Temperament { temperament ?? .equal }
+    /// The temperament in force — nil storage reads as the family default.
+    public var appliedTemperament: Temperament {
+        temperament ?? (template?.family == .bowed ? .pure : .equal)
+    }
 
     public var template: Instrument? { Instrument.named(templateID) }
 
@@ -315,9 +320,10 @@ public final class InstrumentStore: ObservableObject {
 
     /// Change how the targets divide their intervals — a granular edit like
     /// a reference step, so the preset claim stays and shows "(edited)"
-    /// while drifted.
+    /// while drifted. Stored verbatim: nil is reserved for "never chosen",
+    /// which reads as the family default.
     public func setTemperament(id: String, _ temperament: Temperament) {
-        update(id: id) { $0.temperament = temperament == .equal ? nil : temperament }
+        update(id: id) { $0.temperament = temperament }
     }
 
     /// Called by `PresetStore.load` after applying a preset's fields, so the

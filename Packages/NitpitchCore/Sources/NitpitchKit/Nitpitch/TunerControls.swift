@@ -131,6 +131,48 @@ struct LightStrip: View {
 /// It replaces the plain label in the header rather than adding a third menu
 /// to the controls row, which is already full. Whole hertz per step, matching
 /// how orchestras actually specify a pitch (442, 443, baroque 415).
+/// The temperament, worn where the reference is: it's the same kind of
+/// fact — "A=442, pure" — and it must be readable on the tuning screens
+/// themselves, because a ±2¢ target shift redraws nothing a dial would
+/// show. Bowed instruments only; a tap flips it. The tuning menu keeps the
+/// long-form picker ("Pure fifths"/"Pure fourths") for the labeled choice.
+struct TemperamentChip: View {
+    let temperament: Temperament
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            label
+                .font(.callout.weight(.medium))
+                .foregroundStyle(
+                    temperament == .pure
+                        ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
+                )
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .overlay(
+                    Capsule().strokeBorder(
+                        temperament == .pure
+                            ? AnyShapeStyle(.tint)
+                            : AnyShapeStyle(Color.secondary.opacity(0.4)),
+                        lineWidth: 1)
+                )
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("tuner.temperament")
+        .accessibilityLabel(Text("Temperament", bundle: .module))
+        .accessibilityValue(label)
+    }
+
+    private var label: Text {
+        switch temperament {
+        case .equal: return Text("Equal", bundle: .module)
+        case .pure: return Text("Pure", bundle: .module)
+        }
+    }
+}
+
 struct ReferencePitchStepper: View {
     @Binding var reference: ReferencePitch
     /// The reference is "this note at this frequency", so its label follows the

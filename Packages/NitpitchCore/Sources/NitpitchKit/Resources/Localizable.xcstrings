@@ -208,6 +208,9 @@
     "Previous string" : {
       "comment" : "Arrow in the single-string view: go to the lower neighbouring string"
     },
+    "Pure" : {
+      "comment" : "The temperament chip beside the reference: pure intervals in force"
+    },
     "Pure fifths" : {
       "comment" : "Temperament choice on fifths-tuned bowed instruments: beatless 3:2 intervals"
     },

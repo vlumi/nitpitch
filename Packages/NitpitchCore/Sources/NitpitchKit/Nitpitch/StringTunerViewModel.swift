@@ -258,10 +258,12 @@ public final class StringTunerViewModel: ObservableObject {
             state = .reading(cents: cents, clarity: 0.98)
             level = ((0.55 + 0.25 * sin(tick * 1.7)) * 20).rounded() / 20
             // A finished measurement per string, values varied by target so
-            // the layout is judged with cells disagreeing.
+            // the layout is judged with cells disagreeing. Modulo 11, which
+            // no regular tuning defeats: fifths collapsed mod 7 (a violin's
+            // four cells all read the same Δ) and fourths would mod 5.
             if isIntonating, openSample == nil {
                 openSample = -1.5
-                octaveSample = Double(target.midi % 7) - 2.5
+                octaveSample = Double(target.midi % 11) - 3.5
                 delta = (octaveSample ?? 0) - (openSample ?? 0)
                 octaveCents = octaveSample
             }

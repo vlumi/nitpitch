@@ -508,6 +508,33 @@ final class NitpitchUITests: XCTestCase {
             "the detector screen must not be reachable in a normal launch")
     }
 
+    /// The grid's intonation layer: the … menu toggle lights the octave row
+    /// on every cell — proven through the accessibility value, which gains
+    /// the delta once the demo's synthetic measurement lands.
+    func testIntonationLayerTogglesAcrossTheGrid() {
+        let app = launch(extraArguments: ["-demo"])
+        openViolinGrid(app)
+        let cell = app.descendants(matching: .any)["grid.cell.0"].firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+
+        openLayoutMenu(app)
+        let toggle = app.descendants(matching: .any)["Check intonation"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        toggle.tap()
+
+        let measured = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS %@", "octave delta"),
+            object: cell)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [measured], timeout: 5), .completed,
+            "the cell's octave layer should carry the demo measurement")
+
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "grid-intonation"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     func testDetectorScreenOpensUnderTheDebugFlag() {
         let app = launch(extraArguments: ["-debug"])
         openViolinGrid(app)

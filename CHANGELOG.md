@@ -27,6 +27,17 @@ and remembered exactly as you left them.
 - Mac: ← and → walk the strings in the string view — the same move as the
   on-screen arrows, without reaching for the mouse. The keys land there
   the moment the screen opens, and fall silent past the outermost string.
+- The intonation check scales to the whole instrument: a "Check
+  intonation" toggle in the grid's … menu lights the octave layer on
+  every cell and strip at once — a tiny second light strip above each
+  string's own dots, the Δ verdict beside it — so checking a saddle no
+  longer means visiting strings one by one. Octave findings are claimed
+  by their owners wherever the engines put them (a string's own octave
+  always lands outside its own band: on a neighbour's dial, or above
+  every band, where only the sentinel sees it), and in octave tunings
+  like Drop D an ambiguous note lights both of its meanings rather than
+  neither. Behind a toggle, unlike the string view's ambient panel —
+  the grid is a tuning surface first.
 - The string view checks intonation, ambiently — no mode to find. Below
   the switcher sits the octave's own tuner, lit whenever the octave
   sounds (fretted 12th, fingered octave, or the natural harmonic — they

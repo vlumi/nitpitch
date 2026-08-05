@@ -344,7 +344,9 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(nameField.waitForExistence(timeout: 5))
         nameField.tap()
         nameField.typeText("Gig")
-        app.buttons["Tuning only"].firstMatch.tap()
+        // The sheet's defaults stand (payload checkboxes on): the flow under
+        // test is save-and-load, and A=440 riding along changes nothing.
+        app.buttons["preset.save.confirm"].firstMatch.tap()
         XCTAssertTrue(
             tuningMenu.label.contains("Gig"),
             "saving claims the preset — the pill shows what you just named")
@@ -354,7 +356,11 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(tuningMenu.label.contains("Standard"))
 
         tuningMenu.tap()
-        let gig = app.buttons["Gig"].firstMatch
+        // Prefix match: the row's label carries the payload suffix ("Gig
+        // · A=440"), which is the point of the label.
+        let gig = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Gig")
+        ).firstMatch
         XCTAssertTrue(gig.waitForExistence(timeout: 5), "the saved preset should be offered")
         gig.tap()
         XCTAssertTrue(
@@ -383,7 +389,9 @@ final class NitpitchUITests: XCTestCase {
         XCTAssertTrue(nameField.waitForExistence(timeout: 5))
         nameField.tap()
         nameField.typeText("Gig")
-        app.buttons["Tuning only"].firstMatch.tap()
+        // The sheet's defaults stand (payload checkboxes on): the flow under
+        // test is save-and-load, and A=440 riding along changes nothing.
+        app.buttons["preset.save.confirm"].firstMatch.tap()
 
         tuningMenu.tap()
         app.buttons["Manage presets…"].firstMatch.tap()

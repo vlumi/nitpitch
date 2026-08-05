@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Saving a preset chooses its payload with checkboxes: the pitches
+  always ride (they're what a preset IS), while the reference and — on
+  bowed instruments — the temperament are each a labeled toggle showing
+  the value it would capture, both on by default. The old alert had one
+  button per combination, a pattern that stopped scaling the moment
+  temperament became a third dimension.
 - Bowed instruments tune the way orchestras do, by default: pure
   fifths (fourths on the double bass) retune the open-string targets to
   beatless intervals,

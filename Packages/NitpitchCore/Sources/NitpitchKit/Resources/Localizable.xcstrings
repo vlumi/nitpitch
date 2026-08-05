@@ -220,6 +220,9 @@
     "Raise target" : {
       "comment" : "Stepper in the single-string view: this string's target up a semitone"
     },
+    "Reference" : {
+      "comment" : "Preset-save checkbox: carry the reference pitch"
+    },
     "Reference pitch" : {
       "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"
     },
@@ -240,6 +243,9 @@
     },
     "Retry" : {
       "comment" : "No-input state: re-check for a microphone after connecting one"
+    },
+    "Save" : {
+      "comment" : "Preset-save sheet: the confirm button"
     },
     "Save as preset…" : {
       "comment" : "Tuning menu: save the current setup under a name"
@@ -264,12 +270,6 @@
     },
     "The first four are on the launch screen." : {
       "comment" : "Favorites section footer when more than four are starred"
-    },
-    "Tuning and reference" : {
-      "comment" : "Save button: the preset carries the pitches and the reference pitch"
-    },
-    "Tuning only" : {
-      "comment" : "Save button: the preset carries the pitches and nothing else"
     },
     "Tunings" : {
       "comment" : "Presets sheet: the catalog tunings section"

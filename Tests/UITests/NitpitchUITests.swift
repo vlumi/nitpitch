@@ -125,6 +125,32 @@ final class NitpitchUITests: XCTestCase {
             "back from a string should land on the grid")
     }
 
+    /// Intonation mode: the toolbar toggle swaps the pane for the workbench —
+    /// the two capture chips and the delta appear (populated by the demo's
+    /// synthetic measurement), and toggling back restores the tuner.
+    func testIntonationModeShowsTheCaptures() {
+        let app = launch()
+        openViolinGrid(app)
+        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["string.target"].waitForExistence(timeout: 5))
+
+        app.descendants(matching: .any)["string.intonation"].firstMatch.tap()
+        let open = app.descendants(matching: .any)["intonation.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["intonation.delta"].exists)
+
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "intonation"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        app.descendants(matching: .any)["string.intonation"].firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["string.target"].waitForExistence(timeout: 5),
+            "leaving the mode restores the tuner pane")
+    }
+
     /// The target stepper: nudge G3 down, the headline changes, the grid's
     /// cell follows when you go back, and the header relabels the tuning
     /// Custom — the whole edit loop, end to end.

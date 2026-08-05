@@ -24,6 +24,16 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The intonation workbench: a tuning-fork toggle in the string view checks
+  whether a string plays in tune along its length. Play the open string,
+  then the octave — fretted 12th, fingered octave, or the natural
+  harmonic — and each is captured once it holds steady; the verdict is the
+  delta between them (positive = octave sharp; on a guitar the saddle
+  wants to move back). One detector serves both notes: an open string
+  always sounds odd partials while the octave sounds only even ones, so
+  the two are told apart by what's missing, not by where they are — which
+  is also why a phone microphone rolling off a low string's fundamental
+  can't fool it. Measurement only, so it works on locked instruments.
 - A Mac with no microphone at all no longer crashes at launch: the audio
   engine throws an uncatchable exception the moment it's asked about input
   hardware that doesn't exist, so the app now checks for input devices

@@ -19,11 +19,22 @@ final class SingleStringTuner: ObservableObject {
     /// swipe animation for no reason.
     let inputLevel = InputLevel()
 
+    /// The intonation mode's state, its own island for the same reason.
+    let intonation = IntonationMonitor()
+
     private var instrument: Instrument
     private let audio: AudioSessionController
     private let bank: DetectorBank
+    /// Rides alongside the bank on the analysis queue, answering nil while
+    /// the mode is off — the subscription calls it unconditionally.
+    private let analyzer: IntonationAnalyzer
+    /// The frequency the analyzer is aimed at, so `apply` can tell a real
+    /// retarget (captures invalid) from an incidental instance change like
+    /// the lock toggling (captures fine).
+    private var analyzerTarget: Double
     private var subscription: AudioSessionController.Subscription?
     private var demo: Task<Void, Never>?
+    private var intonationDemo: Task<Void, Never>?
     private var reference: ReferencePitch
     /// Kept so retargeting doesn't quietly reset debug-tuned thresholds.
     private var tuning: DetectionTuning
@@ -45,6 +56,28 @@ final class SingleStringTuner: ObservableObject {
             targets: [note.frequency(reference: reference)],
             bands: [band],
             tuning: tuning)
+        analyzerTarget = note.frequency(reference: reference)
+        analyzer = IntonationAnalyzer(
+            sampleRate: audio.sampleRate, target: analyzerTarget, tuning: tuning)
+    }
+
+    /// Enter or leave intonation mode. The analyzer's flag is what the
+    /// analysis queue reads; the monitor forgets its captures on the way
+    /// out — a stale measurement reappearing later would look authoritative
+    /// and be anything but.
+    func setIntonating(_ on: Bool) {
+        if LaunchStores.isDemo {
+            intonationDemo?.cancel()
+            intonationDemo = nil
+            if on {
+                intonationDemo = Task { await runDemoIntonation() }
+            } else {
+                intonation.reset()
+            }
+            return
+        }
+        analyzer.setActive(on)
+        if !on { intonation.reset() }
     }
 
     func attach() {
@@ -55,13 +88,17 @@ final class SingleStringTuner: ObservableObject {
             return
         }
         guard subscription == nil else { return }
-        subscription = audio.subscribe { [weak self, bank] window in
-            // Analysis queue; only the result hops to main.
+        subscription = audio.subscribe { [weak self, bank, analyzer] window in
+            // Analysis queue; only the result hops to main. The bank keeps
+            // running under intonation mode — leaving it warm is what makes
+            // toggling out instant — and the analyzer answers nil while off.
             let results = bank.analyze(window)
+            let frame = analyzer.analyze(window)
             Task { @MainActor [weak self] in
                 guard let self, let result = results.first else { return }
                 self.tuner.ingest(result)
                 self.inputLevel.set((result.displayLevel * 20).rounded() / 20)
+                if let frame { self.intonation.ingest(frame) }
             }
         }
     }
@@ -71,8 +108,11 @@ final class SingleStringTuner: ObservableObject {
         subscription = nil
         demo?.cancel()
         demo = nil
+        intonationDemo?.cancel()
+        intonationDemo = nil
         inputLevel.set(0)
         bank.interrupted()
+        analyzer.interrupted()
         tuner.end()
     }
 
@@ -94,17 +134,52 @@ final class SingleStringTuner: ObservableObject {
         if tuner.target != note {
             tuner.retarget(note)
         }
+        // The intonation captures answer for one specific target; a real
+        // retarget invalidates them. An incidental instance change — the
+        // lock toggling — moves nothing and must not wipe a measurement.
+        let hz = note.frequency(reference: reference)
+        analyzer.configure(target: hz, tuning: tuning)
+        if hz != analyzerTarget {
+            analyzerTarget = hz
+            intonation.reset()
+        }
     }
 
     func retune(_ tuning: DetectionTuning) {
         self.tuning = tuning
         bank.retune(tuning)
+        analyzer.configure(target: analyzerTarget, tuning: tuning)
     }
 
     private func runDemoLevel() async {
         var tick = 0.0
         while !Task.isCancelled {
             inputLevel.set(((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20)
+            tick += 0.055
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
+    /// A measurement in progress, synthesized: the open sample already
+    /// captured, the octave being held under the needle — so the layout is
+    /// judged with every element populated, which is the demo's whole job.
+    private func runDemoIntonation() async {
+        intonation.reset()
+        for _ in 0..<IntonationCapture.stableFrames {
+            intonation.ingest(
+                IntonationAnalyzer.Frame(
+                    sounding: .note(slot: .open, cents: -1.6, clarity: 0.97), level: 0.5))
+        }
+        intonation.ingest(IntonationAnalyzer.Frame(sounding: .nothing, level: 0.1))
+        var tick = 0.0
+        while !Task.isCancelled {
+            // A gentle wobble inside the stability window, so the octave
+            // sample records and then keeps refreshing like a held note's.
+            let cents = 5.8 + sin(tick) * 1.2
+            intonation.ingest(
+                IntonationAnalyzer.Frame(
+                    sounding: .note(slot: .octave, cents: cents, clarity: 0.97),
+                    level: 0.5 + 0.2 * sin(tick * 1.7)))
             tick += 0.055
             try? await Task.sleep(nanoseconds: 50_000_000)
         }

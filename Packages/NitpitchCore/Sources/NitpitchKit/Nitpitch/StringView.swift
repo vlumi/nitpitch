@@ -20,6 +20,11 @@ struct StringView: View {
 
     @StateObject private var single: SingleStringTuner
     @State private var index: Int
+    /// Whether the pane is the intonation workbench rather than the tuner.
+    /// View state, not store state: a measuring session belongs to the
+    /// screen that's running it, and it's read-only — which is also why the
+    /// toggle stays enabled on a locked instrument.
+    @State private var isIntonating = false
     /// Finger-following displacement of the dial pane while a swipe is in
     /// flight — zero whenever the pane is at rest.
     @State private var dragOffset: CGFloat = 0
@@ -88,6 +93,7 @@ struct StringView: View {
         .padding(24)
         .navigationTitle(instance.nameText)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) { intonationButton }
             ToolbarItem(placement: .primaryAction) { lockButton }
         }
         // No identifier on the container: applied here it stamps every child
@@ -99,6 +105,9 @@ struct StringView: View {
         }
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
+        }
+        .onChangeCompat(of: isIntonating) { on in
+            single.setIntonating(on)
         }
     }
 
@@ -115,13 +124,20 @@ struct StringView: View {
                 .padding(.top, 6)
             dialCarousel
             stringSwitcher
-            ReferencePitchStepper(
-                reference: Binding(
-                    get: { instance.reference },
-                    set: { store.setReference(id: instance.id, $0) }),
-                naming: settings.naming
-            )
-            .disabled(instance.isLocked)
+            // The bottom row is the mode's row: the reference stepper while
+            // tuning, the captured measurement while intonating — the
+            // reference is exactly what must NOT move mid-measurement.
+            if isIntonating {
+                IntonationReadout(monitor: single.intonation)
+            } else {
+                ReferencePitchStepper(
+                    reference: Binding(
+                        get: { instance.reference },
+                        set: { store.setReference(id: instance.id, $0) }),
+                    naming: settings.naming
+                )
+                .disabled(instance.isLocked)
+            }
         }
     }
 
@@ -155,7 +171,12 @@ struct StringView: View {
 
     @ViewBuilder
     private func pane(at position: Int) -> some View {
-        if position == index {
+        if position == index, isIntonating {
+            IntonationDialPane(
+                monitor: single.intonation,
+                target: single.tuner.target,
+                naming: settings.naming)
+        } else if position == index {
             StringDialPane(
                 tuner: single.tuner,
                 naming: settings.naming,
@@ -215,6 +236,23 @@ struct StringView: View {
                 }
                 animatedStep(delta)
             }
+    }
+
+    /// The intonation workbench's door: check the octave — fretted 12th,
+    /// fingered octave, or the harmonic — against the open string. Filled
+    /// and tinted while the mode is on, the same on/off vocabulary as the
+    /// padlock beside it. Measurement only, so a locked instrument keeps it.
+    private var intonationButton: some View {
+        Button {
+            isIntonating.toggle()
+        } label: {
+            Image(systemName: "tuningfork")
+                .foregroundStyle(
+                    isIntonating ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityIdentifier("string.intonation")
+        .accessibilityLabel(Text("Intonation", bundle: .module))
+        .accessibilityAddTraits(isIntonating ? [.isSelected] : [])
     }
 
     /// The same ambient padlock as the grid's — the lock follows the

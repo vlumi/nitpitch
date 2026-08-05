@@ -60,6 +60,68 @@ final class GridIntonationTests: XCTestCase {
         }
     }
 
+    // MARK: - The grid router: the bass field case
+
+    /// Bass E1 A1 D2 G2 — the tuning whose fourths and low fundamentals
+    /// starved parity in the field: only G's octave ever classified, while
+    /// MPM put E's 12th fret on the D dial at +200¢.
+    private var bass: [Double] {
+        [28, 33, 38, 43].map { Note(midi: $0).frequency() }
+    }
+
+    private func mpmReading(_ hz: Double) -> DetectionResult {
+        DetectionResult(frequency: hz, clarity: 0.95, rms: 0.1, level: 0.8)
+    }
+
+    private var silent: DetectionResult {
+        DetectionResult(frequency: nil, clarity: 0.2, rms: 0.05)
+    }
+
+    /// The field report itself: E's fretted 12th lands in the D string's
+    /// band, so MPM hands it to the D dial. The router claims it for E, in
+    /// parity shape, and quiets the dial it landed on.
+    func testAFrettedTwelfthOnANeighboursDialIsClaimedByItsOwner() {
+        let e12th = 2 * bass[0] * pow(2, 6.0 / 1200)
+        let routed = GridIntonationRouting.route(
+            results: [silent, silent, mpmReading(e12th), silent], targets: bass)
+        XCTAssertNil(routed[2].frequency, "the D dial must not pin at +200")
+        XCTAssertTrue(routed[0].evenPartialsOnly, "E claims its octave in parity shape")
+        XCTAssertEqual(
+            1200 * log2((routed[0].frequency ?? 1) / bass[0]), 6, accuracy: 0.1,
+            "the claim carries the octave's cents on the open scale")
+    }
+
+    /// Ordinary tuning readings — in a string's own neighbourhood — are
+    /// nobody's octave and pass through untouched.
+    func testInBandTuningReadingsPassUntouched() {
+        let flatD = bass[2] * pow(2, -30.0 / 1200)
+        let routed = GridIntonationRouting.route(
+            results: [silent, silent, mpmReading(flatD), silent], targets: bass)
+        XCTAssertEqual(routed[2].frequency, flatD)
+    }
+
+    /// A claim never overwrites live evidence: when the owner's own dial is
+    /// reading this frame, the octave finding is dropped, not forced in.
+    func testAClaimNeverOverwritesLiveEvidence() {
+        let openE = bass[0] * pow(2, 3.0 / 1200)
+        let e12th = 2 * bass[0]
+        let routed = GridIntonationRouting.route(
+            results: [mpmReading(openE), silent, mpmReading(e12th), silent], targets: bass)
+        XCTAssertEqual(routed[0].frequency, openE, "the open reading stands")
+        XCTAssertFalse(routed[0].evenPartialsOnly)
+        XCTAssertNil(routed[2].frequency, "the stray landing still quiets")
+    }
+
+    /// Spectral parity frames are already shaped and keep their dial slot —
+    /// the router only claims unflagged readings.
+    func testParityFramesPassUntouched() {
+        let parity = DetectionResult(
+            frequency: bass[3], clarity: 0.9, rms: 0.1, level: 0.8, evenPartialsOnly: true)
+        let routed = GridIntonationRouting.route(
+            results: [silent, silent, silent, parity], targets: bass)
+        XCTAssertEqual(routed[3], parity)
+    }
+
     func testRetargetAndLayerFlipForget() {
         let tuner = makeTuner()
         tuner.begin()

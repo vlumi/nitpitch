@@ -34,6 +34,11 @@ final class StringTuners: ObservableObject {
     private var subscription: AudioSessionController.Subscription?
     /// Drives `inputLevel` under `-demo`, where no audio flows.
     private var demo: Task<Void, Never>?
+    /// Whether the intonation layer is on — gates the octave claim routing.
+    private var isIntonating = false
+    /// The strings' target frequencies, for the router's 2f arithmetic.
+    /// Kept alongside the bank's copy, which it doesn't share back.
+    private var targets: [Double]
 
     init(
         instrument: Instrument, audio: AudioSessionController, reference: ReferencePitch,
@@ -45,9 +50,10 @@ final class StringTuners: ObservableObject {
         tuners = zip(instrument.notes, bands).map { note, band in
             StringTunerViewModel(audio: audio, target: note, band: band, reference: reference)
         }
+        targets = instrument.notes.map { $0.frequency(reference: reference) }
         bank = DetectorBank(
             sampleRate: audio.sampleRate,
-            targets: instrument.notes.map { $0.frequency(reference: reference) },
+            targets: targets,
             bands: bands,
             tuning: tuning)
     }
@@ -66,7 +72,15 @@ final class StringTuners: ObservableObject {
             let results = bank.analyze(window)
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                for (tuner, result) in zip(self.tuners, results) {
+                // With the intonation layer on, octave findings get claimed
+                // by their owners first — MPM puts a fretted 12th on a
+                // NEIGHBOUR's dial, because a string's own octave is always
+                // outside its own band (see `GridIntonationRouting`).
+                let routed =
+                    self.isIntonating
+                    ? GridIntonationRouting.route(results: results, targets: self.targets)
+                    : results
+                for (tuner, result) in zip(self.tuners, routed) {
                     tuner.ingest(result)
                 }
                 // Every result carries the same frame's RMS; the meter shows
@@ -107,8 +121,9 @@ final class StringTuners: ObservableObject {
     ) {
         let bands = instrument.stringBands(
             reference: reference, maxSemitones: tuning.maxSemitonesFromString)
+        targets = instrument.notes.map { $0.frequency(reference: reference) }
         bank.configure(
-            targets: instrument.notes.map { $0.frequency(reference: reference) },
+            targets: targets,
             bands: bands,
             tuning: tuning)
         for (tuner, (note, band)) in zip(tuners, zip(instrument.notes, bands)) {
@@ -136,6 +151,7 @@ final class StringTuners: ObservableObject {
     /// The intonation check, for every string at once — the grid's whole
     /// point is not switching strings.
     func setIntonating(_ on: Bool) {
+        isIntonating = on
         for tuner in tuners { tuner.setIntonating(on) }
     }
 }

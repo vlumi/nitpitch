@@ -132,4 +132,10 @@ final class StringTuners: ObservableObject {
     func setReportingRaw(_ isReporting: Bool) {
         for tuner in tuners { tuner.isReportingRaw = isReporting }
     }
+
+    /// The intonation check, for every string at once — the grid's whole
+    /// point is not switching strings.
+    func setIntonating(_ on: Bool) {
+        for tuner in tuners { tuner.setIntonating(on) }
+    }
 }

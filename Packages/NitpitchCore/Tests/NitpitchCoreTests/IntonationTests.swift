@@ -215,6 +215,42 @@ final class IntonationTests: XCTestCase {
         XCTAssertNil(capture.delta)
     }
 
+    /// The grid's plumbing: the bank's spectral results carry the parity
+    /// fingerprint up from the estimator, so every string's consumer can
+    /// recognize its own octave without a second detector.
+    func testTheBankCarriesParityThroughItsResults() {
+        let g3 = 196.0
+        let bank = DetectorBank(
+            sampleRate: sampleRate, targets: [g3], bands: [100...400], tuning: .default)
+
+        let octave = tone(
+            detuned(2 * g3, cents: 5), count: signalLength(hops: 3),
+            harmonics: [1.0, 0.6, 0.4])
+        var litFrames = 0
+        for hop in 0..<3 {
+            let start = hop * Detection.hopSize
+            let results = bank.analyze(Array(octave[start..<(start + Detection.windowSize)]))
+            if let result = results.first, result.frequency != nil {
+                XCTAssertTrue(result.evenPartialsOnly, "the octave is even slots only")
+                litFrames += 1
+            }
+        }
+        XCTAssertGreaterThan(litFrames, 0, "the octave must be measured at all")
+
+        bank.interrupted()
+        let open = tone(detuned(g3, cents: -7), count: signalLength(hops: 3))
+        litFrames = 0
+        for hop in 0..<3 {
+            let start = hop * Detection.hopSize
+            let results = bank.analyze(Array(open[start..<(start + Detection.windowSize)]))
+            if let result = results.first, result.frequency != nil {
+                XCTAssertFalse(result.evenPartialsOnly, "an open string brings odd evidence")
+                litFrames += 1
+            }
+        }
+        XCTAssertGreaterThan(litFrames, 0)
+    }
+
     // MARK: - End to end: signal in, samples out
 
     func testAHeldOctaveReachesTheCapture() {

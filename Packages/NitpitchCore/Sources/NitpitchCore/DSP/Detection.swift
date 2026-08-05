@@ -60,12 +60,23 @@ public struct DetectionResult: Equatable, Sendable {
     /// authority. The spectral engine fills it per string from that string's
     /// own partials; MPM has only the whole frame to go on.
     public let level: Double
+    /// The estimate's parity fingerprint, carried up from
+    /// `HarmonicEstimator.Reading`: every partial behind it sat at an even
+    /// multiple of the target, which is what a note an OCTAVE UP looks like
+    /// through this target's slots (the open string always brings odd
+    /// evidence). Spectral frames only — MPM measures a period, not
+    /// partials, and always reports false.
+    public let evenPartialsOnly: Bool
 
-    public init(frequency: Double?, clarity: Double, rms: Double, level: Double = 0) {
+    public init(
+        frequency: Double?, clarity: Double, rms: Double, level: Double = 0,
+        evenPartialsOnly: Bool = false
+    ) {
         self.frequency = frequency
         self.clarity = clarity
         self.rms = rms
         self.level = level
+        self.evenPartialsOnly = evenPartialsOnly
     }
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)

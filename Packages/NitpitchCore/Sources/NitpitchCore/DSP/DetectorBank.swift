@@ -243,7 +243,7 @@ public final class DetectorBank: @unchecked Sendable {
             }
             return DetectionResult(
                 frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms),
-                level: reading.strength)
+                level: reading.strength, evenPartialsOnly: reading.evenPartialsOnly)
         }
     }
 }

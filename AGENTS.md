@@ -202,10 +202,11 @@ one of the drafts that lost.
   55 Hz spans one FFT bin, MPM carries the frames, the 12th fret slammed
   the dial to +1200). A toggle mode was shipped first and unshipped:
   pane identity removes the ambiguity a mode would guard against, and
-  nobody tunes a string an octave sharp. Captures record only from held
-  runs (six same-slot frames within 4¢ after one forgiven outlier, two
-  quiet frames of grace — bass wobble and gate flicker demanded both),
-  latest wins; live cross-talk
+  nobody tunes a string an octave sharp. Captures record only from a
+  consensus: six same-slot inliers around the run's rolling median (16
+  frames of history, ±2¢ band, four quiet frames of grace) — outliers
+  are discarded, never given a veto; a picked bass demanded the shape
+  and its player proposed it. Latest run wins; live cross-talk
   may flicker, recorded numbers must not. Measurement only — works on
   locked instruments. Bowed instruments keep it: fingered-octave practice
   and the traditional false-string check (a harmonic consistently off the

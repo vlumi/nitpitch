@@ -155,23 +155,27 @@ final class IntonationTests: XCTestCase {
         XCTAssertNil(capture.open, "past the grace, the run starts over")
     }
 
-    /// One wild frame per window must not veto a lock the median — the
-    /// recorded value — never felt. Bass strings wobble: beating partials,
-    /// pluck pitch drift.
-    func testOneOutlierDoesNotBlockTheLock() {
+    /// An outlier costs one extra frame of evidence, never a restart: the
+    /// lock waits for `stableFrames` inliers around the run's median, and
+    /// the recorded value is the median of the inliers alone.
+    func testAnOutlierDelaysTheLockByOneFrameAndLeavesNoTrace() {
         var capture = IntonationCapture()
         for cents in [-2.0, -1.8, -2.2, 6.0, -2.0, -1.9] {
             capture.ingest(note(.open, cents))
         }
-        XCTAssertEqual(capture.open ?? .nan, -1.95, accuracy: 0.1)
+        XCTAssertNil(capture.open, "five inliers are not yet a consensus")
+        capture.ingest(note(.open, -2.1))
+        XCTAssertEqual(capture.open ?? .nan, -2.0, accuracy: 0.1)
     }
 
-    func testTwoOutliersStillBlockTheLock() {
+    /// A picked bass note: wobbly attack, wild frames scattered through a
+    /// decaying pluck — the run collects evidence wherever it lands, and
+    /// the outliers are discarded rather than given a veto.
+    func testAScatteredPluckStillLocks() {
         var capture = IntonationCapture()
-        for cents in [-2.0, 6.0, -2.2, 6.0, -2.0, -1.9] {
-            capture.ingest(note(.open, cents))
-        }
-        XCTAssertNil(capture.open, "one outlier is forgiven, a wobble is not")
+        let pluck = [6.0, -2.0, -1.8, 7.0, -2.2, -2.0, -8.0, -1.9, -2.1]
+        for cents in pluck { capture.ingest(note(.open, cents)) }
+        XCTAssertEqual(capture.open ?? .nan, -2.0, accuracy: 0.15)
     }
 
     func testASlotSwitchStartsANewRun() {
@@ -182,10 +186,13 @@ final class IntonationTests: XCTestCase {
         XCTAssertEqual(capture.octave ?? .nan, 6, accuracy: 0.01)
     }
 
+    /// A re-play after a saddle adjustment: the pause between plucks
+    /// outlives the quiet grace, so the old evidence is gone and the new
+    /// run speaks alone.
     func testTheLatestStableRunWins() {
         var capture = IntonationCapture()
         for _ in 0..<6 { capture.ingest(note(.octave, 6)) }
-        capture.ingest(nothing)
+        for _ in 0..<(IntonationCapture.quietGraceFrames + 1) { capture.ingest(nothing) }
         for _ in 0..<6 { capture.ingest(note(.octave, 3)) }
         XCTAssertEqual(capture.octave ?? .nan, 3, accuracy: 0.01)
     }

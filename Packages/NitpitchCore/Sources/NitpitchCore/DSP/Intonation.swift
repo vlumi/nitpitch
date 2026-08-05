@@ -138,34 +138,40 @@ public final class IntonationAnalyzer: @unchecked Sendable {
 /// a time. Pure state — no audio, no clocks — so the gating rules are
 /// testable as arithmetic.
 ///
-/// A sample records only from a **stable run**: `stableFrames` frames in the
-/// same slot, spread within `stabilityWindowCents`. That's what keeps a
-/// sympathetic resonance, a transient octave-jump, or the tail of a decaying
-/// pluck out of the record — cross-talk may flicker on the live display all
-/// it wants, but a captured number has to have been *held*. Within a
-/// continuing run the sample keeps refreshing, and a later stable run simply
-/// replaces the value: latest wins, so a polluted capture costs one
-/// deliberate re-play, not a reset ritual.
+/// A sample records only from a **consensus**: at least `stableFrames`
+/// frames in the same slot agreeing within `stabilityWindowCents`, out of a
+/// rolling run of up to `runLength`. That's what keeps a sympathetic
+/// resonance, a transient octave-jump, or the tail of a decaying pluck out
+/// of the record — cross-talk may flicker on the live display all it wants,
+/// but a captured number has to have been *held*. Within a continuing run
+/// the sample keeps refreshing, and a later run simply replaces the value:
+/// latest wins, so a polluted capture costs one deliberate re-play, not a
+/// reset ritual.
 ///
-/// Two honest allowances, both bought by a bass in the field:
-/// - The spread check may discard **one outlier** frame. Low-string
-///   estimates wobble more (beating partials, pluck pitch drift), and a
-///   single 6¢ frame was vetoing locks the median — the recorded value —
-///   was already immune to.
-/// - Silence gets `quietGraceFrames` of grace before the run resets. A
-///   decaying note hovers at the strength gate and flickers note/nothing;
-///   demanding literally consecutive frames kept restarting the clock on a
-///   note that was, by ear, plainly being held.
+/// Inliers around the median, not a spread veto — the shape a bass demanded
+/// (and its player proposed). A picked low string wobbles at the attack and
+/// dies toward the gate quickly, so the frames worth keeping are scattered
+/// among ones that aren't; demanding that the *last N* frames be
+/// collectively tight held the lock hostage to where the wobble landed.
+/// Instead the run's median names the consensus, frames within half the
+/// window of it are the evidence, and enough evidence locks — outliers are
+/// discarded rather than given a veto. A genuine drift still refuses:
+/// drifting values never put `stableFrames` of themselves around one
+/// median. Silence gets `quietGraceFrames` of grace (late-decay frames
+/// flicker at the strength gate), and the pause before a re-play after a
+/// saddle adjustment is what resets the run.
 public struct IntonationCapture: Equatable, Sendable {
-    /// Same-slot frames a sample needs — just over a quarter second at the
-    /// ~21 Hz analysis rate.
+    /// Agreeing same-slot frames a sample needs — just over a quarter
+    /// second of evidence at the ~21 Hz analysis rate.
     public static let stableFrames = 6
-    /// The most those frames may span, in cents — after the one allowed
-    /// outlier is discarded — before the run is judged to be a note still
-    /// settling rather than one being held.
+    /// How many recent frames the run remembers — about a pluck's worth
+    /// above the gate.
+    public static let runLength = 16
+    /// The consensus band, in cents: an inlier sits within half of this of
+    /// the run's median.
     public static let stabilityWindowCents = 4.0
     /// How many below-gate frames a run survives before it resets.
-    public static let quietGraceFrames = 2
+    public static let quietGraceFrames = 4
 
     /// The open string's deviation from its target, in cents.
     public private(set) var open: Double?
@@ -200,26 +206,26 @@ public struct IntonationCapture: Equatable, Sendable {
             run.removeAll(keepingCapacity: true)
         }
         run.append(cents)
-        if run.count > Self.stableFrames {
+        if run.count > Self.runLength {
             run.removeFirst()
         }
-        guard run.count == Self.stableFrames else { return }
-        let sorted = run.sorted()
-        // The spread with one outlier forgiven: the tightest span among
-        // "all", "all but the highest" and "all but the lowest". One wild
-        // frame per window must not veto a lock the median never felt.
-        let spread = min(
-            sorted[sorted.count - 1] - sorted[0],
-            sorted[sorted.count - 2] - sorted[0],
-            sorted[sorted.count - 1] - sorted[1])
-        guard spread <= Self.stabilityWindowCents else { return }
-        // The median of the run, not the last frame: the middle of a held
-        // note, immune to whichever end wobbled most.
-        let value = (sorted[sorted.count / 2] + sorted[(sorted.count - 1) / 2]) / 2
+        guard run.count >= Self.stableFrames else { return }
+        // The run's median names the consensus; frames within half the
+        // window of it are the evidence. Enough evidence locks, and the
+        // value is the median of the evidence alone — an outlier neither
+        // vetoes the lock nor leaves a fingerprint on the number.
+        let consensus = Self.median(run.sorted())
+        let inliers = run.filter { abs($0 - consensus) <= Self.stabilityWindowCents / 2 }
+        guard inliers.count >= Self.stableFrames else { return }
+        let value = Self.median(inliers.sorted())
         switch slot {
         case .open: open = value
         case .octave: octave = value
         }
+    }
+
+    private static func median(_ sorted: [Double]) -> Double {
+        (sorted[sorted.count / 2] + sorted[(sorted.count - 1) / 2]) / 2
     }
 
     public mutating func reset() {

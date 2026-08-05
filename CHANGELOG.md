@@ -44,9 +44,11 @@ and remembered exactly as you left them.
   fundamental spans one FFT bin and the time-domain engine carries more
   of the frames — the 12th fret used to slam the main dial to +1200,
   and the open string flickered between in-tune and full-right. Capture
-  locks meet the bass halfway too: one wild frame per window is forgiven
-  (the recorded median never felt it), and a decaying note flickering at
-  the strength gate gets two frames of grace before its run restarts.
+  locks meet a picked bass halfway too: the lock waits for six frames
+  agreeing around the run's median — collected across a pluck's worth of
+  history, wobbly attack and wild frames discarded rather than given a
+  veto — and a decaying note flickering at the strength gate gets a few
+  frames of grace before its run restarts.
 - A Mac with no microphone at all no longer crashes at launch: the audio
   engine throws an uncatchable exception the moment it's asked about input
   hardware that doesn't exist, so the app now checks for input devices

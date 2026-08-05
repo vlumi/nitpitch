@@ -183,16 +183,25 @@ one of the drafts that lost.
   simply dim — the closed lock over dimmed controls IS the explanation.
   Dialog-per-touch ("unlock to make changes?") was designed and rejected:
   popups on a music stand are exactly the wrong thing.
-- **Intonation is parity, not a second detector.** The string view's
-  workbench (tuning-fork toggle) tells the open string from its octave by
-  which partials showed up: open always brings odd evidence (3f, 5f — even
+- **Intonation is parity, not a second detector — and ambient, not a
+  mode.** The string view tells the open string from its octave by which
+  partials showed up: open always brings odd evidence (3f, 5f — even
   when a phone mic rolls the fundamental off), a note at 2f sounds even
   slots only. An octave *target* is impossible in the estimator by
   construction (every partial shared), so the one open-string target
   serves both notes, and the cents come out on the same scale either way.
-  Captures record only from held runs (six consecutive frames within 4¢),
-  latest wins; live cross-talk may flicker, recorded numbers must not.
-  Measurement only — works on locked instruments.
+  The screen shows everything at once: the main dial stays "how far is
+  the OPEN string" and stands down while the octave plays (the bank's
+  2nd-harmonic anchor would misread a fretted 12th as the open string,
+  roughly in tune); the octave gets its own compact tuner below, beside
+  the captures and Δ. A toggle mode was shipped first and unshipped:
+  pane identity removes the ambiguity a mode would guard against, and
+  nobody tunes a string an octave sharp. Captures record only from held
+  runs (six consecutive frames within 4¢), latest wins; live cross-talk
+  may flicker, recorded numbers must not. Measurement only — works on
+  locked instruments. Bowed instruments keep it: fingered-octave practice
+  and the traditional false-string check (a harmonic consistently off the
+  open string's promise).
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

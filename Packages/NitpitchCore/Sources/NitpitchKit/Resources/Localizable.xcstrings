@@ -127,9 +127,6 @@
     "Instrument options" : {
       "comment" : "Accessibility label for the grid's … menu"
     },
-    "Intonation" : {
-      "comment" : "Toolbar toggle for the intonation-check mode in the string view"
-    },
     "Light" : {
       "comment" : "Appearance option: always light"
     },

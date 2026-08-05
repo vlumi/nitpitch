@@ -61,42 +61,37 @@ final class SingleStringTuner: ObservableObject {
             sampleRate: audio.sampleRate, target: analyzerTarget, tuning: tuning)
     }
 
-    /// Enter or leave intonation mode. The analyzer's flag is what the
-    /// analysis queue reads; the monitor forgets its captures on the way
-    /// out — a stale measurement reappearing later would look authoritative
-    /// and be anything but.
-    func setIntonating(_ on: Bool) {
-        if LaunchStores.isDemo {
-            intonationDemo?.cancel()
-            intonationDemo = nil
-            if on {
-                intonationDemo = Task { await runDemoIntonation() }
-            } else {
-                intonation.reset()
-            }
-            return
-        }
-        analyzer.setActive(on)
-        if !on { intonation.reset() }
-    }
-
     func attach() {
         tuner.begin()
+        analyzer.setActive(true)
         if LaunchStores.isDemo {
             guard demo == nil else { return }
             demo = Task { await runDemoLevel() }
+            intonationDemo = Task { await runDemoIntonation() }
             return
         }
         guard subscription == nil else { return }
         subscription = audio.subscribe { [weak self, bank, analyzer] window in
-            // Analysis queue; only the result hops to main. The bank keeps
-            // running under intonation mode — leaving it warm is what makes
-            // toggling out instant — and the analyzer answers nil while off.
+            // Analysis queue; only the results hop to main.
             let results = bank.analyze(window)
             let frame = analyzer.analyze(window)
             Task { @MainActor [weak self] in
                 guard let self, let result = results.first else { return }
-                self.tuner.ingest(result)
+                // The bank can't tell the octave from the open string — its
+                // estimator accepts 2nd-harmonic anchors by design (a phone
+                // mic's rolled-off low E), so a fretted 12th reads back as
+                // the open target, roughly in tune. Parity can tell. When
+                // the frame says octave, the main dial gets silence instead
+                // of the misread: this screen's promise is "how far is the
+                // OPEN string from its target", and the octave's own tuner
+                // sits right below.
+                if let frame, frame.soundsOctave {
+                    self.tuner.ingest(
+                        DetectionResult(
+                            frequency: nil, clarity: result.clarity, rms: result.rms))
+                } else {
+                    self.tuner.ingest(result)
+                }
                 self.inputLevel.set((result.displayLevel * 20).rounded() / 20)
                 if let frame { self.intonation.ingest(frame) }
             }
@@ -112,7 +107,7 @@ final class SingleStringTuner: ObservableObject {
         intonationDemo = nil
         inputLevel.set(0)
         bank.interrupted()
-        analyzer.interrupted()
+        analyzer.setActive(false)
         tuner.end()
     }
 
@@ -161,8 +156,9 @@ final class SingleStringTuner: ObservableObject {
     }
 
     /// A measurement in progress, synthesized: the open sample already
-    /// captured, the octave being held under the needle — so the layout is
-    /// judged with every element populated, which is the demo's whole job.
+    /// captured, the octave being held — the panel's dial lit, both values
+    /// and the delta populated. The layout is judged with every element
+    /// live, which is the demo's whole job.
     private func runDemoIntonation() async {
         intonation.reset()
         for _ in 0..<IntonationCapture.stableFrames {
@@ -183,5 +179,14 @@ final class SingleStringTuner: ObservableObject {
             tick += 0.055
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
+    }
+}
+
+extension IntonationAnalyzer.Frame {
+    /// Whether this frame's note is the octave — the main dial's cue to
+    /// stand down and let the octave's own tuner answer.
+    var soundsOctave: Bool {
+        if case .note(slot: .octave, cents: _, clarity: _) = sounding { return true }
+        return false
     }
 }

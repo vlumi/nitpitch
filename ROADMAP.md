@@ -122,8 +122,18 @@ everything else depends on, and worth putting in early.
   all need the honest rewrite to "…unless you enable iCloud sync".
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.
-- **Watch app** — plausible, but microphone quality and screen size both
-  work against it. Investigate before committing.
+- **Watch app** — more plausible than first assumed. The mic's reported
+  response is 125 Hz–8 kHz, and the app already owns the machinery that
+  floor demands: violin and viola fundamentals all sit above it; cello
+  and guitar read through their 2nd harmonics, which is exactly the
+  anchor-≤2 rule the estimator ships for phone mics; the 8 kHz ceiling
+  is irrelevant (the highest partial used is ~4 kHz). Bass is the
+  doubtful case — E1/A1's 2nd harmonics are below the floor too, so it
+  would be MPM-only from harmonics 3+. Screen: the strips' light-dot
+  vocabulary is already watch-sized. CPU: per-hop cost is measured in
+  single-digit milliseconds on a desktop core against the 46 ms hop.
+  Remaining unknowns: the real response curve versus the spec, watchOS
+  session/measurement modes, and whether MPM alone carries a bass.
 
 ## 4. Toward 1.0
 

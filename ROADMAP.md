@@ -140,9 +140,18 @@ everything else depends on, and worth putting in early.
   visually), within watchOS's preset-haptic palette; no custom waveform
   engine there. Phone haptics stay irrelevant: haptics need contact,
   and while tuning, the phone is by definition the thing not being
-  held. Remaining unknowns: the real response curve versus the spec,
-  watchOS session/measurement modes, and whether MPM alone carries a
-  bass.
+  held. Architecture, settled by the constraints: standalone where it
+  counts — mic and DSP run on the watch (NitpitchCore is pure
+  Swift + Accelerate, ports as-is), installable without the phone since
+  watchOS 6, factory seeding gives a watch-only user a working tuner —
+  and companion-shaped only in data, riding the parked iCloud sync
+  rather than a bespoke WatchConnectivity protocol: instruments, pins,
+  references and temperaments are exactly what sync already moves, so
+  the watch is the second device that makes sync earn its keep. Phone
+  and Mac stay the management surfaces; the wrist gets favorites, the
+  haptic tuner, maybe chromatic — no editors on a 40 mm screen.
+  Remaining unknowns: the real response curve versus the spec, watchOS
+  session/measurement modes, and whether MPM alone carries a bass.
 
 ## 4. Toward 1.0
 

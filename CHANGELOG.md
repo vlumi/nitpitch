@@ -24,6 +24,11 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The presets sheet fits phones again: its Mac minimum width (400pt)
+  was forced onto a 375pt iPhone screen, and the missing width came out
+  of the list's horizontal margins — rows flush to both edges. The
+  minimum is now Mac-only, and the rows' payload line gained the same
+  "· pure" vocabulary as the tuning menu.
 - Saving a preset chooses its payload with checkboxes: the pitches
   always ride (they're what a preset IS), while the reference and — on
   bowed instruments — the temperament are each a labeled toggle showing

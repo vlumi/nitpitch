@@ -24,6 +24,9 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Mac: ← and → walk the strings in the string view — the same move as the
+  on-screen arrows, without reaching for the mouse. The keys land there
+  the moment the screen opens, and fall silent past the outermost string.
 - The intonation workbench: a tuning-fork toggle in the string view checks
   whether a string plays in tune along its length. Play the open string,
   then the octave — fretted 12th, fingered octave, or the natural

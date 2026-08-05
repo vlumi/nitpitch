@@ -109,7 +109,30 @@ struct StringView: View {
         .onChangeCompat(of: isIntonating) { on in
             single.setIntonating(on)
         }
+        #if os(macOS)
+        // The keyboard walks the strings: ← and → are the arrows beside the
+        // dots, without reaching for the mouse. Focus lands here on arrival
+        // — invisibly (the whole screen IS the focused thing, a ring would
+        // say nothing) — and the keys fall through at the outermost string,
+        // same as the arrows disable.
+        .focusable()
+        .focusEffectDisabled()
+        .focused($keyboardFocus)
+        .onKeyPress(.leftArrow) { keyStep(-1) }
+        .onKeyPress(.rightArrow) { keyStep(1) }
+        .onAppear { keyboardFocus = true }
+        #endif
     }
+
+    #if os(macOS)
+    @FocusState private var keyboardFocus: Bool
+
+    private func keyStep(_ delta: Int) -> KeyPress.Result {
+        guard canStep(delta) else { return .ignored }
+        animatedStep(delta)
+        return .handled
+    }
+    #endif
 
     /// Swiping is the same move as the arrows, but with the gallery's
     /// physics: the pane rides the finger, the neighbour is revealed beside

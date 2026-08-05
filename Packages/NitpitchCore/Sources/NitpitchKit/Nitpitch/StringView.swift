@@ -40,7 +40,9 @@ struct StringView: View {
         _single = StateObject(
             wrappedValue: SingleStringTuner(
                 instrument: instance.instrument, index: index, audio: audio,
-                reference: instance.reference, tuning: detection.tuning))
+                reference: instance.reference,
+                temperament: instance.appliedTemperament,
+                tuning: detection.tuning))
     }
 
     private var instance: InstrumentInstance {

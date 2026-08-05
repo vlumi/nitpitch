@@ -103,6 +103,9 @@
     "Edit strings…" : {
       "comment" : "Instrument management action opening the string editor"
     },
+    "Equal" : {
+      "comment" : "Temperament choice: equal temperament (100-cent semitones)"
+    },
     "Favorite" : {
       "comment" : "Accessibility label for the preset favorite star"
     },
@@ -205,6 +208,12 @@
     "Previous string" : {
       "comment" : "Arrow in the single-string view: go to the lower neighbouring string"
     },
+    "Pure fifths" : {
+      "comment" : "Temperament choice on fifths-tuned bowed instruments: beatless 3:2 intervals"
+    },
+    "Pure fourths" : {
+      "comment" : "Temperament choice on the double bass: beatless 4:3 intervals"
+    },
     "Raise target" : {
       "comment" : "Stepper in the single-string view: this string's target up a semitone"
     },
@@ -246,6 +255,9 @@
     },
     "System" : {
       "comment" : "Appearance option: follow the system setting"
+    },
+    "Temperament" : {
+      "comment" : "Tuning-menu picker: how the open-string targets divide their intervals"
     },
     "The first four are on the launch screen." : {
       "comment" : "Favorites section footer when more than four are starred"

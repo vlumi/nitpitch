@@ -196,13 +196,18 @@ extension InstrumentGridView {
         Text(LocalizedStringKey(name), bundle: .module)
     }
 
-    /// The user's name verbatim, with the reference riding along when the
-    /// preset carries one — the label says what loading will do.
+    /// The user's name verbatim, with the reference and a non-equal
+    /// temperament riding along when the preset carries them — the label
+    /// says what loading will do.
     func presetLabel(_ preset: Preset) -> Text {
+        var suffix = ""
         if let reference = preset.reference {
-            return Text(verbatim: "\(preset.name) · A=\(Int(reference.hz))")
+            suffix += " · A=\(Int(reference.hz))"
         }
-        return Text(verbatim: preset.name)
+        if preset.temperament == .pure {
+            suffix += " · pure"
+        }
+        return Text(verbatim: preset.name + suffix)
     }
 
     /// The claimed preset — still existing; a dangling id after a deletion
@@ -220,6 +225,8 @@ extension InstrumentGridView {
     func valuesMatch(_ preset: Preset) -> Bool {
         instance.strings == preset.strings
             && (preset.referenceHz == nil || preset.referenceHz == instance.referenceHz)
+            && (preset.temperament == nil
+                || preset.temperament == instance.appliedTemperament)
     }
 
     @ViewBuilder

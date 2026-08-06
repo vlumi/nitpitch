@@ -31,7 +31,11 @@ and remembered exactly as you left them.
   reads "D–A · fifth · 2.7/s · narrow" with a dot pulsing at the true
   rate, appears in a fixed lane under the dial grid's meter (the
   sounding pair edged in tint — adjacent strings aren't always adjacent
-  cells) and on the pair's own shared boundary in the strips. The aim
+  cells) and, in the strips, as a squarish card in the side margin —
+  where the string lines run — vertically centered on the pair's shared
+  boundary: centered horizontally it sat on the very cards it was
+  describing. The strip cards ceded a few points of padding for the
+  room. The aim
   follows the temperament: pure tunes to silence, equal honestly aims
   at its own ~1 beat per second — fourths ride the same physics on the
   bass and guitar.

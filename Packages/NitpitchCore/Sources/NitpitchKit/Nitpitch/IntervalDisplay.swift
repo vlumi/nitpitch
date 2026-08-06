@@ -79,46 +79,95 @@ struct IntervalChip: View {
     let display: IntervalMonitor.Display
     let notes: [Note]
     let naming: NoteNaming
+    /// The strips' shape: squarish, two lines, for the side margin —
+    /// centered on the boundary it rode before, it sat ON the cards it was
+    /// describing (field report: "blocks the lower string's view").
+    var stacked = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            pulsingDot
-            if notes.indices.contains(display.lowerIndex),
-                notes.indices.contains(display.upperIndex)
-            {
-                HStack(spacing: 2) {
-                    CompactNoteName(
-                        note: notes[display.lowerIndex], naming: naming, fontSize: 14)
-                    Text(verbatim: "–")
-                        .foregroundStyle(.secondary)
-                    CompactNoteName(
-                        note: notes[display.upperIndex], naming: naming, fontSize: 14)
+        Group {
+            if stacked {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        pulsingDot
+                        pairNames
+                    }
+                    HStack(spacing: 6) {
+                        beatLabel
+                        aimLabel
+                    }
+                    HStack(spacing: 6) {
+                        kindLabel
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if !onTarget {
+                            directionLabel
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
                 }
-            }
-            kindLabel
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(verbatim: beatText)
-                .font(.callout.weight(.semibold).monospacedDigit())
-                .foregroundStyle(onTarget ? AnyShapeStyle(Color.green) : AnyShapeStyle(.primary))
-            if display.targetBeatHz > 0.05 {
-                Text(verbatim: "→ \(format(display.targetBeatHz))")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            if !onTarget {
-                directionLabel
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(.thinMaterial))
+            } else {
+                HStack(spacing: 8) {
+                    pulsingDot
+                    pairNames
+                    kindLabel
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    beatLabel
+                    aimLabel
+                    if !onTarget {
+                        directionLabel
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(.thinMaterial))
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 5)
-        .background(Capsule().fill(.thinMaterial))
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("tuner.interval")
         .accessibilityLabel(Text("Interval", bundle: .module))
         .accessibilityValue(Text(verbatim: accessibleValue))
+    }
+
+    @ViewBuilder
+    private var pairNames: some View {
+        if notes.indices.contains(display.lowerIndex),
+            notes.indices.contains(display.upperIndex)
+        {
+            HStack(spacing: 2) {
+                CompactNoteName(
+                    note: notes[display.lowerIndex], naming: naming, fontSize: 14)
+                Text(verbatim: "–")
+                    .foregroundStyle(.secondary)
+                CompactNoteName(
+                    note: notes[display.upperIndex], naming: naming, fontSize: 14)
+            }
+        }
+    }
+
+    private var beatLabel: some View {
+        Text(verbatim: beatText)
+            .font(.callout.weight(.semibold).monospacedDigit())
+            .foregroundStyle(
+                onTarget ? AnyShapeStyle(Color.green) : AnyShapeStyle(.primary))
+    }
+
+    @ViewBuilder
+    private var aimLabel: some View {
+        if display.targetBeatHz > 0.05 {
+            Text(verbatim: "→ \(format(display.targetBeatHz))")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
     }
 
     /// Close enough to the temperament's own answer that the ear hears
@@ -200,10 +249,12 @@ struct IntervalLane: View {
     }
 }
 
-/// The strips' home for the chip: centered on the boundary the sounding
-/// pair shares — adjacent strings are adjacent rows there by construction.
-/// Positioned arithmetically (the strips are a plain VStack with known row
-/// heights), never by inserting a row: nothing may reflow mid-bow.
+/// The strips' home for the chip: in the TRAILING margin where the string
+/// lines run — empty by construction — vertically centered on the boundary
+/// the sounding pair shares (adjacent strings are adjacent rows there).
+/// Centered horizontally it sat ON the cards it was describing. Positioned
+/// arithmetically (the strips are a plain VStack with known row heights),
+/// never by inserting a row: nothing may reflow mid-bow.
 struct StripsIntervalOverlay: View {
     @ObservedObject var interval: IntervalMonitor
     let notes: [Note]
@@ -213,14 +264,18 @@ struct StripsIntervalOverlay: View {
     let count: Int
     let lowOnTop: Bool
 
+    /// The stacked chip's approximate height, for centering on the boundary.
+    private static let chipHeight: CGFloat = 72
+
     var body: some View {
         if let display = interval.display {
             let lowerRow = displayRow(display.lowerIndex)
             let upperRow = displayRow(display.upperIndex)
             let boundary = CGFloat(min(lowerRow, upperRow) + 1)
             let centerY = boundary * rowHeight + (boundary - 0.5) * rowSpacing
-            IntervalChip(display: display, notes: notes, naming: naming)
-                .offset(y: centerY - IntervalLane.height / 2)
+            IntervalChip(display: display, notes: notes, naming: naming, stacked: true)
+                .offset(y: centerY - Self.chipHeight / 2)
+                .padding(.trailing, 8)
         }
     }
 

@@ -191,9 +191,7 @@ extension InstrumentGridView {
         // The drawn gauge grades by pitch — the lowest string the fattest,
         // like the set in your hand — independent of display order.
         let total = max(1, strings.tuners.count - 1)
-        let rowHeight = 64 * scale
-        let rowSpacing = 10 + share
-        return VStack(spacing: rowSpacing) {
+        return VStack(spacing: 10 + share) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { position, entry in
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
                     StringStrip(
@@ -205,31 +203,30 @@ extension InstrumentGridView {
                         toneIdentifier: "strips.tone.\(entry.index)",
                         onToneToggle: {
                             Task { await strings.toggleTone(string: entry.index) }
-                        })
+                        },
+                        boundsIndex: entry.index)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("strips.row.\(position)")
             }
         }
-        // The interval chip rides the trailing MARGIN, vertically centered
-        // on the boundary the sounding pair shares — in the strips,
-        // adjacent strings are adjacent rows by construction. The margin
-        // is the string lines' territory, empty by construction; centered
-        // horizontally the chip sat on the very cards it was describing.
-        // An overlay rather than an inserted row: nothing may reflow the
-        // strips mid-bow.
-        .overlay(alignment: .topTrailing) {
-            StripsIntervalOverlay(
-                interval: strings.interval,
-                notes: instance.instrument.notes,
-                naming: settings.naming,
-                rowHeight: rowHeight,
-                rowSpacing: rowSpacing,
-                count: ordered.count,
-                lowOnTop: settings.stripsLowOnTop)
-        }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+        // The interval chip straddles the sounding pair: snug against the
+        // cards' trailing edge, vertically centered on the union of their
+        // PUBLISHED bounds — estimated row heights drifted, geometry
+        // doesn't. An overlay rather than an inserted row: nothing may
+        // reflow the strips mid-bow.
+        .overlayPreferenceValue(StripCardBoundsKey.self) { anchors in
+            GeometryReader { proxy in
+                StripsIntervalOverlay(
+                    interval: strings.interval,
+                    notes: instance.instrument.notes,
+                    naming: settings.naming,
+                    anchors: anchors,
+                    proxy: proxy)
+            }
+        }
         .frame(
             minHeight: max(0, size.height - Self.meterChrome),
             alignment: .center)

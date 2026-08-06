@@ -126,11 +126,36 @@ struct LightStrip: View {
     }
 }
 
-/// The reference-pitch control: the `A=440` readout with a step either side.
-///
-/// It replaces the plain label in the header rather than adding a third menu
-/// to the controls row, which is already full. Whole hertz per step, matching
-/// how orchestras actually specify a pitch (442, 443, baroque 415).
+/// A speaker toggle bound to one tone tag — its own observable island, so a
+/// tone starting re-renders the speakers and nothing else. Enabled on
+/// locked instruments: sounding a target changes no state.
+struct ToneSpeaker: View {
+    @ObservedObject var tone: ToneGenerator
+    let tag: String
+    let identifier: String
+    var font: Font = .body
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: isSounding ? "speaker.wave.2.fill" : "speaker.wave.2")
+                .font(font)
+                .foregroundStyle(
+                    isSounding ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
+                )
+                .frame(minWidth: 24, minHeight: 24)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(Text("Reference tone", bundle: .module))
+        .accessibilityValue(
+            isSounding ? Text("On", bundle: .module) : Text("Off", bundle: .module))
+    }
+
+    private var isSounding: Bool { tone.playingTag == tag }
+}
+
 /// The temperament, worn where the reference is: it's the same kind of
 /// fact — "A=442, pure" — and it must be readable on the tuning screens
 /// themselves, because a ±2¢ target shift redraws nothing a dial would
@@ -173,6 +198,11 @@ struct TemperamentChip: View {
     }
 }
 
+/// The reference-pitch control: the `A=440` readout with a step either side.
+///
+/// It replaces the plain label in the header rather than adding a third menu
+/// to the controls row, which is already full. Whole hertz per step, matching
+/// how orchestras actually specify a pitch (442, 443, baroque 415).
 struct ReferencePitchStepper: View {
     @Binding var reference: ReferencePitch
     /// The reference is "this note at this frequency", so its label follows the

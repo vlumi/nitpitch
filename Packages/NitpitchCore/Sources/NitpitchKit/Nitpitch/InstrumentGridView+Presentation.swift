@@ -83,6 +83,18 @@ extension InstrumentGridView {
                 // Identified by STRING, not by visual position: cell 0 is the
                 // lowest string wherever the row order puts it.
                 .accessibilityIdentifier("grid.cell.\(entry.index)")
+                // The string's own speaker, a sibling overlay so its taps
+                // never reach the navigation underneath. Tapping another
+                // speaker mid-tone glides to it.
+                .overlay(alignment: .topTrailing) {
+                    ToneSpeaker(
+                        tone: strings.tone, tag: "string.\(entry.index)",
+                        identifier: "grid.tone.\(entry.index)", font: .caption
+                    ) {
+                        Task { await strings.toggleTone(string: entry.index) }
+                    }
+                    .padding(6)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -181,6 +193,16 @@ extension InstrumentGridView {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("strips.row.\(position)")
+                // The strip's speaker rides the string line's spare width.
+                .overlay(alignment: .trailing) {
+                    ToneSpeaker(
+                        tone: strings.tone, tag: "string.\(entry.index)",
+                        identifier: "strips.tone.\(entry.index)", font: .caption
+                    ) {
+                        Task { await strings.toggleTone(string: entry.index) }
+                    }
+                    .padding(.trailing, 4)
+                }
             }
         }
         .padding(.horizontal, 16)

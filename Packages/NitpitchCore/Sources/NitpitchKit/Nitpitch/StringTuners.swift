@@ -129,6 +129,15 @@ final class StringTuners: ObservableObject {
         // The spectral engine's phase pair must not span the gap.
         bank.interrupted()
         for tuner in tuners { tuner.end() }
+        // Leaving mid-tone: silence it and hand the session back to capture.
+        if tone.playingTag != nil {
+            let tone = tone
+            let audio = audio
+            Task {
+                await tone.stop()
+                await audio.endTonePlayback()
+            }
+        }
     }
 
     /// Re-tune every band when the reference, the temperament or the band
@@ -157,6 +166,18 @@ final class StringTuners: ObservableObject {
                 tuner.retarget(note)
             }
         }
+        // A sounding tone follows whatever moved it: stepping the reference
+        // while its A plays retunes the pitch live, and a retuned string
+        // glides its speaker along.
+        if let tag = tone.playingTag {
+            if tag == "reference" {
+                tone.retune(hz: reference.hz)
+            } else if let index = Int(tag.dropFirst("string.".count)),
+                targets.indices.contains(index)
+            {
+                tone.retune(hz: targets[index])
+            }
+        }
     }
 
     /// Thresholds or engine only — no band change, so the detectors keep their
@@ -175,5 +196,45 @@ final class StringTuners: ObservableObject {
     func setIntonating(_ on: Bool) {
         isIntonating = on
         for tuner in tuners { tuner.setIntonating(on) }
+    }
+
+    // MARK: - The reference tone, from the grid
+
+    /// One generator for the whole screen: tapping another speaker while
+    /// one sounds GLIDES to it, and tapping the sounding one stops.
+    let tone = ToneGenerator()
+
+    /// Sound one string's tempered target.
+    func toggleTone(string index: Int) async {
+        guard targets.indices.contains(index) else { return }
+        await toggleTone(hz: targets[index], tag: "string.\(index)")
+    }
+
+    /// Sound the reference itself — the A the footer stepper shows. While
+    /// it plays, stepping the reference retunes it live (`configure`).
+    func toggleTone(reference: ReferencePitch) async {
+        await toggleTone(hz: reference.hz, tag: "reference")
+    }
+
+    private func toggleTone(hz: Double, tag: String) async {
+        if tone.playingTag == tag {
+            await stopTone()
+            return
+        }
+        if tone.playingTag == nil {
+            // Capture yields; every dial goes honestly idle rather than
+            // freezing on its last reading.
+            audio.beginTonePlayback()
+            for tuner in tuners { tuner.end() }
+            inputLevel.set(0)
+        }
+        tone.start(hz: hz, tag: tag)
+    }
+
+    func stopTone() async {
+        guard tone.playingTag != nil else { return }
+        await tone.stop()
+        await audio.endTonePlayback()
+        for tuner in tuners { tuner.begin() }
     }
 }

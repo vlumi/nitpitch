@@ -179,6 +179,49 @@ final class NitpitchUITests: XCTestCase {
             "toggling back should silence it")
     }
 
+    /// The grid's speakers: the reference A by the stepper, one per string
+    /// cell — and the handover: tapping another speaker mid-tone takes the
+    /// sound over (a glide) rather than stacking or restarting.
+    func testGridSpeakersHandOver() {
+        let app = launch(extraArguments: ["-demo"])
+        openViolinGrid(app)
+
+        let reference = app.descendants(matching: .any)["grid.tone.reference"].firstMatch
+        XCTAssertTrue(reference.waitForExistence(timeout: 5))
+        reference.tap()
+        XCTAssertEqual(
+            XCTWaiter().wait(
+                for: [
+                    XCTNSPredicateExpectation(
+                        predicate: NSPredicate(format: "value == %@", "On"),
+                        object: reference)
+                ], timeout: 5), .completed,
+            "the reference A should sound")
+
+        let cell = app.descendants(matching: .any)["grid.tone.0"].firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        cell.tap()
+        XCTAssertEqual(
+            XCTWaiter().wait(
+                for: [
+                    XCTNSPredicateExpectation(
+                        predicate: NSPredicate(format: "value == %@", "On"), object: cell),
+                    XCTNSPredicateExpectation(
+                        predicate: NSPredicate(format: "value == %@", "Off"),
+                        object: reference),
+                ], timeout: 5), .completed,
+            "the string's speaker should take the tone over from the reference")
+
+        cell.tap()
+        XCTAssertEqual(
+            XCTWaiter().wait(
+                for: [
+                    XCTNSPredicateExpectation(
+                        predicate: NSPredicate(format: "value == %@", "Off"), object: cell)
+                ], timeout: 5), .completed,
+            "tapping the sounding speaker stops it")
+    }
+
     /// The target stepper: nudge G3 down, the headline changes, the grid's
     /// cell follows when you go back, and the header relabels the tuning
     /// Custom — the whole edit loop, end to end.

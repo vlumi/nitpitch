@@ -53,16 +53,33 @@ final class ToneSynthTests: XCTestCase {
             "50 ms is more than the ramp needs")
     }
 
-    /// Retuning mid-note — the swipe to the next string — must be
-    /// phase-continuous: no jump at the moment the frequency changes.
+    /// Retuning mid-note — the swipe to the next string — must GLIDE: an
+    /// instantaneous frequency jump is phase-continuous but not
+    /// slope-continuous, and that kink was audible as a cutting noise in
+    /// the field. The pitch must move through the middle and land.
     func testRetuningGlides() {
         var synth = ToneSynth(sampleRate: sampleRate, frequency: 440)
         synth.targetAmplitude = ToneSynth.playingAmplitude
         var rendered = samples(&synth, seconds: 0.1)
-        synth.frequency = 660
+        synth.targetFrequency = 660
+        rendered += samples(&synth, seconds: 0.02)
+        XCTAssertTrue(
+            (450...650).contains(synth.frequency),
+            "20 ms in, the pitch is mid-glide, not teleported")
         rendered += samples(&synth, seconds: 0.1)
+        XCTAssertEqual(synth.frequency, 660, accuracy: 0.001, "the glide lands")
         let maxJump = zip(rendered, rendered.dropFirst()).map { abs($1 - $0) }.max() ?? 1
         // The 660 Hz slope bound: 2π·660/44100·0.3 ≈ 0.028.
         XCTAssertLessThan(maxJump, 0.035)
+    }
+
+    /// Gliding down works symmetrically — E back to A.
+    func testGlidingDownLands() {
+        var synth = ToneSynth(sampleRate: sampleRate, frequency: 660)
+        synth.targetAmplitude = ToneSynth.playingAmplitude
+        _ = samples(&synth, seconds: 0.05)
+        synth.targetFrequency = 440
+        _ = samples(&synth, seconds: 0.12)
+        XCTAssertEqual(synth.frequency, 440, accuracy: 0.001)
     }
 }

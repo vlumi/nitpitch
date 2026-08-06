@@ -172,6 +172,9 @@ public final class StringTunerViewModel: ObservableObject {
             return
         }
 
+        // A confident reading is tuning activity: the screen stays awake.
+        audio.pokeScreenAwake()
+
         let raw = PitchReading(frequency: hz, reference: reference)
         let absolute = Double(raw.note.midi) * 100 + raw.cents
         // Against *this string's* TEMPERED target, not the nearest note. No

@@ -168,6 +168,8 @@ public final class NitpitchViewModel: ObservableObject {
             return
         }
         quietFrames = 0
+        // A confident reading is tuning activity: the screen stays awake.
+        audio.pokeScreenAwake()
 
         let raw = PitchReading(frequency: hz, reference: reference)
         // Smooth in absolute cents (MIDI×100 + offset) so the median and the

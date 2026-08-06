@@ -3,6 +3,10 @@ import Foundation
 import NitpitchCore
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 /// The app's one microphone: a single engine and session, fanned out to any
 /// number of listeners.
 ///
@@ -145,6 +149,75 @@ public final class AudioSessionController: ObservableObject {
         status = .idle
     }
 
+    // MARK: - The screen stays awake while tuning is ACTIVE
+
+    /// How long after the last sign of tuning life the screen may sleep
+    /// again. Long enough to survive a peg adjustment or a bow re-grip;
+    /// short enough that a phone forgotten on the stand doesn't burn its
+    /// battery all night.
+    public static let wakeGraceSeconds: Double = 90
+
+    /// Whether the app is currently holding the screen awake — the state
+    /// the poke/release pair manages, exposed for tests.
+    public private(set) var isKeepingScreenAwake = false
+
+    private var wakeDeadline: Task<Void, Never>?
+    private var lastWakePoke: Date?
+    #if os(macOS)
+    private var displayActivity: NSObjectProtocol?
+    #endif
+
+    /// A sign of tuning life: a confident reading arrived, or a tone is
+    /// sounding. The screen stays awake, and the sleep deadline re-arms.
+    /// The idle timer is fully dynamic, so activity-based is the honest
+    /// policy — the alternative was "awake forever while the app is open",
+    /// which keeps a forgotten phone lit on the stand.
+    ///
+    /// Throttled: readings arrive ~21×/second, and re-arming the deadline
+    /// per frame is churn for nothing.
+    public func pokeScreenAwake() {
+        if let last = lastWakePoke, Date().timeIntervalSince(last) < 10,
+            isKeepingScreenAwake
+        {
+            return
+        }
+        lastWakePoke = Date()
+        keepScreenAwake(true)
+        wakeDeadline?.cancel()
+        wakeDeadline = Task { [weak self] in
+            try? await Task.sleep(
+                nanoseconds: UInt64(Self.wakeGraceSeconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.wakeDeadlinePassed()
+        }
+    }
+
+    private func wakeDeadlinePassed() {
+        // A droning tone is activity even when nobody touches anything.
+        if tone.playingTag != nil {
+            pokeScreenAwake()
+            return
+        }
+        keepScreenAwake(false)
+    }
+
+    private func keepScreenAwake(_ awake: Bool) {
+        guard awake != isKeepingScreenAwake else { return }
+        isKeepingScreenAwake = awake
+        #if os(iOS)
+        UIApplication.shared.isIdleTimerDisabled = awake
+        #elseif os(macOS)
+        if awake {
+            displayActivity = ProcessInfo.processInfo.beginActivity(
+                options: [.idleDisplaySleepDisabled],
+                reason: "Tuning in progress")
+        } else if let activity = displayActivity {
+            ProcessInfo.processInfo.endActivity(activity)
+            displayActivity = nil
+        }
+        #endif
+    }
+
     /// The one reference tone, app-wide. A single engine by design: when
     /// every screen owned its own generator, starting a tone on the grid
     /// and another in a string view sounded BOTH — exclusivity has to be
@@ -163,6 +236,9 @@ public final class AudioSessionController: ObservableObject {
             beginTonePlayback()
         }
         tone.start(hz: hz, tag: tag)
+        // A sounding tone is tuning activity — the deadline re-arms itself
+        // for as long as it drones.
+        pokeScreenAwake()
     }
 
     /// Stop whatever sounds and hand the session back to capture — safe

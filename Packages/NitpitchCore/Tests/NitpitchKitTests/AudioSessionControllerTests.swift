@@ -112,4 +112,16 @@ final class AudioSessionControllerTests: XCTestCase {
         XCTAssertEqual(received, [[5]], "still subscribed after suspend")
         subscription.cancel()
     }
+
+    /// Activity keeps the screen awake; the throttle tolerates the ~21 Hz
+    /// poke rate without churning. (The 90 s release deadline is real time
+    /// and stays field-verified.)
+    func testTuningActivityKeepsTheScreenAwake() {
+        let controller = AudioSessionController(input: AudioInput())
+        XCTAssertFalse(controller.isKeepingScreenAwake)
+        controller.pokeScreenAwake()
+        XCTAssertTrue(controller.isKeepingScreenAwake)
+        controller.pokeScreenAwake()
+        XCTAssertTrue(controller.isKeepingScreenAwake, "repeat pokes are harmless")
+    }
 }

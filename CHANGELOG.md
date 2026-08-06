@@ -24,6 +24,17 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The screen stays awake while you tune — and only while you tune: a
+  confident reading or a sounding tone holds it, and it's released
+  ninety seconds after the last sign of life, so a phone forgotten on
+  the stand still sleeps. Mac displays get the same courtesy.
+- The reference tone is properly audible now, low strings included: a
+  phone speaker can't reproduce a bass string's fundamental at all, so
+  the tone carries harmonics the speaker CAN produce and the ear
+  rebuilds the pitch from them (the missing-fundamental effect) — plus
+  a higher playing level. The clickless edges and glides are measured
+  against the richer waveform's own slope.
+
 ### build 5 — 2026-08-06
 
 - Bowing two adjacent strings shows the interval itself, in the ear's

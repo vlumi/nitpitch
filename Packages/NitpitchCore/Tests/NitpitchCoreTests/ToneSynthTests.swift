@@ -2,8 +2,10 @@ import XCTest
 
 @testable import NitpitchCore
 
-/// The reference tone as arithmetic: right pitch, clickless edges,
-/// phase-continuous retuning.
+/// The reference tone as arithmetic: right pitch (verified by the app's own
+/// detector, since the harmonic-rich waveform defeats zero-crossing
+/// counting), clickless edges (measured against the tone's own steady
+/// slope), phase-continuous retuning.
 final class ToneSynthTests: XCTestCase {
     private let sampleRate = 44100.0
 
@@ -11,37 +13,43 @@ final class ToneSynthTests: XCTestCase {
         (0..<Int(sampleRate * seconds)).map { _ in synth.nextSample() }
     }
 
-    func testAnAFourFortyIsAnAFourForty() {
-        var synth = ToneSynth(sampleRate: sampleRate, frequency: 440)
-        synth.targetAmplitude = ToneSynth.playingAmplitude
-        let rendered = samples(&synth, seconds: 1)
-        // Count upward zero crossings after the attack has settled — one
-        // per cycle.
-        let settled = Array(rendered.dropFirst(4410))
-        var crossings = 0
-        for index in 1..<settled.count
-        where settled[index - 1] <= 0 && settled[index] > 0 {
-            crossings += 1
-        }
-        let seconds = Double(settled.count) / sampleRate
-        XCTAssertEqual(Double(crossings) / seconds, 440, accuracy: 1.5)
+    private func maxJump(_ rendered: [Float]) -> Float {
+        zip(rendered, rendered.dropFirst()).map { abs($1 - $0) }.max() ?? 1
     }
 
-    /// The edges must not click: with a ramped envelope, no two adjacent
-    /// samples may jump more than the waveform's own slope allows.
+    /// The tone's pitch, as the tuner itself would hear it — for the
+    /// fundamental AND for a bass-register note whose fundamental a phone
+    /// speaker couldn't even reproduce (the harmonics carry it).
+    func testTheDetectorAgreesOnThePitch() {
+        for target in [440.0, 82.4] {
+            var synth = ToneSynth(sampleRate: sampleRate, frequency: target)
+            synth.targetAmplitude = ToneSynth.playingAmplitude
+            let rendered = samples(&synth, seconds: 0.5)
+            let detector = PitchDetector(sampleRate: sampleRate, band: Detection.fullBand)
+            let window = Array(rendered[8192..<(8192 + Detection.windowSize)])
+            guard let heard = detector.analyze(window).frequency else {
+                XCTFail("the tone at \(target) must be detectable")
+                continue
+            }
+            XCTAssertEqual(heard, target, accuracy: target * 0.002)
+        }
+    }
+
+    /// The edges must not click: start and stop may not jump more than the
+    /// held tone's own steepest sample-to-sample move (plus the envelope's
+    /// tiny per-sample step).
     func testStartAndStopAreClickless() {
         var synth = ToneSynth(sampleRate: sampleRate, frequency: 440)
         synth.targetAmplitude = ToneSynth.playingAmplitude
-        var rendered = samples(&synth, seconds: 0.1)
+        let attack = samples(&synth, seconds: 0.1)
+        let steady = samples(&synth, seconds: 0.1)
         synth.targetAmplitude = 0
-        rendered += samples(&synth, seconds: 0.1)
+        let release = samples(&synth, seconds: 0.1)
         XCTAssertEqual(synth.amplitude, 0, "the release must land")
         XCTAssertFalse(synth.isAudible)
-        let maxJump = zip(rendered, rendered.dropFirst()).map { abs($1 - $0) }.max() ?? 1
-        // A 440 Hz sine at 0.3 moves at most 2π·440/44100·0.3 ≈ 0.019 per
-        // sample; the envelope adds its own slope on top. 0.025 is the
-        // budget; a hard start or stop would jump by 0.3.
-        XCTAssertLessThan(maxJump, 0.025)
+        let steadyJump = maxJump(steady)
+        XCTAssertLessThanOrEqual(maxJump(attack), steadyJump * 1.05 + 0.002)
+        XCTAssertLessThanOrEqual(maxJump(release), steadyJump * 1.05 + 0.002)
     }
 
     func testTheAttackLandsPromptly() {
@@ -60,17 +68,21 @@ final class ToneSynthTests: XCTestCase {
     func testRetuningGlides() {
         var synth = ToneSynth(sampleRate: sampleRate, frequency: 440)
         synth.targetAmplitude = ToneSynth.playingAmplitude
-        var rendered = samples(&synth, seconds: 0.1)
+        _ = samples(&synth, seconds: 0.1)
         synth.targetFrequency = 660
-        rendered += samples(&synth, seconds: 0.02)
+        let gliding = samples(&synth, seconds: 0.02)
         XCTAssertTrue(
             (450...650).contains(synth.frequency),
             "20 ms in, the pitch is mid-glide, not teleported")
-        rendered += samples(&synth, seconds: 0.2)
+        let landing = samples(&synth, seconds: 0.2)
         XCTAssertEqual(synth.frequency, 660, accuracy: 0.05, "the glide lands")
-        let maxJump = zip(rendered, rendered.dropFirst()).map { abs($1 - $0) }.max() ?? 1
-        // The 660 Hz slope bound: 2π·660/44100·0.3 ≈ 0.028.
-        XCTAssertLessThan(maxJump, 0.035)
+        // The glide's own steepest move may not exceed the landed tone's —
+        // the 660 Hz steady slope bounds everything.
+        var steadySynth = ToneSynth(sampleRate: sampleRate, frequency: 660)
+        steadySynth.targetAmplitude = ToneSynth.playingAmplitude
+        _ = samples(&steadySynth, seconds: 0.1)
+        let steadyJump = maxJump(samples(&steadySynth, seconds: 0.1))
+        XCTAssertLessThanOrEqual(maxJump(gliding + landing), steadyJump * 1.05 + 0.002)
     }
 
     /// Gliding down works symmetrically — E back to A.

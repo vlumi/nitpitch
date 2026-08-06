@@ -187,6 +187,12 @@
     "Octave versus open" : {
       "comment" : "Accessibility label for the intonation delta readout"
     },
+    "Off" : {
+      "comment" : "Accessibility value: a toggle that is off"
+    },
+    "On" : {
+      "comment" : "Accessibility value: a toggle that is on"
+    },
     "Open" : {
       "comment" : "Intonation: the open-string sample's label"
     },
@@ -225,6 +231,9 @@
     },
     "Reference pitch" : {
       "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"
+    },
+    "Reference tone" : {
+      "comment" : "Toolbar toggle in the string view: sound the string's target to tune by ear"
     },
     "Remove from favorites" : {
       "comment" : "Star on an instrument row: unpin it from the launch screen"

@@ -155,6 +155,30 @@ final class NitpitchUITests: XCTestCase {
         add(shot)
     }
 
+    /// The reference tone: the string view's speaker toggles it on and off,
+    /// and the button honestly reports which.
+    func testReferenceToneToggles() {
+        let app = launch(extraArguments: ["-demo"])
+        openViolinGrid(app)
+        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+
+        let tone = app.descendants(matching: .any)["string.tone"].firstMatch
+        XCTAssertTrue(tone.waitForExistence(timeout: 5))
+        tone.tap()
+        let sounding = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "On"), object: tone)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [sounding], timeout: 5), .completed,
+            "the speaker should report the tone sounding")
+
+        tone.tap()
+        let silent = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "Off"), object: tone)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [silent], timeout: 5), .completed,
+            "toggling back should silence it")
+    }
+
     /// The target stepper: nudge G3 down, the headline changes, the grid's
     /// cell follows when you go back, and the header relabels the tuning
     /// Custom — the whole edit loop, end to end.

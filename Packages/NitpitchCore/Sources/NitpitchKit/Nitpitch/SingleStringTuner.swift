@@ -22,6 +22,11 @@ final class SingleStringTuner: ObservableObject {
     /// The intonation mode's state, its own island for the same reason.
     let intonation = IntonationMonitor()
 
+    /// The reference tone, aimed at this string's tempered target — tune by
+    /// ear against it, or survive a room too noisy to detect in. Its own
+    /// observable island: only the toolbar button re-renders with it.
+    let tone = ToneGenerator()
+
     private var instrument: Instrument
     private let audio: AudioSessionController
     private let bank: DetectorBank
@@ -93,6 +98,23 @@ final class SingleStringTuner: ObservableObject {
         }
     }
 
+    /// Sound the string's target, or stop it. Capture yields while the
+    /// tone plays — detection suspends rather than hearing the app's own
+    /// voice — and the dial honestly goes idle: frozen readings pretending
+    /// to be live is a lesson this app has already paid for.
+    func toggleTone() async {
+        if tone.playingHz != nil {
+            await tone.stop()
+            await audio.endTonePlayback()
+            tuner.begin()
+            return
+        }
+        audio.beginTonePlayback()
+        tuner.end()
+        inputLevel.set(0)
+        tone.start(hz: analyzerTarget)
+    }
+
     func detach() {
         subscription?.cancel()
         subscription = nil
@@ -104,6 +126,16 @@ final class SingleStringTuner: ObservableObject {
         bank.interrupted()
         analyzer.setActive(false)
         tuner.end()
+        // Leaving mid-tone: silence it and hand the session back to
+        // capture, which the next screen is already listening through.
+        if tone.playingHz != nil {
+            let tone = tone
+            let audio = audio
+            Task {
+                await tone.stop()
+                await audio.endTonePlayback()
+            }
+        }
     }
 
     /// The one entry point for "aim here now": swiping to a neighbour, the
@@ -134,6 +166,9 @@ final class SingleStringTuner: ObservableObject {
             analyzerTarget = hz
             intonation.reset()
         }
+        // A sounding tone follows the retarget — swiping to the next string
+        // glides the pitch, which IS the tune-by-fifths flow: A, then D.
+        tone.retune(hz: hz)
     }
 
     func retune(_ tuning: DetectionTuning) {

@@ -19,15 +19,6 @@ Improvements to the act of tuning itself, for the instruments actually on
 hand. Intonation and temperaments shipped in 0.2.0 b4; what remains builds
 on them, and is cohesive enough to be the next version when it ships.
 
-### Tone generator
-
-Play a reference pitch to tune against by ear — set the A from the app,
-tune the rest by fifths the way violinists actually work; also the
-fallback in a noisy room. Needs no DSP (`AVAudioSourceNode` and the
-existing targets). The design question is playback against capture: either
-detection suspends while a tone sounds, or the detector hears the app's
-own output and locks onto it.
-
 ### Interval tuning — the remaining half of double stops
 
 

@@ -249,6 +249,18 @@ one of the drafts that lost.
   one-button-per-combination stopped scaling at three dimensions. Just-vs-Pythagorean is moot for adjacent
   open strings — fifths and fourths are pure in both — which is why the
   one non-equal choice is just called "pure".
+- **The reference tone yields, mixes, and defers.** Detection SUSPENDS
+  while the tone sounds — the roadmap's open design question, answered:
+  the alternative was the detector locking onto the app's own voice —
+  and the dial goes honestly idle rather than freezing (a lesson paid
+  for once already). On iOS the tone plays under `.ambient`: it MIXES
+  with the user's music and RESPECTS the silent switch — a reference
+  tone is a courtesy, not an alarm, and an accidental ring switch
+  should silence it. Capture itself runs `.playAndRecord + 
+  .mixWithOthers` — plain `.record` paused the user's music the moment
+  any tuner listened, which is the kind of behavior apps get deleted
+  for. The tone follows retargets phase-continuously: swiping strings
+  mid-note glides A→D, which IS the tune-by-fifths flow.
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

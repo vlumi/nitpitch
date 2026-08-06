@@ -122,7 +122,14 @@ public final class AudioInput: NSObject {
         // .measurement disables the input processing (AGC, EQ, noise
         // suppression) that voice modes apply — all of which distort the
         // harmonic content the detector depends on.
-        try session.setCategory(.record, mode: .measurement, options: [])
+        // .playAndRecord + .mixWithOthers rather than plain .record: a
+        // non-mixable session PAUSES whatever the user is listening to the
+        // moment the tuner starts hearing, which is the kind of behavior
+        // apps get deleted for. Tuning alongside music is the user's call
+        // to make, not the session's.
+        try session.setCategory(
+            .playAndRecord, mode: .measurement,
+            options: [.mixWithOthers, .defaultToSpeaker])
         try session.setActive(true)
         #endif
 

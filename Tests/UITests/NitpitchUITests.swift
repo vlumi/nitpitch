@@ -179,6 +179,27 @@ final class NitpitchUITests: XCTestCase {
             "toggling back should silence it")
     }
 
+    /// The interval lane: the demo's synthetic double stop populates the
+    /// chip under the meter — pair, beats, and its accessibility value.
+    func testIntervalLaneShowsTheDemoDoubleStop() {
+        let app = launch(extraArguments: ["-demo"])
+        openViolinGrid(app)
+
+        let chip = app.descendants(matching: .any)["tuner.interval"].firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        let populated = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS %@", "beats per second"),
+            object: chip)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [populated], timeout: 5), .completed,
+            "the demo double stop should populate the chip")
+
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "interval-lane"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     /// The grid's speakers: the reference A by the stepper, one per string
     /// cell — and the handover: tapping another speaker mid-tone takes the
     /// sound over (a glide) rather than stacking or restarting.

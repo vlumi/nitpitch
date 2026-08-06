@@ -269,6 +269,22 @@ one of the drafts that lost.
   navigation begins in silence; the reference readout itself is the
   reference tone's button wherever the stepper appears, and the padlock
   freezes only the ± — listening changes no state.
+- **The interval display speaks in beats, derived, and never reflows.**
+  Beats are the ear's units — |3·f_L − 2·f_U| for a fifth — DERIVED from
+  the double stop's two pitches rather than measured off the amplitude
+  envelope: the estimator reads both notes sub-cent and its
+  skip-shared-partials rule keeps each pitch clean of the very
+  coincidence partial that beats (envelope measurement, which would add
+  inharmonicity, waits for the field to ask). The aim follows the
+  temperament — pure tunes to silence, equal's fifth honestly aims at
+  ~1 Hz. Placement: the strips get the chip on the pair's shared
+  boundary (adjacent strings ARE adjacent rows there); the dial grid
+  gets a fixed lane under the meter with the pair edged in tint,
+  because adjacent strings aren't reliably adjacent cells (two-column
+  violin puts D–A on a diagonal). Both homes are overlays or reserved
+  height: NOTHING may reflow the dials mid-bow. Thirds stay out
+  (fretted instruments tune to frets); the beat number is the watch's
+  future haptic vocabulary verbatim.
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

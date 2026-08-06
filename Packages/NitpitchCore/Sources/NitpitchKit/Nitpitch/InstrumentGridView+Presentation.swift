@@ -24,8 +24,10 @@ extension InstrumentGridView {
     /// reserving it a second time is exactly what kept leaving a band of
     /// empty below the grid — the scale stopped early, and the leftover fell
     /// outside the centering frame, pooling at the bottom.
+    /// The interval lane joins the DIAL budget only: the strips carry
+    /// their chip on the pair's own boundary instead.
     static var meterChrome: CGFloat { 10 }
-    static var gridChrome: CGFloat { meterChrome + 8 }
+    static var gridChrome: CGFloat { meterChrome + 8 + IntervalLane.height }
 
     /// The grid's shape for this viewport. On iOS the column count is the
     /// user's picker and the cells scale to the width — down to half size,
@@ -83,6 +85,11 @@ extension InstrumentGridView {
                 // Identified by STRING, not by visual position: cell 0 is the
                 // lowest string wherever the row order puts it.
                 .accessibilityIdentifier("grid.cell.\(entry.index)")
+                // The sounding interval pair's tinted edge — the lane names
+                // the pair, this is where the eye lands next.
+                .overlay {
+                    IntervalHighlight(interval: strings.interval, index: entry.index)
+                }
                 // The string's own speaker, a sibling overlay so its taps
                 // never reach the navigation underneath. Bottom corner: the
                 // top row belongs to the level meter, and the two competed
@@ -184,7 +191,9 @@ extension InstrumentGridView {
         // The drawn gauge grades by pitch — the lowest string the fattest,
         // like the set in your hand — independent of display order.
         let total = max(1, strings.tuners.count - 1)
-        return VStack(spacing: 10 + share) {
+        let rowHeight = 64 * scale
+        let rowSpacing = 10 + share
+        return VStack(spacing: rowSpacing) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { position, entry in
                 NavigationLink(value: TunerRoute.string(instance.id, entry.index)) {
                     StringStrip(
@@ -201,6 +210,21 @@ extension InstrumentGridView {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("strips.row.\(position)")
             }
+        }
+        // The interval chip rides the BOUNDARY the sounding pair shares —
+        // in the strips, adjacent strings are adjacent rows by
+        // construction, so the space between them genuinely exists. An
+        // overlay rather than an inserted row: nothing may reflow the
+        // strips mid-bow.
+        .overlay(alignment: .top) {
+            StripsIntervalOverlay(
+                interval: strings.interval,
+                notes: instance.instrument.notes,
+                naming: settings.naming,
+                rowHeight: rowHeight,
+                rowSpacing: rowSpacing,
+                count: ordered.count,
+                lowOnTop: settings.stripsLowOnTop)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

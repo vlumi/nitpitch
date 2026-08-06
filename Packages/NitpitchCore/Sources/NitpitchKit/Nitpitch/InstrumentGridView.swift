@@ -231,22 +231,38 @@ struct InstrumentGridView: View {
             strips(for: size)
         } else {
             let layout = dialLayout(for: size)
-            dialGrid(columns: layout.columns, cellScale: layout.scale)
-                // Cards hug their content instead of stretching into acres —
-                // the emptiness lives outside the cards — but loosely enough
-                // that a single column can still use the width it was
-                // visibly given.
-                .frame(maxWidth: CGFloat(layout.columns) * (330 * layout.scale + 12) + 32)
-                .frame(maxWidth: .infinity, alignment: .center)
-                // When width caps the scale so the grid can't fill the
-                // height, the slack frames the grid on the Mac instead of
-                // pooling at the bottom; phones read scrolling content from
-                // the top. Claims every point below the meter — the footer
-                // inset is already outside the viewport — so no slack is
-                // left where the centering can't reach it.
-                .frame(
-                    minHeight: max(0, size.height - Self.meterChrome),
-                    alignment: verticalCentering)
+            VStack(spacing: 0) {
+                // The interval lane: one fixed place in every column count,
+                // its height always reserved so a double stop starting or
+                // stopping never reflows the dials mid-bow. Adjacent
+                // STRINGS aren't reliably adjacent CELLS (a two-column
+                // violin puts D and A on a diagonal), so the grid gets a
+                // lane and the sounding pair gets a tinted edge; the strips
+                // — where the pair genuinely shares a boundary — get the
+                // chip on that boundary instead.
+                IntervalLane(
+                    interval: strings.interval,
+                    notes: instance.instrument.notes,
+                    naming: settings.naming)
+                dialGrid(columns: layout.columns, cellScale: layout.scale)
+                    // Cards hug their content instead of stretching into
+                    // acres — the emptiness lives outside the cards — but
+                    // loosely enough that a single column can still use the
+                    // width it was visibly given.
+                    .frame(
+                        maxWidth: CGFloat(layout.columns) * (330 * layout.scale + 12) + 32
+                    )
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            // When width caps the scale so the grid can't fill the
+            // height, the slack frames the grid on the Mac instead of
+            // pooling at the bottom; phones read scrolling content from
+            // the top. Claims every point below the meter — the footer
+            // inset is already outside the viewport — so no slack is
+            // left where the centering can't reach it.
+            .frame(
+                minHeight: max(0, size.height - Self.meterChrome),
+                alignment: verticalCentering)
         }
     }
 

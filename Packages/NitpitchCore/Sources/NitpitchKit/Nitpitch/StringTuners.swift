@@ -39,6 +39,12 @@ final class StringTuners: ObservableObject {
     /// The strings' target frequencies, for the router's 2f arithmetic.
     /// Kept alongside the bank's copy, which it doesn't share back.
     private var targets: [Double]
+    /// Nominal MIDI per string, for the interval arithmetic.
+    private var midis: [Int]
+
+    /// The interval readout — beats between two sounding adjacent strings —
+    /// its own island like the meter's.
+    let interval = IntervalMonitor()
 
     init(
         instrument: Instrument, audio: AudioSessionController, reference: ReferencePitch,
@@ -57,11 +63,13 @@ final class StringTuners: ObservableObject {
         }
         targets = Self.temperedTargets(
             notes: instrument.notes, offsets: offsets, reference: reference)
+        midis = instrument.strings
         bank = DetectorBank(
             sampleRate: audio.sampleRate,
             targets: targets,
             bands: bands,
             tuning: tuning)
+        interval.configure(midis: midis, targets: targets)
     }
 
     private static func temperedTargets(
@@ -106,6 +114,13 @@ final class StringTuners: ObservableObject {
                 for (tuner, result) in zip(self.tuners, routed) {
                     tuner.ingest(result)
                 }
+                // The interval readout hears the same frame — open strings
+                // only, so an octave claim (parity-flagged) never
+                // masquerades as a sounding pair member.
+                self.interval.ingest(
+                    frequencies: routed.map {
+                        $0.evenPartialsOnly ? nil : $0.frequency
+                    })
                 // Every result carries the same frame's RMS; the meter shows
                 // the shared display curve of it.
                 if let frame = results.first {
@@ -116,11 +131,26 @@ final class StringTuners: ObservableObject {
     }
 
     /// The demo's overall meter, so the top of the screen moves like the rest
-    /// of the synthetic layout.
+    /// of the synthetic layout — and a synthetic double stop on the middle
+    /// pair, its beats breathing between ~3/s and 0, so the interval chip,
+    /// its pulse and both of its homes are judged live.
     private func runDemoLevel() async {
         var tick = 0.0
         while !Task.isCancelled {
             inputLevel.set(((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20)
+            if midis.count >= 3, targets.count == midis.count,
+                let kind = IntervalBeat.Kind(semitones: midis[2] - midis[1])
+            {
+                let beat = max(0, 3 * (0.5 + 0.5 * sin(tick * 0.25)))
+                let lower = targets[1]
+                let upper =
+                    (Double(kind.lowerHarmonic) * lower - beat)
+                    / Double(kind.upperHarmonic)
+                var frequencies = [Double?](repeating: nil, count: midis.count)
+                frequencies[1] = lower
+                frequencies[2] = upper
+                interval.ingest(frequencies: frequencies)
+            }
             tick += 0.055
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
@@ -132,6 +162,7 @@ final class StringTuners: ObservableObject {
         demo?.cancel()
         demo = nil
         inputLevel.set(0)
+        interval.reset()
         // The spectral engine's phase pair must not span the gap.
         bank.interrupted()
         for tuner in tuners { tuner.end() }
@@ -153,6 +184,8 @@ final class StringTuners: ObservableObject {
         let offsets = temperament.offsets(for: instrument.strings)
         targets = Self.temperedTargets(
             notes: instrument.notes, offsets: offsets, reference: reference)
+        midis = instrument.strings
+        interval.configure(midis: midis, targets: targets)
         bank.configure(
             targets: targets,
             bands: bands,

@@ -211,12 +211,14 @@ extension InstrumentGridView {
                 .accessibilityIdentifier("strips.row.\(position)")
             }
         }
-        // The interval chip rides the BOUNDARY the sounding pair shares —
-        // in the strips, adjacent strings are adjacent rows by
-        // construction, so the space between them genuinely exists. An
-        // overlay rather than an inserted row: nothing may reflow the
+        // The interval chip rides the trailing MARGIN, vertically centered
+        // on the boundary the sounding pair shares — in the strips,
+        // adjacent strings are adjacent rows by construction. The margin
+        // is the string lines' territory, empty by construction; centered
+        // horizontally the chip sat on the very cards it was describing.
+        // An overlay rather than an inserted row: nothing may reflow the
         // strips mid-bow.
-        .overlay(alignment: .top) {
+        .overlay(alignment: .topTrailing) {
             StripsIntervalOverlay(
                 interval: strings.interval,
                 notes: instance.instrument.notes,

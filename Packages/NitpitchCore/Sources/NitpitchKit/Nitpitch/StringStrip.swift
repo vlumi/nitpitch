@@ -87,7 +87,9 @@ struct StringStrip: View {
                     font: .caption, action: onToneToggle)
             }
         }
-        .padding(.horizontal, 16 * scale)
+        // Trimmed from 16: the interval chip lives in the side margin now,
+        // and the cards ceding a few points is what gives it its room.
+        .padding(.horizontal, 10 * scale)
         .padding(.vertical, 12 * scale)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

@@ -19,36 +19,14 @@ Improvements to the act of tuning itself, for the instruments actually on
 hand. Intonation and temperaments shipped in 0.2.0 b4; what remains builds
 on them, and is cohesive enough to be the next version when it ships.
 
-### Interval tuning — the remaining half of double stops
-
-
-The DSP shipped: `HarmonicEstimator` reads both strings of a double stop to
-sub-cent accuracy (see AGENTS.md). What hasn't been built is the *display*
-that matches how violinists actually use a fifth: set A from a reference,
-then tune each remaining string against its neighbour by bowing both and
-listening to the interval — D+A, then G+D, then A+E. The ear judges the
-fifth, not either note alone. No mainstream tuner shows this.
-
-- **The beat rate is likely the real prize.** In a fifth the lower note's
-  3rd harmonic coincides with the upper's 2nd; near pure, those partials
-  beat at a rate that *is* the tuning error, measurable from the amplitude
-  envelope more precisely than either pitch. "3 beats/sec, slowing" is
-  closer to what the ear does than two cent readings side by side.
-- **Pure, not equal-tempered.** A violinist tuning by ear produces the just
-  3:2 fifth, ~2 cents wider than equal-tempered — which the shipped pure
-  temperament already encodes in the targets.
-- **The UI is the genuine unknown** — two needles? a beat display? an
-  interval-width indicator? Wants trying against the instrument, not
-  designing on paper.
-- **Known risk, not solvable in software:** sustaining a clean double stop
-  is a bowing skill. The per-string signal bars already show when the bow
-  favors one string; whether that's nuisance or dealbreaker is a
-  real-instrument question.
-
 ### Fine-tuning display
 
 A strobe or beat-frequency view, how professionals tune to a fraction of a
-cent. Shares machinery with the interval display.
+cent. The interval/beat display shipped (derived from the double stop's two
+pitches); this is the single-string sibling, and an amplitude-envelope beat
+measurement — which would also capture string inharmonicity — remains the
+refinement if the field ever finds the derived rate disagreeing with the
+ear.
 
 ## 2. Piano — and why the target isn't always 2^(n/12)
 

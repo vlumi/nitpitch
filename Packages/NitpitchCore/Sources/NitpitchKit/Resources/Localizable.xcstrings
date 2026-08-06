@@ -112,6 +112,12 @@
     "Favorites" : {
       "comment" : "Presets sheet: the favorited presets' section"
     },
+    "fifth" : {
+      "comment" : "Interval chip: the pair a fifth apart"
+    },
+    "fourth" : {
+      "comment" : "Interval chip: the pair a fourth apart"
+    },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments"
     },
@@ -132,6 +138,9 @@
     },
     "Instrument options" : {
       "comment" : "Accessibility label for the grid's … menu"
+    },
+    "Interval" : {
+      "comment" : "Accessibility label for the interval\/beat readout"
     },
     "Light" : {
       "comment" : "Appearance option: always light"
@@ -159,6 +168,9 @@
     },
     "Name" : {
       "comment" : "Text field placeholder in the rename dialog"
+    },
+    "narrow" : {
+      "comment" : "Interval chip: the interval is narrower than pure"
     },
     "New instrument" : {
       "comment" : "Title of the staged-creation prompt: name the instrument being added"
@@ -297,6 +309,9 @@
     },
     "Vln" : {
       "comment" : "Kind tag: violin (orchestra abbreviation)"
+    },
+    "wide" : {
+      "comment" : "Interval chip: the interval is wider than pure"
     }
   },
   "version" : "1.0"

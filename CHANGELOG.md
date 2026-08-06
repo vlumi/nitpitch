@@ -24,6 +24,17 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Bowing two adjacent strings shows the interval itself, in the ear's
+  own units: BEATS. In a fifth, the lower string's 3rd harmonic and the
+  upper's 2nd coincide when pure and audibly pulse when not — the pulse
+  rate IS the tuning error, and no mainstream tuner shows it. The chip
+  reads "D–A · fifth · 2.7/s · narrow" with a dot pulsing at the true
+  rate, appears in a fixed lane under the dial grid's meter (the
+  sounding pair edged in tint — adjacent strings aren't always adjacent
+  cells) and on the pair's own shared boundary in the strips. The aim
+  follows the temperament: pure tunes to silence, equal honestly aims
+  at its own ~1 beat per second — fourths ride the same physics on the
+  bass and guitar.
 - A reference tone: the speaker in the string view sounds the current
   string's target — tempered, so a pure-fifths violin hears pure
   fifths — to tune against by ear, or to survive a room too noisy to

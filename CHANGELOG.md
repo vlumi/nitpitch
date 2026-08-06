@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 5 — 2026-08-06
+
 - Bowing two adjacent strings shows the interval itself, in the ear's
   own units: BEATS. In a fifth, the lower string's 3rd harmonic and the
   upper's 2nd coincide when pure and audibly pulse when not — the pulse

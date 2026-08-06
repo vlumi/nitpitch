@@ -24,6 +24,17 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- A reference tone: the speaker in the string view sounds the current
+  string's target — tempered, so a pure-fifths violin hears pure
+  fifths — to tune against by ear, or to survive a room too noisy to
+  detect in. Swiping strings mid-tone glides the pitch: A, then D, the
+  way violinists actually work. Detection pauses while it sounds (the
+  app must not tune itself to its own voice), the tone mixes with
+  whatever you're listening to instead of pausing it, and it respects
+  the silent switch — a reference tone is a courtesy, not an alarm.
+- The tuner no longer pauses your music: capturing used a non-mixable
+  audio session, so opening any tuner silenced whatever was playing.
+  Tuning alongside music is now your call, not the session's.
 ### build 4 — 2026-08-05
 
 - The presets sheet fits phones again: its Mac minimum width (400pt)

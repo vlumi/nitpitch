@@ -90,6 +90,11 @@ struct StringView: View {
         .padding(24)
         .navigationTitle(instance.nameText)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                ToneButton(tone: single.tone) {
+                    Task { await single.toggleTone() }
+                }
+            }
             ToolbarItem(placement: .primaryAction) { lockButton }
         }
         // No identifier on the container: applied here it stamps every child
@@ -372,5 +377,28 @@ struct StringView: View {
         guard canStepTarget(delta) else { return }
         store.setString(id: instance.id, index: index, midi: instance.strings[index] + delta)
         // The store change comes back through onChange(of: instance) → apply.
+    }
+}
+
+/// The reference-tone toggle, observing the generator directly — its own
+/// island, so the tone starting re-renders one toolbar glyph and nothing
+/// else. Available on locked instruments: sounding a target changes no
+/// state.
+private struct ToneButton: View {
+    @ObservedObject var tone: ToneGenerator
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: tone.playingHz != nil ? "speaker.wave.2.fill" : "speaker.wave.2")
+                .foregroundStyle(
+                    tone.playingHz != nil
+                        ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityIdentifier("string.tone")
+        .accessibilityLabel(Text("Reference tone", bundle: .module))
+        .accessibilityValue(
+            tone.playingHz != nil
+                ? Text("On", bundle: .module) : Text("Off", bundle: .module))
     }
 }

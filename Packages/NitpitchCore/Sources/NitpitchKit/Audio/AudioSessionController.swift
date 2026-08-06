@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import NitpitchCore
 import SwiftUI
@@ -142,6 +143,28 @@ public final class AudioSessionController: ObservableObject {
     public func suspend() {
         input.stop()
         status = .idle
+    }
+
+    /// Capture yields to the reference tone. Detection SUSPENDS while a
+    /// tone sounds — the design question the roadmap left open, answered:
+    /// the alternative was the detector locking onto the app's own voice.
+    /// On iOS the session drops to `.ambient` for the duration: it mixes
+    /// with whatever the user left playing, and it respects the silent
+    /// switch — a reference tone is a courtesy, not an alarm, and an
+    /// accidental ring switch should silence it.
+    public func beginTonePlayback() {
+        input.stop()
+        status = .idle
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        try? session.setActive(true)
+        #endif
+    }
+
+    /// The tone is over: capture takes the session back.
+    public func endTonePlayback() async {
+        await activate()
     }
 
     /// Receive every analysis window until the subscription is released.

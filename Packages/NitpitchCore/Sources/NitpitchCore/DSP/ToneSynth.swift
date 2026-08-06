@@ -7,9 +7,15 @@ import Foundation
 /// threads and sessions.
 public struct ToneSynth {
     public let sampleRate: Double
-    /// Hertz. Changes are phase-continuous — retuning mid-note (swiping to
-    /// the next string while the tone sounds) glides rather than clicks.
-    public var frequency: Double
+    /// Where the pitch is heading, in hertz. The sounding `frequency` GLIDES
+    /// there — an instantaneous jump is phase-continuous but not
+    /// slope-continuous, and that derivative kink is a broadband transient:
+    /// the field report was "a cutting noise, pretty painful if the volume
+    /// is up". The glide is cents-linear and fast (~70 ms across a fifth) —
+    /// portamento, not a slide.
+    public var targetFrequency: Double
+    /// The pitch actually sounding right now.
+    public private(set) var frequency: Double
     /// Where the envelope is heading: `playingAmplitude`, or 0 on the way
     /// out. The ramp covers ~30 ms — immediate to the ear, clickless to
     /// the waveform.
@@ -22,10 +28,13 @@ public struct ToneSynth {
     public static let playingAmplitude = 0.3
     /// Envelope slope per second of audio: full scale in ~30 ms.
     public static let rampPerSecond = 10.0
+    /// Glide speed: a fifth (700¢) crossed in 70 ms.
+    public static let glideCentsPerSecond = 10_000.0
 
     public init(sampleRate: Double, frequency: Double) {
         self.sampleRate = sampleRate
         self.frequency = frequency
+        self.targetFrequency = frequency
     }
 
     /// Whether there's anything left to hear — false once a release ramp
@@ -38,6 +47,15 @@ public struct ToneSynth {
             amplitude = min(targetAmplitude, amplitude + step)
         } else if amplitude > targetAmplitude {
             amplitude = max(targetAmplitude, amplitude - step)
+        }
+        if frequency != targetFrequency {
+            let stepCents = Self.glideCentsPerSecond / sampleRate
+            let diffCents = 1200 * log2(targetFrequency / frequency)
+            if abs(diffCents) <= stepCents {
+                frequency = targetFrequency
+            } else {
+                frequency *= pow(2, (diffCents > 0 ? stepCents : -stepCents) / 1200)
+            }
         }
         let sample = sin(phase) * amplitude
         phase += 2 * .pi * frequency / sampleRate

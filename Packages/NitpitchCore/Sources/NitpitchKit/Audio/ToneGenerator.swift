@@ -16,6 +16,9 @@ import NitpitchCore
 public final class ToneGenerator: ObservableObject {
     /// What's sounding, in hertz — nil while silent. The button's state.
     @Published public private(set) var playingHz: Double?
+    /// WHO is sounding, for screens with several speakers — "string.2",
+    /// "reference" — so each button knows whether the tone is its own.
+    @Published public private(set) var playingTag: String?
 
     private let engine = AVAudioEngine()
     private var source: AVAudioSourceNode?
@@ -46,22 +49,34 @@ public final class ToneGenerator: ObservableObject {
         #endif
     }
 
-    public func start(hz: Double) {
+    public func start(hz: Double, tag: String = "tone") {
+        // Already sounding: glide to the new pitch and hand over the tag —
+        // tapping another string's speaker mid-tone slides, it never
+        // restarts.
+        if playingHz != nil, engine.isRunning {
+            box.update { $0.targetFrequency = hz }
+            playingHz = hz
+            playingTag = tag
+            return
+        }
         buildSourceIfNeeded()
         box.update { synth in
-            synth.frequency = hz
+            let sampleRate = synth.sampleRate
+            synth = ToneSynth(sampleRate: sampleRate, frequency: hz)
             synth.targetAmplitude = ToneSynth.playingAmplitude
         }
         engine.prepare()
         guard (try? engine.start()) != nil else { return }
         playingHz = hz
+        playingTag = tag
     }
 
-    /// Follow a retarget mid-note — phase-continuous, so the swipe to the
-    /// next string glides instead of clicking.
+    /// Follow a retarget mid-note. The synth GLIDES there — an instant
+    /// frequency jump is slope-discontinuous, and its click was a field
+    /// report ("pretty painful if the volume is up").
     public func retune(hz: Double) {
         guard playingHz != nil else { return }
-        box.update { $0.frequency = hz }
+        box.update { $0.targetFrequency = hz }
         playingHz = hz
     }
 
@@ -73,11 +88,13 @@ public final class ToneGenerator: ObservableObject {
         try? await Task.sleep(nanoseconds: 60_000_000)
         engine.stop()
         playingHz = nil
+        playingTag = nil
     }
 
     private func engineDied() {
         guard playingHz != nil, !engine.isRunning else { return }
         playingHz = nil
+        playingTag = nil
     }
 
     private func buildSourceIfNeeded() {

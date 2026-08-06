@@ -106,6 +106,11 @@ struct InstrumentGridView: View {
                 }
             }
         }
+        // BEFORE the footer joins: applied any later, the identifier stamps
+        // the inset's own buttons — the reference speaker and the
+        // temperament chip both read "grid.strings" to accessibility, ids
+        // clobbered exactly as the string view's comment warns.
+        .accessibilityIdentifier("grid.strings")
         .safeAreaInset(edge: .bottom) { footer }
         .navigationTitle(instance.nameText)
         // Pinned large on purpose: with .automatic, rotating to landscape
@@ -122,7 +127,6 @@ struct InstrumentGridView: View {
             ToolbarItem(placement: .primaryAction) { lockButton }
             ToolbarItem(placement: .primaryAction) { layoutMenu }
         }
-        .accessibilityIdentifier("grid.strings")
         .task {
             strings.attachAll()
             // Recency feeds "my instruments" ordering — opening counts.
@@ -310,6 +314,15 @@ struct InstrumentGridView: View {
                     set: { store.setReference(id: instance.id, $0) }),
                 naming: settings.naming
             )
+            .disabled(instance.isLocked)
+            // The reference, audible: sound the A the stepper shows, and
+            // stepping it mid-tone retunes the pitch live. Outside the
+            // lock — listening changes no state.
+            ToneSpeaker(
+                tone: strings.tone, tag: "reference", identifier: "grid.tone.reference"
+            ) {
+                Task { await strings.toggleTone(reference: instance.reference) }
+            }
             // The temperament beside the reference — the same kind of
             // fact, worn where you look while tuning. Bowed only.
             if instance.template?.family == .bowed {
@@ -318,9 +331,9 @@ struct InstrumentGridView: View {
                         id: instance.id,
                         instance.appliedTemperament == .pure ? .equal : .pure)
                 }
+                .disabled(instance.isLocked)
             }
         }
-        .disabled(instance.isLocked)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .background(.thinMaterial)

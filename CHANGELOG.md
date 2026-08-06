@@ -32,6 +32,11 @@ and remembered exactly as you left them.
   app must not tune itself to its own voice), the tone mixes with
   whatever you're listening to instead of pausing it, and it respects
   the silent switch — a reference tone is a courtesy, not an alarm.
+  Pitch changes GLIDE (an abrupt jump was a cutting noise at volume),
+  and the grid grew speakers of its own: one per string cell and strip,
+  plus the reference A beside its stepper — step the reference while
+  its tone sounds and the pitch follows live. Tapping another speaker
+  mid-tone slides over to it.
 - The tuner no longer pauses your music: capturing used a non-mixable
   audio session, so opening any tuner silenced whatever was playing.
   Tuning alongside music is now your call, not the session's.

@@ -308,21 +308,22 @@ struct InstrumentGridView: View {
     /// the app there.
     private var footer: some View {
         HStack(spacing: 20) {
+            // The readout itself is the reference tone's button — tap
+            // A=442 to hear it, step ± while it sounds and the pitch
+            // follows live. The lock freezes only the ± (isAdjustable):
+            // listening changes no state, so the tone stays free on a
+            // locked instrument.
             ReferencePitchStepper(
                 reference: Binding(
                     get: { instance.reference },
                     set: { store.setReference(id: instance.id, $0) }),
-                naming: settings.naming
-            )
-            .disabled(instance.isLocked)
-            // The reference, audible: sound the A the stepper shows, and
-            // stepping it mid-tone retunes the pitch live. Outside the
-            // lock — listening changes no state.
-            ToneSpeaker(
-                tone: strings.tone, tag: "reference", identifier: "grid.tone.reference"
-            ) {
-                Task { await strings.toggleTone(reference: instance.reference) }
-            }
+                naming: settings.naming,
+                tone: strings.tone,
+                toneIdentifier: "grid.tone.reference",
+                onToneToggle: {
+                    Task { await strings.toggleTone(reference: instance.reference) }
+                },
+                isAdjustable: !instance.isLocked)
             // The temperament beside the reference — the same kind of
             // fact, worn where you look while tuning. Bowed only.
             if instance.template?.family == .bowed {

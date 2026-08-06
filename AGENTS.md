@@ -259,8 +259,16 @@ one of the drafts that lost.
   should silence it. Capture itself runs `.playAndRecord + 
   .mixWithOthers` — plain `.record` paused the user's music the moment
   any tuner listened, which is the kind of behavior apps get deleted
-  for. The tone follows retargets phase-continuously: swiping strings
-  mid-note glides A→D, which IS the tune-by-fifths flow.
+  for. The tone follows retargets by GLIDING — exponential (one-pole in
+  cents, ~20 ms τ), because a rate-limited glide made small steps
+  effectively instantaneous again (a ±1 Hz reference step is ~4¢ —
+  crossed in 0.4 ms, same kink as no glide; both found in the field).
+  ONE engine app-wide, on the session controller: exclusivity is
+  structural — when each screen owned a generator, two could sound at
+  once. Tags say whose it is ("tone", "reference", "string.N");
+  navigation begins in silence; the reference readout itself is the
+  reference tone's button wherever the stepper appears, and the padlock
+  freezes only the ± — listening changes no state.
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

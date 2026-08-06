@@ -157,17 +157,22 @@ struct StringView: View {
                     reference: Binding(
                         get: { instance.reference },
                         set: { store.setReference(id: instance.id, $0) }),
-                    naming: settings.naming
-                )
+                    naming: settings.naming,
+                    tone: single.tone,
+                    toneIdentifier: "string.tone.reference",
+                    onToneToggle: {
+                        Task { await single.toggleTone(reference: instance.reference) }
+                    },
+                    isAdjustable: !instance.isLocked)
                 if instrument.family == .bowed {
                     TemperamentChip(temperament: instance.appliedTemperament) {
                         store.setTemperament(
                             id: instance.id,
                             instance.appliedTemperament == .pure ? .equal : .pure)
                     }
+                    .disabled(instance.isLocked)
                 }
             }
-            .disabled(instance.isLocked)
         }
     }
 

@@ -84,9 +84,10 @@ extension InstrumentGridView {
                 // lowest string wherever the row order puts it.
                 .accessibilityIdentifier("grid.cell.\(entry.index)")
                 // The string's own speaker, a sibling overlay so its taps
-                // never reach the navigation underneath. Tapping another
-                // speaker mid-tone glides to it.
-                .overlay(alignment: .topTrailing) {
+                // never reach the navigation underneath. Bottom corner: the
+                // top row belongs to the level meter, and the two competed
+                // there. Tapping another speaker mid-tone glides to it.
+                .overlay(alignment: .bottomTrailing) {
                     ToneSpeaker(
                         tone: strings.tone, tag: "string.\(entry.index)",
                         identifier: "grid.tone.\(entry.index)", font: .caption
@@ -189,20 +190,16 @@ extension InstrumentGridView {
                     StringStrip(
                         tuner: entry.tuner, naming: settings.naming, scale: scale,
                         gauge: 1.5 + CGFloat(total - entry.index) / CGFloat(total) * 3.5,
-                        isIntonating: isIntonating)
+                        isIntonating: isIntonating,
+                        tone: strings.tone,
+                        toneTag: "string.\(entry.index)",
+                        toneIdentifier: "strips.tone.\(entry.index)",
+                        onToneToggle: {
+                            Task { await strings.toggleTone(string: entry.index) }
+                        })
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("strips.row.\(position)")
-                // The strip's speaker rides the string line's spare width.
-                .overlay(alignment: .trailing) {
-                    ToneSpeaker(
-                        tone: strings.tone, tag: "string.\(entry.index)",
-                        identifier: "strips.tone.\(entry.index)", font: .caption
-                    ) {
-                        Task { await strings.toggleTone(string: entry.index) }
-                    }
-                    .padding(.trailing, 4)
-                }
             }
         }
         .padding(.horizontal, 16)

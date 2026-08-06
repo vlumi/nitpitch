@@ -66,8 +66,8 @@ final class ToneSynthTests: XCTestCase {
         XCTAssertTrue(
             (450...650).contains(synth.frequency),
             "20 ms in, the pitch is mid-glide, not teleported")
-        rendered += samples(&synth, seconds: 0.1)
-        XCTAssertEqual(synth.frequency, 660, accuracy: 0.001, "the glide lands")
+        rendered += samples(&synth, seconds: 0.2)
+        XCTAssertEqual(synth.frequency, 660, accuracy: 0.05, "the glide lands")
         let maxJump = zip(rendered, rendered.dropFirst()).map { abs($1 - $0) }.max() ?? 1
         // The 660 Hz slope bound: 2π·660/44100·0.3 ≈ 0.028.
         XCTAssertLessThan(maxJump, 0.035)
@@ -79,7 +79,23 @@ final class ToneSynthTests: XCTestCase {
         synth.targetAmplitude = ToneSynth.playingAmplitude
         _ = samples(&synth, seconds: 0.05)
         synth.targetFrequency = 440
-        _ = samples(&synth, seconds: 0.12)
-        XCTAssertEqual(synth.frequency, 440, accuracy: 0.001)
+        _ = samples(&synth, seconds: 0.25)
+        XCTAssertEqual(synth.frequency, 440, accuracy: 0.05)
+    }
+
+    /// The second field report: a ±1 Hz reference step is ~4¢, which a
+    /// rate-limited glide crossed in 0.4 ms — the same kink as no glide at
+    /// all. The exponential must SPREAD a small step, not sprint it.
+    func testASmallStepIsSpreadNotSprinted() {
+        var synth = ToneSynth(sampleRate: sampleRate, frequency: 442)
+        synth.targetAmplitude = ToneSynth.playingAmplitude
+        _ = samples(&synth, seconds: 0.05)
+        synth.targetFrequency = 443
+        _ = samples(&synth, seconds: 0.005)
+        XCTAssertLessThan(
+            synth.frequency, 442.5,
+            "5 ms in, a 1 Hz step must still be underway")
+        _ = samples(&synth, seconds: 0.2)
+        XCTAssertEqual(synth.frequency, 443, accuracy: 0.05, "and it lands")
     }
 }

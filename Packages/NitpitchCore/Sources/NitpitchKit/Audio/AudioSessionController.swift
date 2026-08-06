@@ -145,6 +145,35 @@ public final class AudioSessionController: ObservableObject {
         status = .idle
     }
 
+    /// The one reference tone, app-wide. A single engine by design: when
+    /// every screen owned its own generator, starting a tone on the grid
+    /// and another in a string view sounded BOTH — exclusivity has to be
+    /// structural, not cooperative.
+    public let tone = ToneGenerator()
+
+    /// Sound `hz` under `tag`, take over from whatever else sounds (a
+    /// glide), or stop if `tag` is already the one sounding. Screens wrap
+    /// this to stand their own dials down.
+    public func toggleTone(hz: Double, tag: String) async {
+        if tone.playingTag == tag {
+            await silenceTone()
+            return
+        }
+        if tone.playingTag == nil {
+            beginTonePlayback()
+        }
+        tone.start(hz: hz, tag: tag)
+    }
+
+    /// Stop whatever sounds and hand the session back to capture — safe
+    /// when silent. Tuning screens call it on arrival: navigation begins
+    /// in silence, whoever left a tone ringing behind.
+    public func silenceTone() async {
+        guard tone.playingTag != nil else { return }
+        await tone.stop()
+        await endTonePlayback()
+    }
+
     /// Capture yields to the reference tone. Detection SUSPENDS while a
     /// tone sounds — the design question the roadmap left open, answered:
     /// the alternative was the detector locking onto the app's own voice.

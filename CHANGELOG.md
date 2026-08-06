@@ -32,11 +32,19 @@ and remembered exactly as you left them.
   app must not tune itself to its own voice), the tone mixes with
   whatever you're listening to instead of pausing it, and it respects
   the silent switch — a reference tone is a courtesy, not an alarm.
-  Pitch changes GLIDE (an abrupt jump was a cutting noise at volume),
-  and the grid grew speakers of its own: one per string cell and strip,
-  plus the reference A beside its stepper — step the reference while
-  its tone sounds and the pitch follows live. Tapping another speaker
-  mid-tone slides over to it.
+  Pitch changes GLIDE — exponentially, so a one-hertz reference step
+  spreads as smoothly as a string swipe (a rate-limited glide made
+  small steps click like no glide at all) — and the grid grew speakers
+  of its own: one per string cell (bottom corner, clear of the level
+  meter) and inside each strip's card, where the eye actually is.
+  The reference readout itself is now the reference tone's button, on
+  every screen the A=442 stepper appears — the chromatic tuner
+  included: tap the pitch to hear it, step ± while it sounds and the
+  pitch follows live. One tone engine serves the whole app, so two
+  screens can never sound at once (they briefly could), navigation
+  begins in silence, and tapping another speaker mid-tone slides over
+  to it. Listening never locks: the tone stays available on a locked
+  instrument, whose padlock freezes only the ± steps.
 - The tuner no longer pauses your music: capturing used a non-mixable
   audio session, so opening any tuner silenced whatever was playing.
   Tuning alongside music is now your call, not the session's.

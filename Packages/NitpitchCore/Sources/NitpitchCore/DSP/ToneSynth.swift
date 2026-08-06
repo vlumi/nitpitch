@@ -1,10 +1,18 @@
 import Foundation
 
-/// The reference tone's waveform: a pure sine — the tuning fork's voice —
-/// with a short amplitude ramp at both ends so starting and stopping click
+/// The reference tone's waveform: a sine with a tail of harmonics, and a
+/// short amplitude ramp at both ends so starting and stopping click
 /// nothing. Pure state advanced one sample at a time, so the rules are
 /// testable as arithmetic; the audio engine wrapper (`ToneGenerator`) owns
 /// threads and sessions.
+///
+/// The harmonics are load-bearing, not tone color: a phone speaker cannot
+/// reproduce a low string's fundamental at all (E2's 82 Hz, let alone a
+/// bass E1), and a pure sine at low pitch is doubly cursed by the ear's
+/// equal-loudness curves — the field verdict was "hard to hear even at max
+/// volume". The overtones are what the speaker CAN produce, and the ear
+/// reconstructs the pitch from them: the missing-fundamental effect, the
+/// same reason a bass line survives a phone call.
 public struct ToneSynth {
     public let sampleRate: Double
     /// Where the pitch is heading, in hertz. The sounding `frequency` GLIDES
@@ -24,10 +32,18 @@ public struct ToneSynth {
     private var phase: Double = 0
 
     /// The playing level: clearly audible, comfortable over music left
-    /// playing underneath.
-    public static let playingAmplitude = 0.3
-    /// Envelope slope per second of audio: full scale in ~30 ms.
-    public static let rampPerSecond = 10.0
+    /// playing underneath. The partial weights below are normalized to sum
+    /// to 1, so this is the true waveform peak — no clipping headroom
+    /// games.
+    public static let playingAmplitude = 0.8
+
+    /// The harmonic recipe, fundamental first, normalized at render time.
+    /// Enough overtone energy to carry a low note through a small
+    /// speaker, decaying fast enough to stay a reference tone rather than
+    /// an organ.
+    public static let partials: [Double] = [1.0, 0.5, 0.35, 0.25]
+    /// Envelope slope per second of audio: the playing level in ~30 ms.
+    public static let rampPerSecond = 25.0
     /// The glide's time constant. Exponential rather than rate-limited: a
     /// linear glide made SMALL steps effectively instantaneous again — a
     /// ±1 Hz reference step is ~4¢, crossed in 0.4 ms, the same audible
@@ -66,7 +82,12 @@ public struct ToneSynth {
                 frequency *= pow(2, diffCents * pull / 1200)
             }
         }
-        let sample = sin(phase) * amplitude
+        var sample = 0.0
+        let norm = Self.partials.reduce(0, +)
+        for (index, weight) in Self.partials.enumerated() {
+            sample += sin(phase * Double(index + 1)) * weight / norm
+        }
+        sample *= amplitude
         phase += 2 * .pi * frequency / sampleRate
         if phase > 2 * .pi { phase -= 2 * .pi }
         return Float(sample)

@@ -31,11 +31,14 @@ and remembered exactly as you left them.
   reads "D–A · fifth · 2.7/s · narrow" with a dot pulsing at the true
   rate, appears in a fixed lane under the dial grid's meter (the
   sounding pair edged in tint — adjacent strings aren't always adjacent
-  cells) and, in the strips, as a squarish card in the side margin —
-  where the string lines run — vertically centered on the pair's shared
-  boundary: centered horizontally it sat on the very cards it was
-  describing. The strip cards ceded a few points of padding for the
-  room. The aim
+  cells) and, in the strips, as a squarish card snug against the
+  strips' trailing edge, straddling exactly the two strips it names —
+  positioned from their published geometry, not estimated row heights.
+  It repeats no names there (it points at its pair), never resizes, and
+  the advice is drawn, not written: arrows spreading apart mean widen,
+  converging mean bring together, a green checkmark means leave it be —
+  the same glyphs in the grid's lane. The strip cards ceded a few
+  points of padding for the room, and their names grew a size. The aim
   follows the temperament: pure tunes to silence, equal honestly aims
   at its own ~1 beat per second — fourths ride the same physics on the
   bass and guitar.

@@ -79,36 +79,34 @@ struct IntervalChip: View {
     let display: IntervalMonitor.Display
     let notes: [Note]
     let naming: NoteNaming
-    /// The strips' shape: squarish, two lines, for the side margin —
-    /// centered on the boundary it rode before, it sat ON the cards it was
-    /// describing (field report: "blocks the lower string's view").
+    /// The strips' shape: squarish, for the side margin — the dot on the
+    /// left, vertically centered, the values stacked to its right. No pair
+    /// names (the chip straddles the very strips it names) and FIXED width,
+    /// so "narrow" coming and going never resizes the box — both field
+    /// reports.
     var stacked = false
+
+    /// The stacked chip's frame, shared with its positioner.
+    static let stackedSize = CGSize(width: 108, height: 62)
 
     var body: some View {
         Group {
             if stacked {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        pulsingDot
-                        pairNames
-                    }
-                    HStack(spacing: 6) {
-                        beatLabel
-                        aimLabel
-                    }
-                    HStack(spacing: 6) {
-                        kindLabel
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if !onTarget {
-                            directionLabel
-                                .font(.caption)
-                                .foregroundStyle(.orange)
+                HStack(spacing: 8) {
+                    pulsingDot
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 5) {
+                            beatLabel
+                            aimLabel
                         }
+                        directionGlyph
                     }
                 }
                 .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .frame(
+                    width: Self.stackedSize.width, height: Self.stackedSize.height,
+                    alignment: .leading
+                )
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(.thinMaterial))
@@ -116,16 +114,9 @@ struct IntervalChip: View {
                 HStack(spacing: 8) {
                     pulsingDot
                     pairNames
-                    kindLabel
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                     beatLabel
                     aimLabel
-                    if !onTarget {
-                        directionLabel
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
+                    directionGlyph
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 5)
@@ -136,6 +127,26 @@ struct IntervalChip: View {
         .accessibilityIdentifier("tuner.interval")
         .accessibilityLabel(Text("Interval", bundle: .module))
         .accessibilityValue(Text(verbatim: accessibleValue))
+    }
+
+    /// The ACTION, not the state — the player's question settled it: a
+    /// narrow interval wants widening, so it gets arrows spreading apart; a
+    /// wide one gets arrows converging; on target, a checkmark says leave
+    /// it be. Always present, so nothing resizes when advice changes.
+    private var directionGlyph: some View {
+        Group {
+            if onTarget {
+                Image(systemName: "checkmark")
+                    .foregroundStyle(Color.green)
+            } else if display.wideCents < 0 {
+                Image(systemName: "arrow.left.and.line.vertical.and.arrow.right")
+                    .foregroundStyle(Color.orange)
+            } else {
+                Image(systemName: "arrow.right.and.line.vertical.and.arrow.left")
+                    .foregroundStyle(Color.orange)
+            }
+        }
+        .font(.caption.weight(.semibold))
     }
 
     @ViewBuilder
@@ -194,18 +205,6 @@ struct IntervalChip: View {
         }
     }
 
-    private var kindLabel: Text {
-        switch display.kind {
-        case .fifth: return Text("fifth", bundle: .module)
-        case .fourth: return Text("fourth", bundle: .module)
-        }
-    }
-
-    private var directionLabel: Text {
-        display.wideCents < 0
-            ? Text("narrow", bundle: .module) : Text("wide", bundle: .module)
-    }
-
     private var beatText: String {
         display.beatHz < 0.05 ? "0/s" : "\(format(display.beatHz))/s"
     }
@@ -219,8 +218,10 @@ struct IntervalChip: View {
         if display.targetBeatHz > 0.05 {
             parts.append("aim \(format(display.targetBeatHz))")
         }
-        if !onTarget {
-            parts.append(display.wideCents < 0 ? "narrow" : "wide")
+        if onTarget {
+            parts.append("in tune")
+        } else {
+            parts.append(display.wideCents < 0 ? "narrow, widen" : "wide, bring closer")
         }
         return parts.joined(separator: ", ")
     }
@@ -249,38 +250,46 @@ struct IntervalLane: View {
     }
 }
 
-/// The strips' home for the chip: in the TRAILING margin where the string
-/// lines run — empty by construction — vertically centered on the boundary
-/// the sounding pair shares (adjacent strings are adjacent rows there).
-/// Centered horizontally it sat ON the cards it was describing. Positioned
-/// arithmetically (the strips are a plain VStack with known row heights),
-/// never by inserting a row: nothing may reflow mid-bow.
+/// Each strip's CARD publishes its true bounds under its string index, so
+/// the interval chip can straddle the pair by geometry rather than by
+/// estimated row heights — the arithmetic version drifted (the 64pt budget
+/// isn't the rendered height) and the chip failed to span its own pair.
+struct StripCardBoundsKey: PreferenceKey {
+    static var defaultValue: [Int: Anchor<CGRect>] { [:] }
+
+    static func reduce(
+        value: inout [Int: Anchor<CGRect>], nextValue: () -> [Int: Anchor<CGRect>]
+    ) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
+/// The strips' home for the chip: snug against the cards' trailing edge —
+/// "closer to the end of each string's box, rather than close to the
+/// screen edge" — vertically centered on the UNION of the pair's card
+/// rects, so it visibly straddles both strips it describes. Resolved from
+/// published anchors, so it's exact whatever the rendered row heights are.
 struct StripsIntervalOverlay: View {
     @ObservedObject var interval: IntervalMonitor
     let notes: [Note]
     let naming: NoteNaming
-    let rowHeight: CGFloat
-    let rowSpacing: CGFloat
-    let count: Int
-    let lowOnTop: Bool
-
-    /// The stacked chip's approximate height, for centering on the boundary.
-    private static let chipHeight: CGFloat = 72
+    let anchors: [Int: Anchor<CGRect>]
+    let proxy: GeometryProxy
 
     var body: some View {
-        if let display = interval.display {
-            let lowerRow = displayRow(display.lowerIndex)
-            let upperRow = displayRow(display.upperIndex)
-            let boundary = CGFloat(min(lowerRow, upperRow) + 1)
-            let centerY = boundary * rowHeight + (boundary - 0.5) * rowSpacing
+        if let display = interval.display,
+            let lowerAnchor = anchors[display.lowerIndex],
+            let upperAnchor = anchors[display.upperIndex]
+        {
+            let lower = proxy[lowerAnchor]
+            let upper = proxy[upperAnchor]
+            let trailing = max(lower.maxX, upper.maxX)
+            let centerY = (min(lower.minY, upper.minY) + max(lower.maxY, upper.maxY)) / 2
             IntervalChip(display: display, notes: notes, naming: naming, stacked: true)
-                .offset(y: centerY - Self.chipHeight / 2)
-                .padding(.trailing, 8)
+                .position(
+                    x: trailing + 10 + IntervalChip.stackedSize.width / 2,
+                    y: centerY)
         }
-    }
-
-    private func displayRow(_ index: Int) -> Int {
-        lowOnTop ? index : count - 1 - index
     }
 }
 

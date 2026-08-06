@@ -32,6 +32,9 @@ struct StringStrip: View {
     var toneTag = ""
     var toneIdentifier = ""
     var onToneToggle: (() -> Void)?
+    /// When set, the card publishes its bounds under this string index —
+    /// how the interval chip finds the pair it must straddle.
+    var boundsIndex: Int?
 
     var body: some View {
         HStack(spacing: 12 * scale) {
@@ -58,11 +61,13 @@ struct StringStrip: View {
         HStack(spacing: 10 * scale) {
             // The octave rides as a subscript here too — a guitar has two
             // E strings, and the strips are where they sit side by side.
+            // A size bigger in a slot a touch narrower: the old 60pt slot
+            // left dead air between short names and the flat-cents column.
             CompactNoteName(
-                note: tuner.target, naming: naming, fontSize: 24 * scale,
+                note: tuner.target, naming: naming, fontSize: 27 * scale,
                 color: cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary)
             )
-            .frame(width: 60 * scale, alignment: .leading)
+            .frame(width: 54 * scale, alignment: .leading)
             centsSlot(flatSide: true)
             VStack(spacing: 5 * scale) {
                 if isIntonating {
@@ -87,14 +92,19 @@ struct StringStrip: View {
                     font: .caption, action: onToneToggle)
             }
         }
-        // Trimmed from 16: the interval chip lives in the side margin now,
-        // and the cards ceding a few points is what gives it its room.
+        // Trimmed from 16/12: the interval chip lives in the side margin
+        // now, and the cards ceding a few points is what gives it its
+        // room — the vertical trim buys back the bigger name, so the
+        // card's height holds.
         .padding(.horizontal, 10 * scale)
-        .padding(.vertical, 12 * scale)
+        .padding(.vertical, 10 * scale)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.secondary.opacity(0.08))
         )
+        .anchorPreference(key: StripCardBoundsKey.self, value: .bounds) { anchor in
+            boundsIndex.map { [$0: anchor] } ?? [:]
+        }
     }
 
     /// The magnitude alone, on the side the pitch leans — flat's slot sits

@@ -74,6 +74,12 @@ final class StringTuners: ObservableObject {
 
     func attachAll() {
         for tuner in tuners { tuner.begin() }
+        // Navigation begins in silence: whatever tone the previous screen
+        // left ringing stops here.
+        if tone.playingTag != nil {
+            let audio = audio
+            Task { await audio.silenceTone() }
+        }
         if LaunchStores.isDemo {
             guard demo == nil else { return }
             demo = Task { await runDemoLevel() }
@@ -131,12 +137,8 @@ final class StringTuners: ObservableObject {
         for tuner in tuners { tuner.end() }
         // Leaving mid-tone: silence it and hand the session back to capture.
         if tone.playingTag != nil {
-            let tone = tone
             let audio = audio
-            Task {
-                await tone.stop()
-                await audio.endTonePlayback()
-            }
+            Task { await audio.silenceTone() }
         }
     }
 
@@ -200,41 +202,34 @@ final class StringTuners: ObservableObject {
 
     // MARK: - The reference tone, from the grid
 
-    /// One generator for the whole screen: tapping another speaker while
-    /// one sounds GLIDES to it, and tapping the sounding one stops.
-    let tone = ToneGenerator()
+    /// The app's ONE tone, through the controller — tapping another speaker
+    /// while one sounds GLIDES to it, and no two screens can ever sound at
+    /// once, because there is exactly one engine to sound with.
+    var tone: ToneGenerator { audio.tone }
 
     /// Sound one string's tempered target.
     func toggleTone(string index: Int) async {
         guard targets.indices.contains(index) else { return }
-        await toggleTone(hz: targets[index], tag: "string.\(index)")
+        await toggle(hz: targets[index], tag: "string.\(index)")
     }
 
     /// Sound the reference itself — the A the footer stepper shows. While
     /// it plays, stepping the reference retunes it live (`configure`).
     func toggleTone(reference: ReferencePitch) async {
-        await toggleTone(hz: reference.hz, tag: "reference")
+        await toggle(hz: reference.hz, tag: "reference")
     }
 
-    private func toggleTone(hz: Double, tag: String) async {
-        if tone.playingTag == tag {
-            await stopTone()
-            return
-        }
-        if tone.playingTag == nil {
+    private func toggle(hz: Double, tag: String) async {
+        let stopping = tone.playingTag == tag
+        let wasSilent = tone.playingTag == nil
+        await audio.toggleTone(hz: hz, tag: tag)
+        if stopping {
+            for tuner in tuners { tuner.begin() }
+        } else if wasSilent {
             // Capture yields; every dial goes honestly idle rather than
             // freezing on its last reading.
-            audio.beginTonePlayback()
             for tuner in tuners { tuner.end() }
             inputLevel.set(0)
         }
-        tone.start(hz: hz, tag: tag)
-    }
-
-    func stopTone() async {
-        guard tone.playingTag != nil else { return }
-        await tone.stop()
-        await audio.endTonePlayback()
-        for tuner in tuners { tuner.begin() }
     }
 }

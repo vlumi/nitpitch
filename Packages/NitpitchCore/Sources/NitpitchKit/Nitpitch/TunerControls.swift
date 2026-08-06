@@ -134,17 +134,27 @@ struct ToneSpeaker: View {
     let tag: String
     let identifier: String
     var font: Font = .body
+    /// When set, the text IS the button — the reference readout tappable
+    /// anywhere, the speaker glyph riding along as the hint.
+    var text: Text?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: isSounding ? "speaker.wave.2.fill" : "speaker.wave.2")
-                .font(font)
-                .foregroundStyle(
-                    isSounding ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
-                )
-                .frame(minWidth: 24, minHeight: 24)
-                .contentShape(Rectangle())
+            HStack(spacing: 5) {
+                Image(systemName: isSounding ? "speaker.wave.2.fill" : "speaker.wave.2")
+                    .font(text == nil ? font : .caption)
+                    .foregroundStyle(
+                        isSounding ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
+                    )
+                if let text {
+                    text
+                        .font(.body.monospacedDigit())
+                        .foregroundStyle(.primary)
+                }
+            }
+            .frame(minWidth: 24, minHeight: 24)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
         .accessibilityIdentifier(identifier)
@@ -209,20 +219,43 @@ struct ReferencePitchStepper: View {
     /// notation setting — `A=442` beside a readout spelling notes `La` or `イ`
     /// would name the same pitch two different ways on one screen.
     let naming: NoteNaming
+    /// When provided, the readout ITSELF is the reference tone's button —
+    /// tap `A=442` anywhere to hear it, step ± while it sounds and the
+    /// pitch follows. The speaker glyph rides along as the hint.
+    var tone: ToneGenerator?
+    var toneIdentifier: String = "tuner.tone.reference"
+    var onToneToggle: (() -> Void)?
+    /// The padlock freezes the ± but never the listening: sounding the
+    /// reference changes no state, so the tone button stays live on a
+    /// locked instrument. This is why the lock must not be an outer
+    /// `.disabled` around the whole stepper.
+    var isAdjustable = true
 
     var body: some View {
         HStack(spacing: 10) {
-            button("minus", enabled: reference.canLower) { reference = reference.lowered() }
-            Text(verbatim: "\(naming.concertAName)=\(Int(reference.hz))")
-                .font(.body.monospacedDigit())
-                .foregroundStyle(.primary)
-                // Fixed width so the row doesn't shift when the value goes
-                // from three digits to two, or the glyph widths change.
-                .frame(minWidth: 78)
-                .accessibilityIdentifier("tuner.reference")
-                .accessibilityLabel(Text("Reference pitch", bundle: .module))
-                .accessibilityValue(Text(verbatim: "\(Int(reference.hz)) Hz"))
-            button("plus", enabled: reference.canRaise) { reference = reference.raised() }
+            button("minus", enabled: isAdjustable && reference.canLower) {
+                reference = reference.lowered()
+            }
+            if let tone, let onToneToggle {
+                ToneSpeaker(
+                    tone: tone, tag: "reference", identifier: toneIdentifier,
+                    text: readout, action: onToneToggle
+                )
+                .frame(minWidth: 96)
+            } else {
+                readout
+                    .font(.body.monospacedDigit())
+                    .foregroundStyle(.primary)
+                    // Fixed width so the row doesn't shift when the value goes
+                    // from three digits to two, or the glyph widths change.
+                    .frame(minWidth: 78)
+                    .accessibilityIdentifier("tuner.reference")
+                    .accessibilityLabel(Text("Reference pitch", bundle: .module))
+                    .accessibilityValue(Text(verbatim: "\(Int(reference.hz)) Hz"))
+            }
+            button("plus", enabled: isAdjustable && reference.canRaise) {
+                reference = reference.raised()
+            }
         }
         // The buttons are the adjustment; VoiceOver gets one adjustable
         // element instead of three separate stops.
@@ -234,6 +267,15 @@ struct ReferencePitchStepper: View {
             @unknown default: break
             }
         }
+        // The combined element hides the inner button from VoiceOver, so
+        // the tone gets a named action on the element itself.
+        .accessibilityAction(named: Text("Reference tone", bundle: .module)) {
+            onToneToggle?()
+        }
+    }
+
+    private var readout: Text {
+        Text(verbatim: "\(naming.concertAName)=\(Int(reference.hz))")
     }
 
     private func button(

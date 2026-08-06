@@ -22,10 +22,10 @@ final class SingleStringTuner: ObservableObject {
     /// The intonation mode's state, its own island for the same reason.
     let intonation = IntonationMonitor()
 
-    /// The reference tone, aimed at this string's tempered target — tune by
-    /// ear against it, or survive a room too noisy to detect in. Its own
-    /// observable island: only the toolbar button re-renders with it.
-    let tone = ToneGenerator()
+    /// The app's ONE reference tone, through the controller — a single
+    /// engine so two screens can never sound at once (the field found the
+    /// double when each screen owned its own).
+    var tone: ToneGenerator { audio.tone }
 
     private var instrument: Instrument
     private let audio: AudioSessionController
@@ -73,6 +73,12 @@ final class SingleStringTuner: ObservableObject {
     func attach() {
         tuner.begin()
         analyzer.setActive(true)
+        // Navigation begins in silence: whatever tone the previous screen
+        // left ringing stops here, and capture takes the session back.
+        if tone.playingTag != nil {
+            let audio = audio
+            Task { await audio.silenceTone() }
+        }
         if LaunchStores.isDemo {
             guard demo == nil else { return }
             demo = Task { await runDemoLevel() }
@@ -103,16 +109,25 @@ final class SingleStringTuner: ObservableObject {
     /// voice — and the dial honestly goes idle: frozen readings pretending
     /// to be live is a lesson this app has already paid for.
     func toggleTone() async {
-        if tone.playingHz != nil {
-            await tone.stop()
-            await audio.endTonePlayback()
+        await toggle(hz: analyzerTarget, tag: "tone")
+    }
+
+    /// Sound the reference A itself — the readout beside the stepper is
+    /// the button.
+    func toggleTone(reference: ReferencePitch) async {
+        await toggle(hz: reference.hz, tag: "reference")
+    }
+
+    private func toggle(hz: Double, tag: String) async {
+        let stopping = tone.playingTag == tag
+        let wasSilent = tone.playingTag == nil
+        await audio.toggleTone(hz: hz, tag: tag)
+        if stopping {
             tuner.begin()
-            return
+        } else if wasSilent {
+            tuner.end()
+            inputLevel.set(0)
         }
-        audio.beginTonePlayback()
-        tuner.end()
-        inputLevel.set(0)
-        tone.start(hz: analyzerTarget)
     }
 
     func detach() {
@@ -128,13 +143,9 @@ final class SingleStringTuner: ObservableObject {
         tuner.end()
         // Leaving mid-tone: silence it and hand the session back to
         // capture, which the next screen is already listening through.
-        if tone.playingHz != nil {
-            let tone = tone
+        if tone.playingTag != nil {
             let audio = audio
-            Task {
-                await tone.stop()
-                await audio.endTonePlayback()
-            }
+            Task { await audio.silenceTone() }
         }
     }
 
@@ -166,9 +177,14 @@ final class SingleStringTuner: ObservableObject {
             analyzerTarget = hz
             intonation.reset()
         }
-        // A sounding tone follows the retarget — swiping to the next string
-        // glides the pitch, which IS the tune-by-fifths flow: A, then D.
-        tone.retune(hz: hz)
+        // A sounding tone follows whatever moved it, BY TAG: the string's
+        // tone glides with a swipe (the tune-by-fifths flow), the reference
+        // A follows its stepper, and neither ever grabs the other's pitch.
+        if tone.playingTag == "tone" {
+            tone.retune(hz: hz)
+        } else if tone.playingTag == "reference" {
+            tone.retune(hz: reference.hz)
+        }
     }
 
     func retune(_ tuning: DetectionTuning) {

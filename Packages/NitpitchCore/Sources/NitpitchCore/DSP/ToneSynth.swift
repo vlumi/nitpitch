@@ -28,8 +28,17 @@ public struct ToneSynth {
     public static let playingAmplitude = 0.3
     /// Envelope slope per second of audio: full scale in ~30 ms.
     public static let rampPerSecond = 10.0
-    /// Glide speed: a fifth (700¢) crossed in 70 ms.
-    public static let glideCentsPerSecond = 10_000.0
+    /// The glide's time constant. Exponential rather than rate-limited: a
+    /// linear glide made SMALL steps effectively instantaneous again — a
+    /// ±1 Hz reference step is ~4¢, crossed in 0.4 ms, the same audible
+    /// kink as no glide at all ("smaller ticks", the second field report).
+    /// A one-pole approach in cents space is smooth at both ends for any
+    /// step size: a fifth still lands in ~70 ms, a reference step spreads
+    /// over ~40.
+    public static let glideTimeConstant = 0.02
+    /// Close enough to snap: the exponential's asymptote, cut off where no
+    /// ear follows.
+    public static let glideSnapCents = 0.05
 
     public init(sampleRate: Double, frequency: Double) {
         self.sampleRate = sampleRate
@@ -49,12 +58,12 @@ public struct ToneSynth {
             amplitude = max(targetAmplitude, amplitude - step)
         }
         if frequency != targetFrequency {
-            let stepCents = Self.glideCentsPerSecond / sampleRate
             let diffCents = 1200 * log2(targetFrequency / frequency)
-            if abs(diffCents) <= stepCents {
+            if abs(diffCents) <= Self.glideSnapCents {
                 frequency = targetFrequency
             } else {
-                frequency *= pow(2, (diffCents > 0 ? stepCents : -stepCents) / 1200)
+                let pull = 1 - exp(-1 / (Self.glideTimeConstant * sampleRate))
+                frequency *= pow(2, diffCents * pull / 1200)
             }
         }
         let sample = sin(phase) * amplitude

@@ -26,6 +26,9 @@ public struct ChromaticTunerView: View {
 
     @ObservedObject private var store: InstrumentStore
     @ObservedObject private var presets: PresetStore
+    /// Kept for the reference tone: the readout beside the stepper is its
+    /// button, and the tone lives on the controller (the app's one engine).
+    private let audio: AudioSessionController
     /// Opens the pushed instrument list.
     private let onOpenChooser: () -> Void
     /// Goes straight to one instance's grid — a rack row's path, skipping
@@ -45,6 +48,7 @@ public struct ChromaticTunerView: View {
         self.settings = settings
         self.store = store
         self.presets = presets
+        self.audio = audio
         self.onOpenChooser = onOpenChooser
         self.onChooseInstance = onChooseInstance
         self.onChoosePin = onChoosePin
@@ -178,7 +182,25 @@ public struct ChromaticTunerView: View {
     /// rows that say what they'll open into, the whole list one row below.
     private var controls: some View {
         VStack(spacing: 16) {
-            ReferencePitchStepper(reference: $settings.reference, naming: settings.naming)
+            // Tap A=442 to hear it; step ± while it sounds and the pitch
+            // follows (the onChange below). The dial stands down honestly
+            // through the status observation — capture yields, status goes
+            // idle, the model follows.
+            ReferencePitchStepper(
+                reference: $settings.reference, naming: settings.naming,
+                tone: audio.tone,
+                onToneToggle: {
+                    Task {
+                        await audio.toggleTone(
+                            hz: settings.reference.hz, tag: "reference")
+                    }
+                }
+            )
+            .onChangeCompat(of: settings.reference) { reference in
+                if audio.tone.playingTag == "reference" {
+                    audio.tone.retune(hz: reference.hz)
+                }
+            }
             LaunchRack(
                 entries: pinned, onChoose: onChooseInstance,
                 onChoosePin: onChoosePin, onOpenChooser: onOpenChooser)

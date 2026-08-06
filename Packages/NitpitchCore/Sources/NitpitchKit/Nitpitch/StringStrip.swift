@@ -26,6 +26,12 @@ struct StringStrip: View {
     /// string's own, the verdict in a slot of its own — there's width to
     /// spare in a strip.
     var isIntonating = false
+    /// The string's speaker, INSIDE the card — out on the string line it
+    /// was invisible (the field couldn't spot it).
+    var tone: ToneGenerator?
+    var toneTag = ""
+    var toneIdentifier = ""
+    var onToneToggle: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12 * scale) {
@@ -74,6 +80,11 @@ struct StringStrip: View {
             centsSlot(flatSide: false)
             if isIntonating {
                 deltaSlot
+            }
+            if let tone, let onToneToggle {
+                ToneSpeaker(
+                    tone: tone, tag: toneTag, identifier: toneIdentifier,
+                    font: .caption, action: onToneToggle)
             }
         }
         .padding(.horizontal, 16 * scale)

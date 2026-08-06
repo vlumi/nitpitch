@@ -66,6 +66,7 @@ and remembered exactly as you left them.
 - The tuner no longer pauses your music: capturing used a non-mixable
   audio session, so opening any tuner silenced whatever was playing.
   Tuning alongside music is now your call, not the session's.
+
 ### build 4 — 2026-08-05
 
 - The presets sheet fits phones again: its Mac minimum width (400pt)

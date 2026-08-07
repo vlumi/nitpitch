@@ -54,7 +54,8 @@ nitpitch/
     │   ├── DSP/                    PitchDetector (MPM), HarmonicEstimator (spectral),
     │   │                           DetectorBank (engines + arbitration), SubharmonicFilter,
     │   │                           Detection constants, DetectionTuning, ReadingSmoother
-    │   └── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
+    │   ├── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
+    │   └── Sync/                   SyncMerge (last-writer-wins + tombstones)
     └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
         ├── Audio/                  AudioInput, AudioSessionController (one engine, fan-out)
         ├── App/                    Settings + SettingsView, DetectionSettings, LaunchStores,
@@ -317,6 +318,25 @@ one of the drafts that lost.
   catalog names localize. A tuning's displayed name is derived by matching
   pitches against the catalog — identity follows the values, so it can't
   drift from what's strung.
+- **Syncing merges whole records, last writer wins, deletions leave
+  tombstones.** The rules are pure functions in `NitpitchCore/Sync` and
+  are tested with no iCloud, no network and no second device
+  (`SyncMergeTests`); Kit adds transport only. Whole-record LWW, not
+  field-level merging: a device that changed only the name would
+  otherwise resurrect a tuning the other device deliberately replaced —
+  a half-record nobody ever saved. LWW can lose an edit in a genuine
+  race; it can never invent a state that never existed. Deletion needs
+  its own record because absence carries no date: without a tombstone
+  the surviving copy looks like news and merges straight back, which
+  the factory seed's deliberately stable ids make a certainty rather
+  than a risk. A tombstone loses to an edit that postdates it (the user
+  changed their mind on some device), is dropped once its record
+  returns (or the next round trip would re-delete it forever), and
+  expires after six months so the set can't grow without bound. An
+  unstamped record — anything stored before syncing existed — yields to
+  any stamped copy. The property that matters most is symmetry: merging
+  in both directions gives the same answer, or two devices disagree
+  permanently, each convinced it is right.
 - **Readouts are the local note name on scientific octaves.** Every
   readout — targets and detections alike — leads with the player's own
   spelling ("H₃", "Si₃"), the octave as a scientific subscript, and the

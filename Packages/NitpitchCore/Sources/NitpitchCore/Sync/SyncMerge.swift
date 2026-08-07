@@ -127,10 +127,28 @@ public enum SyncMerge {
     }
 
     private static func newer<Record: SyncRecord>(_ lhs: Record, _ rhs: Record) -> Record {
-        // Ties go to the first seen, which is the local copy: identical
-        // stamps mean the same save, and preferring local avoids a
-        // pointless publish on every merge.
-        stamp(rhs) > stamp(lhs) ? rhs : lhs
+        let left = stamp(lhs)
+        let right = stamp(rhs)
+        guard left == right else { return right > left ? rhs : lhs }
+        // A tie is not "the same save". Two devices seed their factory
+        // instruments on first launch, and `Date()` is coarse enough that
+        // both stamps land identically — so an EDITED record can tie with
+        // a pristine one, and preferring the local copy would decide it
+        // differently on each device. That is the one outcome the merge
+        // must never produce, since neither side would ever converge.
+        //
+        // Break it on the content instead: a total order both devices
+        // compute the same way. Which record wins is arbitrary; that they
+        // agree is not.
+        return tiebreak(rhs) > tiebreak(lhs) ? rhs : lhs
+    }
+
+    /// A stable, content-derived ordering for records whose stamps tie.
+    /// Any total function of the value works — this one is cheap and
+    /// deterministic across devices and launches (unlike `hashValue`,
+    /// which Swift seeds randomly per process).
+    private static func tiebreak<Record: SyncRecord>(_ record: Record) -> String {
+        String(describing: record)
     }
 
     /// A record's stamp, with missing read as the beginning of time.

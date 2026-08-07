@@ -132,7 +132,15 @@ public final class InstrumentStore: ObservableObject {
                     isLocked: false,
                     loadedPresetID: nil,
                     lastUsedAt: nil,
-                    modifiedAt: Date()))
+                    // The seed is stamped at the BEGINNING OF TIME, not
+                    // now. A factory instrument is not something the user
+                    // did — it's what was there before they did anything —
+                    // so it must lose to every real edit, including edits
+                    // made on another device before this one was ever set
+                    // up. Stamping it `now` would let a fresh install's
+                    // pristine "Violin" overwrite the "Konzertmeister" a
+                    // user renamed last week, purely by being newer.
+                    modifiedAt: .distantPast))
         }
         defaults.set(true, forKey: Self.seededKey)
     }
@@ -377,6 +385,15 @@ public final class InstrumentStore: ObservableObject {
     /// so "my instruments" orders itself by actual use.
     public func markUsed(id: String) {
         update(id: id) { $0.lastUsedAt = Date() }
+    }
+
+    /// Install merged state from `SyncEngine`. Deliberately NOT an edit:
+    /// nothing re-stamps, because the stamps ARE the merge's evidence —
+    /// re-stamping on adoption would make every device's copy look like
+    /// the newest one and last-writer-wins would decide nothing.
+    func adopt(_ merged: [InstrumentInstance], tombstones stones: Set<Tombstone>) {
+        if merged != instances { instances = merged }
+        if stones != tombstones { tombstones = stones }
     }
 
     private func update(id: String, _ change: (inout InstrumentInstance) -> Void) {

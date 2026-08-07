@@ -25,22 +25,32 @@ public struct RootView: View {
     /// The instruments you own. Created here: it lives exactly as long as the
     /// navigation that hands its instances out.
     @StateObject private var store: InstrumentStore
-    @StateObject private var presets = PresetStore(defaults: LaunchStores.defaults)
+    @StateObject private var presets: PresetStore
     @State private var path: [TunerRoute] = []
     /// Created here rather than passed in: it lives for the session, resets on
     /// every launch, and nothing outside the tuner hierarchy has any business
     /// reading it.
     @StateObject private var detection = DetectionSettings()
+    /// iCloud syncing, off unless the user asked for it. Created here
+    /// because it needs every store at once, and they all meet here.
+    @StateObject private var sync: SyncEngine
 
     public init(settings: Settings, audio: AudioSessionController) {
         self.settings = settings
         self.audio = audio
         // A new instrument's reference seeds from the chromatic screen's —
         // "from wherever you came from".
-        _store = StateObject(
-            wrappedValue: InstrumentStore(defaults: LaunchStores.defaults) {
-                settings.reference
-            })
+        let store = InstrumentStore(defaults: LaunchStores.defaults) {
+            settings.reference
+        }
+        let presets = PresetStore(defaults: LaunchStores.defaults)
+        _store = StateObject(wrappedValue: store)
+        _presets = StateObject(wrappedValue: presets)
+        _sync = StateObject(
+            wrappedValue: SyncEngine(
+                store: LaunchStores.syncStore(),
+                instruments: store, presets: presets, settings: settings,
+                defaults: LaunchStores.defaults))
     }
 
     public var body: some View {
@@ -54,7 +64,7 @@ public struct RootView: View {
             .navigationDestination(for: TunerRoute.self) { route in
                 switch route {
                 case .chooser:
-                    InstrumentChooser(settings: settings, store: store) { id in
+                    InstrumentChooser(settings: settings, store: store, sync: sync) { id in
                         path.append(.instrument(id))
                     }
                 case .instrument(let id):

@@ -4,31 +4,15 @@ Planned work only — if it's not planned, it's not here. Settled decisions and
 their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
 in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.2.0 build 4 cut for beta, carrying far more than
-v0.2 planned: the no-microphone survival story, the whole intonation arc
-(string-view panel, grid layer), and temperaments (pure by default on bowed,
-preset-carried). The "tuning the tuning" milestone's headline features
-therefore shipped under 0.2.0 — the version number waits for a release that
-earns it. Per-hop CPU was measured and retired as a concern — a 6-dial
-guitar costs ~4.5 ms of the 46 ms hop on a desktop core (pinned by
-`DetectorBankPerformanceTests`).
+**Where things stand:** v0.2.0 build 5 cut for beta. The "tuning the
+tuning" milestone is COMPLETE, all of it under 0.2.0: intonation
+(string-view panel, grid layer), temperaments (pure by default on bowed,
+preset-carried), the reference tone, the interval/beat display, and the
+fine-tuning strobe — plus the no-microphone survival story. The version
+number waits for a release that earns it. Per-hop CPU was measured and
+retired as a concern (pinned by `DetectorBankPerformanceTests`).
 
-## 1. Tuning the tuning — what remains (violin, guitar, bass)
-
-Improvements to the act of tuning itself, for the instruments actually on
-hand. Intonation and temperaments shipped in 0.2.0 b4; what remains builds
-on them, and is cohesive enough to be the next version when it ships.
-
-### Fine-tuning display
-
-A strobe or beat-frequency view, how professionals tune to a fraction of a
-cent. The interval/beat display shipped (derived from the double stop's two
-pitches); this is the single-string sibling, and an amplitude-envelope beat
-measurement — which would also capture string inharmonicity — remains the
-refinement if the field ever finds the derived rate disagreeing with the
-ear.
-
-## 2. Piano — and why the target isn't always 2^(n/12)
+## 1. Piano — and why the target isn't always 2^(n/12)
 
 Wanting to tune a piano with this breaks an assumption the app rests on
 everywhere: that a note's correct frequency is `reference × 2^(semitones/12)`.
@@ -44,7 +28,7 @@ from the piano in front of you; a published average is a starting point.
 
 ### The seam is small
 
-Covered by the temperament seam in § 1 — piano stretch is exactly a
+Covered by the shipped temperament machinery — piano stretch is exactly a
 temperament: a per-instrument function from note to expected frequency.
 
 ### What a piano mode needs beyond that
@@ -64,13 +48,13 @@ temperament: a per-instrument function from note to expected frequency.
   above the black keys and below the white ones.
 - **Unison tuning.** Most notes have two or three strings tuned to each
   other, and hearing the beats between them is most of the job — closer to
-  § 1 than to the ordinary tuner.
+  the shipped interval/beat display than to the ordinary tuner.
 - **Measuring inharmonicity**, if it goes beyond a published average curve.
 
 A large feature, clearly not v0.2 — but the temperament seam is the part
 everything else depends on, and worth putting in early.
 
-## 3. Other features worth considering
+## 2. Other features worth considering
 
 - **Preset share + import** — a preset serializes into a URL fragment
   (small enough; no server) and renders as a QR code; importing shows a
@@ -122,7 +106,7 @@ everything else depends on, and worth putting in early.
   Remaining unknowns: the real response curve versus the spec, watchOS
   session/measurement modes, and whether MPM alone carries a bass.
 
-## 4. Toward 1.0
+## 3. Toward 1.0
 
 Not scheduled for any near milestone — the pile that matters when an App
 Store release does.
@@ -142,7 +126,7 @@ Store release does.
   the device hot-plug handling should swap capture over live — confirm
   both.
 
-## 5. Owed upstream to donpa
+## 4. Owed upstream to donpa
 
 Found while porting its scaffold; fixed here, still broken there:
 

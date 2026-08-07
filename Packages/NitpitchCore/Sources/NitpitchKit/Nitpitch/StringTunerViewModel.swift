@@ -108,6 +108,19 @@ public final class StringTunerViewModel: ObservableObject {
     /// against the shifted target.
     public private(set) var targetOffsetCents: Double
 
+    /// The fine-tuning strobe's state — error as motion, fed from the same
+    /// smoothed readings the dial shows. Its own island: only the band
+    /// re-renders with it, and only the string view mounts one.
+    let strobe = StrobeMonitor()
+
+    /// One reading's worth of time, for the strobe's integrator.
+    private static let hopSeconds = Double(Detection.hopSize) / 44100
+
+    /// The tempered target in hertz — what the strobe measures against.
+    private var targetHz: Double {
+        target.frequency(reference: reference) * pow(2, targetOffsetCents / 1200)
+    }
+
     /// Re-tune when the reference or the band moves. The detector itself lives
     /// in the bank; here only the display copy and the smoothing reset.
     public func configure(
@@ -132,6 +145,7 @@ public final class StringTunerViewModel: ObservableObject {
         target = note
         smoother.reset()
         resetIntonation()
+        strobe.clear()
         if state != .idle { state = .waiting }
     }
 
@@ -153,6 +167,7 @@ public final class StringTunerViewModel: ObservableObject {
         smoother.reset()
         state = .idle
         level = 0
+        strobe.clear()
     }
 
     /// This string's slice of a frame's analysis, from `StringTuners`.
@@ -167,6 +182,7 @@ public final class StringTunerViewModel: ObservableObject {
             if quietFrames >= Self.quietFramesBeforeIdle, audio.status == .running {
                 smoother.reset()
                 state = .waiting
+                strobe.clear()
                 if octaveCents != nil { octaveCents = nil }
             }
             return
@@ -184,6 +200,9 @@ public final class StringTunerViewModel: ObservableObject {
         let epsilon = absolute - Double(target.midi) * 100 - targetOffsetCents
 
         if isIntonating, result.evenPartialsOnly {
+            // The octave is not the open string: the strobe holds its
+            // silence rather than crawling at a pitch nobody is tuning.
+            strobe.clear()
             ingestOctave(epsilon: epsilon, result: result)
             return
         }
@@ -201,6 +220,7 @@ public final class StringTunerViewModel: ObservableObject {
         let smoothed = smoother.update(cents: absolute)
         let cents = smoothed - Double(target.midi) * 100 - targetOffsetCents
         state = .reading(cents: cents, clarity: result.clarity)
+        strobe.ingest(cents: cents, targetHz: targetHz, dt: Self.hopSeconds)
     }
 
     /// The octave, recognized by parity through this string's own slots:
@@ -271,6 +291,7 @@ public final class StringTunerViewModel: ObservableObject {
             let swing = sin(tick) * 0.75 + sin(tick * 0.31) * 0.25
             let cents = swing * TuningDisplay.fullScaleCents
             state = .reading(cents: cents, clarity: 0.98)
+            strobe.ingest(cents: cents, targetHz: targetHz, dt: 0.05)
             level = ((0.55 + 0.25 * sin(tick * 1.7)) * 20).rounded() / 20
             // A finished measurement per string, values varied by target so
             // the layout is judged with cells disagreeing. Modulo 11, which

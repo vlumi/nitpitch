@@ -285,6 +285,18 @@ one of the drafts that lost.
   height: NOTHING may reflow the dials mid-bow. Thirds stay out
   (fretted instruments tune to frets); the beat number is the watch's
   future haptic vocabulary verbatim.
+- **The strobe renders error as motion, and hands off from the
+  needle.** Sub-cent error is invisible to any position display — the
+  log arc made the needle honest but can't cure that — so the strobe
+  band crawls at the error's own rate (one revolution per hertz-second,
+  integrated from the same smoothed readings the dial shows; no new
+  DSP). Self-gating within ±10¢ of the tempered target, no toggle; NO
+  dead-band — a 0.2¢-flat string crawls slowly because it IS flat, and
+  jitter wobbles around a truthful mean drift, as hardware strobes
+  always have. String view only: grid cells are coarse by design, and
+  chromatic's wandering nearest-note target defeats slow-crawl reading.
+  A11y-hidden — the cents number is the accessible channel; the band is
+  pure motion, and it honors Reduce Motion by not appearing.
 - **Navigation is a pushed path; favorites are instruments.** Chromatic
   root → instrument list → grid → string view, and back walks the same
   path. Pinned chips jump straight to an instance; the instance

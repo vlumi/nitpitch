@@ -52,11 +52,11 @@ struct StringView: View {
     private var instrument: Instrument { instance.instrument }
 
     /// The measured content: meter 10, dial pane 173 (arc 70 after the
-    /// readout's rise + readout 77 + strip 14 + gaps), switcher 40, the
-    /// intonation panel 104, reference row ~30, four 16pt gaps. Measured,
-    /// not padded — an overstated canvas is empty window (the chromatic
-    /// root and the grid cells both had that disease).
-    private static let design = CGSize(width: 400, height: 427)
+    /// readout's rise + readout 77 + strip 14 + gaps), strobe band 12,
+    /// switcher 40, the intonation panel 104, reference row ~30, five 16pt
+    /// gaps. Measured, not padded — an overstated canvas is empty window
+    /// (the chromatic root and the grid cells both had that disease).
+    private static let design = CGSize(width: 400, height: 455)
 
     var body: some View {
         GeometryReader { geo in
@@ -144,6 +144,10 @@ struct StringView: View {
             ObservedLevelMeter(level: single.inputLevel)
                 .padding(.top, 6)
             dialCarousel
+            // The strobe: sub-cent error as MOTION, waking only near the
+            // target — the hand-off point where the needle runs out of
+            // resolution. Rightward crawl = sharp; stationary = there.
+            StrobeBand(strobe: single.tuner.strobe)
             stringSwitcher
             // The octave's tuner and the intonation verdict, ambient — no
             // mode. This screen has the room, and the measurement is only

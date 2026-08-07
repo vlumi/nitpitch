@@ -24,6 +24,18 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The fine-tuning strobe: a segmented band under the string view's
+  dial that renders sub-cent error as MOTION — rightward crawl is
+  sharp, leftward flat, stationary is there. The eye reads slow drift
+  far better than any needle position, which is how hardware strobes
+  reach a tenth of a cent: precision comes from watching for a second.
+  One revolution per hertz-second of error, so a violin A one cent
+  sharp crawls a quarter turn per second. It wakes only within ten
+  cents of the (tempered) target — the hand-off point where the needle
+  runs out of resolution — and there is deliberately no dead-band: a
+  string a fifth of a cent flat crawls, slowly, because it is flat.
+  This completes the tuning-the-tuning milestone.
+
 - Pinned presets moved behind their instrument's accordion: the row's
   trailing chevron — separated, so the row itself still opens the
   instrument with one tap — discloses the chips, which grew into proper

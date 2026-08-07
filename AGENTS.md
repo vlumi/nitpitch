@@ -544,6 +544,25 @@ one language.
 - SourceKit in-IDE diagnostics may report `No such module 'NitpitchCore'` for files
   it hasn't indexed — these are **false**. The authoritative checks are
   `swift build` / `swift test` / `xcodebuild`.
+- **Building in Xcode prunes string-catalog keys that are looked up at
+  runtime** — instrument names, family names, tuning names, kind tags.
+  They live as plain Swift values in `NitpitchCore` and reach the screen
+  through `Text(LocalizedStringKey(name), bundle: .module)`, so Xcode's
+  extractor sees no literal in `NitpitchKit`'s source and deletes them as
+  orphans; SwiftPM never puts them back, because they were hand-authored
+  in the first place. The fix, already applied to all 17: mark them
+  `"extractionState": "manual"` in
+  `NitpitchKit/Resources/Localizable.xcstrings`, which the extractor
+  leaves alone. **Any new runtime-resolved key needs the same marker**,
+  or the next Xcode build silently drops it — and the day translations
+  land, dropping a key drops its translations with it.
+- **A string catalog only gains keys when someone builds in Xcode**, so a
+  PR written entirely from the command line ships UI text with no catalog
+  entry at all (this is how PR #106's three sync strings landed
+  uncovered). `swift build` does NOT extract. After adding user-facing
+  text, either build once in Xcode or add the entry by hand — and read
+  `git diff` on the catalog for **deletions** as well as additions, since
+  Xcode reformats the whole file and a silent removal reads as reflow.
 - `Scripts/embed-commit-sha.sh` writes `unknown` for a repo with no commits yet
   (fresh `git init`) as well as for a non-git checkout. Both must not fail the
   build — this bit the very first build of this project.

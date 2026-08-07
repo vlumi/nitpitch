@@ -285,6 +285,9 @@
     "Settings": {
       "comment": "Title of the settings sheet, and the gear button's VoiceOver label"
     },
+    "Sign in to iCloud on this device to sync.": {
+      "comment": "Footer under the sync switch while no iCloud account is signed in"
+    },
     "Standard": {
       "comment": "Tuning name: the instrument's standard tuning"
     },

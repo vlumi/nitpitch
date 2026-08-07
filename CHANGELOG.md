@@ -27,7 +27,9 @@ and remembered exactly as you left them.
 - iCloud sync, off until you turn it on: a switch at the foot of the
   instrument list keeps your instruments, presets and favorites the same
   on every device signed in to your iCloud account. Leave it off and
-  nothing leaves the device, exactly as before.
+  nothing leaves the device, exactly as before. Signed out of iCloud,
+  the switch disables itself and says why, rather than pretending to
+  sync into a void.
 
 - The fine-tuning strobe: a segmented band under the string view's
   dial that renders sub-cent error as MOTION — rightward crawl is

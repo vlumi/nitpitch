@@ -68,12 +68,16 @@ everything else depends on, and worth putting in early.
   stand in for two devices in tests, and the opt-in switch at the foot
   of the instrument list, off by default.
 
-  What remains is release paperwork and field proof, and the app cannot
-  ship the feature enabled until both are done:
-  - the `com.apple.developer.ubiquity-kvstore-identifier` entitlement on
-    both targets, plus the iCloud capability on the App ID and a
-    provisioning refresh — without it the toggle turns on and silently
-    syncs nothing;
+  The entitlement is in the repo (both targets, identifier pinned
+  explicitly so the shared bundle id yields ONE store across platforms —
+  donpa's production-proven pattern), and the switch disables itself
+  with an explanatory footer when no iCloud account is signed in.
+  **One manual step remains before the toggle can work on a device: build
+  once in Xcode with automatic signing**, which registers the iCloud
+  capability on the App ID and refreshes the provisioning profile —
+  command-line builds sign with whatever profile already exists.
+
+  What remains after that is paperwork and field proof:
   - **the honest rewrite**: "nothing leaves the device" is a shipped
     promise, in PRIVACY.md, the README and the App Store text. Each
     becomes "…unless you enable iCloud sync". The in-app footer already

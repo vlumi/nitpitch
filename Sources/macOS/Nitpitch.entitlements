@@ -12,7 +12,16 @@
 	     consent string. -->
 	<key>com.apple.security.device.audio-input</key>
 	<true/>
-	<!-- No network entitlement: the app never makes a connection, and omitting
-	     it means the sandbox enforces that rather than merely documenting it. -->
+	<!-- iCloud Key-Value Storage, for the opt-in sync of instruments,
+	     presets and favorites (SyncEngine). Pinned explicitly and identical
+	     to iOS so both platforms share one store — see the iOS entitlements
+	     for the why. Off by default: nothing is written until the user
+	     turns the sync switch on. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)fi.misaki.nitpitch</string>
+	<!-- Still no network entitlement: KVS is written locally and the system
+	     daemon (ubd) does the networking outside the sandbox, so the app
+	     itself remains unable to make a connection — the sandbox keeps
+	     enforcing that rather than merely documenting it. -->
 </dict>
 </plist>

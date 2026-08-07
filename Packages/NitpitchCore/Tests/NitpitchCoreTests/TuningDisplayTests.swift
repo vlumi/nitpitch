@@ -33,14 +33,25 @@ final class TuningDisplayTests: XCTestCase {
 
     /// Sweep tracks the error directly, so the filled length is proportional
     /// to how far off the note is.
-    func testSweepIsLinearInTheOffset() {
-        let full = TuningDisplay.fullScaleDegrees
+    func testSweepIsLogarithmicLikeTheDots() {
+        // The in-tune boundary gets real travel — linear sweep gave the
+        // last two cents of a peg turn 3.6°, invisible exactly where
+        // tuning happens.
+        let boundary = abs(TuningDisplay.arc(forCents: 2).sweepDegrees)
+        XCTAssertGreaterThan(boundary, 15)
+        // Equal RATIOS of error get equal angular steps: each doubling
+        // 2→4→8→16→32 adds exactly the same swing — the dots' geometry.
+        let steps = [2.0, 4, 8, 16, 32].map {
+            abs(TuningDisplay.arc(forCents: $0).sweepDegrees)
+        }
+        let deltas = zip(steps, steps.dropFirst()).map { $1 - $0 }
+        for delta in deltas {
+            XCTAssertEqual(delta, deltas[0], accuracy: 0.001)
+        }
+        // And the ticks agree with the readings about where 8¢ lives.
+        let tick = TuningDisplay.ticks.first { $0.cents == 8 }!
         XCTAssertEqual(
-            TuningDisplay.arc(forCents: TuningDisplay.fullScaleCents / 4).sweepDegrees,
-            full / 4, accuracy: 0.001)
-        XCTAssertEqual(
-            TuningDisplay.arc(forCents: TuningDisplay.fullScaleCents / 2).sweepDegrees,
-            full / 2, accuracy: 0.001)
+            tick.degrees, TuningDisplay.arc(forCents: 8).sweepDegrees, accuracy: 0.001)
     }
 
     /// Thickness holds at zero through the in-tune band, so small wobbles

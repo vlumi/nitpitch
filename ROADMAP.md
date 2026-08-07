@@ -62,35 +62,6 @@ everything else depends on, and worth putting in early.
   nitpitch.app hosts the long tail — scordatura, historical setups — as
   those same links, so the collection grows without app updates.
 
-- **iCloud sync** — **the code has shipped**: merge rules
-  (`NitpitchCore/Sync`), transport (`NitpitchKit/App/SyncEngine.swift`)
-  behind a `KeyValueSyncStore` seam so two engines over one dictionary
-  stand in for two devices in tests, and the opt-in switch at the foot
-  of the instrument list, off by default.
-
-  The entitlement is in the repo (both targets, identifier pinned
-  explicitly so the shared bundle id yields ONE store across platforms —
-  donpa's production-proven pattern), and the switch disables itself
-  with an explanatory footer when no iCloud account is signed in.
-  **One manual step remains before the toggle can work on a device: build
-  once in Xcode with automatic signing**, which registers the iCloud
-  capability on the App ID and refreshes the provisioning profile —
-  command-line builds sign with whatever profile already exists.
-
-  What remains after that is paperwork and field proof:
-  - **the honest rewrite**: "nothing leaves the device" is a shipped
-    promise, in PRIVACY.md, the README and the App Store text. Each
-    becomes "…unless you enable iCloud sync". The in-app footer already
-    says both halves depending on the switch;
-  - **two-device verification** on a real iCloud account: edit here and
-    watch it land there, delete on one and confirm it stays deleted on
-    both, and take both devices offline, edit the same instrument on
-    each, and confirm the later edit wins on both. KVS is unreliable on
-    the simulator and propagates on its own schedule, so this is a
-    patience exercise rather than a test-suite matter — but it is the
-    only thing that proves the transport, since everything above it is
-    already proven against the fake.
-
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.
 - **Watch app** — more plausible than first assumed. The mic's reported
@@ -115,7 +86,7 @@ everything else depends on, and worth putting in early.
   counts — mic and DSP run on the watch (NitpitchCore is pure
   Swift + Accelerate, ports as-is), installable without the phone since
   watchOS 6, factory seeding gives a watch-only user a working tuner —
-  and companion-shaped only in data, riding the shipped iCloud sync
+  and companion-shaped only in data, riding the shipped, field-verified iCloud sync
   rather than a bespoke WatchConnectivity protocol: instruments, pins,
   references and temperaments are exactly what sync already moves, so
   the watch is the second device that makes sync earn its keep. Phone
@@ -130,7 +101,10 @@ Not scheduled for any near milestone — the pile that matters when an App
 Store release does.
 
 - **Release mechanics** — port donpa's `Scripts/asc/` (listing and
-  screenshot sync), minus the game-specific achievements parts.
+  screenshot sync), minus the game-specific achievements parts. The App
+  Store description and privacy answers must say what PRIVACY.md now
+  says: nothing leaves the device *unless you enable iCloud sync*, and
+  even then only setup data, only into the user's own iCloud account.
 - **Beta verification of unowned instruments** (viola, cello, double
   bass) — the digital piano verifies range in five minutes per
   instrument; timbre needs real players via TestFlight's "What to Test".

@@ -24,6 +24,17 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The dial's sweep is logarithmic now, like the dots always were: the
+  ear's sensitivity to mistuning is proportional, so equal RATIOS of
+  error get equal angles. Linear sweep gave the last two cents of a peg
+  turn 3.6 degrees — invisible exactly where tuning happens; now the
+  in-tune boundary sits at 18 degrees and every doubling beyond adds
+  the same swing, with the scale ticks riding the same curve so an 8
+  cent tick and an 8 cent needle agree about where 8 cents is.
+- The launch screen's instrument rows grew into proper finger targets
+  (they sat under Apple's 44-point floor), their names a size with
+  them, and the pinned-preset chips followed.
+
 - The screen stays awake while you tune — and only while you tune: a
   confident reading or a sounding tone holds it, and it's released
   ninety seconds after the last sign of life, so a phone forgotten on

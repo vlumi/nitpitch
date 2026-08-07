@@ -60,12 +60,15 @@ struct LaunchRack: View {
 
     /// Rows shown before deferring to the chooser.
     static let rowCap = 4
-    /// Design metrics the chromatic canvas math builds on.
-    static let rowHeight: CGFloat = 40
+    /// Design metrics the chromatic canvas math builds on. The row is a
+    /// finger target first: 40 sat under Apple's 44pt floor and the field
+    /// called it hard to hit.
+    static let rowHeight: CGFloat = 48
     static let rowSpacing: CGFloat = 6
 
-    /// One chips line's design height, where an instrument has pins.
-    static let chipRowHeight: CGFloat = 30
+    /// One chips line's design height, where an instrument has pins —
+    /// grown with the rows: the chips are targets too.
+    static let chipRowHeight: CGFloat = 34
 
     /// The rack's exact design height — instrument rows, the All
     /// instruments row, and a chips line per pinned-into instrument — so
@@ -140,7 +143,7 @@ struct LaunchRack: View {
             HStack(spacing: 10) {
                 KindTag(template: entry.template)
                 entry.name
-                    .font(.callout.weight(.medium))
+                    .font(.body.weight(.medium))
                 if let tuningName = entry.tuningName {
                     Text(LocalizedStringKey(tuningName), bundle: .module)
                         .font(.caption)

@@ -42,16 +42,39 @@ public enum TuningDisplay {
         }
     }
 
+    /// The sweep curve's knee: the in-tune boundary's cents, and the angle
+    /// it lands at. Inside the knee the sweep is linear (a log has no
+    /// zero); outside, each DOUBLING of the error adds the same angle.
+    private static let sweepKneeCents = 2.0
+    private static let sweepKneeDegrees = 18.0
+
     /// Maps a cent offset to the arc's sweep and thickness.
     ///
-    /// Sweep is linear in the offset so the arc's end tracks the error
-    /// directly — that's what the eye follows while turning a peg. Thickness
+    /// Sweep is LOGARITHMIC in the offset, like the light strip below it —
+    /// the ear's sensitivity to mistuning is proportional, so equal RATIOS
+    /// of error get equal angles. Linear sweep spent nearly all its travel
+    /// on errors too large to care about precisely: the last two cents of
+    /// a peg turn moved the needle 3.6°, invisible exactly where tuning
+    /// actually happens. Now ±2¢ is 18°, and every doubling beyond adds
+    /// ~15.5° — so the ticks, which share this mapping, land at even
+    /// spacing on the same doubling thresholds as the dots. Thickness
     /// stays at zero through the in-tune band so a thin upright mark means
     /// right, then grows as the note goes clearly wrong.
     public static func arc(forCents cents: Double) -> Arc {
         guard cents.isFinite else { return Arc(sweepDegrees: 0, thickness: 0) }
         let clamped = min(max(cents, -fullScaleCents), fullScaleCents)
-        let sweep = clamped / fullScaleCents * fullScaleDegrees
+        let magnitude = abs(clamped)
+        let degrees: Double
+        if magnitude <= sweepKneeCents {
+            degrees = magnitude / sweepKneeCents * sweepKneeDegrees
+        } else {
+            let octaves = log2(magnitude / sweepKneeCents)
+            let fullOctaves = log2(fullScaleCents / sweepKneeCents)
+            degrees =
+                sweepKneeDegrees
+                + octaves / fullOctaves * (fullScaleDegrees - sweepKneeDegrees)
+        }
+        let sweep = (clamped < 0 ? -1.0 : 1.0) * degrees
 
         let beyondInTune = max(0, abs(clamped) - inTuneCents)
         let thicknessRange = fullScaleCents - inTuneCents
@@ -86,7 +109,9 @@ public enum TuningDisplay {
     public static var ticks: [Tick] {
         let magnitudes = lightThresholds + [fullScaleCents]
         return magnitudes.flatMap { magnitude -> [Tick] in
-            let degrees = magnitude / fullScaleCents * fullScaleDegrees
+            // Through the same mapping as the readings, or an 8¢ tick and
+            // an 8¢ needle would disagree about where 8¢ is.
+            let degrees = arc(forCents: magnitude).sweepDegrees
             let major = magnitude == fullScaleCents || magnitude >= inTuneCents
             return [
                 Tick(cents: -magnitude, degrees: -degrees, isMajor: major),

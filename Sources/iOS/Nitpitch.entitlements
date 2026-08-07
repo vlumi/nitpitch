@@ -2,12 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Deliberately empty. The tuner needs no capability beyond microphone
-	     access, which is granted by NSMicrophoneUsageDescription (a plist
-	     consent string), not an entitlement. No iCloud, no Game Center, no
-	     associated domains — nothing leaves the device.
-
-	     The file exists (and is wired via CODE_SIGN_ENTITLEMENTS) so adding a
-	     capability later is a one-key edit rather than a project change. -->
+	<!-- Microphone access needs no entitlement on iOS — it's granted by
+	     NSMicrophoneUsageDescription (a plist consent string). -->
+	<!-- iCloud Key-Value Storage, for the opt-in sync of instruments,
+	     presets and favorites (SyncEngine). The identifier is pinned
+	     EXPLICITLY and is identical on iOS + macOS so the two apps share
+	     one KVS store — the bundle id is shared for Universal Purchase,
+	     and without the explicit pin each platform would derive its own
+	     store and never see the other's records (donpa learned this).
+	     Off by default: the app writes nothing to it until the user turns
+	     the sync switch on. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)fi.misaki.nitpitch</string>
 </dict>
 </plist>

@@ -16,6 +16,10 @@ final class FakeSyncStore: KeyValueSyncStore, @unchecked Sendable {
     private let subject = PassthroughSubject<Void, Never>()
     private(set) var synchronizeCount = 0
 
+    /// The signed-in state, script-controlled: flip it and deliver an
+    /// external change, the way `NSUbiquityIdentityDidChange` arrives.
+    var isAvailable = true
+
     func data(forKey key: String) -> Data? { storage[key] }
 
     func set(_ data: Data?, forKey key: String) {
@@ -318,6 +322,43 @@ final class SyncEngineTests: XCTestCase {
         mac.engine.setEnabled(true)
 
         XCTAssertEqual(mac.instruments.instance(id: Instrument.violin.id)?.name, "Already here")
+    }
+
+    /// No iCloud account is a hard stop, not a degraded mode: KVS accepts
+    /// writes locally and never moves them, so an engine that kept going
+    /// would tell the UI "synced" while syncing nothing.
+    func testNoAccountMeansNothingIsWrittenOrClaimed() {
+        let cloud = FakeSyncStore()
+        cloud.isAvailable = false
+        let device = makeDevice(sharing: cloud)
+        defer { destroy(device) }
+
+        XCTAssertFalse(device.engine.isCloudAvailable)
+        device.instruments.rename(id: Instrument.violin.id, to: "Nowhere to go")
+        device.engine.sync()
+
+        XCTAssertTrue(cloud.allKeys.isEmpty, "nothing written")
+        XCTAssertNil(device.engine.lastSyncedAt, "and nothing claimed")
+    }
+
+    /// Signing in arrives as an identity change; the engine notices and
+    /// the first real sync happens without anyone toggling anything.
+    func testSigningInCatchesUp() {
+        let cloud = FakeSyncStore()
+        cloud.isAvailable = false
+        let device = makeDevice(sharing: cloud)
+        defer { destroy(device) }
+        device.engine.sync()
+        XCTAssertTrue(cloud.allKeys.isEmpty)
+
+        cloud.isAvailable = true
+        cloud.deliverExternalChange()
+        let caught = expectation(description: "caught up")
+        DispatchQueue.main.async { caught.fulfill() }
+        wait(for: [caught], timeout: 1)
+
+        XCTAssertTrue(device.engine.isCloudAvailable)
+        XCTAssertFalse(cloud.allKeys.isEmpty, "the catch-up sync ran")
     }
 
     /// Turning sync off leaves what's already in iCloud alone: another

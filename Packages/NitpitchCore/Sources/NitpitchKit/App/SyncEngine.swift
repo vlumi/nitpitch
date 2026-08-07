@@ -15,6 +15,10 @@ import NitpitchCore
 /// are all exercised deterministically. What remains untested is the six
 /// lines of `UbiquitousSyncStore`, which are a straight forwarding.
 public protocol KeyValueSyncStore: AnyObject {
+    /// Whether the cloud is reachable at all — no iCloud account means KVS
+    /// accepts writes locally and never moves them, which is worse than
+    /// failing: the toggle would claim to sync while syncing nothing.
+    var isAvailable: Bool { get }
     func data(forKey key: String) -> Data?
     func set(_ data: Data?, forKey key: String)
     /// Every key currently stored, for finding records this device has
@@ -34,10 +38,20 @@ public final class UbiquitousSyncStore: KeyValueSyncStore {
     private let subject = PassthroughSubject<Void, Never>()
     private var observer: NSObjectProtocol?
 
+    private var identityObserver: NSObjectProtocol?
+
     public init() {
         observer = NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
             object: store, queue: .main
+        ) { [subject] _ in
+            subject.send()
+        }
+        // Signing in or out of iCloud is a change of world: the engine
+        // re-reads availability and re-syncs off the same signal.
+        identityObserver = NotificationCenter.default.addObserver(
+            forName: .NSUbiquityIdentityDidChange,
+            object: nil, queue: .main
         ) { [subject] _ in
             subject.send()
         }
@@ -46,7 +60,12 @@ public final class UbiquitousSyncStore: KeyValueSyncStore {
 
     deinit {
         if let observer { NotificationCenter.default.removeObserver(observer) }
+        if let identityObserver { NotificationCenter.default.removeObserver(identityObserver) }
     }
+
+    /// Whether this device is signed in to iCloud — the same check donpa
+    /// ships (`ubiquityIdentityToken`), proven in production there.
+    public var isAvailable: Bool { FileManager.default.ubiquityIdentityToken != nil }
 
     public func data(forKey key: String) -> Data? { store.data(forKey: key) }
 
@@ -72,6 +91,10 @@ public final class EphemeralSyncStore: KeyValueSyncStore {
     private var storage: [String: Data] = [:]
 
     public init() {}
+
+    /// Always available: UI tests run on simulators with no iCloud
+    /// account, and the switch must stay exercisable there.
+    public var isAvailable: Bool { true }
 
     public func data(forKey key: String) -> Data? { storage[key] }
 
@@ -121,6 +144,11 @@ public final class SyncEngine: ObservableObject {
     /// reassurance line. Nil until the first one.
     @Published public private(set) var lastSyncedAt: Date?
 
+    /// Whether the cloud can be reached at all (signed in to iCloud). The
+    /// switch disables against this rather than letting the user turn on
+    /// a sync that would silently move nothing.
+    @Published public private(set) var isCloudAvailable: Bool
+
     private let store: KeyValueSyncStore
     private let instruments: InstrumentStore
     private let presets: PresetStore
@@ -153,6 +181,7 @@ public final class SyncEngine: ObservableObject {
         self.defaults = defaults
         self.isEnabled = defaults.bool(forKey: Key.enabled)
         self.lastSyncedAt = defaults.object(forKey: Key.lastSyncedAt) as? Date
+        self.isCloudAvailable = store.isAvailable
         if isEnabled { start() }
     }
 
@@ -179,7 +208,13 @@ public final class SyncEngine: ObservableObject {
     private func start() {
         store.externalChanges
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.sync() }
+            .sink { [weak self] in
+                guard let self else { return }
+                // Signing in/out arrives on this same signal.
+                let available = self.store.isAvailable
+                if available != self.isCloudAvailable { self.isCloudAvailable = available }
+                self.sync()
+            }
             .store(in: &cancellables)
 
         // The stores announce themselves through `objectWillChange`, which
@@ -203,7 +238,10 @@ public final class SyncEngine: ObservableObject {
     /// A full round: take what's out there, merge it with what's here,
     /// keep the result locally and publish it back.
     public func sync() {
-        guard isEnabled else { return }
+        // Unavailable is a hard stop, not a degraded mode: KVS accepts
+        // writes with no account and never moves them, so "synced" here
+        // would be a lie the UI then repeats.
+        guard isEnabled, store.isAvailable else { return }
         // Stamp FIRST. A local edit made since the last sync is not yet
         // dated, and `apply` is about to weigh it against the cloud's
         // copy — undated, it loses, and the merge overwrites the very
@@ -301,7 +339,7 @@ public final class SyncEngine: ObservableObject {
     /// Publish the local state: one key per record, plus the tombstones
     /// and the synced settings.
     private func push() {
-        guard isEnabled else { return }
+        guard isEnabled, store.isAvailable else { return }
         // Every outbound path lands here, so this is where the settings
         // stamp has to be brought up to date: a value pushed without one
         // is a value that loses every merge it takes part in.

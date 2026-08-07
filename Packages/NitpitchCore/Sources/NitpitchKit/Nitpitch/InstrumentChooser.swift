@@ -63,9 +63,16 @@ struct InstrumentChooser: View {
             Toggle(isOn: syncBinding) {
                 Text("Sync with iCloud", bundle: .module)
             }
+            // Disabled, not hidden, when there's no iCloud account: KVS
+            // would accept every write locally and move none of them, so
+            // an enabled switch would claim a sync that isn't happening.
+            // The footer says what would make it work.
+            .disabled(!sync.isCloudAvailable)
             .accessibilityIdentifier("chooser.sync")
         } footer: {
-            if sync.isEnabled {
+            if !sync.isCloudAvailable {
+                Text("Sign in to iCloud on this device to sync.", bundle: .module)
+            } else if sync.isEnabled {
                 Text(
                     "Instruments, presets and favorites stay the same on every device.",
                     bundle: .module)

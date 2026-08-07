@@ -499,6 +499,13 @@ final class NitpitchUITests: XCTestCase {
         star.tap()
         app.navigationBars.buttons.firstMatch.tap()
 
+        // The chips live behind the row's accordion now: the separated
+        // trailing chevron discloses them, while the row itself still
+        // opens the instrument.
+        let disclose = app.descendants(matching: .any)["rack.expand.guitar"].firstMatch
+        XCTAssertTrue(disclose.waitForExistence(timeout: 5), "a pinned row grows a chevron")
+        disclose.tap()
+
         // The chip sits under the guitar's row; tapping it opens the
         // guitar with Gig loaded — an explicit pick, drift overwritten.
         let chip = app.descendants(matching: .any)["pin.guitar.Gig"].firstMatch

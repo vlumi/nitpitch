@@ -52,10 +52,13 @@ struct LaunchRack: View {
     }
 
     let entries: [Entry]
+    /// Which rows show their chips — the accordion, persisted in Settings.
+    let expanded: Set<String>
     let onChoose: (String) -> Void
     /// A pin's tap: open the instrument INTO the preset (or, locked, just
     /// open it — the navigation half of a pin is not a change).
     let onChoosePin: (String, String) -> Void
+    let onToggleExpand: (String) -> Void
     let onOpenChooser: () -> Void
 
     /// Rows shown before deferring to the chooser.
@@ -66,17 +69,20 @@ struct LaunchRack: View {
     static let rowHeight: CGFloat = 48
     static let rowSpacing: CGFloat = 6
 
-    /// One chips line's design height, where an instrument has pins —
-    /// grown with the rows: the chips are targets too.
-    static let chipRowHeight: CGFloat = 34
+    /// One chips line's design height. Proper targets now: the chips only
+    /// appear behind the accordion, so their size no longer costs every
+    /// row its clutter budget.
+    static let chipRowHeight: CGFloat = 44
 
     /// The rack's exact design height — instrument rows, the All
-    /// instruments row, and a chips line per pinned-into instrument — so
-    /// the canvas grows by precisely this much and the fill stays honest.
-    static func height(for entries: [Entry]) -> CGFloat {
+    /// instruments row, and a chips line per EXPANDED pinned-into
+    /// instrument — so the canvas grows by precisely this much and the
+    /// fill stays honest.
+    static func height(for entries: [Entry], expanded: Set<String>) -> CGFloat {
         let shown = entries.prefix(rowCap)
         let rows = CGFloat(shown.count + 1)
-        let chipRows = CGFloat(shown.filter { !$0.pins.isEmpty }.count)
+        let chipRows = CGFloat(
+            shown.filter { !$0.pins.isEmpty && expanded.contains($0.id) }.count)
         return rows * rowHeight + (rows - 1) * rowSpacing + chipRows * chipRowHeight
     }
 
@@ -84,7 +90,7 @@ struct LaunchRack: View {
         VStack(spacing: Self.rowSpacing) {
             ForEach(entries.prefix(Self.rowCap)) { entry in
                 row(for: entry)
-                if !entry.pins.isEmpty {
+                if !entry.pins.isEmpty, expanded.contains(entry.id) {
                     pinChips(for: entry)
                 }
             }
@@ -103,9 +109,9 @@ struct LaunchRack: View {
                 Button {
                     onChoosePin(entry.id, pin.presetID)
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: "pin.fill")
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundStyle(.orange)
                         Group {
                             if pin.localized {
@@ -114,14 +120,14 @@ struct LaunchRack: View {
                                 Text(verbatim: pin.name)
                             }
                         }
-                        .font(.caption.weight(.medium))
+                        .font(.callout.weight(.medium))
                         if entry.isLocked {
                             Image(systemName: "lock.fill")
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 12)
                     .frame(height: Self.chipRowHeight - 6)
                     .background(Capsule().fill(Color.secondary.opacity(0.1)))
                     .contentShape(Capsule())
@@ -136,38 +142,70 @@ struct LaunchRack: View {
         .frame(height: Self.chipRowHeight - 6)
     }
 
+    /// Two buttons, one row: the row itself opens the instrument, and a
+    /// separated trailing chevron discloses its pin chips — the split the
+    /// player asked for, so the row never serves two purposes at one tap.
+    /// No pins, no chevron.
     private func row(for entry: Entry) -> some View {
-        Button {
-            onChoose(entry.id)
-        } label: {
-            HStack(spacing: 10) {
-                KindTag(template: entry.template)
-                entry.name
-                    .font(.body.weight(.medium))
-                if let tuningName = entry.tuningName {
-                    Text(LocalizedStringKey(tuningName), bundle: .module)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
+        HStack(spacing: 0) {
+            Button {
+                onChoose(entry.id)
+            } label: {
+                HStack(spacing: 10) {
+                    KindTag(template: entry.template)
+                    entry.name
+                        .font(.body.weight(.medium))
+                    if let tuningName = entry.tuningName {
+                        Text(LocalizedStringKey(tuningName), bundle: .module)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
+                    Spacer(minLength: 4)
+                    if entry.isLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
-                Spacer(minLength: 4)
-                if entry.isLocked {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
+                .padding(.horizontal, 14)
+                .frame(height: Self.rowHeight)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 14)
-            .frame(height: Self.rowHeight)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.12))
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("favorite.\(entry.id)")
+
+            if !entry.pins.isEmpty {
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.25))
+                    .frame(width: 1, height: Self.rowHeight - 20)
+                expandToggle(for: entry)
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.accentColor.opacity(0.12))
+        )
+    }
+
+    private func expandToggle(for entry: Entry) -> some View {
+        Button {
+            onToggleExpand(entry.id)
+        } label: {
+            Image(systemName: "chevron.down")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .rotationEffect(.degrees(expanded.contains(entry.id) ? 0 : -90))
+                .frame(width: 44, height: Self.rowHeight)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("favorite.\(entry.id)")
+        .accessibilityIdentifier("rack.expand.\(entry.id)")
+        .accessibilityLabel(Text("Presets", bundle: .module))
+        .accessibilityValue(
+            expanded.contains(entry.id)
+                ? Text("On", bundle: .module) : Text("Off", bundle: .module))
     }
 
     private var allInstrumentsRow: some View {

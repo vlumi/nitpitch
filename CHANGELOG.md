@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Pinned presets moved behind their instrument's accordion: the row's
+  trailing chevron — separated, so the row itself still opens the
+  instrument with one tap — discloses the chips, which grew into proper
+  finger targets now that their size no longer costs every row its
+  clutter. Rows without pins carry no chevron, and the expansion is
+  remembered: the rack waits as you left it, open rows included.
+
 - The dial's sweep is logarithmic now, like the dots always were: the
   ear's sensitivity to mistuning is proportional, so equal RATIOS of
   error get equal angles. Linear sweep gave the last two cents of a peg

@@ -11,7 +11,9 @@ import NitpitchCore
 /// instrument, never by a tuning. The tuning's display name is derived by
 /// matching the pitches against the template's catalog — identity follows the
 /// values, so nothing here can drift out of sync with what's actually strung.
-public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Sendable {
+public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Sendable,
+    SyncRecord
+{
     /// For the default instance of each template this IS the template id
     /// ("violin"), which keeps accessibility identifiers readable and lets
     /// pinned favourites from before instances existed keep working unchanged.
@@ -49,6 +51,9 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
     /// syncing (ROADMAP: iCloud sync). Stamped by the store's one update
     /// chokepoint; optional for old stored JSON.
     public var modifiedAt: Date?
+
+    public var syncID: String { id }
+    public var syncModifiedAt: Date? { modifiedAt }
 
     public var reference: ReferencePitch { ReferencePitch(hz: referenceHz) }
 
@@ -126,7 +131,8 @@ public final class InstrumentStore: ObservableObject {
                     referenceHz: seedReference().hz,
                     isLocked: false,
                     loadedPresetID: nil,
-                    lastUsedAt: nil))
+                    lastUsedAt: nil,
+                    modifiedAt: Date()))
         }
         defaults.set(true, forKey: Self.seededKey)
     }
@@ -169,7 +175,8 @@ public final class InstrumentStore: ObservableObject {
             referenceHz: seedReference().hz,
             isLocked: false,
             loadedPresetID: nil,
-            lastUsedAt: nil)
+            lastUsedAt: nil,
+            modifiedAt: Date())
         instances.append(created)
         return created
     }
@@ -192,7 +199,8 @@ public final class InstrumentStore: ObservableObject {
             referenceHz: referenceHz ?? seedReference().hz,
             isLocked: false,
             loadedPresetID: nil,
-            lastUsedAt: nil)
+            lastUsedAt: nil,
+            modifiedAt: Date())
         instances.append(created)
         return created
     }
@@ -211,7 +219,8 @@ public final class InstrumentStore: ObservableObject {
             referenceHz: source.referenceHz,
             isLocked: false,
             loadedPresetID: nil,
-            lastUsedAt: nil)
+            lastUsedAt: nil,
+            modifiedAt: Date())
         instances.append(created)
         return created
     }
@@ -229,8 +238,34 @@ public final class InstrumentStore: ObservableObject {
     /// ordinary, and an empty list is a legitimate state (the + menu is
     /// always the way back). Deletions stick; the seed never reruns.
     public func remove(id: String) {
+        guard instances.contains(where: { $0.id == id }) else { return }
         instances.removeAll { $0.id == id }
+        // Remembered, not merely performed — and doubly so here, because
+        // the factory seed's ids are stable: without a tombstone a deleted
+        // factory instrument would return from any device that still has
+        // it (see `SyncMerge`).
+        tombstones = SyncMerge.mergedTombstones(
+            local: tombstones.union([Tombstone(id: id, deletedAt: Date())]),
+            remote: [], survivors: instances, now: Date())
     }
+
+    /// Deletions this device has performed, for the merge. Persisted like
+    /// everything else, pruned by age (`Tombstone.lifetime`) whenever one
+    /// is added.
+    public private(set) var tombstones: Set<Tombstone> {
+        get {
+            guard let data = defaults.data(forKey: Self.tombstonesKey),
+                let stored = try? JSONDecoder().decode(Set<Tombstone>.self, from: data)
+            else { return [] }
+            return stored
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            defaults.set(data, forKey: Self.tombstonesKey)
+        }
+    }
+
+    private static let tombstonesKey = "instruments.tombstones.v1"
 
     public func rename(id: String, to name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

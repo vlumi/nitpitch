@@ -63,16 +63,32 @@ everything else depends on, and worth putting in early.
   those same links, so the collection grows without app updates.
 
 - **iCloud sync** — instruments, presets, pins and order between devices.
-  The design is settled: per-record last-writer-wins over
-  `NSUbiquitousKeyValueStore` (one key per instrument/preset, `modifiedAt`
-  as the currency — already stamped by the stores — plus deletion
-  tombstones), which never duplicates because ids are stable: the factory
-  seed uses template ids precisely so two devices seed identically and
-  the first merge is clean. Opt-in like donpa: a toggle on the
-  instruments page, off by default — because "nothing leaves the device"
-  is a shipped promise (the macOS build carries no network entitlement),
-  and the day sync ships, PRIVACY.md, the README and the App Store text
-  all need the honest rewrite to "…unless you enable iCloud sync".
+  **The merge rules have shipped** (`NitpitchCore/Sync`): per-record
+  last-writer-wins on `modifiedAt`, deletion tombstones, whole-value
+  settings, all pure and unit-tested; both stores stamp every write path
+  and record their deletions. It never duplicates because ids are
+  stable: the factory seed uses template ids precisely so two devices
+  seed identically and the first merge is clean.
+
+  What remains is transport and paperwork:
+  - a `SyncEngine` in Kit behind a protocol seam — one
+    `NSUbiquitousKeyValueStore` key per record, pushed on store change,
+    applied back on `didChangeExternallyNotification`, with the merge
+    tested against a fake rather than the cloud;
+  - which Settings sync at all — pins and their order yes; device-shaped
+    state (`rackExpanded`, strips-on-Mac) stays local;
+  - the opt-in toggle on the instruments page, off by default, and the
+    first-enable merge;
+  - the `com.apple.developer.ubiquity-kvstore-identifier` entitlement on
+    both targets plus the iCloud capability on the App ID;
+  - the honest rewrite: "nothing leaves the device" is a shipped promise
+    (the macOS build carries no network entitlement), so PRIVACY.md, the
+    README and the App Store text all become "…unless you enable iCloud
+    sync".
+
+  Verification wants two real devices on one iCloud account — KVS is
+  unreliable on the simulator, and propagation latency makes it a
+  patience exercise rather than a test-suite matter.
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.
 - **Watch app** — more plausible than first assumed. The mic's reported

@@ -13,7 +13,7 @@ import NitpitchCore
 ///
 /// Never edited in place: loading copies values out, and the only way values
 /// flow back is a save — over the same name, deliberately.
-public struct Preset: Equatable, Hashable, Codable, Identifiable, Sendable {
+public struct Preset: Equatable, Hashable, Codable, Identifiable, Sendable, SyncRecord {
     public let id: String
     /// The user's name for it — why they saved it, not what the tuning is
     /// called. Verbatim in the UI, never localized.
@@ -31,6 +31,13 @@ public struct Preset: Equatable, Hashable, Codable, Identifiable, Sendable {
     /// A=442 — while nil (every preset saved before temperaments existed)
     /// means "leave the instrument's alone".
     public let temperament: Temperament?
+    /// When this preset was last saved — the currency of last-writer-wins
+    /// syncing, stamped by `save`. Optional for presets stored before
+    /// syncing existed, which `SyncMerge` reads as the beginning of time.
+    public var modifiedAt: Date?
+
+    public var syncID: String { id }
+    public var syncModifiedAt: Date? { modifiedAt }
 
     public var reference: ReferencePitch? { referenceHz.map(ReferencePitch.init(hz:)) }
 
@@ -124,7 +131,8 @@ public final class PresetStore: ObservableObject {
             // must RESTORE equal when loaded onto a pure instrument, so
             // "equal" and "unspecified" cannot share a spelling. Left out,
             // loading leaves the instrument's temperament alone.
-            temperament: includeTemperament ? instance.appliedTemperament : nil)
+            temperament: includeTemperament ? instance.appliedTemperament : nil,
+            modifiedAt: Date())
         if let index = presets.firstIndex(where: { $0.id == preset.id }) {
             presets[index] = preset
         } else {
@@ -134,11 +142,36 @@ public final class PresetStore: ObservableObject {
     }
 
     public func remove(id: String) {
+        guard presets.contains(where: { $0.id == id }) else { return }
         presets.removeAll { $0.id == id }
+        // A deletion has to be remembered, not merely performed: absence
+        // carries no date, so a device that still holds the preset would
+        // merge it straight back (see `SyncMerge`).
+        tombstones = SyncMerge.mergedTombstones(
+            local: tombstones.union([Tombstone(id: id, deletedAt: Date())]),
+            remote: [], survivors: presets, now: Date())
         // The favorite flag dies with the preset; launch pins resolve by
         // lookup, so a dangling pin simply stops rendering.
         if isFavorite(id) { toggleFavorite(id) }
     }
+
+    /// Deletions this device has performed, for the merge. Persisted like
+    /// everything else, pruned by age (`Tombstone.lifetime`) whenever one
+    /// is added.
+    public private(set) var tombstones: Set<Tombstone> {
+        get {
+            guard let data = defaults.data(forKey: Self.tombstonesKey),
+                let stored = try? JSONDecoder().decode(Set<Tombstone>.self, from: data)
+            else { return [] }
+            return stored
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            defaults.set(data, forKey: Self.tombstonesKey)
+        }
+    }
+
+    private static let tombstonesKey = "presets.tombstones.v1"
 
     /// Apply a preset to an instance: the fields it carries, nothing else.
     public func load(_ preset: Preset, onto instance: InstrumentInstance, in store: InstrumentStore)

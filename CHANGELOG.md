@@ -26,256 +26,154 @@ and remembered exactly as you left them.
 
 - iCloud sync, off until you turn it on: a switch at the foot of the
   instrument list keeps your instruments, presets and favorites the same
-  on every device signed in to your iCloud account. Leave it off and
-  nothing leaves the device, exactly as before. Signed out of iCloud,
-  the switch disables itself and says why, rather than pretending to
-  sync into a void.
-
-- The fine-tuning strobe: a segmented band under the string view's
-  dial that renders sub-cent error as MOTION — rightward crawl is
-  sharp, leftward flat, stationary is there. The eye reads slow drift
-  far better than any needle position, which is how hardware strobes
-  reach a tenth of a cent: precision comes from watching for a second.
-  One revolution per hertz-second of error, so a violin A one cent
-  sharp crawls a quarter turn per second. It wakes only within ten
-  cents of the (tempered) target — the hand-off point where the needle
-  runs out of resolution — and there is deliberately no dead-band: a
-  string a fifth of a cent flat crawls, slowly, because it is flat.
-  This completes the tuning-the-tuning milestone.
-
-- Pinned presets moved behind their instrument's accordion: the row's
-  trailing chevron — separated, so the row itself still opens the
-  instrument with one tap — discloses the chips, which grew into proper
-  finger targets now that their size no longer costs every row its
-  clutter. Rows without pins carry no chevron, and the expansion is
-  remembered: the rack waits as you left it, open rows included.
-
-- The dial's sweep is logarithmic now, like the dots always were: the
-  ear's sensitivity to mistuning is proportional, so equal RATIOS of
-  error get equal angles. Linear sweep gave the last two cents of a peg
-  turn 3.6 degrees — invisible exactly where tuning happens; now the
-  in-tune boundary sits at 18 degrees and every doubling beyond adds
-  the same swing, with the scale ticks riding the same curve so an 8
-  cent tick and an 8 cent needle agree about where 8 cents is.
+  on every device signed in to your iCloud account. Off, nothing leaves
+  the device, exactly as before; signed out of iCloud, the switch
+  disables itself and says why.
+- The fine-tuning strobe: a band under the string view's dial that shows
+  sub-cent error as motion — crawling right is sharp, left is flat,
+  stationary is in tune, one revolution per hertz-second. It wakes
+  within ten cents of the tempered target, where the needle runs out of
+  resolution, and has no dead-band: a string a fifth of a cent flat
+  crawls slowly, because it is flat.
+- Pinned presets moved behind their instrument's accordion: a separated
+  trailing chevron discloses the chips while the row itself still opens
+  the instrument. Rows without pins carry no chevron, the expansion is
+  remembered, and the chips grew into proper finger targets.
+- The dial's sweep is logarithmic now, like the dots always were: equal
+  RATIOS of error get equal angles, so the in-tune boundary sits at 18
+  degrees instead of 3.6, and the scale ticks ride the same curve.
 - The launch screen's instrument rows grew into proper finger targets
-  (they sat under Apple's 44-point floor), their names a size with
-  them, and the pinned-preset chips followed.
-
-- The screen stays awake while you tune — and only while you tune: a
-  confident reading or a sounding tone holds it, and it's released
-  ninety seconds after the last sign of life, so a phone forgotten on
-  the stand still sleeps. Mac displays get the same courtesy.
-- The reference tone is properly audible now, low strings included: a
-  phone speaker can't reproduce a bass string's fundamental at all, so
-  the tone carries harmonics the speaker CAN produce and the ear
-  rebuilds the pitch from them (the missing-fundamental effect) — plus
-  a higher playing level. The clickless edges and glides are measured
-  against the richer waveform's own slope.
+  (they sat under Apple's 44-point floor), their names sized with them.
+- The screen stays awake while you tune — and only while: a confident
+  reading or a sounding tone holds it, released ninety seconds after the
+  last sign of life. Mac displays get the same courtesy.
+- The reference tone is properly audible now, low strings included: it
+  carries harmonics a phone speaker CAN produce and the ear rebuilds the
+  pitch from them, at a higher playing level, edges still clickless.
 
 ### build 5 — 2026-08-06
 
 - Bowing two adjacent strings shows the interval itself, in the ear's
-  own units: BEATS. In a fifth, the lower string's 3rd harmonic and the
-  upper's 2nd coincide when pure and audibly pulse when not — the pulse
-  rate IS the tuning error, and no mainstream tuner shows it. The chip
-  reads "D–A · fifth · 2.7/s · narrow" with a dot pulsing at the true
-  rate, appears in a fixed lane under the dial grid's meter (the
-  sounding pair edged in tint — adjacent strings aren't always adjacent
-  cells) and, in the strips, as a squarish card snug against the
-  strips' trailing edge, straddling exactly the two strips it names —
-  positioned from their published geometry, not estimated row heights.
-  It repeats no names there (it points at its pair), never resizes, and
-  the advice is drawn, not written: arrows spreading apart mean widen,
-  converging mean bring together, a green checkmark means leave it be —
-  the same glyphs in the grid's lane. The strip cards ceded a few
-  points of padding for the room, and their names grew a size. The aim
-  follows the temperament: pure tunes to silence, equal honestly aims
-  at its own ~1 beat per second — fourths ride the same physics on the
-  bass and guitar.
+  own units: BEATS — the pulse rate IS the tuning error. A chip reads
+  "D–A · 2.7/s" with a dot pulsing at the true rate, in a fixed lane
+  under the dial grid's meter (the sounding pair edged in tint) or, in
+  the strips, straddling exactly the two strips it names. The advice is
+  drawn, not written: arrows spreading mean widen, converging mean bring
+  together, a green checkmark means leave it be. The aim follows the
+  temperament — pure tunes to silence, equal honestly aims at its own
+  ~1 beat per second — and fourths ride the same physics on bass and
+  guitar.
 - A reference tone: the speaker in the string view sounds the current
-  string's target — tempered, so a pure-fifths violin hears pure
-  fifths — to tune against by ear, or to survive a room too noisy to
-  detect in. Swiping strings mid-tone glides the pitch: A, then D, the
-  way violinists actually work. Detection pauses while it sounds (the
-  app must not tune itself to its own voice), the tone mixes with
-  whatever you're listening to instead of pausing it, and it respects
-  the silent switch — a reference tone is a courtesy, not an alarm.
-  Pitch changes GLIDE — exponentially, so a one-hertz reference step
-  spreads as smoothly as a string swipe (a rate-limited glide made
-  small steps click like no glide at all) — and the grid grew speakers
-  of its own: one per string cell (bottom corner, clear of the level
-  meter) and inside each strip's card, where the eye actually is.
-  The reference readout itself is now the reference tone's button, on
-  every screen the A=442 stepper appears — the chromatic tuner
-  included: tap the pitch to hear it, step ± while it sounds and the
-  pitch follows live. One tone engine serves the whole app, so two
-  screens can never sound at once (they briefly could), navigation
-  begins in silence, and tapping another speaker mid-tone slides over
-  to it. Listening never locks: the tone stays available on a locked
-  instrument, whose padlock freezes only the ± steps.
+  string's tempered target, to tune against by ear or to survive a room
+  too noisy to detect in. Swiping strings mid-tone glides the pitch, as
+  do reference steps; detection pauses while it sounds, the tone mixes
+  with whatever you're listening to instead of pausing it, and it
+  respects the silent switch. The grid grew speakers of its own — one
+  per cell, one per strip card — and the reference readout itself is now
+  the tone's button on every screen it appears. One engine serves the
+  whole app, so two screens can never sound at once; a locked
+  instrument's padlock freezes only the ± steps, never the listening.
 - The tuner no longer pauses your music: capturing used a non-mixable
   audio session, so opening any tuner silenced whatever was playing.
-  Tuning alongside music is now your call, not the session's.
 
 ### build 4 — 2026-08-05
 
-- The presets sheet fits phones again: its Mac minimum width (400pt)
-  was forced onto a 375pt iPhone screen, and the missing width came out
-  of the list's horizontal margins — rows flush to both edges. The
-  minimum is now Mac-only, and the rows' payload line gained the same
-  "· pure" vocabulary as the tuning menu.
+- The presets sheet fits phones again: its Mac minimum width (400pt) was
+  forced onto a 375pt iPhone, eating the list's horizontal margins. The
+  rows' payload line gained the tuning menu's "· pure" vocabulary.
 - Saving a preset chooses its payload with checkboxes: the pitches
-  always ride (they're what a preset IS), while the reference and — on
-  bowed instruments — the temperament are each a labeled toggle showing
-  the value it would capture, both on by default. The old alert had one
-  button per combination, a pattern that stopped scaling the moment
-  temperament became a third dimension.
-- Bowed instruments tune the way orchestras do, by default: pure
-  fifths (fourths on the double bass) retune the open-string targets to
-  beatless intervals,
-  anchored at the A string: A from the oboe, pure fifths outward, so a
-  violin's E sits +2¢ and G −4¢ against equal temperament. Presets
-  carry the choice as part of the situation ("quartet, pure" is one
-  chip tap; the menu labels say so), and presets saved before this
-  leave it alone. Fretted instruments never see the row — frets are
-  equal temperament cast in metal — the chromatic screen keeps naming
-  equal-tempered notes, and the intonation layer is untouched by
-  construction: octaves are 2:1 in every temperament. The state is worn
-  where you look while tuning: an Equal/Pure chip beside the reference
-  stepper (grid and string view alike) — one tap flips it, and the
-  tuning menu keeps the long-form picker.
-- Mac: ← and → walk the strings in the string view — the same move as the
-  on-screen arrows, without reaching for the mouse. The keys land there
-  the moment the screen opens, and fall silent past the outermost string.
+  always ride, while the reference and — on bowed instruments — the
+  temperament are labeled toggles showing what they'd capture, both on
+  by default. The old alert had one button per combination.
+- Bowed instruments tune the way orchestras do, by default: pure fifths
+  (fourths on the double bass) anchored at A, so a violin's E sits +2¢
+  and G −4¢ against equal temperament. Presets carry the choice as part
+  of the situation, presets saved before this leave it alone, and
+  fretted instruments never see the row — frets are equal temperament
+  cast in metal. The state is worn as an Equal/Pure chip beside the
+  reference stepper; the tuning menu keeps the long-form picker.
+- Mac: ← and → walk the strings in the string view, live from the
+  moment the screen opens.
 - The intonation check scales to the whole instrument: a "Check
   intonation" toggle in the grid's … menu lights the octave layer on
   every cell and strip at once — a tiny second light strip above each
-  string's own dots, the Δ verdict beside it — so checking a saddle no
-  longer means visiting strings one by one. Octave findings are claimed
-  by their owners wherever the engines put them (a string's own octave
-  always lands outside its own band: on a neighbour's dial, or above
-  every band, where only the sentinel sees it), and in octave tunings
-  like Drop D an ambiguous note lights both of its meanings rather than
-  neither. Behind a toggle, unlike the string view's ambient panel —
-  the grid is a tuning surface first.
-- The string view checks intonation, ambiently — no mode to find. Below
-  the switcher sits the octave's own tuner, lit whenever the octave
-  sounds (fretted 12th, fingered octave, or the natural harmonic — they
-  all count), beside both captured samples and the verdict between them:
-  Δ positive = octave sharp; on a guitar the saddle wants to move back.
-  Each value records once its note holds steady, and the latest hold
-  wins. One detector serves both notes: an open string always sounds odd
-  partials while the octave sounds only even ones, so the two are told
-  apart by what's missing — which is also why a phone microphone rolling
-  off a low string's fundamental can't fool it. The main dial now stands
-  down honestly while the octave plays (it used to misread a fretted
-  12th as the open string, roughly in tune) — the open string's answer
-  stays the open string's. And any reading near +1200¢ routes to the
-  octave's tuner whatever engine found it: on a bass — where a 55 Hz
-  fundamental spans one FFT bin and the time-domain engine carries more
-  of the frames — the 12th fret used to slam the main dial to +1200,
-  and the open string flickered between in-tune and full-right. Capture
-  locks meet a picked bass halfway too: the lock waits for six frames
-  agreeing around the run's median — collected across a pluck's worth of
-  history, wobbly attack and wild frames discarded rather than given a
-  veto — and a decaying note flickering at the strength gate gets a few
-  frames of grace before its run restarts.
-- A Mac with no microphone at all no longer crashes at launch: the audio
-  engine throws an uncatchable exception the moment it's asked about input
-  hardware that doesn't exist, so the app now checks for input devices
-  before asking — and says so: the tuner reads "No audio input device"
-  instead of sitting silent or asking you to play a note it could never
-  hear — with a Retry button for when the microphone arrives. (The device
-  check also stays inside the audio stack now, keeping the camera
-  subsystem's entitlement complaints out of the console.)
-- …and the message actually appears: the tuner sampled the audio status
-  once, in a race it usually lost against activation, so a mic-less Mac
-  showed a stale "Not listening" forever. It now observes the status, so
-  the display follows activation whenever it finishes — including after
-  Retry.
-- Unplugging the microphone mid-run no longer strands the tuner: the
-  windows just stopped coming, the volume bar froze at its last reading,
-  and plugging back in resumed nothing. The capture now listens for the
-  hardware coming and going and rebuilds itself around whatever the input
-  is — unplug drops to "No audio input device" (meter cleared), replug
-  picks the tuning back up on its own. Device events arrive in storms and
-  on threads of the hardware layer's choosing, so they're funneled to the
-  main queue and coalesced into a single rebuild once the hardware
-  settles — answering each one directly crashed the app mid-replug.
+  string's dots, the Δ verdict beside it. Octave findings are claimed by
+  their owners wherever the engines put them, and in octave tunings like
+  Drop D an ambiguous note lights both of its meanings rather than
+  neither.
+- The string view checks intonation ambiently — no mode to find: below
+  the switcher sits the octave's own tuner, both captured samples, and
+  the verdict between them (Δ positive = octave sharp; a guitar's saddle
+  wants to move back). One detector tells the two notes apart by what's
+  missing — an open string always sounds odd partials, its octave only
+  even ones — so the main dial now stands down honestly while the octave
+  plays, readings near +1200¢ route to the octave whatever engine found
+  them, and capture locks meet a picked bass halfway: six frames
+  agreeing around the run's median, with grace at the strength gate.
+- A Mac with no microphone at all no longer crashes at launch: the app
+  checks for input devices before asking the engine, and says so — "No
+  audio input device", with a Retry button for when one arrives.
+- …and the message actually appears: the tuner now observes the audio
+  status instead of sampling it once in a race it usually lost, so a
+  mic-less Mac no longer shows a stale "Not listening" forever.
+- Unplugging the microphone mid-run no longer strands the tuner: capture
+  rebuilds itself around whatever the input is — unplug drops to "No
+  audio input device", replug picks the tuning back up on its own.
+  Device events arrive in storms, so they coalesce into a single rebuild
+  once the hardware settles; answering each directly crashed mid-replug.
 
 ### build 3 — 2026-08-04
 
 - Instruments are deliberate now, and the factory list is real: first
-  launch seeds one ordinary, fully editable instrument per catalog kind —
-  browse and tune immediately, rename the violin "Guarneri", delete the
-  ones you'll never touch (all of them, if you like: the list can be
-  empty, and a big Add button takes their place). Nothing joins or leaves
-  anything by side effect — opening an instrument is just opening it.
+  launch seeds one ordinary, fully editable instrument per catalog
+  kind — rename the violin "Guarneri", delete the ones you'll never
+  touch (all of them, if you like; a big Add button takes their place).
   Each row carries a small kind tag (Vln, Gtr, Bass…) and its current
-  tuning, so which is which reads at a glance without renaming anything.
-- The star is the launch screen: starred instruments form a Favorites
-  section at the top of the list — drag-ordered, and that order IS the
-  home screen's — while everything unstarred sits below, family-grouped
-  and stable. On the launch screen the old truncating chips grew into a
-  rack of full rows (kind tag, name, current tuning, padlock) that say
-  what they'll open into before the tap, with "All instruments…" one row
-  below; the dial stays the headline, the rack caps at four.
-- Presets and tunings can be pinned to an instrument — Standard included:
-  light the 📌 beside "Gig" (or Drop D) in Manage presets…, and a chip
-  appears under that instrument's launch row — tap it and the instrument
-  opens with that setup loaded, an explicit pick that overwrites any
-  drift, while the plain row still opens it exactly as you left it. The
-  pin is the (instrument, preset) pair, so pinning Gig to one guitar
-  never surfaces it on another; pinned entries also float to the top of
-  the tuning menu whether or not the instrument is on the launch screen,
-  and on a locked instrument the chips dim and only navigate. Presets
-  gained template-wide favorites of their own (the ★ floats them into a
-  Favorites block atop every preset list), and Manage presets… is always
-  in the tuning menu — it's where the pins live.
-- Adding an instrument is one sheet: pick the kind from the + menu (one
-  entry per kind, grouped by family) and everything else — the name,
-  ready to edit, and the strings — is decided together, with Create the
-  moment anything comes to exist and Cancel leaving no trace. Kinds that
-  come in sizes offer their common counts as one-tap chips (double bass
-  4/5, guitar 6/7/8, bass 4/5/6 — violins offer nothing, being violins),
-  the full string list waits behind a disclosure (always visible on the
-  Mac, whose sheet fits its content exactly), and nothing is ever
-  labelled "custom" — touch the list and the chips simply stop matching.
-  Duplicate opens the same sheet prefilled from the source: name
-  suggested, strings and reference copied, everything editable.
+  tuning, so which is which reads at a glance.
+- The star is the launch screen: starred instruments form a
+  drag-ordered Favorites section whose order IS the home screen's,
+  everything unstarred sits below, family-grouped. The old truncating
+  chips grew into a rack of full rows (kind tag, name, tuning, padlock)
+  that say what they'll open into, capped at four, "All instruments…"
+  one row below.
+- Presets and tunings can be pinned to an instrument — Standard
+  included: light the 📌 in Manage presets… and a chip under that
+  instrument's launch row opens it with that setup loaded, an explicit
+  pick that overwrites any drift. The pin is the (instrument, preset)
+  pair, so pinning Gig to one guitar never surfaces it on another;
+  pinned entries float to the top of the tuning menu, and on a locked
+  instrument the chips dim and only navigate. Presets gained
+  template-wide ★ favorites of their own.
+- Adding an instrument is one sheet: pick the kind from the + menu and
+  the name and strings are decided together — common string counts as
+  one-tap chips (double bass 4/5, guitar 6/7/8, bass 4/5/6), the full
+  string list behind a disclosure, nothing ever labelled "custom".
+  Duplicate opens the same sheet prefilled from the source.
 - The instrument's own screen manages the instrument: an … menu carries
-  Rename, Duplicate, Edit strings and Delete alongside the column picker —
-  the chooser's swipe and long-press have the same actions for those who
-  find them, but the … is findable by everyone. The string list itself is
-  editable everywhere it appears: add a string at either end (the
-  proposed pitch continues the instrument's own pattern — a violin grows
-  a viola's C3 below), nudge targets in place, remove down to the last;
-  rows stack lowest-at-bottom, so the numbers read like a string set's.
-- The strips look like strings now: each row is a compact card — name,
-  dots, cents — threaded on a line that runs to both screen edges at the
-  string's own gauge, the lowest fattest. The cents got bigger, lost
-  their symbol, and sit on the side the pitch leans — left of the dots
-  when flat, right when sharp, in reserved slots — so which way to turn
-  the peg is visible before the number is read.
-- The dial grid follows the strips' order: the lowest string sits at the
-  bottom, rows reading left to right and climbing upward, leftover rows
-  at the bottom so up-and-right always means higher. The "Low string on
-  top" switch in Settings flips both views together.
+  Rename, Duplicate, Edit strings and Delete alongside the column
+  picker. The string list is editable everywhere it appears: add a
+  string at either end (the proposed pitch continues the instrument's
+  own pattern — a violin grows a viola's C3 below), nudge targets in
+  place, remove down to the last.
+- The strips look like strings now: each row a compact card — name,
+  dots, cents — threaded on a line that runs edge to edge at the
+  string's own gauge, the lowest fattest. The cents sit on the side the
+  pitch leans — left when flat, right when sharp — so the peg direction
+  reads before the number does.
+- The dial grid follows the strips' order: lowest string at the bottom,
+  rows climbing so up-and-right always means higher. The "Low string on
+  top" switch flips both views together.
 - Every readout leads with your own name for the note — the chromatic
   tuner included: in German naming a guitar reads E₂ A₂ D₃ G₃ H₃ E₄
-  everywhere, with the octave as a subscript (E₂ and E₄, not two Es).
-  The chromatic note grew into the space its parens and the arc's hollow
-  gave back; grid cells stack the name over the cents (no more sideways
-  wobble) and rose into the hollow too, so an SE's six height-bound rows
-  stay legible.
+  everywhere, octave as a subscript. The chromatic note grew into the
+  space its parens gave back; grid cells stack the name over the cents.
 - On the Mac, the grid's menus no longer snap shut the moment the
-  microphone hears anything — the level meter's ticking was re-rendering
-  the whole screen, and macOS closes an open menu whenever its anchor
-  rebuilds; the meter now ticks alone.
+  microphone hears anything — the level meter was re-rendering the whole
+  screen, and macOS closes a menu whose anchor rebuilds. It ticks alone.
 - Rotating an iPhone to the strips and back lands on the same grid you
-  left: the collapsed title bar was quietly handing the return trip a
-  taller viewport, for which the auto layout honestly picked a different
-  column count. The title stays large in portrait now.
+  left: the collapsed title bar was handing the return trip a taller
+  viewport and honestly a different column count. The title stays large
+  in portrait.
 
 ### build 2 — 2026-08-03
 

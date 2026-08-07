@@ -43,6 +43,14 @@ public enum LaunchStores {
     /// unchanged.
     public static let isDebug = ProcessInfo.processInfo.arguments.contains("-debug")
 
+    /// The key-value store syncing rides. Under UI tests it's a local
+    /// stand-in: a test run must never touch the developer's real iCloud
+    /// account, and the isolation gate is only total if it covers this
+    /// door too.
+    public static func syncStore() -> KeyValueSyncStore {
+        isClean ? EphemeralSyncStore() : UbiquitousSyncStore()
+    }
+
     public static let defaults: UserDefaults = {
         guard isClean else { return .standard }
         let suite = "fi.misaki.nitpitch.uitest"

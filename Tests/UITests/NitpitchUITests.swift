@@ -39,6 +39,20 @@ final class NitpitchUITests: XCTestCase {
             app.descendants(matching: .any)["grid.strings"].waitForExistence(timeout: 5))
     }
 
+    /// Scroll a list until `element` is on screen, or give up. The
+    /// instrument list is as long as the user's collection, so anything
+    /// below it — the sync switch — is off-screen on a phone until the
+    /// list is scrolled, and `exists` alone can't be trusted to mean
+    /// "the user can reach this".
+    @discardableResult
+    private func scrollToReveal(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
+        for _ in 0..<8 {
+            if element.exists && element.isHittable { return true }
+            app.descendants(matching: .any).firstMatch.swipeUp()
+        }
+        return element.exists && element.isHittable
+    }
+
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
@@ -662,6 +676,29 @@ final class NitpitchUITests: XCTestCase {
         shot.name = "detector-diagnostics"
         shot.lifetime = .keepAlways
         add(shot)
+    }
+
+    /// iCloud syncing is opt-in, and the screen has to SAY so: "nothing
+    /// leaves this device" is a promise the app makes in the App Store
+    /// listing and the privacy policy, so a build that shipped this
+    /// toggle already on would break it silently.
+    ///
+    /// State via `accessibilityValue`, never the `isSelected` trait —
+    /// SwiftUI Toggles don't expose the trait to XCUITest.
+    func testSyncIsOffUntilAskedFor() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+
+        // The switch lives below the whole instrument list, so reaching it
+        // is part of what this asserts.
+        let toggle = app.descendants(matching: .any)["chooser.sync"].firstMatch
+        XCTAssertTrue(scrollToReveal(toggle, in: app), "the sync switch is reachable")
+        XCTAssertEqual(toggle.value as? String, "0", "off until asked for")
+        XCTAssertTrue(
+            app.staticTexts["Nothing leaves this device."].exists,
+            "the promise is stated where the toggle is")
     }
 
     /// Chromatic is the screen you arrive from, so offering it in the chooser

@@ -41,6 +41,7 @@ struct Creation: Identifiable {
 struct InstrumentChooser: View {
     @ObservedObject var settings: Settings
     @ObservedObject var store: InstrumentStore
+    @ObservedObject var sync: SyncEngine
     let onChoose: (String) -> Void
 
     /// The instance being renamed, driving the alert.
@@ -51,6 +52,32 @@ struct InstrumentChooser: View {
     /// The creation in progress — a kind, optionally prefilled from a
     /// source instrument (Duplicate) — driving the sheet.
     @State var creating: Creation?
+
+    /// iCloud syncing — opt-in, and phrased as what it does rather than
+    /// what it is. It sits at the foot of the instrument list because
+    /// instruments and their presets are exactly what it moves; the
+    /// footer states the promise the app makes when it's off, since that
+    /// promise is the reason the toggle exists at all.
+    @ViewBuilder private var syncSection: some View {
+        Section {
+            Toggle(isOn: syncBinding) {
+                Text("Sync with iCloud", bundle: .module)
+            }
+            .accessibilityIdentifier("chooser.sync")
+        } footer: {
+            if sync.isEnabled {
+                Text(
+                    "Instruments, presets and favorites stay the same on every device.",
+                    bundle: .module)
+            } else {
+                Text("Nothing leaves this device.", bundle: .module)
+            }
+        }
+    }
+
+    private var syncBinding: Binding<Bool> {
+        Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) })
+    }
 
     var body: some View {
         List {
@@ -96,6 +123,7 @@ struct InstrumentChooser: View {
                         .frame(maxWidth: .infinity)
                 }
             }
+            syncSection
         }
         .navigationTitle(Text("Instrument", bundle: .module))
         .toolbar {

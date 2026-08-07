@@ -95,11 +95,6 @@ public final class PresetStore: ObservableObject {
 
     private static let favoritesKey = "presets.favorites.v1"
 
-    private var favoriteIDs: Set<String> {
-        get { Set(defaults.stringArray(forKey: Self.favoritesKey) ?? []) }
-        set { defaults.set(Array(newValue).sorted(), forKey: Self.favoritesKey) }
-    }
-
     /// An existing preset that a save under `name` would replace: same
     /// template, same name (case-insensitively — "gig" and "Gig" are one
     /// intent, not two presets).
@@ -185,6 +180,25 @@ public final class PresetStore: ObservableObject {
             store.setTemperament(id: instance.id, temperament)
         }
         store.presetApplied(id: instance.id, presetID: preset.id)
+    }
+
+    /// Install merged state from `SyncEngine` — like `InstrumentStore.adopt`,
+    /// no re-stamping: the stamps are what the merge just judged.
+    func adopt(_ merged: [Preset], tombstones stones: Set<Tombstone>) {
+        if merged != presets { presets = merged }
+        if stones != tombstones { tombstones = stones }
+    }
+
+    /// The favorite flags as one value, for the synced settings slice.
+    var favoriteIDs: Set<String> {
+        get { Set(defaults.stringArray(forKey: Self.favoritesKey) ?? []) }
+        set { defaults.set(Array(newValue).sorted(), forKey: Self.favoritesKey) }
+    }
+
+    func adoptFavorites(_ ids: Set<String>) {
+        guard ids != favoriteIDs else { return }
+        objectWillChange.send()
+        favoriteIDs = ids
     }
 
     private func save() {

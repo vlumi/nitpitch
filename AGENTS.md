@@ -56,6 +56,7 @@ nitpitch/
     │   │                           Detection constants, DetectionTuning, ReadingSmoother
     │   ├── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
     │   └── Sync/                   SyncMerge (last-writer-wins + tombstones)
+    │                               (transport: NitpitchKit/App/SyncEngine.swift)
     └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
         ├── Audio/                  AudioInput, AudioSessionController (one engine, fan-out)
         ├── App/                    Settings + SettingsView, DetectionSettings, LaunchStores,
@@ -337,6 +338,35 @@ one of the drafts that lost.
   any stamped copy. The property that matters most is symmetry: merging
   in both directions gives the same answer, or two devices disagree
   permanently, each convinced it is right.
+- **Syncing's ordering rules, each of which was a real bug.** The
+  transport is a `SyncEngine` over a `KeyValueSyncStore` protocol, so
+  the whole of it runs against a dictionary in tests (`FakeSyncStore`,
+  two engines sharing one instance = two devices). Everything below was
+  caught by those tests and would have been near-invisible in the
+  field:
+  1. **Apply tombstones to records BEFORE pruning tombstones against
+     records.** Pruning first asks "does this record still exist?" of a
+     list that hasn't heard about the deletion yet, so the device
+     holding the doomed record drops the very stone meant to kill it —
+     and re-uploads the record forever.
+  2. **The factory seed stamps `.distantPast`, not `Date()`.** A seeded
+     instrument is what was there before the user did anything, so it
+     must lose to every real edit. Stamped `now`, a fresh install's
+     pristine "Violin" overwrites the "Konzertmeister" you renamed on
+     another device last week — the newer write wins, and it is newer.
+  3. **Stamp before merging, not after.** A local edit made since the
+     last sync is undated until something stamps it, and an undated
+     value loses every merge — so `sync()` stamps first, then applies,
+     or it destroys the change the user just made.
+  4. **Stamp only what actually changed.** Stamping the settings on
+     every store notification made renaming an instrument mark this
+     device's untouched pins as freshly edited, which then beat the
+     other device's real ones.
+  5. **Ties break on content, not on which side is local.** Identical
+     stamps are not "the same save" — two devices seeding on first
+     launch collide routinely — and preferring local resolves a tie
+     differently on each device, which is the one outcome that never
+     converges.
 - **Readouts are the local note name on scientific octaves.** Every
   readout — targets and detections alike — leads with the player's own
   spelling ("H₃", "Si₃"), the octave as a scientific subscript, and the

@@ -24,11 +24,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
-- Groundwork for iCloud sync: the merge rules (last-writer-wins per
-  record, deletion tombstones) and the stamping both stores owe them.
-  Nothing syncs yet and nothing leaves the device — this is the pure,
-  testable half, landed on its own so the transport half has something
-  proven to sit on.
+- iCloud sync, off until you turn it on: a switch at the foot of the
+  instrument list keeps your instruments, presets and favorites the same
+  on every device signed in to your iCloud account. Leave it off and
+  nothing leaves the device, exactly as before.
 
 - The fine-tuning strobe: a segmented band under the string view's
   dial that renders sub-cent error as MOTION — rightward crawl is

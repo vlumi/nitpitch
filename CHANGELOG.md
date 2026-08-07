@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 6 — 2026-08-08
+
 - iCloud sync, off until you turn it on: a switch at the foot of the
   instrument list keeps your instruments, presets and favorites the same
   on every device signed in to your iCloud account. Off, nothing leaves

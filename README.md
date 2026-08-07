@@ -27,10 +27,13 @@ ride.
   exactly as you left it; favorites sit on the launch screen with one-tap
   preset pins ("Strat → Gig"), and any shape can be strung up — a 9-string
   guitar is a creation choice, not a missing feature.
-- **Nothing leaves the device.** Audio is analyzed frame by frame in memory and
-  discarded. No recording, no network — the macOS build doesn't even carry the
-  network entitlement, so the sandbox enforces it rather than merely documenting
-  it.
+- **Nothing leaves the device — unless you enable iCloud sync.** Audio is
+  analyzed frame by frame in memory and discarded, always: no recording, and
+  the app itself makes no network connections — the macOS build doesn't even
+  carry the network entitlement, so the sandbox enforces it rather than merely
+  documenting it. An opt-in switch (off by default) syncs your instruments,
+  presets and favorites between your own devices through your iCloud account;
+  audio is never part of it.
 
 Supported: violin, viola, cello, double bass, guitar, bass guitar, and a
 chromatic mode.
@@ -106,10 +109,14 @@ were caught by those tests during the initial build.
 
 ## Privacy
 
-Nothing is recorded, nothing is transmitted, and there is no third-party code in
-the app. The macOS build runs sandboxed without the network entitlement, so that
-last point is enforced by the OS rather than merely promised. Full statement in
-[PRIVACY.md](PRIVACY.md).
+Nothing is recorded, and there is no third-party code in the app. Nothing is
+transmitted either, unless you turn on iCloud sync — an opt-in switch, off by
+default, that moves your instruments, presets and favorites between your own
+devices through Apple's iCloud; nothing derived from audio is ever part of it,
+and nothing ever reaches the developer. The app itself still makes no network
+connections: the macOS build runs sandboxed without the network entitlement
+(iCloud's system daemon does the moving), so that is enforced by the OS rather
+than merely promised. Full statement in [PRIVACY.md](PRIVACY.md).
 
 ## License
 

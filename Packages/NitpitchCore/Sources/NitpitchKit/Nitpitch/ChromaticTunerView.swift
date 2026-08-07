@@ -80,7 +80,8 @@ public struct ChromaticTunerView: View {
             // padded guesses: overstating them is exactly what left a third
             // of the window empty below the tuner (the dial-grid's cell had
             // the same disease). Margins live outside, in the 24pt padding.
-            let rackHeight = LaunchRack.height(for: pinned)
+            let rackHeight = LaunchRack.height(
+                for: pinned, expanded: Set(settings.rackExpanded))
             let stacked = CGSize(width: 400, height: 236 + rackHeight)
             let wide = CGSize(width: 860, height: max(174, 46 + rackHeight))
             let stackedScale = min(
@@ -202,8 +203,16 @@ public struct ChromaticTunerView: View {
                 }
             }
             LaunchRack(
-                entries: pinned, onChoose: onChooseInstance,
-                onChoosePin: onChoosePin, onOpenChooser: onOpenChooser)
+                entries: pinned,
+                expanded: Set(settings.rackExpanded),
+                onChoose: onChooseInstance,
+                onChoosePin: onChoosePin,
+                onToggleExpand: { id in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        settings.toggleRackExpanded(id)
+                    }
+                },
+                onOpenChooser: onOpenChooser)
         }
     }
 

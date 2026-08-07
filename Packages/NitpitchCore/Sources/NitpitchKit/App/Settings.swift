@@ -14,6 +14,7 @@ public final class Settings: ObservableObject {
         static let favorites = "favoriteInstruments"
         static let stripsOnMac = "stripsOnMac"
         static let stripsLowOnTop = "stripsLowOnTop"
+        static let rackExpanded = "rackExpandedInstruments"
         static let presetPins = "presetPins.v1"
     }
 
@@ -90,6 +91,21 @@ public final class Settings: ObservableObject {
         }
     }
 
+    /// Which launch-rack rows show their pin chips — the accordion's
+    /// state, persisted: the rack waits as you left it, expanded rows
+    /// included.
+    @Published public var rackExpanded: [String] {
+        didSet { defaults.set(rackExpanded, forKey: Key.rackExpanded) }
+    }
+
+    public func toggleRackExpanded(_ id: String) {
+        if let index = rackExpanded.firstIndex(of: id) {
+            rackExpanded.remove(at: index)
+        } else {
+            rackExpanded.append(id)
+        }
+    }
+
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         // `double(forKey:)` returns 0 for a missing key, which ReferencePitch
@@ -108,6 +124,7 @@ public final class Settings: ObservableObject {
         self.favorites = defaults.stringArray(forKey: Key.favorites) ?? [Instrument.violin.id]
         self.stripsOnMac = defaults.bool(forKey: Key.stripsOnMac)
         self.stripsLowOnTop = defaults.bool(forKey: Key.stripsLowOnTop)
+        self.rackExpanded = defaults.stringArray(forKey: Key.rackExpanded) ?? []
         if let data = defaults.data(forKey: Key.presetPins),
             let stored = try? JSONDecoder().decode([PresetPin].self, from: data)
         {

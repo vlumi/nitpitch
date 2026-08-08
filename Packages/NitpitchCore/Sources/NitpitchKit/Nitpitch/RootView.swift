@@ -46,6 +46,8 @@ public struct RootView: View {
         let presets = PresetStore(defaults: LaunchStores.defaults)
         _store = StateObject(wrappedValue: store)
         _presets = StateObject(wrappedValue: presets)
+        // Constructed cheaply — the engine touches iCloud only from
+        // `begin()`, which the body schedules in a task (see below).
         _sync = StateObject(
             wrappedValue: SyncEngine(
                 store: LaunchStores.syncStore(),
@@ -85,6 +87,10 @@ public struct RootView: View {
             // principal slot and the gear is a real toolbar item (see
             // `ChromaticTunerView`), so hiding it would hide the header.
         }
+        // Syncing starts here rather than in `init`: reaching the iCloud
+        // daemon is a variable-latency call, and doing it during view
+        // construction put that latency in front of the first frame.
+        .task { await sync.begin() }
         // The demo route (`-demo-open violin`): straight onto the screen
         // whose layout is being judged. Pushed a beat after launch — seeding
         // the path any earlier (init, even `onAppear`) reliably left the

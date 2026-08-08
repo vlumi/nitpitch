@@ -56,7 +56,8 @@ nitpitch/
     │   │                           Detection constants, DetectionTuning, ReadingSmoother
     │   ├── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
     │   └── Sync/                   SyncMerge (last-writer-wins + tombstones)
-    │                               (transport: NitpitchKit/App/SyncEngine.swift)
+    │                               (transport: NitpitchKit/App/
+    │                               {KeyValueSyncStore,SyncEngine}.swift)
     └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
         ├── Audio/                  AudioInput, AudioSessionController (one engine, fan-out)
         ├── App/                    Settings + SettingsView, DetectionSettings, LaunchStores,
@@ -367,6 +368,17 @@ one of the drafts that lost.
      launch collide routinely — and preferring local resolves a tie
      differently on each device, which is the one outcome that never
      converges.
+  6. **Nothing reaches the iCloud daemon on the launch path.**
+     `SyncEngine.init` runs while the first frame is being built, and both
+     `NSUbiquitousKeyValueStore.synchronize()` and
+     `FileManager.ubiquityIdentityToken` are variable-latency calls into
+     `ubd` — cheap when it's warm, visibly slow on a cold start. So the
+     initializer only reads `UserDefaults`, availability starts `false`
+     (the honest answer while nothing is known), and `begin()` — called
+     from a `.task`, with the token read on a detached task — does the
+     first round trip. `begin()` is idempotent because SwiftUI re-runs a
+     `.task` on reappearance. `SyncEngineLaunchTests` asserts that
+     construction touches nothing, and fails if this is undone.
 - **Readouts are the local note name on scientific octaves.** Every
   readout — targets and detections alike — leads with the player's own
   spelling ("H₃", "Si₃"), the octave as a scientific subscript, and the

@@ -24,6 +24,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Launching is quick again on a cold start: with iCloud sync on, the app
+  was talking to iCloud before it drew anything, and how long that took
+  was up to the system. Syncing now begins after the tuner is on screen.
+
 ### build 6 — 2026-08-08
 
 - iCloud sync, off until you turn it on: a switch at the foot of the

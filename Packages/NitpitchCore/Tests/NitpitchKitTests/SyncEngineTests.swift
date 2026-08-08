@@ -4,42 +4,6 @@ import XCTest
 
 @testable import NitpitchKit
 
-/// A key-value store that behaves like iCloud's without being it: a
-/// dictionary, plus the change notification, plus the ability to stand in
-/// for a *second device* by having two engines share one instance.
-///
-/// This is why `KeyValueSyncStore` is a protocol. Real KVS ignores writes
-/// on the simulator and propagates on its own schedule, so none of the
-/// behaviour below could be asserted against it.
-final class FakeSyncStore: KeyValueSyncStore, @unchecked Sendable {
-    private var storage: [String: Data] = [:]
-    private let subject = PassthroughSubject<Void, Never>()
-    private(set) var synchronizeCount = 0
-
-    /// The signed-in state, script-controlled: flip it and deliver an
-    /// external change, the way `NSUbiquityIdentityDidChange` arrives.
-    var isAvailable = true
-
-    func data(forKey key: String) -> Data? { storage[key] }
-
-    func set(_ data: Data?, forKey key: String) {
-        if let data {
-            storage[key] = data
-        } else {
-            storage.removeValue(forKey: key)
-        }
-    }
-
-    var allKeys: [String] { Array(storage.keys) }
-
-    func synchronize() { synchronizeCount += 1 }
-
-    var externalChanges: AnyPublisher<Void, Never> { subject.eraseToAnyPublisher() }
-
-    /// What another device would see arriving.
-    func deliverExternalChange() { subject.send() }
-}
-
 /// The transport half of syncing: what reaches the cloud, what comes back,
 /// and what happens when two devices disagree. `SyncMergeTests` proves the
 /// rules; these prove the engine applies them to the real stores.
@@ -59,35 +23,6 @@ final class SyncEngineTests: XCTestCase {
         super.tearDown()
     }
 
-    /// One device: its own defaults suite, its own stores, one shared cloud.
-    private struct Device {
-        let instruments: InstrumentStore
-        let presets: PresetStore
-        let settings: Settings
-        let engine: SyncEngine
-        let defaults: UserDefaults
-        let suiteName: String
-    }
-
-    private func makeDevice(sharing store: FakeSyncStore, enabled: Bool = true) -> Device {
-        let name = "fi.misaki.nitpitch.tests.\(UUID().uuidString)"
-        let suite = UserDefaults(suiteName: name)!
-        let instruments = InstrumentStore(defaults: suite, seedReference: { .standard })
-        let presets = PresetStore(defaults: suite)
-        let settings = Settings(defaults: suite)
-        let engine = SyncEngine(
-            store: store, instruments: instruments, presets: presets,
-            settings: settings, defaults: suite)
-        if enabled { engine.setEnabled(true) }
-        return Device(
-            instruments: instruments, presets: presets, settings: settings,
-            engine: engine, defaults: suite, suiteName: name)
-    }
-
-    private func destroy(_ device: Device) {
-        device.defaults.removePersistentDomain(forName: device.suiteName)
-    }
-
     // MARK: - Off by default
 
     /// "Nothing leaves the device" is a shipped promise. A user who never
@@ -95,8 +30,8 @@ final class SyncEngineTests: XCTestCase {
     /// all — not merely where nothing is read back.
     func testDisabledEngineWritesNothing() {
         let cloud = FakeSyncStore()
-        let device = makeDevice(sharing: cloud, enabled: false)
-        defer { destroy(device) }
+        let device = SyncTestDevice(sharing: cloud, enabled: false)
+        defer { device.destroy() }
 
         XCTAssertFalse(device.engine.isEnabled, "off by default")
         device.instruments.rename(id: Instrument.violin.id, to: "Private")
@@ -109,8 +44,8 @@ final class SyncEngineTests: XCTestCase {
     /// every launch.
     func testEnabledStatePersists() {
         let cloud = FakeSyncStore()
-        let device = makeDevice(sharing: cloud)
-        defer { destroy(device) }
+        let device = SyncTestDevice(sharing: cloud)
+        defer { device.destroy() }
 
         let relaunched = SyncEngine(
             store: cloud, instruments: device.instruments, presets: device.presets,
@@ -125,9 +60,9 @@ final class SyncEngineTests: XCTestCase {
     /// other.
     func testEditOnOneDeviceReachesTheOther() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
 
         phone.instruments.rename(id: Instrument.violin.id, to: "Konzertmeister")
         phone.engine.sync()
@@ -141,9 +76,9 @@ final class SyncEngineTests: XCTestCase {
     /// would be worse than one that doesn't sync at all.
     func testPresetsSyncWithTheirPayload() throws {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
 
         let guitar = phone.instruments.instance(id: Instrument.guitar.id)!
         phone.instruments.setTuning(id: guitar.id, strings: [38, 45, 50, 55, 59, 64])  // drop D
@@ -163,9 +98,9 @@ final class SyncEngineTests: XCTestCase {
     /// instruments, not two of everything.
     func testTwoSeededDevicesDoNotDoubleTheList() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
 
         let before = phone.instruments.instances.count
         phone.engine.sync()
@@ -180,9 +115,9 @@ final class SyncEngineTests: XCTestCase {
     /// crossing the wire is what makes this work.
     func testDeletionPropagates() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
         phone.engine.sync()
         mac.engine.sync()
 
@@ -201,9 +136,9 @@ final class SyncEngineTests: XCTestCase {
     /// implementation: the other device re-uploads its surviving copy.
     func testDeletionDoesNotResurrectOnTheNextRound() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
         phone.engine.sync()
         mac.engine.sync()
 
@@ -221,9 +156,9 @@ final class SyncEngineTests: XCTestCase {
     /// is what they converge on, and they agree about which that was.
     func testConflictingEditsConvergeOnTheLater() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
         let violin = Instrument.violin.id
 
         phone.instruments.rename(id: violin, to: "From the phone")
@@ -241,9 +176,9 @@ final class SyncEngineTests: XCTestCase {
     /// blob per store. Both edits must survive.
     func testIndependentEditsBothSurvive() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
         phone.engine.sync()
         mac.engine.sync()
 
@@ -263,9 +198,9 @@ final class SyncEngineTests: XCTestCase {
     /// state describes one screen and stays home.
     func testPinsSyncButDeviceStateDoesNot() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
         phone.engine.sync()
         mac.engine.sync()
 
@@ -289,9 +224,9 @@ final class SyncEngineTests: XCTestCase {
     /// rather than manual.
     func testExternalChangeTriggersAMerge() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(phone); destroy(mac) }
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
 
         phone.instruments.rename(id: Instrument.violin.id, to: "Arrived by itself")
         phone.engine.sync()
@@ -310,13 +245,13 @@ final class SyncEngineTests: XCTestCase {
     /// would make the toggle look broken for however long iCloud took.
     func testEnablingMergesImmediately() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        defer { destroy(phone) }
+        let phone = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy() }
         phone.instruments.rename(id: Instrument.violin.id, to: "Already here")
         phone.engine.sync()
 
-        let mac = makeDevice(sharing: cloud, enabled: false)
-        defer { destroy(mac) }
+        let mac = SyncTestDevice(sharing: cloud, enabled: false)
+        defer { mac.destroy() }
         XCTAssertNotEqual(mac.instruments.instance(id: Instrument.violin.id)?.name, "Already here")
 
         mac.engine.setEnabled(true)
@@ -329,9 +264,9 @@ final class SyncEngineTests: XCTestCase {
     /// would tell the UI "synced" while syncing nothing.
     func testNoAccountMeansNothingIsWrittenOrClaimed() {
         let cloud = FakeSyncStore()
-        cloud.isAvailable = false
-        let device = makeDevice(sharing: cloud)
-        defer { destroy(device) }
+        cloud.availability = false
+        let device = SyncTestDevice(sharing: cloud)
+        defer { device.destroy() }
 
         XCTAssertFalse(device.engine.isCloudAvailable)
         device.instruments.rename(id: Instrument.violin.id, to: "Nowhere to go")
@@ -345,13 +280,13 @@ final class SyncEngineTests: XCTestCase {
     /// the first real sync happens without anyone toggling anything.
     func testSigningInCatchesUp() {
         let cloud = FakeSyncStore()
-        cloud.isAvailable = false
-        let device = makeDevice(sharing: cloud)
-        defer { destroy(device) }
+        cloud.availability = false
+        let device = SyncTestDevice(sharing: cloud)
+        defer { device.destroy() }
         device.engine.sync()
         XCTAssertTrue(cloud.allKeys.isEmpty)
 
-        cloud.isAvailable = true
+        cloud.availability = true
         cloud.deliverExternalChange()
         let caught = expectation(description: "caught up")
         DispatchQueue.main.async { caught.fulfill() }
@@ -366,8 +301,8 @@ final class SyncEngineTests: XCTestCase {
     /// this device" is not "delete my things everywhere".
     func testDisablingLeavesTheCloudIntact() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        defer { destroy(phone) }
+        let phone = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy() }
         phone.engine.sync()
         let keysWhileOn = Set(cloud.allKeys)
         XCTAssertFalse(keysWhileOn.isEmpty)
@@ -389,14 +324,14 @@ extension SyncEngineTests {
     @MainActor
     func testAFreshInstallDoesNotOverwriteRealEdits() {
         let cloud = FakeSyncStore()
-        let phone = makeDevice(sharing: cloud)
-        defer { destroy(phone) }
+        let phone = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy() }
         phone.instruments.rename(id: Instrument.violin.id, to: "Konzertmeister")
         phone.engine.sync()
 
         // A device set up afterwards — its seed is newer than the rename.
-        let mac = makeDevice(sharing: cloud)
-        defer { destroy(mac) }
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { mac.destroy() }
         mac.engine.sync()
         phone.engine.sync()
 

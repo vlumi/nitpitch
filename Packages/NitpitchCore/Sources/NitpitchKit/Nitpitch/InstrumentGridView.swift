@@ -51,6 +51,9 @@ struct InstrumentGridView: View {
     /// a setting: a measuring session belongs to the visit that ran it.
     @State var isIntonating = false
     @Environment(\.dismiss) var dismissGrid
+    /// Replace this screen with another instrument's — the one just made
+    /// from it. Nil where the caller owns no navigation.
+    var onOpenCreated: ((String) -> Void)?
 
     /// The instance as constructed, for while the store catches up and as the
     /// identity to look the live value up by.
@@ -58,8 +61,10 @@ struct InstrumentGridView: View {
 
     init(
         instance: InstrumentInstance, store: InstrumentStore, presets: PresetStore,
-        audio: AudioSessionController, settings: Settings, detection: DetectionSettings
+        audio: AudioSessionController, settings: Settings, detection: DetectionSettings,
+        onOpenCreated: ((String) -> Void)? = nil
     ) {
+        self.onOpenCreated = onOpenCreated
         self.audio = audio
         self.store = store
         self.presets = presets
@@ -161,7 +166,21 @@ struct InstrumentGridView: View {
         .sheet(item: $duplicating) { creation in
             InstrumentCreator(
                 store: store, settings: settings, template: creation.template,
-                source: creation.source)
+                source: creation.source,
+                onCreated: { created in
+                    // Made from HERE — a duplicate, or the differently
+                    // strung instrument "Change string count…" leads to —
+                    // so this screen becomes that instrument. Staying on
+                    // the old one leaves the result invisible, and going
+                    // back to the list makes the user find it.
+                    //
+                    // Deferred a turn: the sheet is dismissing, and
+                    // rewriting the navigation path while the screen that
+                    // OWNS the sheet is being replaced loses the change.
+                    Task { @MainActor in
+                        onOpenCreated?(created.id)
+                    }
+                })
         }
         .sheet(isPresented: $isEditingStrings) {
             InstrumentEditor(

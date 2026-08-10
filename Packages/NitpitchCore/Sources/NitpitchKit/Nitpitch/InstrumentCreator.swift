@@ -21,6 +21,11 @@ struct InstrumentCreator: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
     let template: Instrument
+    /// What was made, for callers that should follow it. The chooser
+    /// ignores this — you may be adding several, and the list is where the
+    /// next one starts — while the grid replaces itself with the new
+    /// instrument, since that's where you already were.
+    var onCreated: ((InstrumentInstance) -> Void)?
     /// Duplicate's shortcut: prefill everything from an existing
     /// instrument — "a copy" is usually "near what I want", and every
     /// prefilled field stays editable before anything exists.
@@ -34,12 +39,14 @@ struct InstrumentCreator: View {
     init(
         store: InstrumentStore, settings: Settings, template: Instrument,
         source: InstrumentInstance? = nil,
-        strings: [Int]? = nil
+        strings: [Int]? = nil,
+        onCreated: ((InstrumentInstance) -> Void)? = nil
     ) {
         self.store = store
         self.settings = settings
         self.template = template
         self.source = source
+        self.onCreated = onCreated
         _name = State(
             initialValue: source.map {
                 store.nextName(after: $0.name, templateID: template.id)
@@ -69,6 +76,7 @@ struct InstrumentCreator: View {
             settings.favorites.append(added.id)
         }
         dismiss()
+        onCreated?(added)
     }
 
     #if os(macOS)

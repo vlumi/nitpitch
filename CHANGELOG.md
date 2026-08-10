@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 7 — 2026-08-10
+
 - Mac: the launch screen's instrument list scrolls instead of shrinking
   the tuner. However many instruments you keep, the dial gets the space —
   and it now grows with the window rather than stopping at a fixed size,

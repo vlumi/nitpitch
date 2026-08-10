@@ -43,11 +43,17 @@
     "Add to favorites": {
       "comment": "Star on an instrument row: pin it to the launch screen"
     },
+    "All instruments": {
+      "comment": "Preset browser filter: don't narrow to one instrument"
+    },
     "All instruments…": {
       "comment": "Launch rack: the row into the full instrument list"
     },
     "All presets": {
       "comment": "Presets sheet: the non-favorited presets' section"
+    },
+    "All presets…": {
+      "comment": "Launch screen row: opens the whole preset collection"
     },
     "Appearance": {
       "comment": "Setting: follow the system appearance, or force light/dark"
@@ -116,6 +122,9 @@
     },
     "Favorites": {
       "comment": "Presets sheet: the favorited presets' section"
+    },
+    "Filter by instrument": {
+      "comment": "Accessibility label for the preset browser's filter menu"
     },
     "Fretted": {
       "comment": "Instrument picker section: fretted string instruments",
@@ -196,6 +205,9 @@
     "No audio input device is available.": {
       "comment": "Shown when the engine reports no usable input"
     },
+    "No presets for this instrument.": {
+      "comment": "Shown when a browser filter matches nothing"
+    },
     "Not listening": {
       "comment": "Shown when the tuner is stopped"
     },
@@ -258,6 +270,9 @@
     "Raise target": {
       "comment": "Stepper in the single-string view: this string's target up a semitone"
     },
+    "Recently changed": {
+      "comment": "Preset browser sort order: most recently saved first"
+    },
     "Reference": {
       "comment": "Preset-save checkbox: carry the reference pitch"
     },
@@ -275,6 +290,9 @@
     },
     "Rename": {
       "comment": "Context menu action and dialog title: rename an instrument"
+    },
+    "Rename preset": {
+      "comment": "Title of the rename prompt"
     },
     "Replace": {
       "comment": "Confirms saving over an existing preset"
@@ -315,6 +333,9 @@
     "Sign in to iCloud on this device to sync.": {
       "comment": "Footer under the sync switch while no iCloud account is signed in"
     },
+    "Sort": {
+      "comment": "Preset browser: the sort-order menu"
+    },
     "Standard": {
       "comment": "Tuning name: the instrument's standard tuning"
     },
@@ -329,6 +350,9 @@
     },
     "Temperament": {
       "comment": "Tuning-menu picker: how the open-string targets divide their intervals"
+    },
+    "That name is already used for this instrument.": {
+      "comment": "Shown when a rename would collide with another preset of the same instrument"
     },
     "The first four are on the launch screen.": {
       "comment": "Favorites section footer when more than four are starred"

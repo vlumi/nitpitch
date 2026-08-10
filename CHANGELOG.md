@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- All your presets in one place: a row on the launch screen (once you've
+  saved one) opens the whole collection across every instrument —
+  filterable by instrument, sortable by what you changed last, by name,
+  or by instrument, and each row says which instrument it fits, what it
+  carries and when you last touched it. Rename lives here too, which
+  nothing offered before: a typo used to mean saving again and deleting
+  the old one.
 - Presets can be shared: the ↑ on a saved preset shows a QR code for a
   bandmate to scan and a link to send. Opening one offers to load it
   once or keep it, and what you keep is yours — editable, and a later

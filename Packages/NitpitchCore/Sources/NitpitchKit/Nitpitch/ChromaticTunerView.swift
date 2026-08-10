@@ -20,6 +20,7 @@ public struct ChromaticTunerView: View {
     @ObservedObject private var settings: Settings
     @StateObject private var model: NitpitchViewModel
     @State private var isShowingSettings = false
+    @State private var isShowingPresets = false
     /// Only consulted on iOS — `resolvedScheme` reads AppKit directly on the
     /// Mac, where this ambient value is unreliable under a forced scheme.
     @Environment(\.colorScheme) private var systemScheme
@@ -81,7 +82,8 @@ public struct ChromaticTunerView: View {
             // of the window empty below the tuner (the dial-grid's cell had
             // the same disease). Margins live outside, in the 24pt padding.
             let rackHeight = LaunchRack.height(
-                for: pinned, expanded: Set(settings.rackExpanded))
+                for: pinned, expanded: Set(settings.rackExpanded),
+                hasPresets: !presets.presets.isEmpty)
             let stacked = CGSize(width: 400, height: 236 + rackHeight)
             let wide = CGSize(width: 860, height: max(174, 46 + rackHeight))
             let stackedScale = min(
@@ -133,6 +135,12 @@ public struct ChromaticTunerView: View {
             scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
         ) {
             SettingsView(settings: settings)
+        }
+        .appearanceSheet(
+            isPresented: $isShowingPresets,
+            scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
+        ) {
+            PresetBrowser(presets: presets, store: store)
         }
         .task { await model.attach() }
         .onDisappear { model.detach() }
@@ -212,7 +220,11 @@ public struct ChromaticTunerView: View {
                         settings.toggleRackExpanded(id)
                     }
                 },
-                onOpenChooser: onOpenChooser)
+                onOpenChooser: onOpenChooser,
+                // The door appears only once there's a collection behind
+                // it — nothing saved, nothing to browse.
+                onOpenPresets: presets.presets.isEmpty
+                    ? nil : { isShowingPresets = true })
         }
     }
 

@@ -701,6 +701,91 @@ final class NitpitchUITests: XCTestCase {
             "the promise is stated where the toggle is")
     }
 
+    /// The collection's own door, and the rule that it only exists once
+    /// there IS a collection: a fresh install has saved nothing, so the row
+    /// would point at an empty list and cost the rack a row for nothing.
+    func testAllPresetsAppearsOnlyOnceSomethingIsSaved() {
+        let app = launch()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuner.instrument"].waitForExistence(timeout: 10))
+        XCTAssertFalse(
+            app.descendants(matching: .any)["tuner.presets"].exists,
+            "nothing saved yet, so no door")
+
+        savePreset(named: "Gig", in: app)
+
+        // Back to the launch screen — two levels up: grid → chooser → root.
+        returnToLaunchScreen(app)
+        let presetsRow = app.descendants(matching: .any)["tuner.presets"].firstMatch
+        XCTAssertTrue(
+            presetsRow.waitForExistence(timeout: 5), "a saved preset opens the door")
+        presetsRow.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Gig"].waitForExistence(timeout: 5),
+            "the browser lists what was saved")
+        // Catalog tunings are NOT the user's collection — they belong to
+        // templates, can't be renamed, deleted or shared, and would drown
+        // the presets actually made.
+        XCTAssertFalse(app.staticTexts["DADGAD"].exists, "no catalog tunings here")
+    }
+
+    /// Renaming is the browser's edit — before it, a typo could only be
+    /// fixed by saving again under a new name and deleting the old one.
+    func testRenamingAPresetInTheBrowser() {
+        let app = launch()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuner.instrument"].waitForExistence(timeout: 10))
+        savePreset(named: "Gigg", in: app)
+        returnToLaunchScreen(app)
+
+        let presetsRow = app.descendants(matching: .any)["tuner.presets"].firstMatch
+        XCTAssertTrue(presetsRow.waitForExistence(timeout: 5))
+        presetsRow.tap()
+
+        let row = app.staticTexts["Gigg"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.press(forDuration: 1.2)
+        app.buttons["Rename"].firstMatch.tap()
+
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeKey("a", modifierFlags: .command)
+        field.typeText("Gig")
+        app.buttons["Rename"].firstMatch.tap()
+
+        XCTAssertTrue(app.staticTexts["Gig"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Gigg"].exists, "the old name is gone")
+    }
+
+    /// Walk back to the launch screen from an instrument's grid: the path
+    /// is root → chooser → grid, so returning is two taps.
+    private func returnToLaunchScreen(_ app: XCUIApplication) {
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["chooser.guitar"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuner.instrument"].waitForExistence(timeout: 5))
+    }
+
+    /// Save a preset named `name` on the guitar, leaving the app in the
+    /// instrument's grid.
+    private func savePreset(named name: String, in app: XCUIApplication) {
+        app.descendants(matching: .any)["tuner.instrument"].firstMatch.tap()
+        app.descendants(matching: .any)["chooser.guitar"].firstMatch.tap()
+        let tuningMenu = app.buttons["grid.tuning"].firstMatch
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        tuningMenu.tap()
+        app.buttons["Save as preset…"].firstMatch.tap()
+        let nameField = app.textFields.firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText(name)
+        app.buttons["preset.save.confirm"].firstMatch.tap()
+    }
+
     /// Chromatic is the screen you arrive from, so offering it in the chooser
     /// would be offering to navigate to where you already are.
     func testTheChooserDoesNotOfferChromatic() {

@@ -60,6 +60,10 @@ struct LaunchRack: View {
     let onChoosePin: (String, String) -> Void
     let onToggleExpand: (String) -> Void
     let onOpenChooser: () -> Void
+    /// Opens the whole collection. Nil when there is nothing saved yet —
+    /// the row appears only once you own a preset, since a door onto an
+    /// empty collection teaches nothing and costs the rack a row.
+    let onOpenPresets: (() -> Void)?
 
     /// Rows shown before deferring to the chooser.
     static let rowCap = 4
@@ -78,9 +82,15 @@ struct LaunchRack: View {
     /// instruments row, and a chips line per EXPANDED pinned-into
     /// instrument — so the canvas grows by precisely this much and the
     /// fill stays honest.
-    static func height(for entries: [Entry], expanded: Set<String>) -> CGFloat {
+    static func height(
+        for entries: [Entry], expanded: Set<String>, hasPresets: Bool = false
+    ) -> CGFloat {
         let shown = entries.prefix(rowCap)
-        let rows = CGFloat(shown.count + 1)
+        // Instrument rows, the All instruments row, and — once anything is
+        // saved — the All presets row. Counted exactly: overstating the
+        // rack is what once left a third of the window empty below the
+        // tuner.
+        let rows = CGFloat(shown.count + 1 + (hasPresets ? 1 : 0))
         let chipRows = CGFloat(
             shown.filter { !$0.pins.isEmpty && expanded.contains($0.id) }.count)
         return rows * rowHeight + (rows - 1) * rowSpacing + chipRows * chipRowHeight
@@ -95,6 +105,9 @@ struct LaunchRack: View {
                 }
             }
             allInstrumentsRow
+            if let onOpenPresets {
+                allPresetsRow(action: onOpenPresets)
+            }
         }
     }
 
@@ -231,5 +244,33 @@ struct LaunchRack: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("tuner.instrument")
+    }
+
+    /// The collection, all of it. Deliberately the same shape as the row
+    /// above — same height, same chevron, same ellipsis — so the two read
+    /// as a pair of doors rather than a row and an oddity.
+    private func allPresetsRow(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.footnote)
+                Text("All presets…", bundle: .module)
+                    .font(.callout.weight(.medium))
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: Self.rowHeight)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.secondary.opacity(0.12))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("tuner.presets")
     }
 }

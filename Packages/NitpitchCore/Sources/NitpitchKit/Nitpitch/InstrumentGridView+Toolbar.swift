@@ -176,6 +176,7 @@ extension InstrumentGridView {
                     }
                 }
                 .disabled(instance.isLocked)
+                .accessibilityIdentifier("grid.editStrings")
             }
 
             Picker(selection: $columns) {

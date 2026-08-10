@@ -62,6 +62,23 @@ enum PresetArrival: Identifiable {
     }
 }
 
+/// An instrument the user needs but doesn't have: the template and the
+/// string count an orphaned preset requires. Carried from the browser to
+/// the chooser, which owns the creation sheet.
+public struct InstrumentShape: Identifiable, Equatable, Sendable {
+    public let templateID: String
+    /// The preset's own pitches — a better starting point than the
+    /// template's, since they're exactly the tuning being restored.
+    public let strings: [Int]
+
+    public init(templateID: String, strings: [Int]) {
+        self.templateID = templateID
+        self.strings = strings
+    }
+
+    public var id: String { "\(templateID):\(strings)" }
+}
+
 /// What a payload would do, spelled out — the same vocabulary the preset
 /// rows and the tuning menu use, so a shared setup reads the way a saved
 /// one does. (An explicitly-equal temperament stays unspelled, as there.)

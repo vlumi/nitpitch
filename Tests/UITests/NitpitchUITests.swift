@@ -365,6 +365,37 @@ final class NitpitchUITests: XCTestCase {
             "the fifth dial exists")
     }
 
+    /// An existing instrument's SHAPE is fixed: the editor retunes it and
+    /// nothing more. Adding or removing strings in place stranded every
+    /// preset saved at the old shape and left the live grid holding a dial
+    /// per old string — so the way to a differently-strung instrument is
+    /// to make one, which the editor points at.
+    func testTheEditorRetunesButCannotReshape() {
+        let app = launch()
+        openViolinGrid(app)
+
+        // Open this instrument's string editor from the grid's … menu.
+        openLayoutMenu(app)
+        let editStrings = app.descendants(matching: .any)["grid.editStrings"].firstMatch
+        XCTAssertTrue(editStrings.waitForExistence(timeout: 5))
+        editStrings.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["editor.row.0"].firstMatch
+                .waitForExistence(timeout: 5))
+        // The rows are here, so retuning still lives on this screen —
+        // reshaping is what doesn't.
+        XCTAssertFalse(
+            app.descendants(matching: .any)["editor.add.high"].exists, "no add-string here")
+        XCTAssertFalse(app.descendants(matching: .any)["editor.add.low"].exists)
+        XCTAssertFalse(
+            app.descendants(matching: .any)["editor.remove.0"].exists,
+            "no remove-string either")
+        // And the way to a different shape is offered rather than hidden.
+        XCTAssertTrue(
+            app.descendants(matching: .any)["editor.changeCount"].firstMatch.exists)
+    }
+
     /// The shape chooses the presentation: rotate to landscape and the dials
     /// become strips — strings drawn as strings — rotate back and the grid
     /// returns.

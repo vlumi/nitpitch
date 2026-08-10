@@ -35,6 +35,8 @@ public struct ChromaticTunerView: View {
     /// Goes straight to one instance's grid — a rack row's path, skipping
     /// the chooser the way a favorite should.
     private let onChooseInstance: (String) -> Void
+    /// An orphaned preset's way back: make the instrument it needs.
+    private let onCreateInstrument: (InstrumentShape) -> Void
     /// A pin's path: the instrument opened INTO a preset — or, locked,
     /// merely opened (the navigation half of a pin is not a change).
     private let onChoosePin: (String, String) -> Void
@@ -44,7 +46,8 @@ public struct ChromaticTunerView: View {
         presets: PresetStore,
         onOpenChooser: @escaping () -> Void,
         onChooseInstance: @escaping (String) -> Void,
-        onChoosePin: @escaping (String, String) -> Void
+        onChoosePin: @escaping (String, String) -> Void,
+        onCreateInstrument: @escaping (InstrumentShape) -> Void
     ) {
         self.settings = settings
         self.store = store
@@ -53,6 +56,7 @@ public struct ChromaticTunerView: View {
         self.onOpenChooser = onOpenChooser
         self.onChooseInstance = onChooseInstance
         self.onChoosePin = onChoosePin
+        self.onCreateInstrument = onCreateInstrument
         // Full band, not the saved instrument's: this screen is chromatic by
         // definition, and an instrument is somewhere you navigate to.
         _model = StateObject(
@@ -140,7 +144,19 @@ public struct ChromaticTunerView: View {
             isPresented: $isShowingPresets,
             scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
         ) {
-            PresetBrowser(presets: presets, store: store)
+            PresetBrowser(
+                presets: presets, store: store,
+                onLoad: { preset, instance in
+                    presets.load(preset, onto: instance, in: store)
+                    onChooseInstance(instance.id)
+                },
+                onCreateInstrument: { preset in
+                    // An orphan's way back: the chooser opens its creation
+                    // sheet already shaped to fit this preset.
+                    onCreateInstrument(
+                        InstrumentShape(
+                            templateID: preset.templateID, strings: preset.strings))
+                })
         }
         .task { await model.attach() }
         .onDisappear { model.detach() }

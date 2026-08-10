@@ -23,6 +23,9 @@ struct EditingStrings: Identifiable {
 struct Creation: Identifiable {
     let template: Instrument
     var source: InstrumentInstance?
+    /// An explicit string list — an orphaned preset's shape, which beats
+    /// both the source's and the template's.
+    var strings: [Int]?
     var id: String { source?.id ?? template.id }
 }
 
@@ -42,6 +45,9 @@ struct InstrumentChooser: View {
     @ObservedObject var settings: Settings
     @ObservedObject var store: InstrumentStore
     @ObservedObject var sync: SyncEngine
+    /// A shape an orphaned preset needs. Set by the browser; the creation
+    /// sheet opens on it once, then it clears.
+    var pendingShape: Binding<InstrumentShape?> = .constant(nil)
     let onChoose: (String) -> Void
 
     /// The instance being renamed, driving the alert.
@@ -138,7 +144,14 @@ struct InstrumentChooser: View {
         }
         .frame(minWidth: 320, minHeight: 380)
         .sheet(item: $editing) { target in
-            InstrumentEditor(store: store, settings: settings, instanceID: target.id)
+            InstrumentEditor(
+                store: store, settings: settings, instanceID: target.id,
+                onChangeStringCount: { instance in
+                    // A different count is a different instrument: the
+                    // creation sheet, prefilled from this one.
+                    guard let template = instance.template else { return }
+                    creating = Creation(template: template, source: instance)
+                })
         }
         .alert(
             Text("Rename", bundle: .module),
@@ -166,8 +179,21 @@ struct InstrumentChooser: View {
         .sheet(item: $creating) { creation in
             InstrumentCreator(
                 store: store, settings: settings, template: creation.template,
-                source: creation.source)
+                source: creation.source, strings: creation.strings)
         }
+        // An orphaned preset asked for an instrument that fits it: open the
+        // creation sheet already shaped, and consume the request so it
+        // can't fire twice.
+        .onAppear { consumePendingShape() }
+        .onChangeCompat(of: pendingShape.wrappedValue) { _ in consumePendingShape() }
+    }
+
+    private func consumePendingShape() {
+        guard let shape = pendingShape.wrappedValue,
+            let template = Instrument.named(shape.templateID)
+        else { return }
+        creating = Creation(template: template, source: nil, strings: shape.strings)
+        pendingShape.wrappedValue = nil
     }
 
     /// The starred instruments, in the favorites list's own order — the

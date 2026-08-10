@@ -24,6 +24,15 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Adding or removing strings on an instrument you already have is gone,
+  and that's a fix: the screen kept showing dials for the old strings
+  until you left and came back, and every preset you'd saved for that
+  instrument quietly stopped fitting it. A different number of strings is
+  a different instrument — "Change string count…" in the string editor
+  makes one, keeping the original.
+- All presets: tap one to load it — it asks which instrument when several
+  fit — and a preset that fits nothing you own now says so and offers to
+  make the instrument it needs, instead of just refusing.
 - All your presets in one place: a row on the launch screen (once you've
   saved one) opens the whole collection across every instrument —
   filterable by instrument, sortable by what you changed last, by name,

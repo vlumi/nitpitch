@@ -33,7 +33,8 @@ struct InstrumentCreator: View {
 
     init(
         store: InstrumentStore, settings: Settings, template: Instrument,
-        source: InstrumentInstance? = nil
+        source: InstrumentInstance? = nil,
+        strings: [Int]? = nil
     ) {
         self.store = store
         self.settings = settings
@@ -43,7 +44,10 @@ struct InstrumentCreator: View {
             initialValue: source.map {
                 store.nextName(after: $0.name, templateID: template.id)
             } ?? store.nextAddedName(for: template))
-        _strings = State(initialValue: source?.strings ?? template.strings)
+        // An explicit list wins over the source's: an orphaned preset opens
+        // this sheet already shaped to fit it, so "create an instrument for
+        // this preset" needs no counting by hand.
+        _strings = State(initialValue: strings ?? source?.strings ?? template.strings)
     }
 
     var body: some View {

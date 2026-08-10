@@ -199,6 +199,28 @@ one of the drafts that lost.
   an intent only the user can tell apart. Unreadable links and links
   fitting no owned instrument are refused plainly: applying a tuning
   nobody sent is worse than a link that doesn't open.
+- **An instrument's SHAPE is fixed once it exists.** Editing a string
+  count in place was wrong in both directions: the live screen builds one
+  tuner per string at init, so `configure`'s `zip` silently truncated (a
+  7th string with no dial; a removed string's dial still showing), and
+  every preset saved at the old shape was stranded, since a preset loads
+  only onto an instrument with the same number of strings. So
+  `InstrumentStore.setEditedStrings` refuses a count change — the guard
+  is the store's, not the UI's — `StringListEditor` grows and shrinks
+  only while `canResize` (the creation sheet), and the editor offers
+  "Change string count…", which opens the creation sheet prefilled from
+  this instrument. Discoverability is the point: without that button,
+  "make a 7-string" means finding the + menu and knowing it offers
+  counts.
+- **An orphaned preset says so, and has a way back.** A preset whose
+  template + string count matches nothing owned (its instrument deleted,
+  or it arrived by link for a shape nobody has) can't be loaded.
+  `PresetFit` decides that; the browser labels the row ("No 8-string
+  Guitar") and its tap opens the creation sheet already shaped to fit —
+  a row that silently does nothing reads as broken. Tapping a loadable
+  preset loads it and goes there, asking WHICH instrument only when
+  several fit, most recently used first: loading onto the wrong guitar
+  retunes an instrument the user didn't mean.
 - **The browser is YOUR collection; the per-instrument sheet is one
   instrument's window onto it.** `PresetBrowser` (the launch screen's
   "All presets…" row) lists saved presets across every instrument, with

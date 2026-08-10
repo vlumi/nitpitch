@@ -377,6 +377,30 @@ one of the drafts that lost.
   path. Pinned chips jump straight to an instance; the instance
   remembering its state is what makes one tap enough — a favorite-preset
   chip would also have had to guess which guitar to load onto.
+- **The Mac's launch screen scrolls its rack; the phone's scales.** A
+  phone has a fixed screen, so the rack and the tuner share ONE design
+  canvas scaled as a unit — every pinned row costs the dial size, which
+  is what `LaunchRack.rowCap` (4) protects. A window can be resized and
+  its rack can scroll, so `ChromaticTunerView+Mac.swift` serves them in
+  the other order: **the tuner is paid first** (`macTunerShare`, 0.55 of
+  a stacked window) and the rack scrolls in the remainder, uncapped —
+  `rowCap: nil`, because a scrolling list has nothing to protect.
+  Three things about this were each a real mistake:
+  1. **`TunerDial` is a FIXED-size unit** (a 110pt arc with the readout
+     stacked below), so widening its frame only spreads the same short
+     arc into a flat smear. It must be `scaleEffect`-ed as a whole, the
+     way the phone's canvas always did — then a bigger window means a
+     bigger tuner with its proportions intact, and no aspect bound is
+     needed to defend the shape.
+  2. **Side-by-side is chosen on leftover WIDTH, not aspect ratio.** With
+     a fixed 320pt rack column, a 670×580 window passed a `width >
+     height × 1.15` test and left the dial ~300pt — squeezed and worse
+     than stacking. The question is "is there a real dial's worth of
+     width after the rack?" (`minSideBySideDialWidth`).
+  3. **Pin chips wrap** (`ChipFlow`). An `HStack` distributes a shortfall
+     by compressing its children, so five pinned tunings in a 320pt
+     column read "S ta" and "D rc" — a shortcut nobody can read is not a
+     shortcut.
 - **Vertical string order is low-at-bottom by default — strips and the
   dial grid's rows alike.** Pitch intuition and tab notation agree, and a
   violin has no view in which its strings stack vertically at all; "low

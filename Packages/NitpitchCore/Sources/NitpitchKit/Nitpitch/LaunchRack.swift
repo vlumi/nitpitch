@@ -54,6 +54,8 @@ struct LaunchRack: View {
     let entries: [Entry]
     /// Which rows show their chips — the accordion, persisted in Settings.
     let expanded: Set<String>
+    /// How many rows THIS rack shows. Nil = all of them.
+    var rowCap: Int? = LaunchRack.rowCap
     let onChoose: (String) -> Void
     /// A pin's tap: open the instrument INTO the preset (or, locked, just
     /// open it — the navigation half of a pin is not a change).
@@ -65,7 +67,10 @@ struct LaunchRack: View {
     /// empty collection teaches nothing and costs the rack a row.
     let onOpenPresets: (() -> Void)?
 
-    /// Rows shown before deferring to the chooser.
+    /// Rows shown before deferring to the chooser — the phone's budget,
+    /// where the rack shares a fixed canvas with the tuner and every row
+    /// costs the dial its size. A SCROLLING rack (the Mac) passes nil and
+    /// shows everything: there is nothing to protect when the list scrolls.
     static let rowCap = 4
     /// Design metrics the chromatic canvas math builds on. The row is a
     /// finger target first: 40 sat under Apple's 44pt floor and the field
@@ -83,22 +88,53 @@ struct LaunchRack: View {
     /// instrument — so the canvas grows by precisely this much and the
     /// fill stays honest.
     static func height(
-        for entries: [Entry], expanded: Set<String>, hasPresets: Bool = false
+        for entries: [Entry], expanded: Set<String>, hasPresets: Bool = false,
+        rowCap: Int? = LaunchRack.rowCap
     ) -> CGFloat {
-        let shown = entries.prefix(rowCap)
+        let shown = rowCap.map { Array(entries.prefix($0)) } ?? entries
         // Instrument rows, the All instruments row, and — once anything is
         // saved — the All presets row. Counted exactly: overstating the
         // rack is what once left a third of the window empty below the
         // tuner.
         let rows = CGFloat(shown.count + 1 + (hasPresets ? 1 : 0))
-        let chipRows = CGFloat(
-            shown.filter { !$0.pins.isEmpty && expanded.contains($0.id) }.count)
+        // Chips wrap, so an expanded instrument can cost more than one chip
+        // line. Estimated from the names' own length — the exact wrap is the
+        // layout's business, and this only has to be close enough that the
+        // scroll view doesn't clip.
+        let chipRows = shown.filter { !$0.pins.isEmpty && expanded.contains($0.id) }
+            .reduce(CGFloat(0)) { total, entry in
+                total + CGFloat(estimatedChipRows(for: entry))
+            }
         return rows * rowHeight + (rows - 1) * rowSpacing + chipRows * chipRowHeight
+    }
+
+    /// The rows this rack draws — capped on the phone, all of them where
+    /// the rack scrolls.
+    private var shownEntries: [Entry] {
+        rowCap.map { Array(entries.prefix($0)) } ?? entries
+    }
+
+    /// Roughly how many lines an instrument's chips take, for the height
+    /// estimate — about 26 points of chip per character plus the padding,
+    /// against a nominal 300pt of usable width.
+    private static func estimatedChipRows(for entry: Entry) -> Int {
+        let widths = entry.pins.map { CGFloat($0.name.count) * 7.5 + 46 }
+        var rows = 1
+        var used: CGFloat = 0
+        for width in widths {
+            if used + width > 290, used > 0 {
+                rows += 1
+                used = width
+            } else {
+                used += width + 6
+            }
+        }
+        return rows
     }
 
     var body: some View {
         VStack(spacing: Self.rowSpacing) {
-            ForEach(entries.prefix(Self.rowCap)) { entry in
+            ForEach(shownEntries) { entry in
                 row(for: entry)
                 if !entry.pins.isEmpty, expanded.contains(entry.id) {
                     pinChips(for: entry)
@@ -117,7 +153,10 @@ struct LaunchRack: View {
     /// and wear the lock; tapping still navigates, but loads nothing —
     /// only the load half of a pin is a change.
     private func pinChips(for entry: Entry) -> some View {
-        HStack(spacing: 6) {
+        // Wrapping, not one squeezed line: a guitar with five pinned tunings
+        // in a 320pt column compressed the chips until they read "S ta" and
+        // "D rc". A chip whose name is unreadable is not a shortcut.
+        ChipFlow(spacing: 6, rowHeight: Self.chipRowHeight - 6) {
             ForEach(entry.pins) { pin in
                 Button {
                     onChoosePin(entry.id, pin.presetID)
@@ -149,10 +188,8 @@ struct LaunchRack: View {
                 .opacity(entry.isLocked ? 0.45 : 1)
                 .accessibilityIdentifier("pin.\(entry.id).\(pin.name)")
             }
-            Spacer(minLength: 0)
         }
         .padding(.leading, 26)
-        .frame(height: Self.chipRowHeight - 6)
     }
 
     /// Two buttons, one row: the row itself opens the instrument, and a

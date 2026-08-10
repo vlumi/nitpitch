@@ -34,6 +34,8 @@ public struct RootView: View {
     /// iCloud syncing, off unless the user asked for it. Created here
     /// because it needs every store at once, and they all meet here.
     @StateObject private var sync: SyncEngine
+    /// A shared preset that just arrived, driving the import sheet.
+    @State private var arrival: PresetArrival?
 
     public init(settings: Settings, audio: AudioSessionController) {
         self.settings = settings
@@ -87,6 +89,10 @@ public struct RootView: View {
             // principal slot and the gear is a real toolbar item (see
             // `ChromaticTunerView`), so hiding it would hide the header.
         }
+        .onOpenURL { receive($0) }
+        .sheet(item: $arrival) { arrival in
+            presetArrivalSheet(arrival)
+        }
         // Syncing starts here rather than in `init`: reaching the iCloud
         // daemon is a variable-latency call, and doing it during view
         // construction put that latency in front of the first frame.
@@ -103,6 +109,32 @@ public struct RootView: View {
         // Forced onto the whole hierarchy, destinations included; nil follows
         // the system.
         .preferredColorScheme(settings.appearance.colorScheme)
+    }
+
+    /// A shared preset arriving from outside (`nitpitch://preset#…`).
+    ///
+    /// The link names a template, not an instrument, so this picks the
+    /// receiver's instrument to apply it to: the most recently used one of
+    /// that template whose string count fits — "my guitar" rather than an
+    /// arbitrary one — and refuses when they own none, since a preset that
+    /// fits nothing has nowhere to go.
+    private func receive(_ url: URL) {
+        guard let link = PresetLinkCodec.link(from: url) else {
+            arrival = .unreadable
+            return
+        }
+        let candidates =
+            store.instances
+            .filter { $0.templateID == link.templateID && $0.strings.count == link.strings.count }
+            .sorted { ($0.lastUsedAt ?? .distantPast) > ($1.lastUsedAt ?? .distantPast) }
+        guard let target = candidates.first else {
+            arrival = .noInstrument(link)
+            return
+        }
+        arrival = .offer(
+            link: link, instrumentID: target.id,
+            resolution: PresetImport.resolve(
+                link: link, existing: presets.existingNames(templateID: link.templateID)))
     }
 
     /// A pin's tap: load the preset — an explicit pick, exactly as if
@@ -124,6 +156,53 @@ public struct RootView: View {
             }
         }
         path.append(.instrument(id))
+    }
+
+    @ViewBuilder
+    private func presetArrivalSheet(_ arrival: PresetArrival) -> some View {
+        switch arrival {
+        case .offer(let link, let instrumentID, let resolution):
+            if let instance = resolve(instrumentID) {
+                PresetImportView(
+                    link: link,
+                    instrumentName: instance.name,
+                    summary: PresetPayloadSummary.text(
+                        strings: link.strings, referenceHz: link.referenceHz,
+                        temperament: link.temperament),
+                    resolution: resolution,
+                    onLoadOnce: {
+                        // Trying a friend's tuning is not a commitment to
+                        // store it: the values land on the instrument and
+                        // nothing joins the collection.
+                        store.setTuning(id: instance.id, strings: link.strings)
+                        if let hz = link.referenceHz {
+                            store.setReference(id: instance.id, ReferencePitch(hz: hz))
+                        }
+                        if let temperament = link.temperament {
+                            store.setTemperament(id: instance.id, temperament)
+                        }
+                        path = [.instrument(instance.id)]
+                    },
+                    onSave: { chosen in
+                        if let saved = presets.importing(link, as: chosen) {
+                            presets.load(saved, onto: instance, in: store)
+                        }
+                        path = [.instrument(instance.id)]
+                    })
+            }
+        case .noInstrument(let link):
+            PresetArrivalProblemView(
+                message: Text(
+                    "This preset is for an instrument you don't have yet. Add one, then open the link again.",
+                    bundle: .module),
+                detail: PresetPayloadSummary.text(
+                    strings: link.strings, referenceHz: link.referenceHz,
+                    temperament: link.temperament))
+        case .unreadable:
+            PresetArrivalProblemView(
+                message: Text("This link isn't readable.", bundle: .module),
+                detail: nil)
+        }
     }
 
     /// An instance by id — and nothing else: instruments exist only by

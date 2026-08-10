@@ -55,6 +55,7 @@ nitpitch/
     │   │                           DetectorBank (engines + arbitration), SubharmonicFilter,
     │   │                           Detection constants, DetectionTuning, ReadingSmoother
     │   ├── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
+    │   ├── Sharing/                PresetLink (+ codec), PresetImport rules
     │   └── Sync/                   SyncMerge (last-writer-wins + tombstones)
     │                               (transport: NitpitchKit/App/
     │                               {KeyValueSyncStore,SyncEngine}.swift)
@@ -175,6 +176,29 @@ one of the drafts that lost.
   construction. Loading copies values out; saving — with a replace confirm —
   is the only way values flow back. Presets that don't fit the instrument
   (template or string count) are never offered.
+- **A shared preset is a value, and importing is a save from elsewhere.**
+  The link carries the payload only — template, pitches, optional
+  reference and temperament, and a suggested name — in the URL's
+  *fragment*, which is never sent to a server, so a static host learns
+  nothing about what anyone shared. Deliberately **no id, no device, no
+  timestamp**: carrying the sender's id would make the link the identity
+  rather than the name, letting a re-share silently overwrite edits the
+  receiver made to their own copy, and putting two people who derived
+  from one original in a fight over one entry — and ids are what sync
+  merges on, so an imported one could collide with a preset the receiver
+  already owns elsewhere.
+  The **receiver takes full ownership**: an accepted preset is an
+  ordinary preset — editable, deletable, synced — because the app has no
+  account, no channel to push corrections through and no way to revoke,
+  so "still the sender's" would be a promise the architecture can't keep
+  (and fiction anyway, since sync rewrites presets under
+  last-writer-wins). A re-import is therefore an ordinary **name
+  collision**, resolved by the rule saving already uses — template +
+  case-insensitive name, confirm before overwriting — offering Replace
+  ("here's the corrected version") or Keep both ("here's a variant"),
+  an intent only the user can tell apart. Unreadable links and links
+  fitting no owned instrument are refused plainly: applying a tuning
+  nobody sent is worse than a link that doesn't open.
 - **Provenance, not protection**: the header pill names the loaded preset;
   granular edits keep the claim and show "(edited)"; only an explicit menu
   pick replaces it. Drift-clears-the-claim was tried first and made the

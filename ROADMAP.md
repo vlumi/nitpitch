@@ -56,11 +56,13 @@ everything else depends on, and worth putting in early.
 
 ## 2. Other features worth considering
 
-- **Preset share + import** — a preset serializes into a URL fragment
-  (small enough; no server) and renders as a QR code; importing shows a
-  preview ("Guitar · Open G · A=442") with *Load once* and *Save*.
-  nitpitch.app hosts the long tail — scordatura, historical setups — as
-  those same links, so the collection grows without app updates.
+- **nitpitch.app's tuning collection** — now that presets serialize into
+  links (shipped), the site can host the long tail — scordatura,
+  historical setups — as ordinary static pages of `nitpitch://preset#…`
+  links, so the collection grows without app updates. Needs the site
+  itself, and a decision on whether those links become Universal Links
+  (a domain and an apple-app-site-association file) so they open the app
+  from a browser rather than needing the scheme.
 
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.

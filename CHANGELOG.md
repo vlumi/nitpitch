@@ -24,6 +24,11 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Presets can be shared: the ↑ on a saved preset shows a QR code for a
+  bandmate to scan and a link to send. Opening one offers to load it
+  once or keep it, and what you keep is yours — editable, and a later
+  version of the same thing asks whether to replace it or keep both
+  rather than overwriting your edits. Nothing but the setup travels.
 - Launching is quick again on a cold start: with iCloud sync on, the app
   was talking to iCloud before it drew anything, and how long that took
   was up to the system. Syncing now begins after the tuner is on screen.

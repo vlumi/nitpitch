@@ -24,6 +24,9 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Making an instrument from another one — "Change string count…", or
+  Duplicate from inside an instrument — now opens the one you just made,
+  instead of leaving you on the old one wondering whether it worked.
 - Adding or removing strings on an instrument you already have is gone,
   and that's a fix: the screen kept showing dials for the old strings
   until you left and came back, and every preset you'd saved for that

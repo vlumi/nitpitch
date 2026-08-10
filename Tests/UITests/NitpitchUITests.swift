@@ -396,6 +396,48 @@ final class NitpitchUITests: XCTestCase {
             app.descendants(matching: .any)["editor.changeCount"].firstMatch.exists)
     }
 
+    /// Making an instrument FROM an instrument lands you on the result.
+    /// Staying on the old one leaves the thing you just made invisible —
+    /// you'd have to walk back to the list and find it.
+    func testChangingStringCountOpensTheNewInstrument() {
+        let app = launch()
+        openViolinGrid(app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.cell.3"].firstMatch.exists,
+            "a violin: four dials")
+
+        openLayoutMenu(app)
+        let editStrings = app.descendants(matching: .any)["grid.editStrings"].firstMatch
+        XCTAssertTrue(editStrings.waitForExistence(timeout: 5))
+        editStrings.tap()
+
+        let changeCount = app.descendants(matching: .any)["editor.changeCount"].firstMatch
+        XCTAssertTrue(changeCount.waitForExistence(timeout: 5))
+        changeCount.tap()
+
+        // The creation sheet, prefilled from this violin — grow it by one.
+        let summary = app.staticTexts["4 strings"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        summary.tap()
+        let addHigh = app.descendants(matching: .any)["editor.add.high"].firstMatch
+        XCTAssertTrue(addHigh.waitForExistence(timeout: 5))
+        addHigh.tap()
+        app.buttons["creator.create"].firstMatch.tap()
+
+        // We're now ON the new instrument, which has the fifth dial.
+        XCTAssertTrue(
+            app.descendants(matching: .any)["grid.cell.4"].firstMatch
+                .waitForExistence(timeout: 10),
+            "the five-string instrument is what's on screen")
+        // ...and Back leads to the list, not to the instrument we came from:
+        // the new screen REPLACED the old rather than stacking on it.
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["chooser.violin"].firstMatch
+                .waitForExistence(timeout: 5),
+            "back goes to the instrument list")
+    }
+
     /// The shape chooses the presentation: rotate to landscape and the dials
     /// become strips — strings drawn as strings — rotate back and the grid
     /// returns.

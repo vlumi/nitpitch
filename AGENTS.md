@@ -211,7 +211,16 @@ one of the drafts that lost.
   "Change string count…", which opens the creation sheet prefilled from
   this instrument. Discoverability is the point: without that button,
   "make a 7-string" means finding the + menu and knowing it offers
-  counts.
+  counts. A creation started from an INSTRUMENT lands on the result and
+  REPLACES that screen (`path = [.chooser, .instrument(new)]`), so Back
+  leads to the list rather than stacking the old instrument behind the
+  new one; a creation started from the chooser stays on the list, since
+  you may be adding several. **The destination is `.id(instance.id)`**:
+  replacing the top of the stack with another `.instrument` route reuses
+  the view — and its `StateObject` tuners, one per string of the OLD
+  instrument — so a five-string instrument arrived at a four-string
+  screen and tripped the per-string assertion. Identity is per
+  instrument, not per route slot.
 - **An orphaned preset says so, and has a way back.** A preset whose
   template + string count matches nothing owned (its instrument deleted,
   or it arrived by link for a shape nobody has) can't be loaded.

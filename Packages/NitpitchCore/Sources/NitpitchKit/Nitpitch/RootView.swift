@@ -87,7 +87,24 @@ public struct RootView: View {
                     if let instance = resolve(id) {
                         InstrumentGridView(
                             instance: instance, store: store, presets: presets,
-                            audio: audio, settings: settings, detection: detection)
+                            audio: audio, settings: settings, detection: detection,
+                            onOpenCreated: { created in
+                                // REPLACE rather than push: the instrument
+                                // that was just made from this one takes
+                                // this screen's place, so Back still leads
+                                // to the list instead of stacking the old
+                                // instrument behind the new one.
+                                path = [.chooser, .instrument(created)]
+                            }
+                        )
+                        // Identity per INSTRUMENT, not per route slot.
+                        // Replacing the top of the stack with another
+                        // `.instrument` reuses this view — and its
+                        // StateObject tuners, one per string of the OLD
+                        // instrument — so a five-string instrument
+                        // arrived at a four-string screen. `.id` forces
+                        // a fresh view, which builds the right tuners.
+                        .id(instance.id)
                     }
                 case .string(let id, let index):
                     if let instance = resolve(id) {

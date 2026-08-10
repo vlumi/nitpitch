@@ -17,29 +17,29 @@ import SwiftUI
 /// `tuner.note`, `tuner.cents`, `tuner.status`, `tuner.instrument`,
 /// `tuner.reference`, `tuner.settings`.
 public struct ChromaticTunerView: View {
-    @ObservedObject private var settings: Settings
-    @StateObject private var model: NitpitchViewModel
+    @ObservedObject var settings: Settings
+    @StateObject var model: NitpitchViewModel
     @State private var isShowingSettings = false
-    @State private var isShowingPresets = false
+    @State var isShowingPresets = false
     /// Only consulted on iOS — `resolvedScheme` reads AppKit directly on the
     /// Mac, where this ambient value is unreliable under a forced scheme.
     @Environment(\.colorScheme) private var systemScheme
 
-    @ObservedObject private var store: InstrumentStore
-    @ObservedObject private var presets: PresetStore
+    @ObservedObject var store: InstrumentStore
+    @ObservedObject var presets: PresetStore
     /// Kept for the reference tone: the readout beside the stepper is its
     /// button, and the tone lives on the controller (the app's one engine).
-    private let audio: AudioSessionController
+    let audio: AudioSessionController
     /// Opens the pushed instrument list.
-    private let onOpenChooser: () -> Void
+    let onOpenChooser: () -> Void
     /// Goes straight to one instance's grid — a rack row's path, skipping
     /// the chooser the way a favorite should.
-    private let onChooseInstance: (String) -> Void
+    let onChooseInstance: (String) -> Void
     /// An orphaned preset's way back: make the instrument it needs.
-    private let onCreateInstrument: (InstrumentShape) -> Void
+    let onCreateInstrument: (InstrumentShape) -> Void
     /// A pin's path: the instrument opened INTO a preset — or, locked,
     /// merely opened (the navigation half of a pin is not a change).
-    private let onChoosePin: (String, String) -> Void
+    let onChoosePin: (String, String) -> Void
 
     public init(
         settings: Settings, audio: AudioSessionController, store: InstrumentStore,
@@ -66,6 +66,76 @@ public struct ChromaticTunerView: View {
     }
 
     public var body: some View {
+        content
+            .padding(24)
+            // The header IS the toolbar now, rather than a hand-drawn imitation
+            // of one — the gear gets the system's size, position and tint for
+            // free, identical to the chooser's +. The meter rides the principal
+            // slot: whether the app can hear anything applies to the whole
+            // screen, so it belongs in the chrome, on the dial's axis.
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    LevelMeter(level: model.level)
+                        .frame(width: 72, height: 4)
+                }
+                // macOS reaches settings through the app menu (⌘,), so a gear
+                // in the window would be a second door to the same room.
+                #if !os(macOS)
+                ToolbarItem(placement: .primaryAction) { settingsButton }
+                #endif
+            }
+            // The sheet needs a *concrete* scheme — see `appearanceSheet` for why
+            // passing the optional through would strand it on the last choice.
+            .appearanceSheet(
+                isPresented: $isShowingSettings,
+                scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
+            ) {
+                SettingsView(settings: settings)
+            }
+            .appearanceSheet(
+                isPresented: $isShowingPresets,
+                scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
+            ) {
+                PresetBrowser(
+                    presets: presets, store: store,
+                    onLoad: { preset, instance in
+                        presets.load(preset, onto: instance, in: store)
+                        onChooseInstance(instance.id)
+                    },
+                    onCreateInstrument: { preset in
+                        // An orphan's way back: the chooser opens its creation
+                        // sheet already shaped to fit this preset.
+                        onCreateInstrument(
+                            InstrumentShape(
+                                templateID: preset.templateID, strings: preset.strings))
+                    })
+            }
+            .task { await model.attach() }
+            .onDisappear { model.detach() }
+            // Only the reference matters here — the instrument doesn't change this
+            // screen's band, which is always full.
+            .onChangeCompat(of: settings.reference) { _ in reconfigure() }
+    }
+
+    /// Portrait: everything in one column.
+    /// What fills the window, before the shared chrome goes on.
+    ///
+    /// The two platforms want opposite things here. A PHONE has a fixed
+    /// screen, so the rack and the tuner share one design canvas that scales
+    /// as a unit — every pinned row costs the dial some size, which is why
+    /// the rack caps at four rows. A WINDOW can be resized and its rack can
+    /// scroll, so paying for rows makes no sense: the tuner takes the space
+    /// and the rack scrolls in what's left.
+    @ViewBuilder private var content: some View {
+        #if os(macOS)
+        macLayout
+        #else
+        scaledLayout
+        #endif
+    }
+
+    /// The phone's layout: one canvas, scaled as a unit.
+    private var scaledLayout: some View {
         GeometryReader { geo in
             // The layout is drawn on a fixed design canvas and scaled as one
             // unit to the viewport — proportions hold by construction from a
@@ -73,18 +143,7 @@ public struct ChromaticTunerView: View {
             // compressing on its own until something breaks.
             //
             // WHICH canvas wins is decided by fill: compute the scale each
-            // layout could reach in this viewport and take the larger. That
-            // is the "stacked when the tuner spans edge-to-edge with room
-            // below, otherwise side-by-side filling the width" rule, derived
-            // rather than thresholded — a squarish window gets one big
-            // stacked tuner, a wide one gets the side-by-side as large as
-            // the height allows.
-            // Heights are the measured content — dial 174 (arc less its
-            // readout's rise, plus the readout), stepper 30, 16pt gaps, and
-            // the rack at its EXACT height for the current pin count — not
-            // padded guesses: overstating them is exactly what left a third
-            // of the window empty below the tuner (the dial-grid's cell had
-            // the same disease). Margins live outside, in the 24pt padding.
+            // layout could reach in this viewport and take the larger.
             let rackHeight = LaunchRack.height(
                 for: pinned, expanded: Set(settings.rackExpanded),
                 hasPresets: !presets.presets.isEmpty)
@@ -103,9 +162,6 @@ public struct ChromaticTunerView: View {
                     stackedLayout
                 }
             }
-            // On the Mac the slack frames the content — same rule as the
-            // dial grid: unfilled height is split around the tuner, not
-            // pooled below it. Phones keep reading from the top.
             .frame(
                 width: design.width, height: design.height,
                 alignment: DesignCanvas.alignment
@@ -115,57 +171,8 @@ public struct ChromaticTunerView: View {
                 width: geo.size.width, height: geo.size.height,
                 alignment: DesignCanvas.alignment)
         }
-        .padding(24)
-        // The header IS the toolbar now, rather than a hand-drawn imitation
-        // of one — the gear gets the system's size, position and tint for
-        // free, identical to the chooser's +. The meter rides the principal
-        // slot: whether the app can hear anything applies to the whole
-        // screen, so it belongs in the chrome, on the dial's axis.
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                LevelMeter(level: model.level)
-                    .frame(width: 72, height: 4)
-            }
-            // macOS reaches settings through the app menu (⌘,), so a gear
-            // in the window would be a second door to the same room.
-            #if !os(macOS)
-            ToolbarItem(placement: .primaryAction) { settingsButton }
-            #endif
-        }
-        // The sheet needs a *concrete* scheme — see `appearanceSheet` for why
-        // passing the optional through would strand it on the last choice.
-        .appearanceSheet(
-            isPresented: $isShowingSettings,
-            scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
-        ) {
-            SettingsView(settings: settings)
-        }
-        .appearanceSheet(
-            isPresented: $isShowingPresets,
-            scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
-        ) {
-            PresetBrowser(
-                presets: presets, store: store,
-                onLoad: { preset, instance in
-                    presets.load(preset, onto: instance, in: store)
-                    onChooseInstance(instance.id)
-                },
-                onCreateInstrument: { preset in
-                    // An orphan's way back: the chooser opens its creation
-                    // sheet already shaped to fit this preset.
-                    onCreateInstrument(
-                        InstrumentShape(
-                            templateID: preset.templateID, strings: preset.strings))
-                })
-        }
-        .task { await model.attach() }
-        .onDisappear { model.detach() }
-        // Only the reference matters here — the instrument doesn't change this
-        // screen's band, which is always full.
-        .onChangeCompat(of: settings.reference) { _ in reconfigure() }
     }
 
-    /// Portrait: everything in one column.
     private var stackedLayout: some View {
         VStack(spacing: 16) {
             dial
@@ -193,7 +200,7 @@ public struct ChromaticTunerView: View {
 
     /// Everything specific to one reading. Self-contained so the per-string
     /// grid can repeat it.
-    private var dial: some View {
+    var dial: some View {
         // Rises deeper than the default (50 vs 40): this readout is a
         // narrow centred column, so it clears the arc's sagging line where
         // the string view's stepper-flanked row wouldn't.
@@ -207,41 +214,51 @@ public struct ChromaticTunerView: View {
     /// rows that say what they'll open into, the whole list one row below.
     private var controls: some View {
         VStack(spacing: 16) {
-            // Tap A=442 to hear it; step ± while it sounds and the pitch
-            // follows (the onChange below). The dial stands down honestly
-            // through the status observation — capture yields, status goes
-            // idle, the model follows.
-            ReferencePitchStepper(
-                reference: $settings.reference, naming: settings.naming,
-                tone: audio.tone,
-                onToneToggle: {
-                    Task {
-                        await audio.toggleTone(
-                            hz: settings.reference.hz, tag: "reference")
-                    }
-                }
-            )
-            .onChangeCompat(of: settings.reference) { reference in
-                if audio.tone.playingTag == "reference" {
-                    audio.tone.retune(hz: reference.hz)
+            referenceStepper
+            launchRack(rowCap: LaunchRack.rowCap)
+        }
+    }
+
+    /// Tap A=442 to hear it; step ± while it sounds and the pitch follows.
+    /// The dial stands down honestly through the status observation —
+    /// capture yields, status goes idle, the model follows.
+    var referenceStepper: some View {
+        ReferencePitchStepper(
+            reference: $settings.reference, naming: settings.naming,
+            tone: audio.tone,
+            onToneToggle: {
+                Task {
+                    await audio.toggleTone(
+                        hz: settings.reference.hz, tag: "reference")
                 }
             }
-            LaunchRack(
-                entries: pinned,
-                expanded: Set(settings.rackExpanded),
-                onChoose: onChooseInstance,
-                onChoosePin: onChoosePin,
-                onToggleExpand: { id in
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        settings.toggleRackExpanded(id)
-                    }
-                },
-                onOpenChooser: onOpenChooser,
-                // The door appears only once there's a collection behind
-                // it — nothing saved, nothing to browse.
-                onOpenPresets: presets.presets.isEmpty
-                    ? nil : { isShowingPresets = true })
+        )
+        .onChangeCompat(of: settings.reference) { reference in
+            if audio.tone.playingTag == "reference" {
+                audio.tone.retune(hz: reference.hz)
+            }
         }
+    }
+
+    /// The instrument rack. `rowCap` is the phone's row budget; nil shows
+    /// every instrument, which is what the Mac's scrolling rack wants.
+    func launchRack(rowCap: Int?) -> some View {
+        LaunchRack(
+            entries: pinned,
+            expanded: Set(settings.rackExpanded),
+            rowCap: rowCap,
+            onChoose: onChooseInstance,
+            onChoosePin: onChoosePin,
+            onToggleExpand: { id in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    settings.toggleRackExpanded(id)
+                }
+            },
+            onOpenChooser: onOpenChooser,
+            // The door appears only once there's a collection behind it —
+            // nothing saved, nothing to browse.
+            onOpenPresets: presets.presets.isEmpty
+                ? nil : { isShowingPresets = true })
     }
 
     /// Pinned ids resolved to rack rows, in pin order. An id resolves
@@ -249,7 +266,7 @@ public struct ChromaticTunerView: View {
     /// lock) or, before its default instance exists, through the template;
     /// ids that resolve to neither are skipped rather than crashing a
     /// launch screen.
-    private var pinned: [LaunchRack.Entry] {
+    var pinned: [LaunchRack.Entry] {
         settings.favorites.compactMap { id in
             if let instance = store.instance(id: id) {
                 return LaunchRack.Entry(

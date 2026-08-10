@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Mac: the launch screen's instrument list scrolls instead of shrinking
+  the tuner. However many instruments you keep, the dial gets the space —
+  and it now grows with the window rather than stopping at a fixed size,
+  side by side in a wide window or above the list in a tall one.
+- Mac: an instrument's pinned tunings wrap onto more lines instead of
+  squeezing into unreadable slivers.
 - Making an instrument from another one — "Change string count…", or
   Duplicate from inside an instrument — now opens the one you just made,
   instead of leaving you on the old one wondering whether it worked.

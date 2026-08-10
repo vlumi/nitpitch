@@ -160,3 +160,110 @@ final class PresetImportStoreTests: XCTestCase {
         XCTAssertEqual(resolution, .create(name: "Gig"), "a different instrument entirely")
     }
 }
+
+/// Renaming — the browser's edit, and the only way a preset's name changes
+/// without saving over it.
+@MainActor
+final class PresetRenameTests: XCTestCase {
+    private var suiteName: String!
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "fi.misaki.nitpitch.tests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        super.tearDown()
+    }
+
+    private func makeStores() -> (PresetStore, InstrumentInstance) {
+        let presets = PresetStore(defaults: defaults)
+        let instruments = InstrumentStore(defaults: defaults, seedReference: { .standard })
+        return (presets, instruments.instance(id: Instrument.guitar.id)!)
+    }
+
+    /// The ordinary case: the name changes, the payload doesn't, and the
+    /// stamp moves so sync carries the edit.
+    func testRenamingKeepsThePayloadAndStamps() throws {
+        let (presets, guitar) = makeStores()
+        let saved = try XCTUnwrap(presets.save(guitar, named: "Gig", includeReference: true))
+        let before = try XCTUnwrap(saved.modifiedAt)
+
+        XCTAssertTrue(presets.rename(id: saved.id, to: "Tomorrow's gig"))
+
+        let renamed = try XCTUnwrap(presets.presets.first { $0.id == saved.id })
+        XCTAssertEqual(renamed.name, "Tomorrow's gig")
+        XCTAssertEqual(renamed.strings, saved.strings)
+        XCTAssertEqual(renamed.referenceHz, saved.referenceHz)
+        XCTAssertGreaterThan(try XCTUnwrap(renamed.modifiedAt), before)
+    }
+
+    /// A name already used by ANOTHER preset of that template is refused —
+    /// the same case-insensitive rule saving and importing use, since two
+    /// presets a letter-case apart are a collision the user can't see.
+    func testRenamingOntoATakenNameIsRefused() throws {
+        let (presets, guitar) = makeStores()
+        let first = try XCTUnwrap(presets.save(guitar, named: "Gig", includeReference: false))
+        let second = try XCTUnwrap(
+            presets.save(guitar, named: "Rehearsal", includeReference: false))
+
+        XCTAssertFalse(presets.rename(id: second.id, to: "gig"), "case-folded collision")
+        XCTAssertEqual(
+            presets.presets.first { $0.id == second.id }?.name, "Rehearsal", "unchanged")
+        XCTAssertEqual(presets.presets.first { $0.id == first.id }?.name, "Gig", "and untouched")
+    }
+
+    /// Renaming to its own name (or a case variant of it) is allowed: the
+    /// preset isn't colliding with anything but itself.
+    func testAPresetCanKeepItsOwnName() throws {
+        let (presets, guitar) = makeStores()
+        let saved = try XCTUnwrap(presets.save(guitar, named: "Gig", includeReference: false))
+
+        XCTAssertTrue(presets.rename(id: saved.id, to: "GIG"))
+        XCTAssertEqual(presets.presets.first { $0.id == saved.id }?.name, "GIG")
+    }
+
+    /// Names collide only within a template — a guitar "Gig" and a violin
+    /// "Gig" have never been the same thing.
+    func testCollisionsAreScopedToTheTemplate() throws {
+        let presets = PresetStore(defaults: defaults)
+        let instruments = InstrumentStore(defaults: defaults, seedReference: { .standard })
+        let guitar = try XCTUnwrap(instruments.instance(id: Instrument.guitar.id))
+        let violin = try XCTUnwrap(instruments.instance(id: Instrument.violin.id))
+        _ = presets.save(guitar, named: "Gig", includeReference: false)
+        let fiddle = try XCTUnwrap(presets.save(violin, named: "Concert", includeReference: false))
+
+        XCTAssertTrue(presets.rename(id: fiddle.id, to: "Gig"), "a different instrument entirely")
+    }
+
+    /// An empty or whitespace-only name is not a name.
+    func testAnEmptyNameIsRefused() throws {
+        let (presets, guitar) = makeStores()
+        let saved = try XCTUnwrap(presets.save(guitar, named: "Gig", includeReference: false))
+
+        XCTAssertFalse(presets.rename(id: saved.id, to: "   "))
+        XCTAssertEqual(presets.presets.first { $0.id == saved.id }?.name, "Gig")
+    }
+
+    /// `isNameAvailable` answers what the rename field asks live, so the
+    /// user learns before they commit rather than after.
+    func testNameAvailabilityMatchesWhatRenameWillDo() throws {
+        let (presets, guitar) = makeStores()
+        let first = try XCTUnwrap(presets.save(guitar, named: "Gig", includeReference: false))
+        let second = try XCTUnwrap(
+            presets.save(guitar, named: "Rehearsal", includeReference: false))
+
+        XCTAssertFalse(
+            presets.isNameAvailable("Gig", templateID: "guitar", excluding: second.id))
+        XCTAssertTrue(
+            presets.isNameAvailable("Gig", templateID: "guitar", excluding: first.id),
+            "its own name is available to itself")
+        XCTAssertTrue(
+            presets.isNameAvailable("New", templateID: "guitar", excluding: second.id))
+        XCTAssertFalse(
+            presets.isNameAvailable("  ", templateID: "guitar", excluding: second.id))
+    }
+}

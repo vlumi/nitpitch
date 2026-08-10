@@ -136,6 +136,44 @@ public final class PresetStore: ObservableObject {
         return preset
     }
 
+    /// Rename a preset — the browser's edit, and the only way a preset's
+    /// name changes without re-saving over it.
+    ///
+    /// Refuses a name already in use for that template, by the same
+    /// case-insensitive rule saving and importing use: two presets one
+    /// letter-case apart are a collision the user can't see, and the
+    /// caller (which knows what it can offer) confirms before asking.
+    /// Returns whether it happened, so the UI can say why it didn't.
+    @discardableResult
+    public func rename(id: String, to name: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let index = presets.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+        let preset = presets[index]
+        if let clash = existing(named: trimmed, templateID: preset.templateID),
+            clash.id != id
+        {
+            return false
+        }
+        guard trimmed != preset.name else { return true }
+        var renamed = preset
+        renamed.name = trimmed
+        // A rename is an edit like any other: stamped, so sync carries it.
+        renamed.modifiedAt = Date()
+        presets[index] = renamed
+        return true
+    }
+
+    /// Whether `name` is free for this template — what the rename field
+    /// checks live, so the user learns before they commit.
+    public func isNameAvailable(_ name: String, templateID: String, excluding id: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        guard let clash = existing(named: trimmed, templateID: templateID) else { return true }
+        return clash.id == id
+    }
+
     /// The presets of one template, as `PresetImport` wants them — the
     /// name-collision check is per template, since a guitar "Gig" and a
     /// violin "Gig" have never been the same thing.

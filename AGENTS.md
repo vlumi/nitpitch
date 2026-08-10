@@ -199,6 +199,23 @@ one of the drafts that lost.
   an intent only the user can tell apart. Unreadable links and links
   fitting no owned instrument are refused plainly: applying a tuning
   nobody sent is worse than a link that doesn't open.
+- **The browser is YOUR collection; the per-instrument sheet is one
+  instrument's window onto it.** `PresetBrowser` (the launch screen's
+  "All presets…" row) lists saved presets across every instrument, with
+  filter, sort — recently changed / name / instrument — rename, delete,
+  favorite and share. Two things it deliberately does NOT have, both
+  because they are *about an instrument*: **catalog tunings**, which
+  belong to templates rather than to the user and would put a dozen rows
+  they can't rename, delete or share in front of the handful they made;
+  and **pinning**, since a pin is the (instrument, preset) pair and a
+  global list has no instrument to bind to. `PresetManager` keeps both,
+  being scoped to one instrument where "the tunings this guitar can
+  wear" is short and meaningful. The row appears only once something is
+  saved — a door onto an empty collection teaches nothing — so
+  `LaunchRack.height(for:expanded:hasPresets:)` counts it, or the
+  chromatic canvas fill goes wrong. `modifiedAt` is OPTIONAL: presets
+  saved before stamping existed have none, so "recently changed" sorts
+  them last and rows show no date rather than an invented one.
 - **Provenance, not protection**: the header pill names the loaded preset;
   granular edits keep the claim and show "(edited)"; only an explicit menu
   pick replaces it. Drift-clears-the-claim was tried first and made the

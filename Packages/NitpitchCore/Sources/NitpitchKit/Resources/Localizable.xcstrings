@@ -147,8 +147,14 @@
     "Interval": {
       "comment": "Accessibility label for the interval/beat readout"
     },
+    "Keep both": {
+      "comment": "Button: save a received preset alongside the one of the same name"
+    },
     "Light": {
       "comment": "Appearance option: always light"
+    },
+    "Load once": {
+      "comment": "Button: apply a received preset without saving it"
     },
     "Lock": {
       "comment": "Menu action: lock this instrument's setup against changes"
@@ -228,6 +234,9 @@
     "Play a note": {
       "comment": "Shown while listening but no pitch is confident enough to display"
     },
+    "Preset received": {
+      "comment": "Title of the sheet shown when a shared preset link is opened"
+    },
     "Presets": {
       "comment": "Title of the preset list sheet"
     },
@@ -242,6 +251,9 @@
     },
     "Pure fourths": {
       "comment": "Temperament choice on the double bass: beatless 4:3 intervals"
+    },
+    "QR code for this preset": {
+      "comment": "Accessibility label for the shared preset's QR code"
     },
     "Raise target": {
       "comment": "Stepper in the single-string view: this string's target up a semitone"
@@ -270,6 +282,9 @@
     "Replace preset": {
       "comment": "Title of the confirmation when saving over an existing name"
     },
+    "Replace “%@”": {
+      "comment": "Button: overwrite the existing preset of this name with the received one"
+    },
     "Retry": {
       "comment": "No-input state: re-check for a microphone after connecting one"
     },
@@ -282,8 +297,20 @@
     "Save preset": {
       "comment": "Title of the save dialog"
     },
+    "Scan this, or send the link.": {
+      "comment": "Footnote under a preset's QR code"
+    },
     "Settings": {
       "comment": "Title of the settings sheet, and the gear button's VoiceOver label"
+    },
+    "Share": {
+      "comment": "Preset row action: hand this setup to someone else"
+    },
+    "Share link": {
+      "comment": "Button: open the system share sheet with the preset link"
+    },
+    "Share preset": {
+      "comment": "Title of the sheet showing a preset's QR code and link"
     },
     "Sign in to iCloud on this device to sync.": {
       "comment": "Footer under the sync switch while no iCloud account is signed in"
@@ -306,6 +333,12 @@
     "The first four are on the launch screen.": {
       "comment": "Favorites section footer when more than four are starred"
     },
+    "This link isn't readable.": {
+      "comment": "Shown when a preset link can't be decoded"
+    },
+    "This preset is for an instrument you don't have yet. Add one, then open the link again.": {
+      "comment": "Shown when a received preset fits no instrument the user owns"
+    },
     "Tunings": {
       "comment": "Presets sheet: the catalog tunings section"
     },
@@ -326,6 +359,9 @@
     "Vln": {
       "comment": "Kind tag: violin (orchestra abbreviation)",
       "extractionState": "manual"
+    },
+    "You already have a preset called “%@”.": {
+      "comment": "Warning when an incoming preset's name is already in use"
     },
     "“%@” already exists.": {
       "comment": "Body of the replace confirmation; the placeholder is the preset's name"

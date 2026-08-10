@@ -136,6 +136,56 @@ public final class PresetStore: ObservableObject {
         return preset
     }
 
+    /// The presets of one template, as `PresetImport` wants them — the
+    /// name-collision check is per template, since a guitar "Gig" and a
+    /// violin "Gig" have never been the same thing.
+    public func existingNames(templateID: String) -> [(id: String, name: String)] {
+        presets.filter { $0.templateID == templateID }.map { (id: $0.id, name: $0.name) }
+    }
+
+    /// Take a shared setup into the collection.
+    ///
+    /// The receiver owns what they accept: this mints a NEW preset with a
+    /// new id, or overwrites one of their own by id when they chose to
+    /// replace. Nothing from the sender's side persists — no origin, no
+    /// claim — so the result is an ordinary preset, editable and syncable
+    /// like any other (AGENTS.md, "Importing is a save from elsewhere").
+    @discardableResult
+    public func importing(
+        _ link: PresetLink, as resolution: PresetImport.Resolution
+    ) -> Preset? {
+        let name: String
+        let id: String
+        switch resolution {
+        case .create(let created):
+            name = created
+            id = UUID().uuidString
+        case .nameTaken(let existingID, let taken, _):
+            // Reached only when the user chose to replace; "keep both" is
+            // spelled by the caller as `.create(name: keepBothName)`.
+            name = taken
+            id = existingID
+        }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !link.strings.isEmpty else { return nil }
+        let preset = Preset(
+            id: id,
+            name: trimmed,
+            templateID: link.templateID,
+            strings: link.strings,
+            referenceHz: link.referenceHz,
+            temperament: link.temperament,
+            // Stamped now: to this device's collection, an import IS an
+            // edit, and sync's last-writer-wins needs to see it as one.
+            modifiedAt: Date())
+        if let index = presets.firstIndex(where: { $0.id == preset.id }) {
+            presets[index] = preset
+        } else {
+            presets.append(preset)
+        }
+        return preset
+    }
+
     public func remove(id: String) {
         guard presets.contains(where: { $0.id == id }) else { return }
         presets.removeAll { $0.id == id }

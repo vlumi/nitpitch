@@ -13,6 +13,8 @@ struct PresetManager: View {
     @ObservedObject var settings: Settings
     let instance: InstrumentInstance
     @Environment(\.dismiss) private var dismiss
+    /// The preset being shared, driving the share sheet.
+    @State private var sharing: Preset?
 
     var body: some View {
         NavigationStack {
@@ -53,6 +55,14 @@ struct PresetManager: View {
                     }
                 }
             }
+        }
+        .sheet(item: $sharing) { preset in
+            PresetShareView(
+                link: PresetLink(
+                    name: preset.name, templateID: preset.templateID,
+                    strings: preset.strings, referenceHz: preset.referenceHz,
+                    temperament: preset.temperament),
+                summary: payloadSummary(preset))
         }
         // Mac sheet sizing only: on an iPhone this minimum EXCEEDS a 375pt
         // screen, and the missing width came out of the list's horizontal
@@ -120,9 +130,27 @@ struct PresetManager: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            shareButton(for: preset)
             pinButton(for: preset)
             deleteButton(for: preset)
         }
+    }
+
+    /// Hand this setup to someone else. Offered on saved presets only:
+    /// catalog tunings are already everywhere the app is, so a link to one
+    /// would carry nothing the receiver doesn't have.
+    private func shareButton(for preset: Preset) -> some View {
+        Button {
+            sharing = preset
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier("presets.share.\(preset.id)")
+        .accessibilityLabel(Text("Share", bundle: .module))
     }
 
     private func favoriteButton(for preset: Preset) -> some View {

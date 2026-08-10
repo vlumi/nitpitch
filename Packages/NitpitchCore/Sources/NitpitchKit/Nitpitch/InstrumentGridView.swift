@@ -164,7 +164,12 @@ struct InstrumentGridView: View {
                 source: creation.source)
         }
         .sheet(isPresented: $isEditingStrings) {
-            InstrumentEditor(store: store, settings: settings, instanceID: instance.id)
+            InstrumentEditor(
+                store: store, settings: settings, instanceID: instance.id,
+                onChangeStringCount: { edited in
+                    guard let template = edited.template else { return }
+                    duplicating = Creation(template: template, source: edited)
+                })
         }
         .alert(
             Text("Rename", bundle: .module),

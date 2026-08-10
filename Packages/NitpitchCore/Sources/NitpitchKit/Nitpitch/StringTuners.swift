@@ -190,6 +190,15 @@ final class StringTuners: ObservableObject {
             targets: targets,
             bands: bands,
             tuning: tuning)
+        // The tuners are built per string at init and the count is fixed
+        // for an instrument's life (see `InstrumentStore.setEditedStrings`),
+        // so this zip should never truncate. It's asserted rather than
+        // assumed: when the shape COULD change, `zip` silently configured
+        // only the strings both sides had — a 7th string with no dial, and
+        // a removed string's dial still on screen.
+        assert(
+            tuners.count == instrument.notes.count,
+            "a tuner per string: \(tuners.count) tuners, \(instrument.notes.count) strings")
         for (tuner, ((note, band), offset)) in zip(
             tuners, zip(zip(instrument.notes, bands), offsets))
         {

@@ -13,15 +13,24 @@ struct StringListEditor: View {
     let strings: [Int]
     let naming: NoteNaming
     let lowOnTop: Bool
+    /// Whether the LIST's shape can change here, as opposed to its pitches.
+    ///
+    /// True while an instrument is being created — the shape is the thing
+    /// being decided. False for one that already exists: a six-string
+    /// guitar doesn't become a seven-string guitar, it's a different
+    /// instrument, and letting the count change under a live screen
+    /// stranded every preset saved at the old shape (see
+    /// `InstrumentEditor`'s "Change string count…").
+    var canResize: Bool = true
     let onChange: ([Int]) -> Void
 
     var body: some View {
         Group {
-            addRow(lowEnd: lowOnTop)
+            if canResize { addRow(lowEnd: lowOnTop) }
             ForEach(displayedIndices, id: \.self) { index in
                 stringRow(index: index)
             }
-            addRow(lowEnd: !lowOnTop)
+            if canResize { addRow(lowEnd: !lowOnTop) }
         }
     }
 
@@ -61,8 +70,8 @@ struct StringListEditor: View {
 
     /// The exact height of the whole block — rows plus both add rows —
     /// for containers that hug rather than scroll.
-    static func blockHeight(strings count: Int) -> CGFloat {
-        CGFloat(count) * rowHeight + 2 * addRowHeight
+    static func blockHeight(strings count: Int, canResize: Bool = true) -> CGFloat {
+        CGFloat(count) * rowHeight + (canResize ? 2 * addRowHeight : 0)
     }
 
     private func stringRow(index: Int) -> some View {
@@ -77,20 +86,22 @@ struct StringListEditor: View {
             Spacer()
             step(systemName: "minus", id: "editor.down.\(index)", index: index, by: -1)
             step(systemName: "plus", id: "editor.up.\(index)", index: index, by: 1)
-            Button {
-                onChange(StringListEditing.removed(strings, at: index))
-            } label: {
-                Image(systemName: "trash")
-                    .foregroundStyle(
-                        strings.count > 1 ? AnyShapeStyle(.red) : AnyShapeStyle(.tertiary)
-                    )
-                    .frame(width: 32, height: 32)
-                    .contentShape(Rectangle())
+            if canResize {
+                Button {
+                    onChange(StringListEditing.removed(strings, at: index))
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundStyle(
+                            strings.count > 1 ? AnyShapeStyle(.red) : AnyShapeStyle(.tertiary)
+                        )
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .disabled(strings.count <= 1)
+                .accessibilityIdentifier("editor.remove.\(index)")
+                .accessibilityLabel(Text("Remove string", bundle: .module))
             }
-            .buttonStyle(.borderless)
-            .disabled(strings.count <= 1)
-            .accessibilityIdentifier("editor.remove.\(index)")
-            .accessibilityLabel(Text("Remove string", bundle: .module))
         }
         .frame(height: Self.rowHeight)
         .accessibilityIdentifier("editor.row.\(index)")

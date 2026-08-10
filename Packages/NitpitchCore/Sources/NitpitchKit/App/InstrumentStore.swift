@@ -317,42 +317,27 @@ public final class InstrumentStore: ObservableObject {
     /// type's contract with the stepper.
     public static let editableMIDIRange = Detection.targetMIDIRange
 
-    /// Whether a string can be added at this end — `StringListEditing`
-    /// holds the rule; this is the store's door to it.
-    public func canAddString(id: String, lowEnd: Bool) -> Bool {
-        guard let strings = instance(id: id)?.strings else { return false }
-        return StringListEditing.canExtend(strings, lowEnd: lowEnd)
-    }
-
-    /// Grow the instrument by one string — the proposal logic lives in
-    /// `StringListEditing`, shared with the creation sheet's draft. A
-    /// structural change is a new shape, so any loaded preset's claim
-    /// clears — the old shape's preset can't even fit.
-    public func addString(id: String, lowEnd: Bool) {
-        guard let current = instance(id: id) else { return }
-        setEditedStrings(id: id, StringListEditing.extended(current.strings, lowEnd: lowEnd))
-    }
-
-    /// Remove one string, never the last — a zero-string instrument is a
-    /// screen with nothing on it. Structural, so the preset claim clears.
-    public func removeString(id: String, index: Int) {
-        guard let current = instance(id: id) else { return }
-        setEditedStrings(id: id, StringListEditing.removed(current.strings, at: index))
-    }
-
     /// The instrument editor's single write path. The claim rule rides the
     /// shape: the same count is a nudge and keeps a loaded preset's claim,
     /// like every target stepper; a different count is structural and
     /// clears it.
+    /// Retune the instrument in place — the editor's pitch nudges.
+    ///
+    /// **The string count cannot change here**, and the guard is the
+    /// store's rather than the UI's: an instrument's shape is fixed once it
+    /// exists (a seven-string guitar is a different instrument, made
+    /// through the creation sheet). Allowing it stranded every preset saved
+    /// at the old shape — a preset loads only onto an instrument with the
+    /// same number of strings — and left the live screen holding a dial per
+    /// old string.
     public func setEditedStrings(id: String, _ strings: [Int]) {
         guard let current = instance(id: id), !strings.isEmpty,
-            strings != current.strings
+            strings != current.strings,
+            strings.count == current.strings.count
         else { return }
-        let structural = current.strings.count != strings.count
-        update(id: id) {
-            $0.strings = strings
-            if structural { $0.loadedPresetID = nil }
-        }
+        // Same count, so the preset claim rides: this is a nudge, like
+        // every other target step, and drift shows as "(edited)".
+        update(id: id) { $0.strings = strings }
     }
 
     public func setReference(id: String, _ reference: ReferencePitch) {

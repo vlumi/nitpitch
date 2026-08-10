@@ -258,19 +258,25 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertEqual(blank.strings, Instrument.guitar.strings)
     }
 
-    /// The editor's single write path reads the claim rule off the shape:
-    /// the same count is a nudge and keeps it, a different count clears it.
-    func testSetEditedStringsClaimFollowsShape() {
+    /// The editor's single write path retunes and nothing more: a
+    /// same-count edit lands and keeps the preset claim, while a different
+    /// count — or an empty list — is refused outright. (The claim no longer
+    /// has a "structural" branch to clear it, because the structural edit
+    /// can't happen: see `testTheStringCountCannotChange`.)
+    func testSetEditedStringsRetunesAndRefusesReshaping() {
         let store = makeStore()
         let guitar = store.instance(id: Instrument.guitar.id)!
         store.presetApplied(id: guitar.id, presetID: "p1")
+
         store.setEditedStrings(id: guitar.id, [38, 45, 50, 55, 59, 64])
-        XCTAssertEqual(store.instance(id: guitar.id)?.loadedPresetID, "p1")
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings.first, 38, "the retune landed")
+        XCTAssertEqual(store.instance(id: guitar.id)?.loadedPresetID, "p1", "and kept the claim")
+
         store.setEditedStrings(id: guitar.id, [35, 38, 45, 50, 55, 59, 64])
-        XCTAssertNil(store.instance(id: guitar.id)?.loadedPresetID)
-        // Empty writes are refused.
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings.count, 6, "a 7th string is refused")
+
         store.setEditedStrings(id: guitar.id, [])
-        XCTAssertEqual(store.instance(id: guitar.id)?.strings.count, 7)
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings.count, 6, "and so is emptiness")
     }
 
     /// The creation prompt's suggested name must be the name `add` would
@@ -285,75 +291,52 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertEqual(store.add(of: .guitar).name, "Guitar 3")
     }
 
-    /// The editor's grow verb continues the outermost interval: a violin
-    /// grows a viola's C3 below, or a B5 above.
-    func testAddStringContinuesTheOutermostInterval() {
+    /// **An instrument's shape is fixed once it exists.** The store
+    /// refuses a different string count, and the guard lives here rather
+    /// than only in the editor: allowing it stranded every preset saved at
+    /// the old shape (a preset loads only onto the same number of strings)
+    /// and left the live screen holding a dial per old string. A
+    /// differently-strung instrument is made, not edited into being.
+    func testTheStringCountCannotChange() {
         let store = makeStore()
         let violin = store.instance(id: Instrument.violin.id)!  // G3 D4 A4 E5
-        store.addString(id: violin.id, lowEnd: true)
-        XCTAssertEqual(store.instance(id: violin.id)?.strings, [48, 55, 62, 69, 76])
-        store.addString(id: violin.id, lowEnd: false)
-        XCTAssertEqual(store.instance(id: violin.id)?.strings, [48, 55, 62, 69, 76, 83])
-        // Guitar's low end continues in fourths: E2 grows a 7-string's B1.
-        let guitar = store.instance(id: Instrument.guitar.id)!
-        store.addString(id: guitar.id, lowEnd: true)
-        XCTAssertEqual(store.instance(id: guitar.id)?.strings.first, 35)
-    }
 
-    /// No room past the outermost pitch means no string: a duplicated
-    /// outermost target would give two dials one zero-width band.
-    func testAddStringRefusesAtTheRangeEdge() {
-        let store = makeStore()
-        let bass = store.add(of: .bassGuitar5)  // low B0 — the range floor
-        XCTAssertFalse(store.canAddString(id: bass.id, lowEnd: true))
-        store.addString(id: bass.id, lowEnd: true)
-        XCTAssertEqual(store.instance(id: bass.id)?.strings.count, 5)
-        // And a long way from the ceiling, adding clamps rather than refuses.
-        XCTAssertTrue(store.canAddString(id: bass.id, lowEnd: false))
-    }
-
-    /// Removing works anywhere but never below one string.
-    func testRemoveStringKeepsAtLeastOne() {
-        let store = makeStore()
-        let violin = store.instance(id: Instrument.violin.id)!
-        store.removeString(id: violin.id, index: 0)
-        XCTAssertEqual(store.instance(id: violin.id)?.strings, [62, 69, 76])
-        store.removeString(id: violin.id, index: 1)
-        store.removeString(id: violin.id, index: 0)
-        XCTAssertEqual(store.instance(id: violin.id)?.strings, [76])
-        store.removeString(id: violin.id, index: 0)
+        store.setEditedStrings(id: violin.id, [48, 55, 62, 69, 76])
         XCTAssertEqual(
-            store.instance(id: violin.id)?.strings, [76],
-            "the last string never goes")
+            store.instance(id: violin.id)?.strings, [55, 62, 69, 76], "growing is refused")
+
+        store.setEditedStrings(id: violin.id, [62, 69, 76])
+        XCTAssertEqual(
+            store.instance(id: violin.id)?.strings, [55, 62, 69, 76], "shrinking too")
     }
 
-    /// Structural edits are a new shape: the loaded preset's claim clears,
-    /// where a pitch nudge (setString) keeps it.
-    func testStructuralEditsClearThePresetClaim() {
+    /// Retuning in place is exactly what the editor is for, and it keeps a
+    /// loaded preset's claim — drift shows as "(edited)", like every other
+    /// target step.
+    func testRetuningInPlaceIsAllowedAndKeepsTheClaim() {
         let store = makeStore()
         let guitar = store.instance(id: Instrument.guitar.id)!
         store.presetApplied(id: guitar.id, presetID: "p1")
-        store.setString(id: guitar.id, index: 0, midi: 38)
+
+        var dropD = guitar.strings
+        dropD[0] = 38
+        store.setEditedStrings(id: guitar.id, dropD)
+
+        XCTAssertEqual(store.instance(id: guitar.id)?.strings.first, 38)
         XCTAssertEqual(
             store.instance(id: guitar.id)?.loadedPresetID, "p1",
-            "a pitch nudge is drift, not a new pick")
-        store.addString(id: guitar.id, lowEnd: true)
-        XCTAssertNil(store.instance(id: guitar.id)?.loadedPresetID)
-
-        store.presetApplied(id: guitar.id, presetID: "p2")
-        store.removeString(id: guitar.id, index: 0)
-        XCTAssertNil(store.instance(id: guitar.id)?.loadedPresetID)
+            "a retune is drift, not a new pick")
     }
 
-    /// A one-string instrument has no interval to continue; growing it
-    /// guesses a fifth rather than freezing.
-    func testAddStringToASingleStringGuessesAFifth() {
+    /// A pitch nudge keeps the claim as well — the two paths agree.
+    func testAPitchNudgeKeepsThePresetClaim() {
         let store = makeStore()
-        let violin = store.instance(id: Instrument.violin.id)!
-        for _ in 0..<3 { store.removeString(id: violin.id, index: 0) }
-        XCTAssertEqual(store.instance(id: violin.id)?.strings, [76])
-        store.addString(id: violin.id, lowEnd: true)
-        XCTAssertEqual(store.instance(id: violin.id)?.strings, [69, 76])
+        let guitar = store.instance(id: Instrument.guitar.id)!
+        store.presetApplied(id: guitar.id, presetID: "p1")
+
+        store.setString(id: guitar.id, index: 0, midi: 38)
+
+        XCTAssertEqual(store.instance(id: guitar.id)?.loadedPresetID, "p1")
     }
 
     /// The effective instrument the detection stack sees carries the

@@ -36,6 +36,8 @@ public struct RootView: View {
     @StateObject private var sync: SyncEngine
     /// A shared preset that just arrived, driving the import sheet.
     @State private var arrival: PresetArrival?
+    /// An instrument shape to create — an orphaned preset's way back.
+    @State private var pendingInstrumentShape: InstrumentShape?
 
     public init(settings: Settings, audio: AudioSessionController) {
         self.settings = settings
@@ -63,12 +65,22 @@ public struct RootView: View {
                 settings: settings, audio: audio, store: store, presets: presets,
                 onOpenChooser: { path.append(.chooser) },
                 onChooseInstance: { id in path.append(.instrument(id)) },
-                onChoosePin: { id, presetID in openPin(instrument: id, preset: presetID) }
+                onChoosePin: { id, presetID in openPin(instrument: id, preset: presetID) },
+                onCreateInstrument: { shape in
+                    pendingInstrumentShape = shape
+                    path = [.chooser]
+                }
             )
             .navigationDestination(for: TunerRoute.self) { route in
                 switch route {
                 case .chooser:
-                    InstrumentChooser(settings: settings, store: store, sync: sync) { id in
+                    InstrumentChooser(
+                        settings: settings, store: store, sync: sync,
+                        // Set when an orphaned preset asked for an
+                        // instrument that fits it; the chooser opens its
+                        // creation sheet already shaped, then clears this.
+                        pendingShape: $pendingInstrumentShape
+                    ) { id in
                         path.append(.instrument(id))
                     }
                 case .instrument(let id):

@@ -18,6 +18,12 @@ import SwiftUI
 struct PresetBrowser: View {
     @ObservedObject var presets: PresetStore
     @ObservedObject var store: InstrumentStore
+    /// Load a preset onto an instrument and go there — the browser's
+    /// point, since a collection you can only look at isn't much of one.
+    var onLoad: ((Preset, InstrumentInstance) -> Void)?
+    /// Make an instrument that fits an orphan, so a homeless preset has a
+    /// way back rather than being a row that refuses to do anything.
+    var onCreateInstrument: ((Preset) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
     @State private var order: PresetBrowsing.Order = .recent
@@ -26,6 +32,9 @@ struct PresetBrowser: View {
     @State private var renaming: Preset?
     @State private var renameText = ""
     @State private var sharing: Preset?
+    /// A preset waiting for the user to say WHICH of several fitting
+    /// instruments to load it onto.
+    @State private var choosingInstrument: Preset?
 
     var body: some View {
         NavigationStack {
@@ -76,6 +85,35 @@ struct PresetBrowser: View {
                     Text("That name is already used for this instrument.", bundle: .module)
                 }
             }
+            .confirmationDialog(
+                Text("Load onto which instrument?", bundle: .module),
+                isPresented: Binding(
+                    get: { choosingInstrument != nil },
+                    set: { if !$0 { choosingInstrument = nil } }),
+                titleVisibility: .visible
+            ) {
+                // Several instruments fit — the user's own guitars, most
+                // recently played first. Asking beats guessing: loading
+                // onto the wrong one retunes an instrument they didn't mean.
+                if let preset = choosingInstrument {
+                    ForEach(candidates(for: preset), id: \.id) { candidate in
+                        Button {
+                            if let onLoad, let instance = store.instance(id: candidate.id) {
+                                onLoad(preset, instance)
+                                choosingInstrument = nil
+                                dismiss()
+                            }
+                        } label: {
+                            Text(verbatim: candidate.name)
+                        }
+                    }
+                }
+                Button(role: .cancel) {
+                    choosingInstrument = nil
+                } label: {
+                    Text("Cancel", bundle: .module)
+                }
+            }
             .sheet(item: $sharing) { preset in
                 PresetShareView(
                     link: PresetLink(
@@ -102,11 +140,15 @@ struct PresetBrowser: View {
                 Text(verbatim: subtitle(for: preset))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if isOrphaned(preset) {
+                    orphanNote(for: preset)
+                }
             }
             Spacer()
             shareButton(for: preset)
         }
         .contentShape(Rectangle())
+        .onTapGesture { load(preset) }
         .swipeActions(edge: .trailing) { actions(for: preset) }
         .contextMenu { actions(for: preset) }
         .accessibilityIdentifier("browser.preset.\(preset.id)")
@@ -161,6 +203,40 @@ struct PresetBrowser: View {
         .accessibilityLabel(Text("Share", bundle: .module))
     }
 
+    /// Load it: straight on when exactly one instrument fits, asking which
+    /// when several do, and offering to make one when none does.
+    private func load(_ preset: Preset) {
+        let fitting = candidates(for: preset)
+        switch fitting.count {
+        case 0:
+            if let onCreateInstrument {
+                onCreateInstrument(preset)
+                dismiss()
+            }
+        case 1:
+            if let onLoad, let instance = store.instance(id: fitting[0].id) {
+                onLoad(preset, instance)
+                dismiss()
+            }
+        default:
+            choosingInstrument = preset
+        }
+    }
+
+    private func candidates(for preset: Preset) -> [PresetFit.Candidate] {
+        PresetFit.candidates(
+            templateID: preset.templateID, stringCount: preset.strings.count,
+            among: store.instances.map {
+                PresetFit.Candidate(
+                    id: $0.id, name: $0.name, templateID: $0.templateID,
+                    stringCount: $0.strings.count, lastUsedAt: $0.lastUsedAt)
+            })
+    }
+
+    private func isOrphaned(_ preset: Preset) -> Bool {
+        candidates(for: preset).isEmpty
+    }
+
     /// The instrument, the payload, and when it last changed — the three
     /// things that tell one preset from another in a list that spans every
     /// instrument. The date is simply absent on presets saved before
@@ -175,6 +251,22 @@ struct PresetBrowser: View {
             parts.append(Self.relative.localizedString(for: changed, relativeTo: Date()))
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// Orphans wear it plainly. A preset whose shape nobody owns can't be
+    /// loaded, and a row that silently does nothing when tapped reads as
+    /// broken — so it says what's missing and offers the way back.
+    @ViewBuilder
+    private func orphanNote(for preset: Preset) -> some View {
+        Label {
+            Text(
+                "No \(preset.strings.count)-string \(templateName(preset.templateID))",
+                bundle: .module)
+        } icon: {
+            Image(systemName: "exclamationmark.triangle")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 
     private static let relative: RelativeDateTimeFormatter = {

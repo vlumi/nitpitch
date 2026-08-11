@@ -81,8 +81,38 @@ public enum PresetLinkCodec {
         components.scheme = "https"
         components.host = universalHost
         components.path = universalPath
-        components.fragment = fragment(for: link)
+        // The fragment ships base64url-ARMORED: the plain v1 string is full
+        // of characters URLComponents must percent-encode (every field
+        // separator becomes %7C, spaces %20), and percent-encoding is what
+        // gets corrupted in transit — mail clients and messengers re-encode
+        // URLs, and a double-encoded payload arrives as "Drop%20D". The
+        // base64url alphabet is entirely unreserved, so NOTHING is ever
+        // encoded and there is nothing for an intermediary to mangle. The
+        // armored form is also shorter than percent-encoding for non-ASCII
+        // names, which triple per byte otherwise.
+        components.fragment = armor(fragment(for: link))
         return components.url
+    }
+
+    /// The v1 string, base64url-clothed (RFC 4648 §5, unpadded). The inner
+    /// payload keeps its own "v1" version; this wrapper only says "armored",
+    /// and the decoder tells the two apart by alphabet — "|" cannot occur in
+    /// base64url, so a fragment starting "v1|" is unambiguously bare.
+    static func armor(_ fragment: String) -> String {
+        Data(fragment.utf8).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    static func unarmor(_ armored: String) -> String? {
+        var base64 =
+            armored
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 { base64.append("=") }
+        guard let data = Data(base64Encoded: base64) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     static func fragment(for link: PresetLink) -> String {
@@ -111,7 +141,14 @@ public enum PresetLinkCodec {
         guard isPresetURL(url), let fragment = url.fragment(percentEncoded: false) else {
             return nil
         }
-        return link(fromFragment: fragment)
+        // Bare v1 first — every link shared before armoring existed, and
+        // they don't expire. The alphabets can't collide: "|" is not a
+        // base64url character.
+        if fragment.hasPrefix("\(version)|") {
+            return link(fromFragment: fragment)
+        }
+        guard let unarmored = unarmor(fragment) else { return nil }
+        return link(fromFragment: unarmored)
     }
 
     /// Both spellings are the app's: the universal link it emits, and the

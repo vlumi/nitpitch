@@ -52,13 +52,40 @@ final class PresetLinkTests: XCTestCase {
 
     /// The payload rides in the FRAGMENT, which is never sent to a server —
     /// that's what lets a link be hosted on a static site without the host
-    /// learning what anyone shared.
+    /// learning what anyone shared. It travels base64url-armored, so the
+    /// pipes and spaces of the inner format never meet a percent sign.
     func testPayloadRidesInTheFragment() throws {
         let url = try XCTUnwrap(PresetLinkCodec.url(for: dropD))
 
         XCTAssertNil(url.query, "nothing in the query")
         let fragment = try XCTUnwrap(url.fragment(percentEncoded: false))
-        XCTAssertTrue(fragment.contains("38,45,50,55,59,64"))
+        let inner = try XCTUnwrap(PresetLinkCodec.unarmor(fragment))
+        XCTAssertTrue(inner.contains("38,45,50,55,59,64"))
+    }
+
+    /// THE property armoring exists for: no character of the emitted link is
+    /// ever percent-encoded, so there is nothing for a mail client or
+    /// messenger to re-encode and corrupt in transit. (The bare format
+    /// shipped as %7C soup — every separator encoded — and double-encoding
+    /// is a bug class this codebase has already met.)
+    func testTheEmittedLinkNeedsNoEncoding() throws {
+        for name in ["Drop D", "Tomorrow's gig", "A|B", "ミサキ", "50% down"] {
+            let link = PresetLink(
+                name: name, templateID: "guitar", strings: [38, 45, 50, 55, 59, 64],
+                referenceHz: 442)
+            let url = try XCTUnwrap(PresetLinkCodec.url(for: link), name)
+            XCTAssertFalse(url.absoluteString.contains("%"), url.absoluteString)
+            XCTAssertEqual(PresetLinkCodec.link(from: url)?.name, name, name)
+        }
+    }
+
+    /// A fragment that is neither bare v1 nor valid armor decodes to
+    /// nothing — same refusal stance as every other malformed input.
+    func testGarbageArmorIsRefused() throws {
+        for fragment in ["!!!not-base64!!!", "aGVsbG8", "djJ8Z3VpdGFy"] {
+            let url = try XCTUnwrap(URL(string: "https://nitpitch.app/t#" + fragment))
+            XCTAssertNil(PresetLinkCodec.link(from: url), fragment)
+        }
     }
 
     /// Names are the user's own words, verbatim — including the ones that

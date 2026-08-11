@@ -181,7 +181,12 @@ one of the drafts that lost.
   reference and temperament, and a suggested name — in the URL's
   *fragment*, which is never sent to a server, so a static host learns
   nothing about what anyone shared. **Emitted as a universal link**
-  (`https://nitpitch.app/t#…`): tappable in every messenger (custom
+  (`https://nitpitch.app/t#…`) with the fragment **base64url-armored**:
+  the bare format's separators percent-encode (%7C soup), and percent
+  sequences are what intermediaries re-encode and corrupt — armored, no
+  character of the link ever needs encoding. Bare `v1|` fragments decode
+  forever (the alphabets can't collide; `|` isn't base64url), and the
+  landing page unarmors client-side. Tappable in every messenger (custom
   schemes often don't linkify), opens the app directly when installed,
   and falls back to nitpitch.app/t — a static page whose JS renders the
   fragment client-side, the one deliberate exception to the site's

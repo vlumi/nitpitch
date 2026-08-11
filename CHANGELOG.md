@@ -24,6 +24,15 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Mac: the launch screen's instrument list stopped misbehaving around
+  its scrollbar — no more flashing layout when expanding an instrument's
+  presets, no scrollbar on a list that visibly fits, and in a tall
+  window the list now uses the space the dial can't, scrolling only when
+  the collection genuinely outgrows the window.
+- Mac: Escape goes up a level — string view to grid to instrument list
+  to the tuner — the keyboard's answer to the phone's edge swipe. A
+  sheet still takes the key first, and at the root it does nothing.
+
 ### build 7 — 2026-08-10
 
 - Mac: the launch screen's instrument list scrolls instead of shrinking

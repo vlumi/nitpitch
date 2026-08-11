@@ -36,26 +36,32 @@ extension ChromaticTunerView {
             if sideBySide {
                 HStack(alignment: .center, spacing: 24) {
                     scaledDial(in: CGSize(width: dialPane, height: geo.size.height))
-                    macControls(
-                        rackHeight: Self.rackHeight(
-                            allowed: geo.size.height - 80, needed: rackNeeded)
-                    )
-                    .frame(width: Self.macRackWidth)
+                    macControls(allowed: geo.size.height - 80)
+                        .frame(width: Self.macRackWidth)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // Stacked, every rack row is height the dial doesn't get, so
-                // the tuner is paid first: it keeps `macTunerShare` of the
-                // window and the rack scrolls in the remainder.
-                let rackHeight = Self.rackHeight(
-                    allowed: geo.size.height * (1 - Self.macTunerShare) - 60,
-                    needed: rackNeeded)
+                // the tuner is paid first — but only what it can USE. The
+                // dial scales as a unit, so its height is width-bound: on a
+                // tall narrow window a flat share reserved a band of empty
+                // space while the rack scrolled beside it for no reason.
+                // Reserve the dial's usable height (a pure function of the
+                // window's width — no layout feedback), capped at its share
+                // of the window; the rack keeps the genuine remainder.
+                let dialHeight =
+                    min(DesignCanvas.maxScale, geo.size.width / Self.dialDesign.width)
+                    * Self.dialDesign.height
+                // The dial's slot is FIXED at that height, not a greedy
+                // GeometryReader: a greedy slot made the VStack split the
+                // window 50/50 with the rack, which both starved the rack
+                // (scrolling beside empty space) and gave the dial height
+                // it couldn't use. Fixed, the rack's cap is the genuine
+                // remainder — and the whole column centers in the window.
+                let dialSlot = min(dialHeight, geo.size.height * Self.macTunerShare)
                 VStack(spacing: 16) {
-                    scaledDial(
-                        in: CGSize(
-                            width: geo.size.width,
-                            height: max(1, geo.size.height - rackHeight - 16)))
-                    macControls(rackHeight: rackHeight)
+                    scaledDial(in: CGSize(width: geo.size.width, height: dialSlot))
+                    macControls(allowed: geo.size.height - dialSlot - 62)
                         .frame(maxWidth: Self.macStackedControlsWidth)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -106,29 +112,34 @@ extension ChromaticTunerView {
     /// it.
     static let macTunerShare: CGFloat = 0.55
 
-    /// The rack's slice: what it needs, never more than it's allowed, and
-    /// never so little that it can't show a row or two.
-    static func rackHeight(allowed: CGFloat, needed: CGFloat) -> CGFloat {
-        max(LaunchRack.rowHeight * 2, min(needed, allowed))
-    }
-
-    /// What the rack would take if nothing constrained it.
-    private var rackNeeded: CGFloat {
-        LaunchRack.height(
-            for: pinned, expanded: Set(settings.rackExpanded),
-            hasPresets: !presets.presets.isEmpty, rowCap: nil)
-    }
-
     /// The stepper and the rack, as one column — the rack scrolling once it
     /// outgrows its slice.
-    private func macControls(rackHeight: CGFloat) -> some View {
+    ///
+    /// `ViewThatFits` decides between the bare rack and a scrolling one, so
+    /// "does it fit" is answered by LAYOUT rather than by an estimate. The
+    /// first draft sized a scroll frame from a per-character guess of the
+    /// wrapped chip lines; whenever the guess ran short the content was a
+    /// few points taller than the frame, and with legacy scrollbars that
+    /// LOOPED: scroller appears → reserves width → chips re-wrap → height
+    /// changes → scrollability flips back — every row's right edge flashing
+    /// between two positions. The second draft measured the content through
+    /// a preference, which an NSScrollView-backed ScrollView never
+    /// delivered (it fired once, with the key's default). Letting the
+    /// layout system pick needs neither: the bare rack is chosen at its own
+    /// exact height whenever it fits the cap, so no scroller can exist —
+    /// and past the cap the scrolling copy fills it, scroller legitimately
+    /// on show.
+    private func macControls(allowed: CGFloat) -> some View {
         VStack(spacing: 16) {
             referenceStepper
-            ScrollView {
+            ViewThatFits(in: .vertical) {
                 launchRack(rowCap: nil)
+                ScrollView {
+                    launchRack(rowCap: nil)
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .frame(height: rackHeight)
+            .frame(maxHeight: max(LaunchRack.rowHeight * 2, allowed))
         }
     }
 }

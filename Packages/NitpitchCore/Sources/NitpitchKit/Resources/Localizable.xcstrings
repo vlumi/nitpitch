@@ -1,407 +1,410 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%@ (edited)": {
-      "comment": "Tuning pill: the loaded preset's name once the setup has drifted from it"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
     },
-    "%lld across": {
-      "comment": "Menu option for how many string dials fit across the grid"
+    "“%@” already exists." : {
+      "comment" : "Body of the replace confirmation; the placeholder is the preset's name"
     },
-    "%lld strings": {
-      "comment": "String-count choice when adding an instrument"
+    "%@ (edited)" : {
+      "comment" : "Tuning pill: the loaded preset's name once the setup has drifted from it"
     },
-    "5-string Bass": {
-      "comment": "Instrument name",
-      "extractionState": "manual"
+    "%lld across" : {
+      "comment" : "Menu option for how many string dials fit across the grid"
     },
-    "7-string Guitar": {
-      "comment": "Instrument name",
-      "extractionState": "manual"
+    "%lld strings" : {
+      "comment" : "String-count choice when adding an instrument"
     },
-    "8-string Guitar": {
-      "comment": "Instrument name",
-      "extractionState": "manual"
+    "5-string Bass" : {
+      "comment" : "Instrument name",
+      "extractionState" : "manual"
     },
-    "A different number of strings is a different instrument.": {
-      "comment": "Footer explaining why the string count isn't editable in place"
+    "7-string Guitar" : {
+      "comment" : "Instrument name",
+      "extractionState" : "manual"
     },
-    "About": {
-      "comment": "Title of the about screen"
+    "8-string Guitar" : {
+      "comment" : "Instrument name",
+      "extractionState" : "manual"
     },
-    "About Nitpitch": {
-      "comment": "Row that opens the about screen"
+    "A different number of strings is a different instrument." : {
+      "comment" : "Footer explaining why the string count isn't editable in place"
     },
-    "Add an instrument": {
-      "comment": "Empty-state button when every instrument has been deleted"
+    "About" : {
+      "comment" : "Title of the about screen"
     },
-    "Add high string": {
-      "comment": "String editor: add a string above the highest"
+    "About Nitpitch" : {
+      "comment" : "Row that opens the about screen"
     },
-    "Add instrument": {
-      "comment": "Toolbar + on the instrument list: add one, picking its type"
+    "Add an instrument" : {
+      "comment" : "Empty-state button when every instrument has been deleted"
     },
-    "Add low string": {
-      "comment": "String editor: add a string below the lowest"
+    "Add high string" : {
+      "comment" : "String editor: add a string above the highest"
     },
-    "Add to favorites": {
-      "comment": "Star on an instrument row: pin it to the launch screen"
+    "Add instrument" : {
+      "comment" : "Toolbar + on the instrument list: add one, picking its type"
     },
-    "All instruments": {
-      "comment": "Preset browser filter: don't narrow to one instrument"
+    "Add low string" : {
+      "comment" : "String editor: add a string below the lowest"
     },
-    "All instruments…": {
-      "comment": "Launch rack: the row into the full instrument list"
+    "Add to favorites" : {
+      "comment" : "Star on an instrument row: pin it to the launch screen"
     },
-    "All presets": {
-      "comment": "Presets sheet: the non-favorited presets' section"
+    "All instruments" : {
+      "comment" : "Preset browser filter: don't narrow to one instrument"
     },
-    "All presets…": {
-      "comment": "Launch screen row: opens the whole preset collection"
+    "All instruments…" : {
+      "comment" : "Launch rack: the row into the full instrument list"
     },
-    "Appearance": {
-      "comment": "Setting: follow the system appearance, or force light/dark"
+    "All presets" : {
+      "comment" : "Presets sheet: the non-favorited presets' section"
     },
-    "Audio is analyzed on your device and never recorded or sent anywhere.": {
-      "comment": "Privacy summary on the about screen"
+    "All presets…" : {
+      "comment" : "Launch screen row: opens the whole preset collection"
     },
-    "Auto": {
-      "comment": "Column picker: let the screen choose the grid shape"
+    "Appearance" : {
+      "comment" : "Setting: follow the system appearance, or force light/dark"
     },
-    "Bass": {
-      "comment": "Kind tag: bass guitar",
-      "extractionState": "manual"
+    "Audio is analyzed on your device and never recorded or sent anywhere." : {
+      "comment" : "Privacy summary on the about screen"
     },
-    "Bowed": {
-      "comment": "Instrument picker section: bowed string instruments",
-      "extractionState": "manual"
+    "Auto" : {
+      "comment" : "Column picker: let the screen choose the grid shape"
     },
-    "Cancel": {
-      "comment": "Dismisses a dialog without doing anything"
+    "Bass" : {
+      "comment" : "Kind tag: bass guitar",
+      "extractionState" : "manual"
     },
-    "Change string count…": {
-      "comment": "Button in the instrument editor: make a new instrument with a different number of strings"
+    "Bowed" : {
+      "comment" : "Instrument picker section: bowed string instruments",
+      "extractionState" : "manual"
     },
-    "Check intonation": {
-      "comment": "Menu toggle: the octave layer across all string cells/strips"
+    "Cancel" : {
+      "comment" : "Dismisses a dialog without doing anything"
     },
-    "Columns": {
-      "comment": "Label for the control setting how many string dials fit across the grid"
+    "Change string count…" : {
+      "comment" : "Button in the instrument editor: make a new instrument with a different number of strings"
     },
-    "Create": {
-      "comment": "Confirming button of the New instrument prompt"
+    "Check intonation" : {
+      "comment" : "Menu toggle: the octave layer across all string cells/strips"
     },
-    "Custom": {
-      "comment": "Tuning name shown when the pitches match no known tuning"
+    "Columns" : {
+      "comment" : "Label for the control setting how many string dials fit across the grid"
     },
-    "DADGAD": {
-      "comment": "Tuning name (guitar)",
-      "extractionState": "manual"
+    "Create" : {
+      "comment" : "Confirming button of the New instrument prompt"
     },
-    "Dark": {
-      "comment": "Appearance option: always dark"
+    "Custom" : {
+      "comment" : "Tuning name shown when the pitches match no known tuning"
     },
-    "Db": {
-      "comment": "Kind tag: double bass (orchestra abbreviation)",
-      "extractionState": "manual"
+    "DADGAD" : {
+      "comment" : "Tuning name (guitar)",
+      "extractionState" : "manual"
     },
-    "Delete": {
-      "comment": "Context menu action: remove an added instrument"
+    "Dark" : {
+      "comment" : "Appearance option: always dark"
     },
-    "Done": {
-      "comment": "Dismisses the settings sheet"
+    "Db" : {
+      "comment" : "Kind tag: double bass (orchestra abbreviation)",
+      "extractionState" : "manual"
     },
-    "Drop D": {
-      "comment": "Tuning name (guitar/bass): lowest string down to D",
-      "extractionState": "manual"
+    "Delete" : {
+      "comment" : "Context menu action: remove an added instrument"
     },
-    "Duplicate": {
-      "comment": "Row action: clone this instrument with its current setup"
+    "Done" : {
+      "comment" : "Dismisses the settings sheet"
     },
-    "Edit strings…": {
-      "comment": "Instrument management action opening the string editor"
+    "Drop D" : {
+      "comment" : "Tuning name (guitar/bass): lowest string down to D",
+      "extractionState" : "manual"
     },
-    "Equal": {
-      "comment": "Temperament choice: equal temperament (100-cent semitones)"
+    "Duplicate" : {
+      "comment" : "Row action: clone this instrument with its current setup"
     },
-    "Favorite": {
-      "comment": "Accessibility label for the preset favorite star"
+    "Edit strings…" : {
+      "comment" : "Instrument management action opening the string editor"
     },
-    "Favorites": {
-      "comment": "Presets sheet: the favorited presets' section"
+    "Equal" : {
+      "comment" : "Temperament choice: equal temperament (100-cent semitones)"
     },
-    "Filter by instrument": {
-      "comment": "Accessibility label for the preset browser's filter menu"
+    "Favorite" : {
+      "comment" : "Accessibility label for the preset favorite star"
     },
-    "Fretted": {
-      "comment": "Instrument picker section: fretted string instruments",
-      "extractionState": "manual"
+    "Favorites" : {
+      "comment" : "Presets sheet: the favorited presets' section"
     },
-    "Gtr": {
-      "comment": "Kind tag: guitar",
-      "extractionState": "manual"
+    "Filter by instrument" : {
+      "comment" : "Accessibility label for the preset browser's filter menu"
     },
-    "Half-step down": {
-      "comment": "Tuning name: every string one semitone down",
-      "extractionState": "manual"
+    "Fretted" : {
+      "comment" : "Instrument picker section: fretted string instruments",
+      "extractionState" : "manual"
     },
-    "How note names are spelled.": {
-      "comment": "Footnote under the notation picker"
+    "Gtr" : {
+      "comment" : "Kind tag: guitar",
+      "extractionState" : "manual"
     },
-    "In the dial grid and the strips. Off: lowest at the bottom, as tabs are written.": {
-      "comment": "Footer explaining the string-order toggle's scope and default"
+    "Half-step down" : {
+      "comment" : "Tuning name: every string one semitone down",
+      "extractionState" : "manual"
     },
-    "Instrument": {
-      "comment": "Title of the instrument chooser"
+    "How note names are spelled." : {
+      "comment" : "Footnote under the notation picker"
     },
-    "Instrument options": {
-      "comment": "Accessibility label for the grid's … menu"
+    "In the dial grid and the strips. Off: lowest at the bottom, as tabs are written." : {
+      "comment" : "Footer explaining the string-order toggle's scope and default"
     },
-    "Instruments, presets and favorites stay the same on every device.": {
-      "comment": "Footer under the sync switch while it is on"
+    "Instrument" : {
+      "comment" : "Title of the instrument chooser"
     },
-    "Interval": {
-      "comment": "Accessibility label for the interval/beat readout"
+    "Instrument options" : {
+      "comment" : "Accessibility label for the grid's … menu"
     },
-    "Keep both": {
-      "comment": "Button: save a received preset alongside the one of the same name"
+    "Instruments, presets and favorites stay the same on every device." : {
+      "comment" : "Footer under the sync switch while it is on"
     },
-    "Light": {
-      "comment": "Appearance option: always light"
+    "Interval" : {
+      "comment" : "Accessibility label for the interval/beat readout"
     },
-    "Load once": {
-      "comment": "Button: apply a received preset without saving it"
+    "Keep both" : {
+      "comment" : "Button: save a received preset alongside the one of the same name"
     },
-    "Load onto which instrument?": {
-      "comment": "Asked when a preset fits several of the user's instruments"
+    "Light" : {
+      "comment" : "Appearance option: always light"
     },
-    "Lock": {
-      "comment": "Menu action: lock this instrument's setup against changes"
+    "Load once" : {
+      "comment" : "Button: apply a received preset without saving it"
     },
-    "Low string on top": {
-      "comment": "Settings toggle for the strips view's string order; off (default) means the lowest string sits at the bottom"
+    "Load onto which instrument?" : {
+      "comment" : "Asked when a preset fits several of the user's instruments"
     },
-    "Lower target": {
-      "comment": "Stepper in the single-string view: this string's target down a semitone"
+    "Lock" : {
+      "comment" : "Menu action: lock this instrument's setup against changes"
     },
-    "MIT licensed.": {
-      "comment": "License note on the about screen"
+    "Low string on top" : {
+      "comment" : "Settings toggle for the strips view's string order; off (default) means the lowest string sits at the bottom"
     },
-    "Manage presets…": {
-      "comment": "Tuning-menu door into the presets sheet: star, pin, delete"
+    "Lower target" : {
+      "comment" : "Stepper in the single-string view: this string's target down a semitone"
     },
-    "Microphone access is off": {
-      "comment": "Shown when the user denied microphone permission"
+    "Manage presets…" : {
+      "comment" : "Tuning-menu door into the presets sheet: star, pin, delete"
     },
-    "My instruments": {
-      "comment": "Chooser section: the instruments the user has made theirs",
-      "extractionState": "manual"
+    "Microphone access is off" : {
+      "comment" : "Shown when the user denied microphone permission"
     },
-    "Name": {
-      "comment": "Text field placeholder in the rename dialog"
+    "MIT licensed." : {
+      "comment" : "License note on the about screen"
     },
-    "New instrument": {
-      "comment": "Title of the staged-creation prompt: name the instrument being added"
+    "My instruments" : {
+      "comment" : "Chooser section: the instruments the user has made theirs",
+      "extractionState" : "manual"
     },
-    "Next string": {
-      "comment": "Arrow in the single-string view: go to the higher neighbouring string"
+    "Name" : {
+      "comment" : "Text field placeholder in the rename dialog"
     },
-    "Nitpicking about pitch.": {
-      "comment": "Tagline on the about screen — the app's name is a pun on 'nitpick'"
+    "New instrument" : {
+      "comment" : "Title of the staged-creation prompt: name the instrument being added"
     },
-    "No %lld-string %@": {
-      "comment": "Shown on a preset whose string count matches no instrument the user owns"
+    "Next string" : {
+      "comment" : "Arrow in the single-string view: go to the higher neighbouring string"
     },
-    "No audio input device": {
-      "comment": "Chromatic status when the system has no microphone or line-in at all"
+    "Nitpicking about pitch." : {
+      "comment" : "Tagline on the about screen — the app's name is a pun on 'nitpick'"
     },
-    "No audio input device is available.": {
-      "comment": "Shown when the engine reports no usable input"
+    "No %lld-string %@" : {
+      "comment" : "Shown on a preset whose string count matches no instrument the user owns"
     },
-    "No presets for this instrument.": {
-      "comment": "Shown when a browser filter matches nothing"
+    "No audio input device" : {
+      "comment" : "Chromatic status when the system has no microphone or line-in at all"
     },
-    "Not listening": {
-      "comment": "Shown when the tuner is stopped"
+    "No audio input device is available." : {
+      "comment" : "Shown when the engine reports no usable input"
     },
-    "Notation": {
-      "comment": "Label for the note-naming convention picker (A B C / A H C / Do Re Mi / iroha)"
+    "No presets for this instrument." : {
+      "comment" : "Shown when a browser filter matches nothing"
     },
-    "Nothing leaves this device.": {
-      "comment": "Footer under the sync switch while it is off — the privacy promise"
+    "Not listening" : {
+      "comment" : "Shown when the tuner is stopped"
     },
-    "Octave": {
-      "comment": "Intonation: the octave sample's label (fretted 12th, fingered octave, or harmonic)"
+    "Notation" : {
+      "comment" : "Label for the note-naming convention picker (A B C / A H C / Do Re Mi / iroha)"
     },
-    "Octave versus open": {
-      "comment": "Accessibility label for the intonation delta readout"
+    "Nothing leaves this device." : {
+      "comment" : "Footer under the sync switch while it is off — the privacy promise"
     },
-    "Off": {
-      "comment": "Accessibility value: a toggle that is off"
+    "Octave" : {
+      "comment" : "Intonation: the octave sample's label (fretted 12th, fingered octave, or harmonic)"
     },
-    "On": {
-      "comment": "Accessibility value: a toggle that is on"
+    "Octave versus open" : {
+      "comment" : "Accessibility label for the intonation delta readout"
     },
-    "Open": {
-      "comment": "Intonation: the open-string sample's label"
+    "Off" : {
+      "comment" : "Accessibility value: a toggle that is off"
     },
-    "Open G": {
-      "comment": "Tuning name (guitar)",
-      "extractionState": "manual"
+    "On" : {
+      "comment" : "Accessibility value: a toggle that is on"
     },
-    "Other": {
-      "comment": "Instrument picker section: everything else (chromatic mode)",
-      "extractionState": "manual"
+    "Open" : {
+      "comment" : "Intonation: the open-string sample's label"
     },
-    "Pin to launch screen": {
-      "comment": "Accessibility label for the preset pin toggle"
+    "Open G" : {
+      "comment" : "Tuning name (guitar)",
+      "extractionState" : "manual"
     },
-    "Play a note": {
-      "comment": "Shown while listening but no pitch is confident enough to display"
+    "Other" : {
+      "comment" : "Instrument picker section: everything else (chromatic mode)",
+      "extractionState" : "manual"
     },
-    "Preset received": {
-      "comment": "Title of the sheet shown when a shared preset link is opened"
+    "Pin to launch screen" : {
+      "comment" : "Accessibility label for the preset pin toggle"
     },
-    "Presets": {
-      "comment": "Title of the preset list sheet"
+    "Play a note" : {
+      "comment" : "Shown while listening but no pitch is confident enough to display"
     },
-    "Previous string": {
-      "comment": "Arrow in the single-string view: go to the lower neighbouring string"
+    "Preset received" : {
+      "comment" : "Title of the sheet shown when a shared preset link is opened"
     },
-    "Pure": {
-      "comment": "The temperament chip beside the reference: pure intervals in force"
+    "Presets" : {
+      "comment" : "Title of the preset list sheet"
     },
-    "Pure fifths": {
-      "comment": "Temperament choice on fifths-tuned bowed instruments: beatless 3:2 intervals"
+    "Previous string" : {
+      "comment" : "Arrow in the single-string view: go to the lower neighbouring string"
     },
-    "Pure fourths": {
-      "comment": "Temperament choice on the double bass: beatless 4:3 intervals"
+    "Pure" : {
+      "comment" : "The temperament chip beside the reference: pure intervals in force"
     },
-    "QR code for this preset": {
-      "comment": "Accessibility label for the shared preset's QR code"
+    "Pure fifths" : {
+      "comment" : "Temperament choice on fifths-tuned bowed instruments: beatless 3:2 intervals"
     },
-    "Raise target": {
-      "comment": "Stepper in the single-string view: this string's target up a semitone"
+    "Pure fourths" : {
+      "comment" : "Temperament choice on the double bass: beatless 4:3 intervals"
     },
-    "Recently changed": {
-      "comment": "Preset browser sort order: most recently saved first"
+    "QR code for this preset" : {
+      "comment" : "Accessibility label for the shared preset's QR code"
     },
-    "Reference": {
-      "comment": "Preset-save checkbox: carry the reference pitch"
+    "Raise target" : {
+      "comment" : "Stepper in the single-string view: this string's target up a semitone"
     },
-    "Reference pitch": {
-      "comment": "VoiceOver label for the reference-pitch stepper (the A=440 control)"
+    "Recently changed" : {
+      "comment" : "Preset browser sort order: most recently saved first"
     },
-    "Reference tone": {
-      "comment": "Toolbar toggle in the string view: sound the string's target to tune by ear"
+    "Reference" : {
+      "comment" : "Preset-save checkbox: carry the reference pitch"
     },
-    "Remove from favorites": {
-      "comment": "Star on an instrument row: unpin it from the launch screen"
+    "Reference pitch" : {
+      "comment" : "VoiceOver label for the reference-pitch stepper (the A=440 control)"
     },
-    "Remove string": {
-      "comment": "Accessibility label for the string editor's per-row delete"
+    "Reference tone" : {
+      "comment" : "Toolbar toggle in the string view: sound the string's target to tune by ear"
     },
-    "Rename": {
-      "comment": "Context menu action and dialog title: rename an instrument"
+    "Remove from favorites" : {
+      "comment" : "Star on an instrument row: unpin it from the launch screen"
     },
-    "Rename preset": {
-      "comment": "Title of the rename prompt"
+    "Remove string" : {
+      "comment" : "Accessibility label for the string editor's per-row delete"
     },
-    "Replace": {
-      "comment": "Confirms saving over an existing preset"
+    "Rename" : {
+      "comment" : "Context menu action and dialog title: rename an instrument"
     },
-    "Replace preset": {
-      "comment": "Title of the confirmation when saving over an existing name"
+    "Rename preset" : {
+      "comment" : "Title of the rename prompt"
     },
-    "Replace “%@”": {
-      "comment": "Button: overwrite the existing preset of this name with the received one"
+    "Replace" : {
+      "comment" : "Confirms saving over an existing preset"
     },
-    "Retry": {
-      "comment": "No-input state: re-check for a microphone after connecting one"
+    "Replace “%@”" : {
+      "comment" : "Button: overwrite the existing preset of this name with the received one"
     },
-    "Save": {
-      "comment": "Preset-save sheet: the confirm button"
+    "Replace preset" : {
+      "comment" : "Title of the confirmation when saving over an existing name"
     },
-    "Save as preset…": {
-      "comment": "Tuning menu: save the current setup under a name"
+    "Retry" : {
+      "comment" : "No-input state: re-check for a microphone after connecting one"
     },
-    "Save preset": {
-      "comment": "Title of the save dialog"
+    "Save" : {
+      "comment" : "Preset-save sheet: the confirm button"
     },
-    "Scan this, or send the link.": {
-      "comment": "Footnote under a preset's QR code"
+    "Save as preset…" : {
+      "comment" : "Tuning menu: save the current setup under a name"
     },
-    "Settings": {
-      "comment": "Title of the settings sheet, and the gear button's VoiceOver label"
+    "Save preset" : {
+      "comment" : "Title of the save dialog"
     },
-    "Share": {
-      "comment": "Preset row action: hand this setup to someone else"
+    "Scan this, or send the link." : {
+      "comment" : "Footnote under a preset's QR code"
     },
-    "Share link": {
-      "comment": "Button: open the system share sheet with the preset link"
+    "Settings" : {
+      "comment" : "Title of the settings sheet, and the gear button's VoiceOver label"
     },
-    "Share preset": {
-      "comment": "Title of the sheet showing a preset's QR code and link"
+    "Share" : {
+      "comment" : "Preset row action: hand this setup to someone else"
     },
-    "Sign in to iCloud on this device to sync.": {
-      "comment": "Footer under the sync switch while no iCloud account is signed in"
+    "Share link" : {
+      "comment" : "Button: open the system share sheet with the preset link"
     },
-    "Sort": {
-      "comment": "Preset browser: the sort-order menu"
+    "Share preset" : {
+      "comment" : "Title of the sheet showing a preset's QR code and link"
     },
-    "Standard": {
-      "comment": "Tuning name: the instrument's standard tuning"
+    "Sign in to iCloud on this device to sync." : {
+      "comment" : "Footer under the sync switch while no iCloud account is signed in"
     },
-    "Strings as strips": {
-      "comment": "Mac layout toggle: show the strings as horizontal strips instead of dials"
+    "Sort" : {
+      "comment" : "Preset browser: the sort-order menu"
     },
-    "Sync with iCloud": {
-      "comment": "Instrument list: the opt-in switch for iCloud syncing"
+    "Standard" : {
+      "comment" : "Tuning name: the instrument's standard tuning"
     },
-    "System": {
-      "comment": "Appearance option: follow the system setting"
+    "Strings as strips" : {
+      "comment" : "Mac layout toggle: show the strings as horizontal strips instead of dials"
     },
-    "Temperament": {
-      "comment": "Tuning-menu picker: how the open-string targets divide their intervals"
+    "Sync with iCloud" : {
+      "comment" : "Instrument list: the opt-in switch for iCloud syncing"
     },
-    "That name is already used for this instrument.": {
-      "comment": "Shown when a rename would collide with another preset of the same instrument"
+    "System" : {
+      "comment" : "Appearance option: follow the system setting"
     },
-    "The first four are on the launch screen.": {
-      "comment": "Favorites section footer when more than four are starred"
+    "Temperament" : {
+      "comment" : "Tuning-menu picker: how the open-string targets divide their intervals"
     },
-    "This link isn't readable.": {
-      "comment": "Shown when a preset link can't be decoded"
+    "That name is already used for this instrument." : {
+      "comment" : "Shown when a rename would collide with another preset of the same instrument"
     },
-    "This preset is for an instrument you don't have yet. Add one, then open the link again.": {
-      "comment": "Shown when a received preset fits no instrument the user owns"
+    "The first four are on the launch screen." : {
+      "comment" : "Favorites section footer when more than four are starred"
     },
-    "Tunings": {
-      "comment": "Presets sheet: the catalog tunings section"
+    "This link isn't readable." : {
+      "comment" : "Shown when a preset link can't be decoded"
     },
-    "Unlock": {
-      "comment": "Menu action and dialog button: allow changes again"
+    "This preset is for an instrument you don't have yet. Add one, then open the link again." : {
+      "comment" : "Shown when a received preset fits no instrument the user owns"
     },
-    "Vc": {
-      "comment": "Kind tag: cello (orchestra abbreviation)",
-      "extractionState": "manual"
+    "Tunings" : {
+      "comment" : "Presets sheet: the catalog tunings section"
     },
-    "Version %@": {
-      "comment": "Version pill on the about screen; %@ is like '0.1.0 (12)'"
+    "Unlock" : {
+      "comment" : "Menu action and dialog button: allow changes again"
     },
-    "Vla": {
-      "comment": "Kind tag: viola (orchestra abbreviation)",
-      "extractionState": "manual"
+    "Vc" : {
+      "comment" : "Kind tag: cello (orchestra abbreviation)",
+      "extractionState" : "manual"
     },
-    "Vln": {
-      "comment": "Kind tag: violin (orchestra abbreviation)",
-      "extractionState": "manual"
+    "Version %@" : {
+      "comment" : "Version pill on the about screen; %@ is like '0.1.0 (12)'"
     },
-    "You already have a preset called “%@”.": {
-      "comment": "Warning when an incoming preset's name is already in use"
+    "Vla" : {
+      "comment" : "Kind tag: viola (orchestra abbreviation)",
+      "extractionState" : "manual"
     },
-    "“%@” already exists.": {
-      "comment": "Body of the replace confirmation; the placeholder is the preset's name"
+    "Vln" : {
+      "comment" : "Kind tag: violin (orchestra abbreviation)",
+      "extractionState" : "manual"
+    },
+    "You already have a preset called “%@”." : {
+      "comment" : "Warning when an incoming preset's name is already in use"
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

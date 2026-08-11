@@ -33,6 +33,15 @@ struct NitpitchApp: App {
                 // for the dial to breathe.
                 .frame(minWidth: 560, minHeight: 400)
                 .capturesWhileActive(audio)
+                // A preset link opened from a browser is an EXTERNAL EVENT,
+                // and a WindowGroup answers those by spawning a new scene —
+                // so clicking a shared link with the app open produced a
+                // second tuner window (donpa has the same bug). This is the
+                // existing window volunteering for all of them: macOS then
+                // routes the URL here, through the same `onOpenURL`, and a
+                // new window appears only when none exists — which, since
+                // the app quits with its last window, means at launch.
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
         .windowResizability(.contentMinSize)
         .commands {

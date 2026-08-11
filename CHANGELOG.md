@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Mac: opening a shared preset link no longer spawns a second tuner
+  window — the one you already have takes it.
 - Preset links are real web links now: sharing gives
   `https://nitpitch.app/t#…`, which is tappable in any messenger, opens
   the app directly when it's installed, and shows the tuning to anyone

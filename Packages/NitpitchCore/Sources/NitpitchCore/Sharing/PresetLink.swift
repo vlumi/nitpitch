@@ -50,27 +50,37 @@ public struct PresetLink: Equatable, Sendable {
 /// density is set by its payload length, and the fields are few and small.
 /// `v1` leads so a later format can be told apart rather than guessed at.
 public enum PresetLinkCodec {
-    /// The custom scheme the app registers. Universal Links (an https URL
-    /// that opens the app) would need a domain and an
-    /// apple-app-site-association file; the scheme works with neither, and
-    /// nitpitch.app can adopt links later without changing this format.
+    /// The custom scheme the app registers — accepted forever (old QR codes
+    /// don't expire), and emitted by nitpitch.app's landing page as its
+    /// open-in-app bridge.
     public static let scheme = "nitpitch"
     public static let host = "preset"
+
+    /// The universal-link home: `https://nitpitch.app/t#…`. This is what the
+    /// app EMITS — an https link is tappable in every messenger (custom
+    /// schemes often don't even linkify), opens the app directly when it's
+    /// installed, and falls back to a page that shows the payload when it
+    /// isn't. Backed by the apple-app-site-association file on nitpitch.app;
+    /// the payload stays in the fragment, which browsers never send, so the
+    /// site remains a static host that learns nothing.
+    public static let universalHost = "nitpitch.app"
+    public static let universalPath = "/t"
 
     /// The current payload version. A decoder that meets a version it
     /// doesn't know refuses rather than misreading — a wrong tuning applied
     /// silently is worse than a link that doesn't open.
     static let version = "v1"
 
-    /// `nitpitch://preset#v1|guitar|38,45,50,55,59,64|442|pure|Drop D`
+    /// `https://nitpitch.app/t#v1|guitar|38,45,50,55,59,64|442|pure|Drop D`
     ///
     /// Name goes LAST and unescaped-of-separators: it's the only field that
     /// can contain anything, so putting it at the end means a name with a
     /// `|` in it can't shift the fields that follow.
     public static func url(for link: PresetLink) -> URL? {
         var components = URLComponents()
-        components.scheme = scheme
-        components.host = host
+        components.scheme = "https"
+        components.host = universalHost
+        components.path = universalPath
         components.fragment = fragment(for: link)
         return components.url
     }
@@ -98,10 +108,25 @@ public enum PresetLinkCodec {
     /// empty tuning. Refusing is the safe failure — the receiver sees "this
     /// link isn't readable" instead of a preset that isn't what was sent.
     public static func link(from url: URL) -> PresetLink? {
-        guard url.scheme?.lowercased() == scheme, url.host?.lowercased() == host,
-            let fragment = url.fragment(percentEncoded: false)
-        else { return nil }
+        guard isPresetURL(url), let fragment = url.fragment(percentEncoded: false) else {
+            return nil
+        }
         return link(fromFragment: fragment)
+    }
+
+    /// Both spellings are the app's: the universal link it emits, and the
+    /// custom scheme every link ever shared already uses. Anything else —
+    /// another host, another path — is not ours to read.
+    private static func isPresetURL(_ url: URL) -> Bool {
+        switch url.scheme?.lowercased() {
+        case "https":
+            return url.host?.lowercased() == universalHost
+                && (url.path == universalPath || url.path == universalPath + "/")
+        case scheme:
+            return url.host?.lowercased() == host
+        default:
+            return false
+        }
     }
 
     static func link(fromFragment fragment: String) -> PresetLink? {

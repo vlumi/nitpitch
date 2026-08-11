@@ -118,25 +118,54 @@ final class PresetLinkTests: XCTestCase {
             "a temperament this build doesn't have")
     }
 
-    /// Only this app's links open: another app's URL isn't ours to read.
+    /// Only this app's links open: another app's URL isn't ours to read —
+    /// and on OUR host, only the preset path speaks for presets.
     func testForeignURLsAreRefused() throws {
         for spelling in [
             "https://example.com/#v1|guitar|38,45,50,55,59,64|442||Drop D",
+            "https://nitpitch.app/support#v1|guitar|38,45,50,55,59,64|442||Drop D",
+            "https://evil.nitpitch.app/t#v1|guitar|38,45,50,55,59,64|442||Drop D",
             "nitpitch://instrument#v1|guitar|38,45,50,55,59,64|442||Drop D",
             "nitpitch://preset",
+            "https://nitpitch.app/t",
         ] {
             let url = try XCTUnwrap(URL(string: spelling), spelling)
             XCTAssertNil(PresetLinkCodec.link(from: url), spelling)
         }
     }
 
-    /// The scheme is matched case-insensitively — URLs get lowercased and
-    /// uppercased in transit by mail clients and QR readers alike.
-    func testSchemeMatchingIsCaseInsensitive() throws {
+    /// The universal link is what the app emits now — and the landing page
+    /// serves /t/ with a trailing slash, which must read the same.
+    func testTheEmittedLinkIsAUniversalLink() throws {
+        let url = try XCTUnwrap(PresetLinkCodec.url(for: dropD))
+
+        XCTAssertEqual(url.scheme, "https")
+        XCTAssertEqual(url.host, "nitpitch.app")
+        XCTAssertEqual(url.path, "/t")
+        let slashed = try XCTUnwrap(
+            URL(string: url.absoluteString.replacingOccurrences(of: "/t#", with: "/t/#")))
+        XCTAssertEqual(PresetLinkCodec.link(from: slashed), dropD, "trailing slash reads too")
+    }
+
+    /// Every link ever shared used the custom scheme; they don't expire, and
+    /// the landing page's open-in-app bridge still mints them.
+    func testTheLegacySchemeIsAcceptedForever() throws {
         let url = try XCTUnwrap(
-            URL(string: "NITPITCH://PRESET#v1|guitar|38,45,50,55,59,64|442||Drop D"))
+            URL(string: "nitpitch://preset#v1|guitar|38,45,50,55,59,64|442||Drop D"))
 
         XCTAssertEqual(PresetLinkCodec.link(from: url)?.name, "Drop D")
+    }
+
+    /// Scheme and host are matched case-insensitively — URLs get lowercased
+    /// and uppercased in transit by mail clients and QR readers alike.
+    func testSchemeMatchingIsCaseInsensitive() throws {
+        for spelling in [
+            "NITPITCH://PRESET#v1|guitar|38,45,50,55,59,64|442||Drop D",
+            "HTTPS://NITPITCH.APP/t#v1|guitar|38,45,50,55,59,64|442||Drop D",
+        ] {
+            let url = try XCTUnwrap(URL(string: spelling))
+            XCTAssertEqual(PresetLinkCodec.link(from: url)?.name, "Drop D", spelling)
+        }
     }
 
     /// A QR code's density is its payload length, so the format staying

@@ -144,6 +144,15 @@ public struct RootView: View {
         }
         #endif
         .onOpenURL { receive($0) }
+        // Universal links (https://nitpitch.app/t#…). iOS hands them to
+        // `onOpenURL`; macOS delivers them as a browsing-web user activity,
+        // so both are wired to the same receiver — the codec accepts both
+        // spellings and refuses everything else.
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            if let url = activity.webpageURL {
+                receive(url)
+            }
+        }
         .sheet(item: $arrival) { arrival in
             presetArrivalSheet(arrival)
         }

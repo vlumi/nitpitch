@@ -23,5 +23,15 @@
 	     daemon (ubd) does the networking outside the sandbox, so the app
 	     itself remains unable to make a connection — the sandbox keeps
 	     enforcing that rather than merely documenting it. -->
+	<!-- Universal Links for preset sharing: https://nitpitch.app/t#… opens
+	     the app directly. Backed by the static apple-app-site-association on
+	     nitpitch.app; the payload rides in the URL fragment (never sent to
+	     the server), so the site stays a static host that learns nothing.
+	     The custom scheme (nitpitch://) stays registered for old links and
+	     as the landing page's open-in-app bridge. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:nitpitch.app</string>
+	</array>
 </dict>
 </plist>

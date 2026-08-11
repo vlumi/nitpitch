@@ -56,13 +56,12 @@ everything else depends on, and worth putting in early.
 
 ## 2. Other features worth considering
 
-- **nitpitch.app's tuning collection** — now that presets serialize into
-  links (shipped), the site can host the long tail — scordatura,
-  historical setups — as ordinary static pages of `nitpitch://preset#…`
-  links, so the collection grows without app updates. Needs the site
-  itself, and a decision on whether those links become Universal Links
-  (a domain and an apple-app-site-association file) so they open the app
-  from a browser rather than needing the scheme.
+- **nitpitch.app's tuning collection** — the plumbing has shipped: the
+  site exists, preset links are universal links
+  (`https://nitpitch.app/t#…` opens the app, or shows the payload to
+  anyone without it). What remains is the collection itself — curated
+  pages for the long tail, scordatura and historical setups, as static
+  pages of those links, growing without app updates.
 
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.

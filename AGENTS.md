@@ -180,7 +180,16 @@ one of the drafts that lost.
   The link carries the payload only — template, pitches, optional
   reference and temperament, and a suggested name — in the URL's
   *fragment*, which is never sent to a server, so a static host learns
-  nothing about what anyone shared. Deliberately **no id, no device, no
+  nothing about what anyone shared. **Emitted as a universal link**
+  (`https://nitpitch.app/t#…`): tappable in every messenger (custom
+  schemes often don't linkify), opens the app directly when installed,
+  and falls back to nitpitch.app/t — a static page whose JS renders the
+  fragment client-side, the one deliberate exception to the site's
+  no-JS rule. The `nitpitch://preset#…` scheme is accepted FOREVER
+  (shared QR codes don't expire) and is what the landing page's
+  open-in-app button mints; macOS receives universal links as a
+  browsing-web `NSUserActivity`, so RootView wires both
+  `onOpenURL` and `onContinueUserActivity` to one receiver. Deliberately **no id, no device, no
   timestamp**: carrying the sender's id would make the link the identity
   rather than the name, letting a re-share silently overwrite edits the
   receiver made to their own copy, and putting two people who derived

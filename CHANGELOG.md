@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Preset links are real web links now: sharing gives
+  `https://nitpitch.app/t#…`, which is tappable in any messenger, opens
+  the app directly when it's installed, and shows the tuning to anyone
+  without it. Old `nitpitch://` links and QR codes keep working, and
+  what travels is unchanged — the setup itself, never sent to any
+  server.
 - Mac: the launch screen's instrument list stopped misbehaving around
   its scrollbar — no more flashing layout when expanding an instrument's
   presets, no scrollbar on a list that visibly fits, and in a tall

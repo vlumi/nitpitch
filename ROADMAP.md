@@ -127,3 +127,8 @@ Found while porting its scaffold; fixed here, still broken there:
    (fresh `git init`), not just on a non-git checkout.
 2. SwiftLint's `excluded:` paths resolve relative to the invocation directory —
    worth a line in donpa's AGENTS.md, as here.
+3. Opening a shared link (donpa.app/s/…) with the app already running spawns a
+   second window on macOS: the WindowGroup answers external events with a new
+   scene unless the existing window volunteers —
+   `.handlesExternalEvents(preferring: ["*"], allowing: ["*"])` on the window
+   content is the fix, proven here on the same bug.

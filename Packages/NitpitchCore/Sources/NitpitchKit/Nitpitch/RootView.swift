@@ -118,6 +118,31 @@ public struct RootView: View {
             // principal slot and the gear is a real toolbar item (see
             // `ChromaticTunerView`), so hiding it would hide the header.
         }
+        // Escape goes up a level, the Mac's answer to the phone's edge
+        // swipe — which macOS has no equivalent of, leaving the toolbar's
+        // back button as the only way out of a pushed screen.
+        //
+        // A KEY EQUIVALENT (hidden button), deliberately not `onKeyPress`:
+        // key presses only reach the focused view hierarchy, and the grid
+        // and chooser focus nothing — the string view's arrow keys need
+        // `.focusable()` + focus-on-appear to work for exactly that reason.
+        // A key equivalent dispatches through the window regardless of
+        // focus, and a modal sheet intercepts it first, so sheet Cancel
+        // (`.cancelAction`) keeps winning while one is up. Disabled at the
+        // root rather than a no-op: a disabled equivalent frees the key.
+        #if os(macOS)
+        .background {
+            Button {
+                path.removeLast()
+            } label: {
+                EmptyView()
+            }
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(path.isEmpty)
+            .opacity(0)
+            .accessibilityHidden(true)
+        }
+        #endif
         .onOpenURL { receive($0) }
         .sheet(item: $arrival) { arrival in
             presetArrivalSheet(arrival)

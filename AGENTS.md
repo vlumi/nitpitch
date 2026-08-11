@@ -649,6 +649,14 @@ one language.
 
 ## Gotchas
 
+- **`onKeyPress` fires only in the FOCUSED view hierarchy.** The string
+  view's arrow keys need `.focusable()` + `.focusEffectDisabled()` +
+  focus-grabbed-on-appear for exactly that reason; a bare `onKeyPress`
+  on a screen that focuses nothing (the grid, the chooser) never fires,
+  while building and linting green. For a key that must work regardless
+  of focus, use a key equivalent — a hidden button with
+  `.keyboardShortcut` (RootView's Escape-goes-back) — which dispatches
+  through the window and lets a modal sheet intercept it first.
 - SourceKit in-IDE diagnostics may report `No such module 'NitpitchCore'` for files
   it hasn't indexed — these are **false**. The authoritative checks are
   `swift build` / `swift test` / `xcodebuild`.

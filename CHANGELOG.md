@@ -24,6 +24,9 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Mac: Escape goes up a level — string view to grid to instrument list
+  to the tuner — the keyboard's answer to the phone's edge swipe. A
+  sheet still takes the key first, and at the root it does nothing.
 - Mac: the launch screen's instrument list scrolls instead of shrinking
   the tuner. However many instruments you keep, the dial gets the space —
   and it now grows with the window rather than stopping at a fixed size,

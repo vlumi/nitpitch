@@ -24,6 +24,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Tap a preset in the Manage-presets sheet to load it onto the
+  instrument you came from — no menu detour. An equals mark shows the
+  row the instrument is already on, so a tap that would change nothing
+  says so up front.
 - An instrument's Manage-presets sheet shows only presets it can
   actually wear: a nine-string experiment no longer clutters your
   six-string's list. Everything still lives in All presets, which can

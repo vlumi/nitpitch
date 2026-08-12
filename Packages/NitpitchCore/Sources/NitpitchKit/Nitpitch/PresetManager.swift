@@ -172,6 +172,10 @@ struct PresetManager: View {
             presets.load(preset, onto: instance, in: store)
             dismiss()
         }
+        // A CONTAINER, explicitly: a bare identifier on a plain stack
+        // broadcasts onto every element inside it, renaming the pin and
+        // share buttons out from under their own identifiers.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("presets.row.\(preset.name)")
     }
 

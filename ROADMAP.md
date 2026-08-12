@@ -106,6 +106,10 @@ Store release does.
   Store description and privacy answers must say what PRIVACY.md now
   says: nothing leaves the device *unless you enable iCloud sync*, and
   even then only setup data, only into the user's own iCloud account.
+  And the copy must not sell simultaneous-string reading on fretted
+  instruments: real plucked double stops rarely register both strings
+  (see the field findings below) — the interval/beat display is a bowed
+  feature in the copy, however true the fourths math is on paper.
 - **Beta verification of unowned instruments** (viola, cello, double
   bass) — the digital piano verifies range in five minutes per
   instrument; timbre needs real players via TestFlight's "What to Test".
@@ -118,6 +122,22 @@ Store release does.
   level should be the happy path (no mic rolloff, no gate flicker), and
   the device hot-plug handling should swap capture over live — confirm
   both.
+- **Guitar/bass detection, three open field findings** (one `-debug`
+  session, guitar in hand, likely one story):
+  1. Playing the high e, the low E's dial captures the note fairly
+     often. The shadow-memory theory is DISPROVEN (the confirmation gate
+     already covers single-frame dropouts, and the app ships hybrid, not
+     the MPM path it was tested against) — needs the debug screen's raw
+     per-string readings before another hypothesis.
+  2. The intonation Δ didn't visibly follow saddle adjustments in either
+     direction. Could be the app, measurement noise, or old strings —
+     undiagnosed, and not worth code until the raw readings say which.
+  3. Two simultaneous PLUCKED strings rarely both register, unlike bowed
+     double stops. Accepted as a physics-shaped limitation (two decaying
+     transients, and fretted players tune string-by-string anyway) — but
+     it constrains the App Store copy below: the interval/beat display
+     is advertised for BOWED double stops only, never as a fretted
+     feature.
 
 ## 4. Owed upstream to donpa
 

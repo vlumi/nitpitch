@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 8 — 2026-08-12
+
 - Tap a preset in the Manage-presets sheet to load it onto the
   instrument you came from — no menu detour. An equals mark shows the
   row the instrument is already on, so a tap that would change nothing

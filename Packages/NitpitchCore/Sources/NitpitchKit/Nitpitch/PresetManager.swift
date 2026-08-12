@@ -11,6 +11,10 @@ import SwiftUI
 struct PresetManager: View {
     @ObservedObject var presets: PresetStore
     @ObservedObject var settings: Settings
+    /// For loading: a tapped row applies itself to THIS instrument — the
+    /// sheet is scoped to one, so unlike the browser there is nothing to
+    /// ask.
+    @ObservedObject var store: InstrumentStore
     let instance: InstrumentInstance
     @Environment(\.dismiss) private var dismiss
     /// The preset being shared, driving the share sheet.
@@ -88,6 +92,7 @@ struct PresetManager: View {
         return HStack(spacing: 10) {
             Text(LocalizedStringKey(name), bundle: .module)
             Spacer()
+            loadIndicator(matches: instance.strings == tuning.strings)
             Button {
                 settings.togglePin(instrumentID: instance.id, presetID: pinID)
             } label: {
@@ -103,6 +108,24 @@ struct PresetManager: View {
             .buttonStyle(.borderless)
             .accessibilityIdentifier("presets.pin.\(name)")
             .accessibilityLabel(Text("Pin to launch screen", bundle: .module))
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Same semantics as picking it in the tuning menu: pitches only,
+            // an explicit pick.
+            store.setTuning(id: instance.id, strings: tuning.strings)
+            dismiss()
+        }
+    }
+
+    /// The row's "already on" mark — a tappable row should say when tapping
+    /// it would change nothing, the way the menu's equals sign does.
+    @ViewBuilder
+    private func loadIndicator(matches: Bool) -> some View {
+        if matches {
+            Image(systemName: "equal")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
     }
 
@@ -130,10 +153,31 @@ struct PresetManager: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            loadIndicator(matches: valuesMatch(preset))
             shareButton(for: preset)
             pinButton(for: preset)
             deleteButton(for: preset)
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // The sheet answers for ONE instrument, so a tap needs no
+            // instrument picker — load and get out of the way, like the
+            // browser.
+            presets.load(preset, onto: instance, in: store)
+            dismiss()
+        }
+        .accessibilityIdentifier("presets.row.\(preset.name)")
+    }
+
+    /// Whether loading would change anything — the payload against the
+    /// instrument's current values, scope-aware like loading itself.
+    private func valuesMatch(_ preset: Preset) -> Bool {
+        guard preset.strings == instance.strings else { return false }
+        if let hz = preset.referenceHz, hz != instance.referenceHz { return false }
+        if let temperament = preset.temperament, temperament != instance.appliedTemperament {
+            return false
+        }
+        return true
     }
 
     /// Hand this setup to someone else. Offered on saved presets only:

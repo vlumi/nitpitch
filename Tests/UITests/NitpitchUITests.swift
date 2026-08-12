@@ -438,6 +438,35 @@ final class NitpitchUITests: XCTestCase {
             "back goes to the instrument list")
     }
 
+    /// The Manage-presets sheet loads on tap: it answers for one
+    /// instrument, so a tapped row applies itself and gets out of the way —
+    /// no picker, unlike the All-presets browser.
+    func testManagerLoadsAPresetOnTap() {
+        let app = launch()
+        let button = app.descendants(matching: .any)["tuner.instrument"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
+        app.descendants(matching: .any)["chooser.guitar"].firstMatch.tap()
+
+        let tuningMenu = app.buttons["grid.tuning"].firstMatch
+        XCTAssertTrue(tuningMenu.waitForExistence(timeout: 5))
+        XCTAssertTrue(tuningMenu.label.contains("Standard"))
+        tuningMenu.tap()
+        app.buttons["Manage presets…"].firstMatch.tap()
+
+        // Drop D ships seeded, so it's here on a fresh install.
+        let row = app.descendants(matching: .any)["presets.row.Drop D"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
+
+        XCTAssertTrue(
+            tuningMenu.waitForExistence(timeout: 5),
+            "the sheet dismissed back to the grid")
+        XCTAssertTrue(
+            tuningMenu.label.contains("Drop D"),
+            "the tap loaded the preset — the pill claims it")
+    }
+
     /// The shape chooses the presentation: rotate to landscape and the dials
     /// become strips — strings drawn as strings — rotate back and the grid
     /// returns.

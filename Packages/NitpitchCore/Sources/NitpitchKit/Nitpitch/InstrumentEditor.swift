@@ -24,6 +24,7 @@ import SwiftUI
 /// screen's worth.
 struct InstrumentEditor: View {
     @ObservedObject var store: InstrumentStore
+    @ObservedObject var presets: PresetStore
     @ObservedObject var settings: Settings
     let instanceID: String
     /// Opens the creation sheet for a new instrument of this kind — the
@@ -146,7 +147,7 @@ struct InstrumentEditor: View {
     /// The same naming rule as everywhere: the tuning's identity follows
     /// the pitches, so edits relabel it by themselves.
     private func tuningCaption(for instance: InstrumentInstance) -> some View {
-        Text(LocalizedStringKey(instance.tuningName ?? "Custom"), bundle: .module)
+        Text(LocalizedStringKey(presets.tuningDisplayName(for: instance)), bundle: .module)
             .foregroundStyle(.secondary)
     }
 }

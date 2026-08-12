@@ -184,7 +184,7 @@ struct InstrumentGridView: View {
         }
         .sheet(isPresented: $isEditingStrings) {
             InstrumentEditor(
-                store: store, settings: settings, instanceID: instance.id,
+                store: store, presets: presets, settings: settings, instanceID: instance.id,
                 onChangeStringCount: { edited in
                     guard let template = edited.template else { return }
                     duplicating = Creation(template: template, source: edited)

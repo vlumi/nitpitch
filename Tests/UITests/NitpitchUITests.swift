@@ -774,33 +774,25 @@ final class NitpitchUITests: XCTestCase {
             "the promise is stated where the toggle is")
     }
 
-    /// The collection's own door, and the rule that it only exists once
-    /// there IS a collection: a fresh install has saved nothing, so the row
-    /// would point at an empty list and cost the rack a row for nothing.
-    func testAllPresetsAppearsOnlyOnceSomethingIsSaved() {
+    /// The collection ships stocked: the factory tunings are seeded as real
+    /// presets, so a fresh install already has a collection — and the
+    /// launch screen's door to it. Drop D in the browser is the model
+    /// change made visible: included by default, special in no other way.
+    func testTheCollectionShipsStocked() {
         let app = launch()
         XCTAssertTrue(
             app.descendants(matching: .any)["tuner.instrument"].waitForExistence(timeout: 10))
-        XCTAssertFalse(
-            app.descendants(matching: .any)["tuner.presets"].exists,
-            "nothing saved yet, so no door")
 
-        savePreset(named: "Gig", in: app)
-
-        // Back to the launch screen — two levels up: grid → chooser → root.
-        returnToLaunchScreen(app)
         let presetsRow = app.descendants(matching: .any)["tuner.presets"].firstMatch
         XCTAssertTrue(
-            presetsRow.waitForExistence(timeout: 5), "a saved preset opens the door")
+            presetsRow.waitForExistence(timeout: 5),
+            "seeded presets open the door on first launch")
         presetsRow.tap()
 
         XCTAssertTrue(
-            app.staticTexts["Gig"].waitForExistence(timeout: 5),
-            "the browser lists what was saved")
-        // Catalog tunings are NOT the user's collection — they belong to
-        // templates, can't be renamed, deleted or shared, and would drown
-        // the presets actually made.
-        XCTAssertFalse(app.staticTexts["DADGAD"].exists, "no catalog tunings here")
+            app.staticTexts["DADGAD"].waitForExistence(timeout: 5),
+            "the factory tunings are IN the collection — ordinary presets now")
+        XCTAssertTrue(app.staticTexts["Open G"].exists)
     }
 
     /// Renaming is the browser's edit — before it, a typo could only be

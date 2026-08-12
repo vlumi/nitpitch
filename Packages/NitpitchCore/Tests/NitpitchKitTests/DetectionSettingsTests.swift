@@ -161,7 +161,7 @@ final class DetectionSettingsTests: XCTestCase {
             instrument: .guitar, audio: controller, reference: .standard)
         XCTAssertEqual(strings.tuners[0].target.fullName, "E2")
 
-        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        let dropD = Instrument.guitar.factoryTunings.first { $0.name == "Drop D" }!
         let retuned = Instrument(
             id: "guitar", name: "Guitar", strings: dropD.strings, family: .fretted)
         strings.configure(instrument: retuned, reference: .standard)

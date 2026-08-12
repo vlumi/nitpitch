@@ -171,11 +171,27 @@ one of the drafts that lost.
   the template's own interval pattern), never changed by a tuning.
 - **A preset is a stamp, not a place**: it carries **only the fields it was
   saved with** (tuning alone, or tuning + reference), decided at save time.
-  A catalog tuning is exactly a built-in preset that carries pitches and
-  nothing else, so "a tuning never moves the reference" holds by
-  construction. Loading copies values out; saving — with a replace confirm —
-  is the only way values flow back. Presets that don't fit the instrument
-  (template or string count) are never offered.
+  Loading copies values out; saving — with a replace confirm — is the only
+  way values flow back. Presets that don't fit the instrument (template or
+  string count) are never offered.
+- **The factory tunings ARE presets — seeded, not special.** The catalog
+  holds exactly Standard, because Standard is a fact about the TEMPLATE
+  (what the instrument's name means), not a thing anyone owns. Everything
+  else that used to be catalog (guitar's Drop D/DADGAD/Open G/Half-step
+  down, bass's Drop D/Half-step down) is seeded once by `PresetStore` as
+  ordinary presets: deletable, renameable, shareable, synced — and
+  mirrored on nitpitch.app, so deleting one is never final. The load-
+  bearing details: ids are stable (`seed:guitar:drop-d`) so two devices
+  seed identically and old catalog PINS migrate by construction
+  (`Settings.migrateCatalogPins`, one-time); the seed stamp is NIL — the
+  instrument seed's `.distantPast` lesson respelled — so a real edit
+  beats a seed, a deletion's tombstone beats a fresh install's re-seed,
+  and the browser shows no invented date; a name the user already took
+  is skipped, never twinned. Consequence for NAMING: the pill and every
+  tuning label resolve past Standard through the user's own presets by
+  value (`PresetStore.tuningDisplayName`) — renamed shows their word,
+  deleted honestly says Custom. Trimming the seed list only affects
+  fresh installs.
 - **A shared preset is a value, and importing is a save from elsewhere.**
   The link carries the payload only — template, pitches, optional
   reference and temperament, and a suggested name — in the URL's

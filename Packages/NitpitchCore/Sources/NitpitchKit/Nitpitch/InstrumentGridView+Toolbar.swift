@@ -113,7 +113,10 @@ extension InstrumentGridView {
     /// announce "Drop D", a catalog tuning nobody picked.
     var pillText: Text {
         guard let loaded = loadedPreset else {
-            return tuningText(instance.tuningName ?? "Custom")
+            // Preset-aware: past Standard, the pitches are named by whichever
+            // PRESET they match — the user's word for them — since the
+            // catalog no longer knows Drop D (it's a seeded preset now).
+            return tuningText(presets.tuningDisplayName(for: instance))
         }
         if valuesMatch(loaded) {
             return Text(verbatim: loaded.name)

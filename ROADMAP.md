@@ -14,12 +14,13 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
 
 ## 1. Other features worth considering
 
-- **nitpitch.app's tuning collection** — the plumbing has shipped: the
-  site exists, preset links are universal links
-  (`https://nitpitch.app/t#…` opens the app, or shows the payload to
-  anyone without it). What remains is the collection itself — curated
-  pages for the long tail, scordatura and historical setups, as static
-  pages of those links, growing without app updates.
+- **nitpitch.app's tuning collection** — plumbing shipped, first wave
+  curated (31 tunings across seven instruments, one page per
+  instrument, in review). It also backs the factory tunings now that
+  they're deletable presets: every seeded tuning belongs on the site,
+  so deleting one is never final. Remaining: a "ships in the app" group
+  per instrument page, and more waves — Joni Mitchell tunings, drop A/E
+  for the 7/8-strings, Biber's Mystery Sonatas as a page of their own.
 
 - **Localization** — Finnish and Japanese. The string catalogs are in place;
   a translation task, deferred until the UI text settles.

@@ -65,7 +65,7 @@ final class InstrumentStoreTests: XCTestCase {
     func testStatePersistsAcrossStores() {
         let first = makeStore()
         let guitar = first.instance(id: Instrument.guitar.id)!
-        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        let dropD = Instrument.guitar.factoryTunings.first { $0.name == "Drop D" }!
         first.setTuning(id: guitar.id, strings: dropD.strings)
         first.setReference(id: guitar.id, ReferencePitch(hz: 442))
         first.setLocked(id: guitar.id, true)
@@ -74,7 +74,9 @@ final class InstrumentStoreTests: XCTestCase {
         let second = makeStore()
         let restored = second.instance(id: guitar.id)
         XCTAssertEqual(restored?.strings, dropD.strings)
-        XCTAssertEqual(restored?.tuningName, "Drop D")
+        // Drop D is a preset now: the instance's own derivation says Custom,
+        // and the preset-aware name is PresetStore.tuningDisplayName's job.
+        XCTAssertEqual(restored?.tuningName, "Custom")
         XCTAssertEqual(restored?.reference.hz, 442)
         XCTAssertEqual(restored?.isLocked, true)
         XCTAssertEqual(restored?.name, "Strat")
@@ -88,10 +90,13 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertNotEqual(first.id, second.id)
         XCTAssertEqual(second.name, "Guitar 2")
 
-        let dadgad = Instrument.guitar.knownTunings.first { $0.name == "DADGAD" }!
+        let dadgad = Instrument.guitar.factoryTunings.first { $0.name == "DADGAD" }!
         store.setTuning(id: second.id, strings: dadgad.strings)
         XCTAssertEqual(store.instance(id: first.id)?.tuningName, "Standard")
-        XCTAssertEqual(store.instance(id: second.id)?.tuningName, "DADGAD")
+        // DADGAD is a preset now, not catalog: the instance's own derivation
+        // only knows Standard/Custom, and the preset-aware name lives in
+        // PresetStore.tuningDisplayName (tested there).
+        XCTAssertEqual(store.instance(id: second.id)?.tuningName, "Custom")
     }
 
     /// A new instrument's reference seeds from where you came from.
@@ -117,7 +122,7 @@ final class InstrumentStoreTests: XCTestCase {
         XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Standard")
 
         store.setTuning(id: guitar.id, strings: [38, 45, 50, 55, 59, 64])
-        XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Drop D")
+        XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Custom")
 
         store.setTuning(id: guitar.id, strings: [39, 45, 50, 55, 59, 64])
         XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Custom")
@@ -132,7 +137,7 @@ final class InstrumentStoreTests: XCTestCase {
         let edited = store.instance(id: guitar.id)!
         XCTAssertEqual(edited.strings, [38, 45, 50, 55, 59, 64])
         // One string edited to match Drop D exactly IS Drop D.
-        XCTAssertEqual(edited.tuningName, "Drop D")
+        XCTAssertEqual(edited.tuningName, "Custom")
 
         store.setString(id: guitar.id, index: 0, midi: 37)
         XCTAssertEqual(store.instance(id: guitar.id)?.tuningName, "Custom")
@@ -162,14 +167,14 @@ final class InstrumentStoreTests: XCTestCase {
         store.setString(id: bass.id, index: 0, midi: 26)  // D#1 -> D1
         let edited = store.instance(id: bass.id)!
         XCTAssertEqual(edited.strings[0], 26)
-        XCTAssertEqual(edited.tuningName, "Drop D")
+        XCTAssertEqual(edited.tuningName, "Custom")
     }
 
     /// The stepper's clamp and the catalog must agree: every catalog tuning
     /// is reachable one semitone at a time.
     func testCatalogTuningsAreWithinTheEditableRange() {
         for template in Instrument.all where !template.strings.isEmpty {
-            for tuning in template.knownTunings {
+            for tuning in template.knownTunings + template.factoryTunings {
                 for midi in tuning.strings {
                     XCTAssertTrue(
                         InstrumentStore.editableMIDIRange.contains(midi),
@@ -199,7 +204,7 @@ final class InstrumentStoreTests: XCTestCase {
     func testDuplicateCopiesTheSetup() {
         let store = makeStore()
         let guitar = store.instance(id: Instrument.guitar.id)!
-        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        let dropD = Instrument.guitar.factoryTunings.first { $0.name == "Drop D" }!
         store.setTuning(id: guitar.id, strings: dropD.strings)
         store.setReference(id: guitar.id, ReferencePitch(hz: 442))
         store.setLocked(id: guitar.id, true)
@@ -344,7 +349,7 @@ final class InstrumentStoreTests: XCTestCase {
     func testEffectiveInstrumentReflectsTheInstance() {
         let store = makeStore()
         let guitar = store.instance(id: Instrument.guitar.id)!
-        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        let dropD = Instrument.guitar.factoryTunings.first { $0.name == "Drop D" }!
         store.setTuning(id: guitar.id, strings: dropD.strings)
 
         let effective = store.instance(id: guitar.id)!.instrument

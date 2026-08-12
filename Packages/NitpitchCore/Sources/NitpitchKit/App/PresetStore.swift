@@ -61,7 +61,11 @@ public final class PresetStore: ObservableObject {
 
     private let defaults: UserDefaults
 
-    public init(defaults: UserDefaults) {
+    /// `seedingFactoryTunings` exists for TESTS of preset mechanics that
+    /// want an empty store; the app always seeds. Real seed behavior —
+    /// including what seeding does to imports and sync — is tested with it
+    /// on (`FactoryTuningSeedTests`).
+    public init(defaults: UserDefaults, seedingFactoryTunings: Bool = true) {
         self.defaults = defaults
         if let data = defaults.data(forKey: Self.key),
             let stored = try? JSONDecoder().decode([Preset].self, from: data)
@@ -70,6 +74,76 @@ public final class PresetStore: ObservableObject {
         } else {
             presets = []
         }
+        if seedingFactoryTunings { seedFactoryTunings() }
+    }
+
+    private static let factorySeededKey = "presets.factorySeeded.v1"
+
+    /// The factory tunings, as real presets: Drop D and its siblings are
+    /// included by default, not special — deletable, renameable, shareable,
+    /// synced like anything the user saved themselves. Runs once (deletions
+    /// stick afterwards); ids are DELIBERATELY stable so two devices seed
+    /// identically and the first sync merges clean instead of doubling the
+    /// list — the instrument seed's proven pattern.
+    ///
+    /// Two deliberate details. A name the user already took is skipped:
+    /// their "Drop D" is theirs, and seeding a twin would collide with the
+    /// case-insensitive name rule everything else obeys. And the stamp is
+    /// NIL, the preset spelling of the instrument seed's `.distantPast`: a
+    /// seed is what was there before the user did anything, so it must lose
+    /// every merge against a real edit — and a deletion's tombstone must
+    /// beat a fresh install's re-seed, or deleting Drop D would only last
+    /// until the next device. (Nil also reads as "no date" in the browser,
+    /// where `.distantPast` would render as a preset last touched decades
+    /// ago.)
+    private func seedFactoryTunings() {
+        guard !defaults.bool(forKey: Self.factorySeededKey) else { return }
+        for template in Instrument.choosable.flatMap(\.instruments) {
+            for tuning in template.factoryTunings {
+                guard let name = tuning.name,
+                    existing(named: name, templateID: template.id) == nil
+                else { continue }
+                presets.append(
+                    Preset(
+                        id: Self.seedID(templateID: template.id, name: name),
+                        name: name,
+                        templateID: template.id,
+                        strings: tuning.strings,
+                        referenceHz: nil,
+                        temperament: nil,
+                        modifiedAt: nil))
+            }
+        }
+        defaults.set(true, forKey: Self.factorySeededKey)
+    }
+
+    /// A seeded preset's id: derived from the template and the tuning's
+    /// catalog name (a code constant, never localized), so every device
+    /// mints the same id — which is what lets sync merge two fresh installs
+    /// into one list, and lets old catalog PINS migrate by construction
+    /// (`Settings.migrateCatalogPins`).
+    public nonisolated static func seedID(templateID: String, name: String) -> String {
+        "seed:\(templateID):\(name.lowercased().replacingOccurrences(of: " ", with: "-"))"
+    }
+
+    /// What the current setup is called: "Standard" when it matches the
+    /// template's own definition, the user's name when the pitches match a
+    /// preset of theirs, "Custom" otherwise.
+    ///
+    /// This replaces the old catalog matching for everything past Standard:
+    /// hand-tune to drop D and the pill says whatever YOUR "Drop D" is
+    /// called — renamed it, and it shows your word; deleted it, and the
+    /// honest answer is Custom, because nothing you own has that name.
+    public func tuningDisplayName(for instance: InstrumentInstance) -> String {
+        if let template = instance.template, template.strings == instance.strings {
+            return "Standard"
+        }
+        if let match = presets.first(where: {
+            $0.templateID == instance.templateID && $0.strings == instance.strings
+        }) {
+            return match.name
+        }
+        return "Custom"
     }
 
     /// The presets loadable onto this instance — favorites first, then the

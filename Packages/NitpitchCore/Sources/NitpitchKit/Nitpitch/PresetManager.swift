@@ -129,8 +129,14 @@ struct PresetManager: View {
         }
     }
 
+    /// FITTING presets only — template AND string count. This sheet is one
+    /// instrument's window onto the collection, and a preset this
+    /// instrument can't wear is pure noise here: the menu won't offer it,
+    /// the pin disables, and the only live control left is Delete — a trap.
+    /// Cross-shape presets live in the All-presets browser, which can pick
+    /// a compatible instrument or offer to create one.
     private var templatePresets: [Preset] {
-        presets.presets.filter { $0.templateID == instance.templateID }
+        presets.presets.filter { $0.fits(instance) }
     }
 
     private var favorites: [Preset] {

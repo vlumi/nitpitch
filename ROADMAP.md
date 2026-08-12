@@ -12,49 +12,7 @@ fine-tuning strobe — plus the no-microphone survival story. The version
 number waits for a release that earns it. Per-hop CPU was measured and
 retired as a concern (pinned by `DetectorBankPerformanceTests`).
 
-## 1. Piano — and why the target isn't always 2^(n/12)
-
-Wanting to tune a piano with this breaks an assumption the app rests on
-everywhere: that a note's correct frequency is `reference × 2^(semitones/12)`.
-
-**Real pianos are tuned stretched.** String stiffness makes their partials
-sharper than exact integer multiples of the fundamental — *inharmonicity* —
-so a tuner matching octaves by ear ends up progressively sharp toward the
-treble and flat toward the bass. That's the Railsback curve, roughly ±30
-cents at the extremes. It isn't sloppiness: a piano tuned to exact equal
-temperament sounds wrong, because its own overtones disagree with it.
-Inharmonicity varies per instrument, so a good stretch curve is measured
-from the piano in front of you; a published average is a starting point.
-
-### The seam is small
-
-Covered by the shipped temperament machinery — piano stretch is exactly a
-temperament: a per-instrument function from note to expected frequency.
-
-### What a piano mode needs beyond that
-
-- **The detection band itself.** The chromatic band (30–2100 Hz) was
-  chosen for strings — the floor just under a 5-string bass's B0, the
-  ceiling past a violin's E string — and a piano overhangs it at both
-  ends: A0 and A♯0 duck under, C♯7…C8 sail over (confirmed on the
-  digital piano). Neither end is a constants tweak: 27.5 Hz means too
-  few periods in the ~93 ms window for MPM, and at 4 kHz its period is
-  ~10 samples, where interpolation's cent resolution collapses — the
-  top octave likely belongs to the spectral path.
-- **88 notes, not N strings.** The grid doesn't scale to a keyboard; a piano
-  wants different navigation — and the strips view already sketches its
-  display: the keyboard is the strips bent into keys. Real key geometry,
-  the tuning dots running vertically *inside* each key, names and cents
-  above the black keys and below the white ones.
-- **Unison tuning.** Most notes have two or three strings tuned to each
-  other, and hearing the beats between them is most of the job — closer to
-  the shipped interval/beat display than to the ordinary tuner.
-- **Measuring inharmonicity**, if it goes beyond a published average curve.
-
-A large feature, clearly not v0.2 — but the temperament seam is the part
-everything else depends on, and worth putting in early.
-
-## 2. Other features worth considering
+## 1. Other features worth considering
 
 - **nitpitch.app's tuning collection** — the plumbing has shipped: the
   site exists, preset links are universal links
@@ -96,7 +54,7 @@ everything else depends on, and worth putting in early.
   Remaining unknowns: the real response curve versus the spec, watchOS
   session/measurement modes, and whether MPM alone carries a bass.
 
-## 3. Toward 1.0
+## 2. Toward 1.0
 
 Not scheduled for any near milestone — the pile that matters when an App
 Store release does.
@@ -139,7 +97,7 @@ Store release does.
      is advertised for BOWED double stops only, never as a fretted
      feature.
 
-## 4. Owed upstream to donpa
+## 3. Owed upstream to donpa
 
 Found while porting its scaffold; fixed here, still broken there:
 

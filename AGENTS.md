@@ -338,6 +338,24 @@ one of the drafts that lost.
   one-button-per-combination stopped scaling at three dimensions. Just-vs-Pythagorean is moot for adjacent
   open strings — fifths and fourths are pure in both — which is why the
   one non-equal choice is just called "pure".
+- **Piano was considered and parked** — wiped from the roadmap
+  deliberately, not forgotten. Three arguments, all pointing the same
+  way: piano owners don't tune their own pianos (hammer, mutes,
+  technique — an amateur with an app can break strings), professional
+  tuners are already served deep by decade-mature tools built around
+  per-piano measured inharmonicity (CyberTuner, Verituner, TuneLab),
+  and the casual "is my piano flat enough to call someone" case is
+  already answered by the chromatic tuner. Meanwhile it was the hardest
+  work on the roadmap: the detection band fails at BOTH ends for
+  non-tweakable reasons (A0 has too few periods in the ~93 ms window
+  for MPM; at the top octave a ~10-sample period collapses
+  interpolation's cent resolution), the grid doesn't scale to 88 keys,
+  and unison tuning means sub-cent resolution of two or three strings
+  on the SAME note — harder detection than anything shipped. Maximum
+  effort, minimum audience. The analysis already paid its rent: piano
+  stretch being "exactly a temperament" is why the temperament seam is
+  shaped as a per-instrument note→frequency function. If a real
+  audience ever materializes, start from that seam.
 - **The reference tone yields, mixes, and defers.** Detection SUSPENDS
   while the tone sounds — the roadmap's open design question, answered:
   the alternative was the detector locking onto the app's own voice —

@@ -47,7 +47,7 @@ final class PresetStoreTests: XCTestCase {
 
     private func makeStores() -> (PresetStore, InstrumentStore) {
         (
-            PresetStore(defaults: defaults),
+            PresetStore(defaults: defaults, seedingFactoryTunings: false),
             InstrumentStore(defaults: defaults) { .standard }
         )
     }
@@ -57,7 +57,7 @@ final class PresetStoreTests: XCTestCase {
     func testTuningOnlyPresetNeverTouchesTheReference() {
         let (presets, instruments) = makeStores()
         let guitar = instruments.instance(id: Instrument.guitar.id)!
-        let dropD = Instrument.guitar.knownTunings.first { $0.name == "Drop D" }!
+        let dropD = Instrument.guitar.factoryTunings.first { $0.name == "Drop D" }!
         instruments.setTuning(id: guitar.id, strings: dropD.strings)
         instruments.setReference(id: guitar.id, ReferencePitch(hz: 442))
 
@@ -71,7 +71,7 @@ final class PresetStoreTests: XCTestCase {
         presets.load(saved, onto: instruments.instance(id: guitar.id)!, in: instruments)
 
         let after = instruments.instance(id: guitar.id)!
-        XCTAssertEqual(after.tuningName, "Drop D")
+        XCTAssertEqual(after.strings, dropD.strings, "the pitches moved")
         XCTAssertEqual(after.reference.hz, 440, "tuning-only presets must not move the reference")
     }
 
@@ -130,7 +130,7 @@ final class PresetStoreTests: XCTestCase {
         let guitar = instruments.instance(id: Instrument.guitar.id)!
         presets.save(guitar, named: "Gig", includeReference: true)
 
-        let reloaded = PresetStore(defaults: defaults)
+        let reloaded = PresetStore(defaults: defaults, seedingFactoryTunings: false)
         XCTAssertEqual(reloaded.presets.count, 1)
         XCTAssertEqual(reloaded.presets.first?.name, "Gig")
         XCTAssertEqual(reloaded.presets.first?.referenceHz, 440)

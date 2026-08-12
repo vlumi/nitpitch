@@ -25,7 +25,7 @@ final class PresetImportStoreTests: XCTestCase {
 
     private func makeStores() -> (PresetStore, InstrumentStore) {
         (
-            PresetStore(defaults: defaults),
+            PresetStore(defaults: defaults, seedingFactoryTunings: false),
             InstrumentStore(defaults: defaults, seedReference: { .standard })
         )
     }
@@ -180,7 +180,7 @@ final class PresetRenameTests: XCTestCase {
     }
 
     private func makeStores() -> (PresetStore, InstrumentInstance) {
-        let presets = PresetStore(defaults: defaults)
+        let presets = PresetStore(defaults: defaults, seedingFactoryTunings: false)
         let instruments = InstrumentStore(defaults: defaults, seedReference: { .standard })
         return (presets, instruments.instance(id: Instrument.guitar.id)!)
     }
@@ -229,7 +229,7 @@ final class PresetRenameTests: XCTestCase {
     /// Names collide only within a template — a guitar "Gig" and a violin
     /// "Gig" have never been the same thing.
     func testCollisionsAreScopedToTheTemplate() throws {
-        let presets = PresetStore(defaults: defaults)
+        let presets = PresetStore(defaults: defaults, seedingFactoryTunings: false)
         let instruments = InstrumentStore(defaults: defaults, seedReference: { .standard })
         let guitar = try XCTUnwrap(instruments.instance(id: Instrument.guitar.id))
         let violin = try XCTUnwrap(instruments.instance(id: Instrument.violin.id))

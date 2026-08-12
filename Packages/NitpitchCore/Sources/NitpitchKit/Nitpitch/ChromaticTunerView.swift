@@ -271,7 +271,8 @@ public struct ChromaticTunerView: View {
             if let instance = store.instance(id: id) {
                 return LaunchRack.Entry(
                     id: id, name: instance.nameText, template: instance.template,
-                    tuningName: instance.tuningName, isLocked: instance.isLocked,
+                    tuningName: presets.tuningDisplayName(for: instance),
+                    isLocked: instance.isLocked,
                     pins: pinEntries(for: instance))
             }
             if let template = Instrument.named(id) {

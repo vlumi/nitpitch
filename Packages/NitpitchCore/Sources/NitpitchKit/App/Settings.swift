@@ -132,6 +132,31 @@ public final class Settings: ObservableObject {
         } else {
             self.presetPins = []
         }
+        migrateCatalogPins()
+    }
+
+    private static let catalogPinsMigratedKey = "pins.catalogMigrated.v1"
+
+    /// Catalog tunings past Standard became seeded PRESETS, so pins that
+    /// pointed at them ("catalog:guitar:Drop D") re-point at the seeded
+    /// preset's id — same launch chip, same tap, new plumbing. One-time;
+    /// Standard pins stay catalog pins, since Standard stayed catalog. The
+    /// seed id is derivable from the pin's own name by construction, so the
+    /// migration needs no store in hand.
+    private func migrateCatalogPins() {
+        guard !defaults.bool(forKey: Self.catalogPinsMigratedKey) else { return }
+        defaults.set(true, forKey: Self.catalogPinsMigratedKey)
+        let migrated = presetPins.map { pin -> PresetPin in
+            let parts = pin.presetID.split(separator: ":", maxSplits: 2)
+            guard parts.count == 3, parts[0] == "catalog", parts[2] != "Standard" else {
+                return pin
+            }
+            return PresetPin(
+                instrumentID: pin.instrumentID,
+                presetID: PresetStore.seedID(
+                    templateID: String(parts[1]), name: String(parts[2])))
+        }
+        if migrated != presetPins { presetPins = migrated }
     }
 }
 

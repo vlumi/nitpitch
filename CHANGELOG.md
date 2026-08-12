@@ -24,6 +24,15 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The built-in tunings are yours now: Drop D, DADGAD, Open G and the
+  rest arrive as ordinary presets — delete the ones you'll never use,
+  rename them, pin them, share them, and they sync like anything you
+  saved yourself. Deleting one sticks (even across your devices), and
+  every one of them lives on nitpitch.app if you ever want it back.
+  Standard stays built in: it's what the instrument's name means. One
+  visible consequence: hand-tune to pitches you have a preset for and
+  the header names it YOUR way — renamed it, and it shows your word;
+  deleted it, and it honestly says Custom.
 - Mac: opening a shared preset link no longer spawns a second tuner
   window — the one you already have takes it.
 - Preset links are real web links now: sharing gives

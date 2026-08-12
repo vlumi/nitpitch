@@ -44,6 +44,7 @@ struct Creation: Identifiable {
 struct InstrumentChooser: View {
     @ObservedObject var settings: Settings
     @ObservedObject var store: InstrumentStore
+    @ObservedObject var presets: PresetStore
     @ObservedObject var sync: SyncEngine
     /// A shape an orphaned preset needs. Set by the browser; the creation
     /// sheet opens on it once, then it clears.
@@ -58,39 +59,6 @@ struct InstrumentChooser: View {
     /// The creation in progress — a kind, optionally prefilled from a
     /// source instrument (Duplicate) — driving the sheet.
     @State var creating: Creation?
-
-    /// iCloud syncing — opt-in, and phrased as what it does rather than
-    /// what it is. It sits at the foot of the instrument list because
-    /// instruments and their presets are exactly what it moves; the
-    /// footer states the promise the app makes when it's off, since that
-    /// promise is the reason the toggle exists at all.
-    @ViewBuilder private var syncSection: some View {
-        Section {
-            Toggle(isOn: syncBinding) {
-                Text("Sync with iCloud", bundle: .module)
-            }
-            // Disabled, not hidden, when there's no iCloud account: KVS
-            // would accept every write locally and move none of them, so
-            // an enabled switch would claim a sync that isn't happening.
-            // The footer says what would make it work.
-            .disabled(!sync.isCloudAvailable)
-            .accessibilityIdentifier("chooser.sync")
-        } footer: {
-            if !sync.isCloudAvailable {
-                Text("Sign in to iCloud on this device to sync.", bundle: .module)
-            } else if sync.isEnabled {
-                Text(
-                    "Instruments, presets and favorites stay the same on every device.",
-                    bundle: .module)
-            } else {
-                Text("Nothing leaves this device.", bundle: .module)
-            }
-        }
-    }
-
-    private var syncBinding: Binding<Bool> {
-        Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) })
-    }
 
     var body: some View {
         List {
@@ -145,7 +113,7 @@ struct InstrumentChooser: View {
         .frame(minWidth: 320, minHeight: 380)
         .sheet(item: $editing) { target in
             InstrumentEditor(
-                store: store, settings: settings, instanceID: target.id,
+                store: store, presets: presets, settings: settings, instanceID: target.id,
                 onChangeStringCount: { instance in
                     // A different count is a different instrument: the
                     // creation sheet, prefilled from this one.
@@ -242,14 +210,17 @@ struct InstrumentChooser: View {
                 HStack(spacing: 6) {
                     entry.nameText
                         .foregroundStyle(.primary)
-                    Text(LocalizedStringKey(entry.tuningName ?? "Custom"), bundle: .module)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        // Visual seasoning only: in the accessibility tree it
-                        // would pollute the row's name ("Guitar 2, Standard"),
-                        // breaking name-addressed automation and VoiceOver
-                        // alike.
-                        .accessibilityHidden(true)
+                    Text(
+                        LocalizedStringKey(presets.tuningDisplayName(for: entry)),
+                        bundle: .module
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    // Visual seasoning only: in the accessibility tree it
+                    // would pollute the row's name ("Guitar 2, Standard"),
+                    // breaking name-addressed automation and VoiceOver
+                    // alike.
+                    .accessibilityHidden(true)
                     if entry.isLocked {
                         Image(systemName: "lock.fill")
                             .font(.caption2)
@@ -418,5 +389,40 @@ struct InstrumentChooser: View {
             isPinned
                 ? Text("Remove from favorites", bundle: .module)
                 : Text("Add to favorites", bundle: .module))
+    }
+}
+
+extension InstrumentChooser {
+    /// iCloud syncing — opt-in, and phrased as what it does rather than
+    /// what it is. It sits at the foot of the instrument list because
+    /// instruments and their presets are exactly what it moves; the
+    /// footer states the promise the app makes when it's off, since that
+    /// promise is the reason the toggle exists at all.
+    @ViewBuilder private var syncSection: some View {
+        Section {
+            Toggle(isOn: syncBinding) {
+                Text("Sync with iCloud", bundle: .module)
+            }
+            // Disabled, not hidden, when there's no iCloud account: KVS
+            // would accept every write locally and move none of them, so
+            // an enabled switch would claim a sync that isn't happening.
+            // The footer says what would make it work.
+            .disabled(!sync.isCloudAvailable)
+            .accessibilityIdentifier("chooser.sync")
+        } footer: {
+            if !sync.isCloudAvailable {
+                Text("Sign in to iCloud on this device to sync.", bundle: .module)
+            } else if sync.isEnabled {
+                Text(
+                    "Instruments, presets and favorites stay the same on every device.",
+                    bundle: .module)
+            } else {
+                Text("Nothing leaves this device.", bundle: .module)
+            }
+        }
+    }
+
+    private var syncBinding: Binding<Bool> {
+        Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) })
     }
 }

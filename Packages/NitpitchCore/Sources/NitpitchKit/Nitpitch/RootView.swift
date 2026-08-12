@@ -75,7 +75,7 @@ public struct RootView: View {
                 switch route {
                 case .chooser:
                     InstrumentChooser(
-                        settings: settings, store: store, sync: sync,
+                        settings: settings, store: store, presets: presets, sync: sync,
                         // Set when an orphaned preset asked for an
                         // instrument that fits it; the chooser opens its
                         // creation sheet already shaped, then clears this.

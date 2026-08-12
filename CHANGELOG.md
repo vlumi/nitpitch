@@ -24,6 +24,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- An instrument's Manage-presets sheet shows only presets it can
+  actually wear: a nine-string experiment no longer clutters your
+  six-string's list. Everything still lives in All presets, which can
+  pick the right instrument — or offer to create it.
 - The built-in tunings are yours now: Drop D, DADGAD, Open G and the
   rest arrive as ordinary presets — delete the ones you'll never use,
   rename them, pin them, share them, and they sync like anything you

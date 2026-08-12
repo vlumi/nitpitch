@@ -151,6 +151,10 @@ struct PresetBrowser: View {
         .onTapGesture { load(preset) }
         .swipeActions(edge: .trailing) { actions(for: preset) }
         .contextMenu { actions(for: preset) }
+        // A CONTAINER, explicitly: a bare identifier on a plain stack
+        // broadcasts onto every element inside it, renaming the favorite
+        // and share buttons out from under their own identifiers.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("browser.preset.\(preset.id)")
     }
 

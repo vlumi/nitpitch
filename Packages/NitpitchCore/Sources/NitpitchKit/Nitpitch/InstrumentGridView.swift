@@ -161,7 +161,8 @@ struct InstrumentGridView: View {
                 detection: detection, strings: strings, naming: settings.naming)
         }
         .sheet(isPresented: $isManagingPresets) {
-            PresetManager(presets: presets, settings: settings, instance: instance)
+            PresetManager(
+                presets: presets, settings: settings, store: store, instance: instance)
         }
         .sheet(item: $duplicating) { creation in
             InstrumentCreator(

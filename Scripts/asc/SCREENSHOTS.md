@@ -52,12 +52,14 @@ stages its own favorites/pins in-app; `presets` and `share` run in the same
 session, so that staging carries.
 
 `-demo-pose` syntax (see `DemoScore.parse`): voices as `midi[@cents]`,
-comma-separated for a double stop — `62,69@-1.8` is D4 true and A4 1.8¢ low,
-which beats at ~2/s because that's what those frequencies do. Cents are
-against A=440 equal temperament, deliberately independent of what the staged
-screen sets the reference to. Without a pose, a built-in score loops through
-a flat-ish open G, its octave, and the D+A pair — that's `make demo-*` for
-layout judging, and what the UI tests stage against.
+comma-separated for a double stop. Cents are against A=440 equal temperament,
+deliberately independent of what the staged screen sets — which cuts both
+ways: the violin defaults to PURE fifths, whose D target sits 1.955¢ below
+equal D, so "D dead on its target" is `62@-2`, not `62`. The baked poses
+below were chosen by looking at the rendered pixels, not just the arithmetic.
+Without a pose, a built-in score loops through a flat-ish open G, its octave,
+and the D+A pair — that's `make demo-*` for layout judging, and what the UI
+tests stage against.
 
 ## Sizes
 
@@ -72,21 +74,23 @@ Capture order (what `make shots` walks — grouped by launch args so sessions
 are shared; the STORE order differs, see below). Same set on every platform.
 `organize-shots.py <platform> --list` prints this with each shot's exact args.
 
-1. **grid** — `-demo-open violin -demo-pose 62,69@-1.8`: the violin grid,
-   D and A genuinely sounding together — D's dial true, A's a hair low, the
-   interval lane beating steadily at ~2/s. The thesis shot: choosing an
-   instrument means something, and double stops are read as the beats a
-   violinist already listens for.
+1. **grid** — `-demo-open violin -demo-pose 62@-2,69@-4`: the violin grid,
+   D and A genuinely sounding together — D dead on its pure target (0¢, the
+   slim centred needle), A 4¢ low (green, visibly left, one amber dot lit),
+   the interval lane beating at 2.0/s. One string done, one settling. The
+   thesis shot: choosing an instrument means something, and double stops are
+   read as the beats a violinist already listens for.
 2. **grid-dark** — same session: flip the in-app Appearance to Dark, capture,
    flip back. The one dark-mode taster.
 3. **reference** — same session: open the tuning menu, step the reference to
    A=442, temperament on Pure. The orchestra story: your section's A, and
-   fifths tuned the way string players tune them.
+   fifths tuned the way string players tune them. (The dials behind go
+   honestly amber-flat — you raised the A on them; the menu is the subject.)
 4. **string-view** — `-demo-open violin -demo-pose 69@2`: tap the A string's
-   dial — the single-string view holding 2¢ sharp, the strobe band visibly
-   crawling. The precision shot: sub-cent error as motion.
+   dial — the single-string view holding 2¢ sharp, the strobe band awake.
+   The precision shot: sub-cent error as motion.
 5. **launch** — `-demo-pose 69@-3`: the chromatic tuner over the instrument
-   rack, A4 reading 3¢ flat. Stage first: star the violin and a guitar in
+   rack, A4 green at −3¢. Stage first: star the violin and a guitar in
    the chooser, pin Drop D on the guitar so a preset chip shows under the
    row. Home, with the app's breadth visible.
 6. **presets** — same session: "All presets…" from the launch screen, the

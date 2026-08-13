@@ -39,28 +39,35 @@ import sys
 # consecutive shots with identical args share one app session, which is also
 # what lets grid-dark reuse grid's staging and `launch` keep its in-app
 # staging alive through `presets` and `share`.
+# Poses are in A=440 EQUAL cents, but the violin defaults to PURE fifths —
+# its D target sits 1.955¢ below equal D — so "D dead on its target" is
+# 62@-2, not 62. Chosen by looking at the rendered pixels: D earns the slim
+# centred needle at 0¢, A reads −4¢ (green, visibly left, one amber dot lit)
+# and the pair beats at 2.0/s. One string done, one settling: the story.
 SHOTS = [
     ("grid",
-     "-demo-open violin -demo-pose 62,69@-1.8",
-     "The violin grid, D and A genuinely sounding together: D true, A 1.8¢ "
-     "low, the interval lane beating steadily at ~2/s. Frame and shoot."),
+     "-demo-open violin -demo-pose 62@-2,69@-4",
+     "The violin grid, D and A genuinely sounding together: D dead on its "
+     "pure target (0¢, slim needle), A 4¢ low, the interval lane beating "
+     "at 2.0/s. Frame and shoot."),
     ("grid-dark",
-     "-demo-open violin -demo-pose 62,69@-1.8",
+     "-demo-open violin -demo-pose 62@-2,69@-4",
      "The SAME grid in Dark: flip the in-app Appearance to Dark, re-frame, "
      "capture, flip back to Light. The dark-mode taster."),
     ("reference",
-     "-demo-open violin -demo-pose 62,69@-1.8",
+     "-demo-open violin -demo-pose 62@-2,69@-4",
      "Still on the grid: open the tuning menu, step the reference to A=442, "
-     "temperament on Pure — the orchestra story in one frame."),
+     "temperament on Pure — the orchestra story in one frame. (The dials "
+     "behind go honestly amber-flat: you raised the A on them.)"),
     ("string-view",
      "-demo-open violin -demo-pose 69@2",
      "Tap the A string's dial: the single-string view holding 2¢ sharp — "
-     "big dial just off centre, the strobe band crawling. Frame and shoot."),
+     "big dial just off centre, the strobe band awake. Frame and shoot."),
     ("launch",
      "-demo-pose 69@-3",
-     "The chromatic tuner over the instrument rack, A4 reading 3¢ flat. "
-     "Stage first: star the violin and a guitar in the chooser, pin Drop D "
-     "on the guitar so a preset chip shows."),
+     "The chromatic tuner over the instrument rack: A4 green at −3¢, the "
+     "readout doing the talking. Stage first: star the violin and a guitar "
+     "in the chooser, pin Drop D on the guitar so a preset chip shows."),
     ("presets",
      "-demo-pose 69@-3",
      "All presets… from the launch screen: the browser with the seeded "

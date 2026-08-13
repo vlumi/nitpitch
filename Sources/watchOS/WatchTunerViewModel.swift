@@ -24,9 +24,17 @@ final class WatchTunerViewModel: ObservableObject {
     private let audio = WatchAudioInput()
     private let detector: PitchDetector
     private var smoother = ReadingSmoother()
-    private let reference = ReferencePitch.standard
+    private var reference = WatchTuning.storedReference()
     private var quietFrames = 0
     private static let quietFramesBeforeIdle = 8
+
+    /// The settings sheet moved the A: names and cents follow. The detector
+    /// itself searches the full band and needs no rebuild.
+    func configure(reference: ReferencePitch) {
+        guard reference != self.reference else { return }
+        self.reference = reference
+        smoother.reset()
+    }
 
     init() {
         detector = PitchDetector(sampleRate: audio.sampleRate)

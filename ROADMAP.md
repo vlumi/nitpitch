@@ -59,11 +59,18 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   the demo's synthesized instrument in the simulator (`make
   demo-watch`), the light-strip vocabulary, and a footer that reports
   whether watchOS granted `.measurement` mode, so the wrist test
-  answers that unknown at a glance. Decided with the scaffold: v1 on
-  the wrist is chromatic only; instruments and the rest come after it
-  proves itself. Remaining unknowns: the real response curve versus
-  the spec (play a violin at the watch), and whether MPM alone
-  carries a bass.
+  answers that unknown at a glance. FIELD-VERIFIED: plucked violin and
+  bass guitar read through the watch mic (bass E wants an amp, as
+  predicted — its fundamental sits below the mic floor). Since grown:
+  the hands-free one-string mode over the catalog instruments
+  (`StringFocus` in Core, its rules pinned by tests; crown overrides;
+  click/success haptics — the haptic vocabulary's first words), and
+  the wrist's two knobs (reference pitch, temperament) shown on the
+  tuner and editable in a crown-driven settings screen, stored locally
+  until sync brings the real settings. Instrument LOCKS deliberately
+  deferred with the same reasoning: a lock belongs to one of YOUR
+  instruments, and those arrive with sync. Remaining unknown: whether
+  MPM alone carries a bass.
   Parked ideas from the same conversation, for after the wrist v1:
   - **Harmonic tuning, minimal twiddling.** Mostly already true: a
     sounded harmonic is a clean tone at k× the fundamental, so its cent

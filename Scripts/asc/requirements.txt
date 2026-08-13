@@ -1,0 +1,4 @@
+# The ASC tooling's only dependencies: signing the App Store Connect API's
+# JWTs. Everything else is the standard library.
+PyJWT>=2.8
+cryptography>=42

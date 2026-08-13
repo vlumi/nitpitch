@@ -60,15 +60,18 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
 Not scheduled for any near milestone — the pile that matters when an App
 Store release does.
 
-- **Release mechanics** — port donpa's `Scripts/asc/` (listing and
-  screenshot sync), minus the game-specific achievements parts. The App
-  Store description and privacy answers must say what PRIVACY.md now
-  says: nothing leaves the device *unless you enable iCloud sync*, and
-  even then only setup data, only into the user's own iCloud account.
-  And the copy must not sell simultaneous-string reading on fretted
-  instruments: real plucked double stops rarely register both strings
-  (see the field findings below) — the interval/beat display is a bowed
-  feature in the copy, however true the fourths math is on paper.
+- **Release mechanics** — DONE in code: donpa's `Scripts/asc/` ported
+  (listing + screenshot sync, minus the game-specific achievement
+  parts), with the listing text written in `Scripts/asc/listing.json`
+  and the shot list in `Scripts/asc/SCREENSHOTS.md` / `make shots`.
+  Both copy constraints are baked into the text and noted at the top of
+  the json: privacy says exactly what PRIVACY.md says (nothing leaves
+  the device *unless you enable iCloud sync*, then only setup data into
+  the user's own account), and the interval/beat display is sold for
+  BOWED double stops only — plucked pairs rarely register both strings
+  (field findings below). Remaining, deliberately deferred: create the
+  app record in ASC, run `make asc-listing-apply` against it, and take
+  the screenshots (`make shots`, then `make asc-screenshots-apply`).
 - **Beta verification of unowned instruments** (viola, cello, double
   bass) — the digital piano verifies range in five minutes per
   instrument; timbre needs real players via TestFlight's "What to Test".

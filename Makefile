@@ -136,3 +136,34 @@ release-distribute-retry:  ## Re-distribute an already-tagged release (no PR/tag
 .PHONY: release-upload
 release-upload:  ## Upload the already-built dist/ package (no rebuild)
 	@Scripts/release-distribute.sh $(PLATFORM) --upload-only
+
+##@ App Store listing
+##~ Screenshot refresh: make shots → make asc-screenshots → make asc-screenshots-apply
+
+# The listing (text + screenshots) is managed from the repo — Scripts/asc/ —
+# never the ASC UI. Everything is dry-run unless the target says -apply.
+# `filter-out all`: the release lane defaults PLATFORM=all, which is not a
+# screenshot platform; stripped here so shoot.sh's own default (iphone) wins.
+.PHONY: shots
+shots: Nitpitch.xcodeproj  ## Guided screenshot capture: PLATFORM=iphone|ipad|mac [OUT=shots]
+	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(OUT)" Scripts/shoot.sh
+
+.PHONY: shots-organize
+shots-organize:  ## Rename freehand captures: PLATFORM=iphone|ipad|mac DIR=<folder>
+	@Scripts/asc/run.sh organize "$(filter-out all,$(PLATFORM))" $(if $(DIR),"$(DIR)",--list)
+
+.PHONY: asc-listing
+asc-listing:  ## Dry-run the listing text sync (Scripts/asc/listing.json → ASC)
+	@Scripts/asc/run.sh listing
+
+.PHONY: asc-listing-apply
+asc-listing-apply:  ## Push the listing text to App Store Connect
+	@Scripts/asc/run.sh listing --apply
+
+.PHONY: asc-screenshots
+asc-screenshots:  ## Dry-run the screenshot upload (shots/ → ASC)
+	@Scripts/asc/run.sh screens
+
+.PHONY: asc-screenshots-apply
+asc-screenshots-apply:  ## Replace + upload the screenshots, in store order
+	@Scripts/asc/run.sh screens --apply

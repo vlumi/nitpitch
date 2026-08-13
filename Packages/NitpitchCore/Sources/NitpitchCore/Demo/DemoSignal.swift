@@ -36,7 +36,11 @@ public struct DemoScore: Equatable, Sendable {
     /// elements allow 5 seconds, and the worst case — entering a screen just
     /// as the element it needs stops sounding — must land a full capture
     /// (six stable frames, ~0.3 s) inside that; a longer loop flakes.
-    public static let drift = parse("0.8:55@-1.6;0.8:67@5.8;1.6:62,69@-1.8")!
+    ///
+    /// The G phase is 0.9 s — one frame OVER `StringFocus.switchFrames`
+    /// (~0.85 s), so the watch's hands-free focus visibly walks back to the
+    /// G string each loop instead of sticking wherever the pair left it.
+    public static let drift = parse("0.9:55@-1.6;0.8:67@5.8;1.6:62,69@-1.8")!
 
     /// `-demo-pose` syntax: steps separated by `;`, each `[seconds:]voices`,
     /// voices comma-separated as `midi[@cents]`.

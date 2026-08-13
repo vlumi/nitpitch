@@ -118,6 +118,10 @@ targets:
     platform: watchOS
     sources:
       - path: Sources/watchOS
+      # The shared asset catalog: the same tuning-fork icon as everywhere
+      # (a `watchos` platform entry in the appiconset; the art is centred,
+      # so the watch's circular mask crops nothing that matters).
+      - path: Sources/Shared
     info:
       path: Sources/watchOS/Info.plist
       properties:
@@ -136,6 +140,7 @@ targets:
         MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "8"
         GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         DEVELOPMENT_TEAM: U84DT7P75P
         CODE_SIGN_STYLE: Automatic
     dependencies:

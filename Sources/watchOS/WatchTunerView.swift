@@ -7,6 +7,7 @@ import SwiftUI
 /// (a harmonic included — its cent error IS the string's) and read it.
 struct WatchTunerView: View {
     @StateObject private var tuner = WatchTunerViewModel()
+    @AppStorage(WatchTuning.referenceKey) private var referenceHz: Double = 440
 
     var body: some View {
         VStack(spacing: 6) {
@@ -26,9 +27,20 @@ struct WatchTunerView: View {
             case .idle:
                 status(" ")
             }
+            NavigationLink {
+                WatchSettingsView(showsTemperament: false)
+            } label: {
+                Text(verbatim: "A=\(Int(referenceHz))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
         }
         .task { await tuner.begin() }
         .onDisappear { tuner.end() }
+        .onChange(of: referenceHz) { _, _ in
+            tuner.configure(reference: WatchTuning.storedReference())
+        }
     }
 
     private func reading(note: Note, cents: Double) -> some View {

@@ -5,6 +5,7 @@ options:
   deploymentTarget:
     iOS: "16.0"
     macOS: "14.0"
+    watchOS: "10.0"
   createIntermediateGroups: true
   developmentLanguage: en
 
@@ -103,6 +104,47 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Nitpitch-iOS
+
+  # The wrist scaffold: a standalone chromatic tuner on NitpitchCore only —
+  # mic and DSP run on the watch, per the roadmap's settled architecture.
+  # DELIBERATELY NOT EMBEDDED in the iOS app yet: embedding would put it in
+  # the next release's bundle, and it hasn't earned shipping. When it does:
+  # flip WKWatchOnly off, add WKCompanionAppBundleIdentifier
+  # (fi.misaki.nitpitch), rename the bundle id to
+  # fi.misaki.nitpitch.watchkitapp, and add `- target: Nitpitch-watchOS`
+  # to the iOS app's dependencies.
+  Nitpitch-watchOS:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Sources/watchOS
+    info:
+      path: Sources/watchOS/Info.plist
+      properties:
+        CFBundleDisplayName: Nitpitch
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.
+        WKApplication: true
+        # Watch-only for now (see the target comment above).
+        WKWatchOnly: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch.watch
+        PRODUCT_NAME: Nitpitch
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "8"
+        GENERATE_INFOPLIST_FILE: NO
+        DEVELOPMENT_TEAM: U84DT7P75P
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - package: NitpitchCore
+        product: NitpitchCore
+    # Shared scheme so `xcodebuild -scheme Nitpitch-watchOS` works on a fresh
+    # checkout (CI, make build-watch) — same reason as the macOS target.
+    scheme:
+      configVariants: []
 
   Nitpitch-macOS:
     type: application

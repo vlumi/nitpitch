@@ -120,3 +120,10 @@ jobs:
             -scheme Nitpitch-iOS \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
+      - name: Build watchOS (simulator)
+        run: |
+          xcodebuild build \
+            -project Nitpitch.xcodeproj \
+            -scheme Nitpitch-watchOS \
+            -destination 'generic/platform=watchOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

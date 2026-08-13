@@ -62,6 +62,22 @@ run-ipad: Nitpitch.xcodeproj  ## Build + launch on an iPad simulator (DEVICE="Ai
 build-mac: Nitpitch.xcodeproj  ## Build the macOS app
 	@Scripts/build.sh macos
 
+.PHONY: build-watch
+build-watch: Nitpitch.xcodeproj  ## Build the watchOS app (simulator)
+	@xcodebuild -project Nitpitch.xcodeproj -scheme Nitpitch-watchOS \
+		-destination "generic/platform=watchOS Simulator" \
+		-derivedDataPath .build-xcode CODE_SIGNING_ALLOWED=NO build
+
+# To run on YOUR watch: open the project in Xcode, pick the Nitpitch-watchOS
+# scheme, choose your watch as the destination (it appears via the paired
+# iPhone; enable Developer Mode on the watch under Settings ▸ Privacy &
+# Security), and Run. First install asks to trust the developer profile on
+# the watch. There is no make target for this: device installs need Xcode's
+# signing + pairing dance.
+.PHONY: demo-watch
+demo-watch: Nitpitch.xcodeproj  ## Build + launch a watch simulator with the synthesized instrument
+	@Scripts/run-watch.sh
+
 .PHONY: build-ios
 build-ios: Nitpitch.xcodeproj  ## Build the iOS app (simulator)
 	@Scripts/build.sh ios

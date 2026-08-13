@@ -52,8 +52,40 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   the watch is the second device that makes sync earn its keep. Phone
   and Mac stay the management surfaces; the wrist gets favorites, the
   haptic tuner, maybe chromatic — no editors on a 40 mm screen.
-  Remaining unknowns: the real response curve versus the spec, watchOS
-  session/measurement modes, and whether MPM alone carries a bass.
+  **Scaffold SHIPPED**: `Nitpitch-watchOS` (watch-only bundle id,
+  deliberately NOT embedded in the iOS app until it earns shipping —
+  the target comment in project.yml says how to flip it), a chromatic
+  one-dial screen on NitpitchCore's real pipeline — mic on the device,
+  the demo's synthesized instrument in the simulator (`make
+  demo-watch`), the light-strip vocabulary, and a footer that reports
+  whether watchOS granted `.measurement` mode, so the wrist test
+  answers that unknown at a glance. Decided with the scaffold: v1 on
+  the wrist is chromatic only; instruments and the rest come after it
+  proves itself. Remaining unknowns: the real response curve versus
+  the spec (play a violin at the watch), and whether MPM alone
+  carries a bass.
+  Parked ideas from the same conversation, for after the wrist v1:
+  - **Harmonic tuning, minimal twiddling.** Mostly already true: a
+    sounded harmonic is a clean tone at k× the fundamental, so its cent
+    error IS the string's, and chromatic mode reads it today — the
+    scaffold supports tuning by harmonics with zero UI. The refinement
+    worth building later: map a recognized pitch back to "that's the D
+    string's 3rd harmonic" (targets × harmonics 1–4, nearest wins) so
+    the display names the string, plus the haptic beat vocabulary. The
+    near-unison two-harmonics-together technique is the hard case (two
+    tones ~1 Hz apart in one band defeat a 93 ms window); the honest
+    v1 answer is one harmonic at a time against the watch's ear.
+  - **"Everything sounding" display** (watch, then maybe iOS/Mac): show
+    all recognized pitches with debounced switching — appearance is
+    already confirmation-gated and disappearance quiet-frames-gated;
+    what's new is switching hysteresis (the shown pitch keeps the
+    screen until a rival is confidently louder/closer for N frames).
+    With an instrument chosen this is the grid the phone already has;
+    target-free (chromatic) polyphony needs a candidate-fundamental
+    corroboration sweep — real DSP work, bounded, not yet earned. The
+    fretted copy-constraint applies to any such display: plucked pairs
+    rarely both register, so it must never be sold as "see your whole
+    strum".
 
 ## 2. Toward 1.0
 

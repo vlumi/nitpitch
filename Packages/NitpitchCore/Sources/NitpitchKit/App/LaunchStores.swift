@@ -1,4 +1,5 @@
 import Foundation
+import NitpitchCore
 
 /// The single isolation gate for UI tests.
 ///

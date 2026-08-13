@@ -62,10 +62,6 @@ public final class NitpitchViewModel: ObservableObject {
     /// Begin receiving windows. The engine itself is the controller's business
     /// — this only starts listening to it.
     public func attach() async {
-        if LaunchStores.isDemo {
-            await runDemo()
-            return
-        }
         subscription = audio.subscribe { [weak self] window in
             // Runs on the analysis queue. Do the DSP here, then hop to main
             // with only the result.
@@ -88,7 +84,6 @@ public final class NitpitchViewModel: ObservableObject {
     /// re-activation either comes up running or lands back on the same
     /// message, both honestly (the status watch relays the outcome).
     public func retryInput() async {
-        guard !LaunchStores.isDemo else { return }
         await audio.activate()
     }
 
@@ -110,37 +105,6 @@ public final class NitpitchViewModel: ObservableObject {
             // `.running` must not knock a live reading back to "listening".
             if case .reading = state { return }
             state = .listening
-        }
-    }
-
-    /// Drives the display from a synthetic reading, for laying out the UI
-    /// where there's no usable microphone (see `LaunchStores.isDemo`).
-    ///
-    /// Oscillates rather than holding a fixed pitch: a static value would
-    /// leave the arc, the colour ramp and most of the light strip untested,
-    /// and those are what the layout has to accommodate at their extremes.
-    ///
-    /// Sinusoidal rather than a linear sweep — it eases at the turning points
-    /// and crosses the centre quickly, so the in-tune state is legible instead
-    /// of flashing past at the same rate as everything else. A slower second
-    /// term detunes the swing so it doesn't look mechanical.
-    private func runDemo() async {
-        state = .listening
-        let target = Note(midi: 69)  // A4, so the octave subscript shows
-        var tick = 0.0
-
-        while !Task.isCancelled {
-            let swing = sin(tick) * 0.75 + sin(tick * 0.31) * 0.25
-            let cents = swing * TuningDisplay.fullScaleCents
-            let hz = target.frequency(reference: reference) * pow(2, cents / 1200)
-
-            state = .reading(
-                PitchReading(frequency: hz, reference: reference),
-                cents: cents, clarity: 0.98)
-            level = 0.45 + 0.2 * sin(tick * 1.7)
-
-            tick += 0.055
-            try? await Task.sleep(nanoseconds: 50_000_000)
         }
     }
 

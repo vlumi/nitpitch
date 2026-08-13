@@ -33,30 +33,40 @@ import os
 import sys
 
 # Canonical shots in CAPTURE order (see SCREENSHOTS.md — the recommended STORE
-# order differs; arrange at upload). Each: (name, what-to-capture). The dark
-# twin comes right after `grid` because it is the same staged screen.
+# order differs; arrange at upload). Each: (name, launch-args, what-to-capture).
+# The launch args stage exact readings via -demo-pose (the demo IS the real
+# pipeline on a synthesized signal, so a pose is simply what "plays");
+# consecutive shots with identical args share one app session, which is also
+# what lets grid-dark reuse grid's staging and `launch` keep its in-app
+# staging alive through `presets` and `share`.
 SHOTS = [
     ("grid",
-     "Open the violin: the per-string grid, the demo bowing D+A together — "
-     "the interval lane's beat chip live under the dials. Capture with the "
-     "pair sounding."),
+     "-demo-open violin -demo-pose 62,69@-1.8",
+     "The violin grid, D and A genuinely sounding together: D true, A 1.8¢ "
+     "low, the interval lane beating steadily at ~2/s. Frame and shoot."),
     ("grid-dark",
+     "-demo-open violin -demo-pose 62,69@-1.8",
      "The SAME grid in Dark: flip the in-app Appearance to Dark, re-frame, "
      "capture, flip back to Light. The dark-mode taster."),
-    ("string-view",
-     "Tap the A string's dial: the single-string view, big dial plus the "
-     "strobe band. Capture within ±10¢ of target, strobe visible."),
     ("reference",
-     "The tuning menu open on the grid, reference stepped to A=442, "
+     "-demo-open violin -demo-pose 62,69@-1.8",
+     "Still on the grid: open the tuning menu, step the reference to A=442, "
      "temperament on Pure — the orchestra story in one frame."),
+    ("string-view",
+     "-demo-open violin -demo-pose 69@2",
+     "Tap the A string's dial: the single-string view holding 2¢ sharp — "
+     "big dial just off centre, the strobe band crawling. Frame and shoot."),
     ("launch",
-     "Walk back to the root: the chromatic tuner over the instrument rack. "
-     "Stage first: star the violin and a guitar, pin Drop D on the guitar "
-     "so a preset chip shows."),
+     "-demo-pose 69@-3",
+     "The chromatic tuner over the instrument rack, A4 reading 3¢ flat. "
+     "Stage first: star the violin and a guitar in the chooser, pin Drop D "
+     "on the guitar so a preset chip shows."),
     ("presets",
+     "-demo-pose 69@-3",
      "All presets… from the launch screen: the browser with the seeded "
      "tunings (Drop D, DADGAD, Open G…), instrument filter visible."),
     ("share",
+     "-demo-pose 69@-3",
      "Share Drop D from the browser: the QR + link sheet. 'Hand a tuning "
      "to a bandmate' in one image."),
 ]
@@ -84,17 +94,17 @@ def main():
             "usage: organize-shots.py <iphone|ipad|mac> "
             "[<dir> | --list] [--by-mtime] [--langs=en]")
     platform = args[0]
-    names = [name for name, _ in SHOTS]
+    names = [name for name, _, _ in SHOTS]
 
     if "--plain" in flagset:  # machine-readable, for Scripts/shoot.sh
-        for name, desc in SHOTS:
-            print(f"{name}\t{desc}")
+        for name, launch_args, desc in SHOTS:
+            print(f"{name}\t{launch_args}\t{desc}")
         return
 
     if "--list" in flagset or len(args) < 2:
         print(f"Capture these {len(SHOTS)} shots for {platform}, in this order:\n")
-        for i, (name, desc) in enumerate(SHOTS, 1):
-            print(f"  {i}. {name}-{platform}.png")
+        for i, (name, launch_args, desc) in enumerate(SHOTS, 1):
+            print(f"  {i}. {name}-{platform}.png   (launch: {launch_args})")
             print(f"     {desc}")
         print("\nShots 1 (grid, Light) and 2 (grid-dark) are the same staged "
               "screen:\nshoot 1, flip Appearance to Dark in-app, shoot 2, flip "

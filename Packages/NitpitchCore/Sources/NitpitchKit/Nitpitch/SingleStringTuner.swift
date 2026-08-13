@@ -38,8 +38,6 @@ final class SingleStringTuner: ObservableObject {
     /// the lock toggling (captures fine).
     private var analyzerTarget: Double
     private var subscription: AudioSessionController.Subscription?
-    private var demo: Task<Void, Never>?
-    private var intonationDemo: Task<Void, Never>?
     private var reference: ReferencePitch
     /// Kept so retargeting doesn't quietly reset debug-tuned thresholds.
     private var tuning: DetectionTuning
@@ -78,12 +76,6 @@ final class SingleStringTuner: ObservableObject {
         if tone.playingTag != nil {
             let audio = audio
             Task { await audio.silenceTone() }
-        }
-        if LaunchStores.isDemo {
-            guard demo == nil else { return }
-            demo = Task { await runDemoLevel() }
-            intonationDemo = Task { await runDemoIntonation() }
-            return
         }
         guard subscription == nil else { return }
         subscription = audio.subscribe { [weak self, bank, analyzer] window in
@@ -133,10 +125,6 @@ final class SingleStringTuner: ObservableObject {
     func detach() {
         subscription?.cancel()
         subscription = nil
-        demo?.cancel()
-        demo = nil
-        intonationDemo?.cancel()
-        intonationDemo = nil
         inputLevel.set(0)
         bank.interrupted()
         analyzer.setActive(false)
@@ -193,40 +181,6 @@ final class SingleStringTuner: ObservableObject {
         analyzer.configure(target: analyzerTarget, tuning: tuning)
     }
 
-    private func runDemoLevel() async {
-        var tick = 0.0
-        while !Task.isCancelled {
-            inputLevel.set(((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20)
-            tick += 0.055
-            try? await Task.sleep(nanoseconds: 50_000_000)
-        }
-    }
-
-    /// A measurement in progress, synthesized: the open sample already
-    /// captured, the octave being held — the panel's dial lit, both values
-    /// and the delta populated. The layout is judged with every element
-    /// live, which is the demo's whole job.
-    private func runDemoIntonation() async {
-        intonation.reset()
-        for _ in 0..<IntonationCapture.stableFrames {
-            intonation.ingest(
-                IntonationAnalyzer.Frame(
-                    sounding: .note(slot: .open, cents: -1.6, clarity: 0.97), level: 0.5))
-        }
-        intonation.ingest(IntonationAnalyzer.Frame(sounding: .nothing, level: 0.1))
-        var tick = 0.0
-        while !Task.isCancelled {
-            // A gentle wobble inside the stability window, so the octave
-            // sample records and then keeps refreshing like a held note's.
-            let cents = 5.8 + sin(tick) * 1.2
-            intonation.ingest(
-                IntonationAnalyzer.Frame(
-                    sounding: .note(slot: .octave, cents: cents, clarity: 0.97),
-                    level: 0.5 + 0.2 * sin(tick * 1.7)))
-            tick += 0.055
-            try? await Task.sleep(nanoseconds: 50_000_000)
-        }
-    }
 }
 
 extension IntonationAnalyzer.Frame {

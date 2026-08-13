@@ -65,7 +65,7 @@ public final class AudioSessionController: ObservableObject {
         }
     }
 
-    private let input: AudioInput
+    private let input: any AudioCapturing
     /// The subscriber table, with its own lock rather than actor isolation:
     /// windows arrive on the analysis queue, and a subscription can be
     /// released from any thread.
@@ -75,7 +75,7 @@ public final class AudioSessionController: ObservableObject {
     /// hardware's.
     public var sampleRate: Double { input.sampleRate }
 
-    public init(input: AudioInput = AudioInput()) {
+    public init(input: any AudioCapturing = AudioInput()) {
         self.input = input
         // Assigned exactly once. Every subscriber is reached from here.
         let receivers = self.receivers
@@ -128,7 +128,7 @@ public final class AudioSessionController: ObservableObject {
     ///
     /// Safe to call repeatedly — `AudioInput.start()` is a no-op while running.
     public func activate() async {
-        guard await AudioInput.requestPermission() else {
+        guard await input.requestPermission() else {
             status = .permissionDenied
             return
         }

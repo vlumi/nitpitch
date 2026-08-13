@@ -9,7 +9,9 @@ struct NitpitchApp: App {
     @StateObject private var settings = Settings(defaults: LaunchStores.defaults)
     /// One microphone for the whole app — see `AudioSessionController` for why
     /// screens subscribe to it rather than each starting their own engine.
-    @StateObject private var audio = AudioSessionController()
+    /// (Under `-demo` the source is a synthesized instrument, chosen at this
+    /// one seam — see `LaunchStores.audioInput`.)
+    @StateObject private var audio = AudioSessionController(input: LaunchStores.audioInput())
 
     var body: some Scene {
         WindowGroup {

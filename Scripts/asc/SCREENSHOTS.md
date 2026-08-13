@@ -3,8 +3,15 @@
 The carousel's job: make a string player scrolling past their 50th tuner stop
 at the per-string grid and think *"this one was built for me."* Lead with what
 no generic tuner has — a dial per string and bowed double stops read as beats —
-then show precision, then breadth. Manual capture, demo mode (synthetic
-readings, seeded presets, no microphone needed).
+then show precision, then breadth. Manual capture, demo mode.
+
+**Every reading in every shot is real.** Under `-demo` the microphone is
+swapped for a synthesized instrument at the one seam below the audio session
+controller — the whole pipeline (detection, smoothing, beats, the strobe) runs
+on known frequencies. `-demo-pose` pins what "plays", so each shot's launch
+args ARE its staging: a dial reading 2¢ sharp is the detector genuinely
+reading a 2¢-sharp string. No waiting for a drift to pass through the right
+moment, and identical pixels on every retake.
 
 **The copy rules apply to images too:** the interval/beat display is staged on
 a VIOLIN, bowed pairs only — never framed as a fretted feature (ROADMAP
@@ -17,19 +24,22 @@ no such screen, which makes this easy.
 make shots PLATFORM=iphone     # or ipad / mac; OUT=shots by default
 ```
 
-It builds, launches the demo (`-demo -uitest-clean -demo-open violin` — clean
-seeded state, synthetic readings, straight onto the violin grid), walks the
-shot list — *"stage this, press ⏎"* — and **captures each shot itself** (window
-grab on Mac, `simctl` on the simulators), straight to
+It builds, then walks the shot list — relaunching the app with each shot's
+own pose (`-demo -uitest-clean` plus the args printed per shot), telling you
+what to stage on screen, and **capturing each shot itself** (window grab on
+Mac, `simctl` on the simulators), straight to
 `shots/<platform>/en/<shot>-<platform>.png`. Retake with `r`, skip with `s`.
-No ⌘S, no renaming: `shots/` is the handoff for the ASC upload.
+Consecutive shots with the same args share one app session, which is what
+keeps in-app staging (favorites, pins, Dark) alive across them. No ⌘S, no
+renaming: `shots/` is the handoff for the ASC upload.
 
 Before a Mac run, once: the first window grab asks for Screen Recording
 permission for your terminal, and the automatic 1440×900 window resize asks
 for Accessibility; grant both and re-run.
 
 Manual fallback (freehand capture, then rename by capture order):
-`make demo-iphone` / `make demo-mac` to just launch, shoot freely, then
+`make demo-iphone` / `make demo-mac` to just launch (append the shot's pose
+via `LAUNCH_ARGS`), shoot freely, then
 `make shots-organize PLATFORM=iphone DIR=<folder>`.
 
 ## Demo isolation & staging
@@ -37,15 +47,17 @@ Manual fallback (freehand capture, then rename by capture order):
 `-uitest-clean` routes every store to wiped ephemeral storage with no iCloud —
 demo runs can't touch real data, and every launch starts identical: the
 factory presets seeded (Drop D, DADGAD, Open G, Half-step down on guitar;
-Drop D, Half-step down on bass), no favorites, no pins. The `launch` and
-`presets` shots stage their own favorites/pins in-app during the run — the
-shot descriptions say what to set up.
+Drop D, Half-step down on bass), no favorites, no pins. The `launch` shot
+stages its own favorites/pins in-app; `presets` and `share` run in the same
+session, so that staging carries.
 
-`-demo` feeds synthetic readings: on an instrument grid it bows the two middle
-strings together (violin: D+A), drifting the beat rate, so the interval chip
-is live; in the single-string view the reading drifts through the cent range,
-so the strobe band wakes as it passes through ±10¢. Capture timing is part of
-the stage direction on those shots.
+`-demo-pose` syntax (see `DemoScore.parse`): voices as `midi[@cents]`,
+comma-separated for a double stop — `62,69@-1.8` is D4 true and A4 1.8¢ low,
+which beats at ~2/s because that's what those frequencies do. Cents are
+against A=440 equal temperament, deliberately independent of what the staged
+screen sets the reference to. Without a pose, a built-in score loops through
+a flat-ish open G, its octave, and the D+A pair — that's `make demo-*` for
+layout judging, and what the UI tests stage against.
 
 ## Sizes
 
@@ -56,32 +68,33 @@ touches ASC.
 
 ## The shots
 
-Capture order (what `make shots` walks — dark right after `grid` because it's
-the same staged screen). Same set on every platform.
+Capture order (what `make shots` walks — grouped by launch args so sessions
+are shared; the STORE order differs, see below). Same set on every platform.
+`organize-shots.py <platform> --list` prints this with each shot's exact args.
 
-1. **grid** — the violin's per-string grid, arriving staged by `-demo-open`:
-   four dials, the demo bowing D+A together, the beat chip live in the
-   interval lane. Capture with the pair sounding. The thesis shot: choosing
-   an instrument means something, and double stops are read as the beats a
+1. **grid** — `-demo-open violin -demo-pose 62,69@-1.8`: the violin grid,
+   D and A genuinely sounding together — D's dial true, A's a hair low, the
+   interval lane beating steadily at ~2/s. The thesis shot: choosing an
+   instrument means something, and double stops are read as the beats a
    violinist already listens for.
-2. **grid-dark** — the same screen with the in-app Appearance flipped to Dark:
-   the one dark-mode taster. Flip back to Light before moving on.
-3. **string-view** — tap the A string's dial: the big dial with the
-   fine-tuning strobe band beneath it. Wait for the demo to drift inside
-   ±10¢ so the strobe is visibly awake. The precision shot — sub-cent error
-   as motion.
-4. **reference** — the grid's tuning menu open, reference stepped to A=442,
-   temperament on Pure. The orchestra story: your section's A, and fifths
-   tuned the way string players tune them.
-5. **launch** — back at the root: the chromatic tuner over the instrument
-   rack. Stage first: star the violin and a guitar in the chooser, pin
-   Drop D on the guitar (its manage sheet) so a preset chip shows under the
+2. **grid-dark** — same session: flip the in-app Appearance to Dark, capture,
+   flip back. The one dark-mode taster.
+3. **reference** — same session: open the tuning menu, step the reference to
+   A=442, temperament on Pure. The orchestra story: your section's A, and
+   fifths tuned the way string players tune them.
+4. **string-view** — `-demo-open violin -demo-pose 69@2`: tap the A string's
+   dial — the single-string view holding 2¢ sharp, the strobe band visibly
+   crawling. The precision shot: sub-cent error as motion.
+5. **launch** — `-demo-pose 69@-3`: the chromatic tuner over the instrument
+   rack, A4 reading 3¢ flat. Stage first: star the violin and a guitar in
+   the chooser, pin Drop D on the guitar so a preset chip shows under the
    row. Home, with the app's breadth visible.
-6. **presets** — "All presets…" from the launch screen: the browser with the
-   seeded tunings across instruments, the instrument filter visible. The
-   collection is real and yours — deletable, renameable, shareable.
-7. **share** — Share Drop D from the browser: the QR + link sheet. Hand a
-   tuning to a bandmate; nothing but the setup travels.
+6. **presets** — same session: "All presets…" from the launch screen, the
+   browser with the seeded tunings across instruments, the instrument filter
+   visible. The collection is real and yours — deletable, renameable,
+   shareable.
+7. **share** — same session: Share Drop D from the browser, the QR + link
+   sheet. Hand a tuning to a bandmate; nothing but the setup travels.
 
 **Store order ≠ capture order.** In ASC, arrange the carousel by persuasion —
 the first ~3 sell the app: **grid, string-view, reference**, then launch,

@@ -47,9 +47,10 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   Swift + Accelerate, ports as-is), installable without the phone since
   watchOS 6, factory seeding gives a watch-only user a working tuner —
   and companion-shaped only in data, riding the shipped, field-verified iCloud sync
-  rather than a bespoke WatchConnectivity protocol: instruments, pins,
-  references and temperaments are exactly what sync already moves, so
-  the watch is the second device that makes sync earn its keep. Phone
+  rather than a bespoke WatchConnectivity protocol: instruments, PRESETS,
+  pins/favorites, references and temperaments are exactly what sync
+  already moves, so the watch is the second device that makes sync earn
+  its keep. Phone
   and Mac stay the management surfaces; the wrist gets favorites, the
   haptic tuner, maybe chromatic — no editors on a 40 mm screen.
   **Scaffold SHIPPED**: `Nitpitch-watchOS` (watch-only bundle id,
@@ -71,6 +72,13 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   deferred with the same reasoning: a lock belongs to one of YOUR
   instruments, and those arrive with sync. Remaining unknown: whether
   MPM alone carries a bass.
+  Wrist field notes (second session, 2026-08-14): the state so far is
+  as designed — catalog only, no stars/presets/locks until sync — but
+  one real finding: the "A=440 · Pure" footer IS the settings button,
+  and the person who asked for the feature didn't find it. A footnote
+  in tertiary text doesn't read as tappable on a 40 mm screen; give it
+  button clothing (chevron, tint, or a bordered capsule) when the
+  watch UI gets its next pass.
   Parked ideas from the same conversation, for after the wrist v1:
   - **Harmonic tuning, minimal twiddling.** Mostly already true: a
     sounded harmonic is a clean tone at k× the fundamental, so its cent

@@ -11,14 +11,42 @@ public enum LaunchStores {
     /// True when launched by a UI test asking for a clean slate.
     public static let isClean = ProcessInfo.processInfo.arguments.contains("-uitest-clean")
 
-    /// Feed the display a synthetic reading instead of the microphone.
+    /// Replace the microphone with a synthesized instrument.
     ///
     /// The iOS simulator reports an input device and delivers silence, so the
     /// `.reading` state — the whole populated layout — is otherwise
-    /// unreachable there. Under `-demo` the view model drifts a note through
-    /// the cent range, which exercises the arc sweep, the colour ramp and the
-    /// light strip without an instrument in hand.
+    /// unreachable there. Under `-demo` the capture source is swapped for
+    /// `DemoSignalInput` at the one seam below `AudioSessionController`: the
+    /// signal is synthetic, and EVERYTHING else — DSP, smoothing, gating,
+    /// beats, the strobe — is the real pipeline hearing it. No view model
+    /// contains a line of demo code.
     public static let isDemo = ProcessInfo.processInfo.arguments.contains("-demo")
+
+    /// What the demo plays: `-demo-pose "62,69@-1.8"` holds specific pitches
+    /// (see `DemoScore.parse` for the syntax) — for screenshots, where a
+    /// staged screen needs exact readings. Without it, the default score
+    /// loops through everything the screens can show.
+    public static let demoPose: String? = {
+        guard isDemo else { return nil }
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-demo-pose"),
+            arguments.indices.contains(index + 1)
+        else { return nil }
+        return arguments[index + 1]
+    }()
+
+    /// The capture source the session controller should be built on — the
+    /// microphone, or the demo's synthesized instrument. A dev-only fork,
+    /// resolved once at app construction; a MISTYPED pose refuses loudly
+    /// rather than silently drifting through a screenshot session.
+    public static func audioInput() -> any AudioCapturing {
+        guard isDemo else { return AudioInput() }
+        guard let pose = demoPose else { return DemoSignalInput(score: .drift) }
+        guard let score = DemoScore.parse(pose) else {
+            preconditionFailure("Unreadable -demo-pose: \(pose)")
+        }
+        return DemoSignalInput(score: score)
+    }
 
     /// Under `-demo`, start on an instrument's grid instead of the chromatic
     /// root: `-demo -demo-open violin`. Demo mode exists for judging layout

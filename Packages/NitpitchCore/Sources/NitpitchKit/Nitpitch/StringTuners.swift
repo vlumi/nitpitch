@@ -32,8 +32,6 @@ final class StringTuners: ObservableObject {
     /// the locking story.
     private let bank: DetectorBank
     private var subscription: AudioSessionController.Subscription?
-    /// Drives `inputLevel` under `-demo`, where no audio flows.
-    private var demo: Task<Void, Never>?
     /// Whether the intonation layer is on — gates the octave claim routing.
     private var isIntonating = false
     /// The strings' target frequencies, for the router's 2f arithmetic.
@@ -88,11 +86,6 @@ final class StringTuners: ObservableObject {
             let audio = audio
             Task { await audio.silenceTone() }
         }
-        if LaunchStores.isDemo {
-            guard demo == nil else { return }
-            demo = Task { await runDemoLevel() }
-            return
-        }
         guard subscription == nil else { return }
         subscription = audio.subscribe { [weak self, bank] window in
             // Runs on the analysis queue. All the DSP happens here; only the
@@ -130,37 +123,9 @@ final class StringTuners: ObservableObject {
         }
     }
 
-    /// The demo's overall meter, so the top of the screen moves like the rest
-    /// of the synthetic layout — and a synthetic double stop on the middle
-    /// pair, its beats breathing between ~3/s and 0, so the interval chip,
-    /// its pulse and both of its homes are judged live.
-    private func runDemoLevel() async {
-        var tick = 0.0
-        while !Task.isCancelled {
-            inputLevel.set(((0.5 + 0.3 * sin(tick * 1.3)) * 20).rounded() / 20)
-            if midis.count >= 3, targets.count == midis.count,
-                let kind = IntervalBeat.Kind(semitones: midis[2] - midis[1])
-            {
-                let beat = max(0, 3 * (0.5 + 0.5 * sin(tick * 0.25)))
-                let lower = targets[1]
-                let upper =
-                    (Double(kind.lowerHarmonic) * lower - beat)
-                    / Double(kind.upperHarmonic)
-                var frequencies = [Double?](repeating: nil, count: midis.count)
-                frequencies[1] = lower
-                frequencies[2] = upper
-                interval.ingest(frequencies: frequencies)
-            }
-            tick += 0.055
-            try? await Task.sleep(nanoseconds: 50_000_000)
-        }
-    }
-
     func detachAll() {
         subscription?.cancel()
         subscription = nil
-        demo?.cancel()
-        demo = nil
         inputLevel.set(0)
         interval.reset()
         // The spectral engine's phase pair must not span the gap.

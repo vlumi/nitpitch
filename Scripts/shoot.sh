@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Guided App Store screenshot capture. Launches the demo, tells you what to
-# stage, and CAPTURES for you — no ⌘S, no renaming, no file shuffling. Output
-# lands canonically named at
+# Guided App Store screenshot capture. Walks the shot list, launching the app
+# with EACH SHOT'S own staged readings (-demo-pose: the demo is the real
+# pipeline hearing a synthesized signal, so a pose is simply what plays),
+# tells you what to stage on screen, and CAPTURES for you — no ⌘S, no
+# renaming, no file shuffling. Output lands canonically named at
 #   <OUT>/<platform>/en/<shot>-<platform>.png
 # ready for the ASC upload (Scripts/asc/screenshots.py).
 #   PLATFORM=iphone|ipad|mac   (default iphone)
 #   OUT=shots                  (default ./shots)
+# Consecutive shots with the same launch args share one app session — that's
+# what keeps in-app staging (favorites, pins, Dark) alive across those shots.
 # One language today (en); when the deferred localization lands, grow the loop
 # donpa's shoot.sh already has.
 #
@@ -24,9 +28,11 @@ OUT="${OUT:-shots}"
 LANG_DIR="en"
 BUNDLE="fi.misaki.nitpitch"
 APP_NAME="Nitpitch"
-# Clean seeded state (factory presets, no personal data touched), synthetic
-# readings, and straight onto the violin grid — the first shot's screen.
-DEMO_ARGS="-demo -uitest-clean -demo-open violin"
+MAC_APP=".build-xcode/Build/Products/Debug/Nitpitch.app"
+# Every shot runs the demo (synthesized instrument, real pipeline) on clean
+# seeded state (factory presets, no personal data touched); each shot's own
+# -demo-open/-demo-pose args ride on top.
+COMMON_ARGS="-demo -uitest-clean"
 
 capture() {  # $1 = output file
     mkdir -p "$(dirname "$1")"
@@ -64,36 +70,66 @@ end tell
 EOF
 }
 
-echo "━━━ $PLATFORM — launching demo ━━━"
-case "$PLATFORM" in
-    mac)
-        LAUNCH_ARGS="$DEMO_ARGS" Scripts/run.sh >/dev/null
+mac_quit() {
+    pgrep -xq "$APP_NAME" || return 0
+    osascript -e "tell application id \"$BUNDLE\" to quit" >/dev/null 2>&1 || true
+    for _ in $(seq 1 8); do
+        pgrep -xq "$APP_NAME" || return 0
+        sleep 1
+    done
+    killall "$APP_NAME" >/dev/null 2>&1 || true
+    sleep 1
+}
+
+# (Re)launch with this shot's args. The first call builds via the run
+# scripts; later calls relaunch the built product directly.
+LAUNCHED=""
+launch_with() {  # $1 = shot's launch args (word-split on purpose)
+    local args="$COMMON_ARGS $1"
+    echo "  ↻ launching: $args"
+    if [ "$PLATFORM" = mac ]; then
+        if [ -z "$LAUNCHED" ]; then
+            # shellcheck disable=SC2086
+            LAUNCH_ARGS="$args" Scripts/run.sh >/dev/null
+        else
+            mac_quit
+            # shellcheck disable=SC2086
+            open "$MAC_APP" --args $args
+        fi
         WINDOW_ID=$(mac_window_id) || { echo "App window never appeared." >&2; exit 1; }
         mac_pin_window
-        ;;
-    iphone | ipad)
-        # The 6.9" iPhone tier needs a Pro Max; the 13" iPad tier the big Pro.
-        case "$PLATFORM" in
-            iphone) device="${DEVICE:-Pro Max}" ;;
-            ipad) device="${DEVICE:-13-inch}" ;;
-        esac
-        log=$(mktemp)
-        LAUNCH_ARGS="$DEMO_ARGS" Scripts/run-ios.sh "$PLATFORM" "$device" | tee "$log"
-        SIM_UDID=$(awk '/^Simulator:/ {print $2}' "$log")
-        rm -f "$log"
-        [ -n "$SIM_UDID" ] || { echo "Couldn't determine the simulator UDID." >&2; exit 1; }
-        sleep 3  # let the launch settle before the first stage prompt
-        ;;
-    *) echo "PLATFORM must be iphone | ipad | mac" >&2; exit 2 ;;
-esac
+    else
+        if [ -z "$LAUNCHED" ]; then
+            local device log
+            case "$PLATFORM" in
+                iphone) device="${DEVICE:-Pro Max}" ;;  # the 6.9" tier
+                ipad) device="${DEVICE:-13-inch}" ;;
+                *) echo "PLATFORM must be iphone | ipad | mac" >&2; exit 2 ;;
+            esac
+            log=$(mktemp)
+            LAUNCH_ARGS="$args" Scripts/run-ios.sh "$PLATFORM" "$device" | tee "$log"
+            SIM_UDID=$(awk '/^Simulator:/ {print $2}' "$log")
+            rm -f "$log"
+            [ -n "$SIM_UDID" ] || { echo "Couldn't find the simulator UDID." >&2; exit 1; }
+        else
+            xcrun simctl terminate "$SIM_UDID" "$BUNDLE" >/dev/null 2>&1 || true
+            # shellcheck disable=SC2086
+            xcrun simctl launch "$SIM_UDID" "$BUNDLE" $args >/dev/null
+        fi
+        sleep 3  # let the launch settle before the stage prompt
+    fi
+    LAUNCHED="$args"
+}
 
 total=$(python3 Scripts/asc/organize-shots.py "$PLATFORM" --plain | wc -l | tr -d ' ')
 i=0
-while IFS=$'\t' read -r name desc; do
+while IFS=$'\t' read -r name shot_args desc; do
     i=$((i + 1))
     file="$OUT/$PLATFORM/$LANG_DIR/${name}-${PLATFORM}.png"
     echo ""
     echo "[$i/$total] $name"
+    # Same args as the running session = same session, staging preserved.
+    [ "$LAUNCHED" = "$COMMON_ARGS $shot_args" ] || launch_with "$shot_args"
     echo "  $desc"
     printf "  ⏎ capture · s skip · q quit: "
     read -r reply </dev/tty

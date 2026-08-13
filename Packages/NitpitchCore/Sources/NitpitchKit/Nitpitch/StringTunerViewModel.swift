@@ -80,8 +80,6 @@ public final class StringTunerViewModel: ObservableObject {
     public private(set) var band: ClosedRange<Double>
 
     private let audio: AudioSessionController
-    /// The synthetic-reading loop, when running under `-demo`.
-    private var demo: Task<Void, Never>?
     private var smoother = ReadingSmoother()
     private var reference: ReferencePitch
     /// Frames with nothing in this string's band; after enough of them the
@@ -149,21 +147,13 @@ public final class StringTunerViewModel: ObservableObject {
         if state != .idle { state = .waiting }
     }
 
-    /// Start showing readings. Under `-demo` this runs the synthetic swing;
-    /// otherwise results arrive from outside through `ingest`.
+    /// Start showing readings; results arrive from outside through `ingest`.
     public func begin() {
-        if LaunchStores.isDemo {
-            guard demo == nil else { return }
-            demo = Task { await runDemo() }
-            return
-        }
         state = .waiting
     }
 
     /// Stop. Safe to call repeatedly.
     public func end() {
-        demo?.cancel()
-        demo = nil
         smoother.reset()
         state = .idle
         level = 0
@@ -275,50 +265,4 @@ public final class StringTunerViewModel: ObservableObject {
         if nextDelta != delta { delta = nextDelta }
     }
 
-    /// Drives this dial from a synthetic reading where there's no usable
-    /// microphone (see `LaunchStores.isDemo`) — the grid is otherwise a page of
-    /// blank cells on the simulator, which is no use for judging the layout.
-    ///
-    /// Each string swings at its own rate and phase, offset by its position in
-    /// the instrument. A grid moving in lockstep would look like one dial drawn
-    /// six times and would hide exactly what the layout has to survive: cells
-    /// disagreeing, some in tune while others are pinned at the ends.
-    private func runDemo() async {
-        state = .waiting
-        var tick = phaseOffset
-
-        while !Task.isCancelled {
-            let swing = sin(tick) * 0.75 + sin(tick * 0.31) * 0.25
-            let cents = swing * TuningDisplay.fullScaleCents
-            state = .reading(cents: cents, clarity: 0.98)
-            strobe.ingest(cents: cents, targetHz: targetHz, dt: 0.05)
-            level = ((0.55 + 0.25 * sin(tick * 1.7)) * 20).rounded() / 20
-            // A finished measurement per string, values varied by target so
-            // the layout is judged with cells disagreeing. Modulo 11, which
-            // no regular tuning defeats: fifths collapsed mod 7 (a violin's
-            // four cells all read the same Δ) and fourths would mod 5.
-            if isIntonating, openSample == nil {
-                openSample = -1.5
-                octaveSample = Double(target.midi % 11) - 3.5
-                delta = (octaveSample ?? 0) - (openSample ?? 0)
-                octaveCents = octaveSample
-            }
-            // A plausible raw result too, so the diagnostics screen shows
-            // moving numbers rather than a column of dashes.
-            if isReportingRaw {
-                let hz = target.frequency(reference: reference) * pow(2, cents / 1200)
-                lastResult = DetectionResult(frequency: hz, clarity: 0.98, rms: 0.05)
-            }
-
-            tick += 0.055
-            try? await Task.sleep(nanoseconds: 50_000_000)
-        }
-    }
-
-    /// Where this string starts in the demo swing, so the dials don't move as
-    /// one. Derived from the target rather than the index — the model doesn't
-    /// know its position in the grid, and this is stable across rebuilds.
-    private var phaseOffset: Double {
-        Double(target.midi % 12) * 0.5
-    }
 }

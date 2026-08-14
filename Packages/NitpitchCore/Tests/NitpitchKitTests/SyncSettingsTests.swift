@@ -141,6 +141,36 @@ final class SyncSettingsTests: XCTestCase {
             "and the phone's older ON does not resurrect it")
     }
 
+    /// Notation is a user preference, not device-shaped state: set it on
+    /// one device and every device spells notes the same way — while a
+    /// device that never touched it stays humble (its default is not an
+    /// opinion and never travels).
+    func testNotationSyncs() {
+        let cloud = FakeSyncStore()
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
+        phone.engine.sync()
+        mac.engine.sync()
+
+        phone.settings.setNaming(.german)
+        phone.engine.sync()
+        mac.engine.sync()
+
+        XCTAssertEqual(mac.settings.naming, .german, "the choice travels")
+
+        // A fresh joiner adopts it rather than announcing its default.
+        let watch = SyncTestDevice(sharing: cloud)
+        defer { watch.destroy() }
+        watch.engine.sync()
+        XCTAssertEqual(watch.settings.naming, .german, "the joiner adopts")
+
+        // And the adoption isn't a claim: nothing bounces back stamped.
+        watch.engine.sync()
+        phone.engine.sync()
+        XCTAssertEqual(phone.settings.naming, .german)
+    }
+
     /// The LOCAL half of the v1 migration: a device that had stamped the
     /// old blob (it made real choices in the whole-value era) carries that
     /// one date onto every membership it holds — once — so those choices

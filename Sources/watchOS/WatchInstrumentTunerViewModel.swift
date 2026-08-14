@@ -36,6 +36,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private var smoother = ReadingSmoother()
     private var reference: ReferencePitch
     private var temperament: Temperament
+    private var naming: NoteNaming
 
     /// `instrument` carries the strings being tuned — a catalog template,
     /// or an instance's own (possibly custom) tuning via
@@ -44,14 +45,15 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     /// the instance itself for instances.
     init(
         instrument: Instrument, reference: ReferencePitch, temperament: Temperament,
-        initialIndex: Int = 0
+        naming: NoteNaming, initialIndex: Int = 0
     ) {
         self.instrument = instrument
         self.reference = reference
         self.temperament = temperament
+        self.naming = naming
         targets = Self.temperedTargets(
             instrument: instrument, reference: reference, temperament: temperament)
-        stringNames = instrument.notes.map(\.fullName)
+        stringNames = instrument.notes.map { $0.fullName(in: naming) }
         focus = StringFocus(stringCount: instrument.strings.count, initialIndex: initialIndex)
         focusIndex = focus.focusIndex
         bank = DetectorBank(
@@ -73,19 +75,21 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     /// for it. A string-count change (sync replaced the tuning wholesale)
     /// rebuilds focus; the caller's `.id` should normally prevent that.
     func configure(
-        instrument: Instrument, reference: ReferencePitch, temperament: Temperament
+        instrument: Instrument, reference: ReferencePitch, temperament: Temperament,
+        naming: NoteNaming
     ) {
         guard
             instrument != self.instrument || reference != self.reference
-                || temperament != self.temperament
+                || temperament != self.temperament || naming != self.naming
         else { return }
         let countChanged = instrument.strings.count != targets.count
         self.instrument = instrument
         self.reference = reference
         self.temperament = temperament
+        self.naming = naming
         targets = Self.temperedTargets(
             instrument: instrument, reference: reference, temperament: temperament)
-        stringNames = instrument.notes.map(\.fullName)
+        stringNames = instrument.notes.map { $0.fullName(in: naming) }
         if countChanged {
             focus = StringFocus(stringCount: targets.count)
             focusIndex = focus.focusIndex

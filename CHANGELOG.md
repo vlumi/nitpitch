@@ -24,6 +24,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The notation setting (how note names are spelled) syncs now: choose
+  German on one device and every device says H — it's a preference of
+  yours, not of the screen it was set on. A device that never touched
+  it adopts your choice instead of arguing with its default.
 - Turning on sync for the first time keeps BOTH versions when the same
   built-in instrument or preset was edited on two devices while apart:
   the later edit keeps its place, the earlier one becomes its own entry

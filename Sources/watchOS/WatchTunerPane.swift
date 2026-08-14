@@ -172,4 +172,3 @@ struct WatchTunerPane<Footer: View>: View {
         }
     }
 }
-

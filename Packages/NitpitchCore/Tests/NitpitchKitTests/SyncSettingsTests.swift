@@ -141,6 +141,39 @@ final class SyncSettingsTests: XCTestCase {
             "and the phone's older ON does not resurrect it")
     }
 
+    /// The LOCAL half of the v1 migration: a device that had stamped the
+    /// old blob (it made real choices in the whole-value era) carries that
+    /// one date onto every membership it holds — once — so those choices
+    /// travel as stamped flags instead of arriving as mute seeds.
+    func testAV1StampedDeviceCarriesItsChoicesForward() {
+        let cloud = FakeSyncStore()
+        // A hand-built v1-era device: real favorites in defaults, plus the
+        // v1 settings stamp the old engine would have written.
+        let suiteName = "fi.misaki.nitpitch.tests.\(UUID().uuidString)"
+        let suite = UserDefaults(suiteName: suiteName)!
+        defer { suite.removePersistentDomain(forName: suiteName) }
+        suite.set([Instrument.cello.id], forKey: "favoriteInstruments")
+        suite.set(Date(), forKey: "sync.settingsModifiedAt.v1")
+        let instruments = InstrumentStore(defaults: suite, seedReference: { .standard })
+        let presets = PresetStore(defaults: suite)
+        let settings = Settings(defaults: suite)
+        let engine = SyncEngine(
+            store: cloud, instruments: instruments, presets: presets,
+            settings: settings, defaults: suite)
+        engine.setEnabled(true)
+        engine.sync()
+
+        // Its cello star is STAMPED now: a fresh joiner adopts it instead
+        // of the two staring mutely past each other.
+        let joiner = SyncTestDevice(sharing: cloud)
+        defer { joiner.destroy() }
+        joiner.engine.sync()
+
+        XCTAssertEqual(
+            joiner.settings.favorites, [Instrument.cello.id],
+            "the v1 device's choices travel — carried forward as stamped flags")
+    }
+
     /// The v1 blob in the cloud decomposes into flags exactly once: a
     /// device still holding the old whole-value settings meets a v2 build
     /// and nothing the user chose is lost.

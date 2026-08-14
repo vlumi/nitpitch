@@ -27,6 +27,15 @@ comment:
 # The whole NitpitchKit target is the untestable capture/view layer. A new file under
 # it is ignored by the glob automatically; pure logic belongs in NitpitchCore instead,
 # where it's tracked. Tests themselves aren't coverage subjects.
+#
+# NitpitchData (stores + sync, split out so the watch can reach them) is GATED like
+# NitpitchCore — it's exactly the headlessly-testable layer — except three files that
+# are Kit-shaped residue the split had to carry: the real-iCloud store (needs a signed
+# account and the ubiquity daemon), the launch-argument gate (ProcessInfo statics),
+# and the appearance preference (resolves against the live platform appearance).
 ignore:
   - "Packages/NitpitchCore/Sources/NitpitchKit/**"
+  - "Packages/NitpitchCore/Sources/NitpitchData/KeyValueSyncStore.swift"
+  - "Packages/NitpitchCore/Sources/NitpitchData/LaunchStores.swift"
+  - "Packages/NitpitchCore/Sources/NitpitchData/AppearancePreference.swift"
   - "Packages/NitpitchCore/Tests/**"

@@ -104,23 +104,40 @@ extension SyncEngine {
     /// the blob is history). The blob key is deleted either way; builds
     /// this old and devices this new don't overlap in a one-user fleet.
     func migrateSettingsBlobIfNeeded() {
-        if !defaults.bool(forKey: Key.localStampsMigrated) {
-            defaults.set(true, forKey: Key.localStampsMigrated)
-            if let stamp = defaults.object(forKey: Key.settingsStamp) as? Date {
-                settings.adoptFavorites(
-                    settings.favorites,
-                    stamps: uniformStamps(settings.favorites, stamp),
-                    orderStamp: stamp)
-                settings.adoptPins(
-                    settings.presetPins,
-                    stamps: uniformStamps(settings.presetPins.map(\.id), stamp),
-                    orderStamp: stamp)
-                presets.adoptFavorites(
-                    presets.favoriteIDs,
-                    stamps: uniformStamps(Array(presets.favoriteIDs), stamp))
-            }
-        }
+        migrateLocalV1Stamps()
+        migrateRemoteV1Blob()
+    }
 
+    private func migrateLocalV1Stamps() {
+        guard !defaults.bool(forKey: Key.localStampsMigrated) else { return }
+        defaults.set(true, forKey: Key.localStampsMigrated)
+        guard let stamp = defaults.object(forKey: Key.settingsStamp) as? Date else { return }
+        migrateLocalMemberships(stamp: stamp)
+    }
+
+    private func migrateLocalMemberships(stamp: Date) {
+        // Same absent-seed rule as the remote half below: a stamped v1
+        // list was "exactly these", so a universal seed it lacks was
+        // unstarred — that act survives as a stamped OFF (a stamp for a
+        // non-member IS the off flag).
+        var favoriteStamps = uniformStamps(settings.favorites, stamp)
+        for id in Settings.seededFavorites where !settings.favorites.contains(id) {
+            favoriteStamps[id] = stamp
+        }
+        settings.adoptFavorites(
+            settings.favorites,
+            stamps: favoriteStamps,
+            orderStamp: stamp)
+        settings.adoptPins(
+            settings.presetPins,
+            stamps: uniformStamps(settings.presetPins.map(\.id), stamp),
+            orderStamp: stamp)
+        presets.adoptFavorites(
+            presets.favoriteIDs,
+            stamps: uniformStamps(Array(presets.favoriteIDs), stamp))
+    }
+
+    private func migrateRemoteV1Blob() {
         guard let data = store.data(forKey: Key.remoteSettings) else { return }
         defer { store.set(nil, forKey: Key.remoteSettings) }
         let hasV2 = store.allKeys.contains { key in

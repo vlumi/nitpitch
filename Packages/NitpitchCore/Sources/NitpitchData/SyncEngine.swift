@@ -6,7 +6,7 @@ import NitpitchCore
 public final class SyncEngine: ObservableObject {
     /// Where a record lives, and what it is. The prefix keeps instruments
     /// and presets from colliding in one flat namespace.
-    private enum Kind: String, CaseIterable {
+    enum Kind: String, CaseIterable {
         case instrument = "i."
         case preset = "p."
 
@@ -173,6 +173,11 @@ public final class SyncEngine: ObservableObject {
         isApplying = true
         defer { isApplying = false }
 
+        // Before any merge, on this device's very first join only: same-id
+        // records edited on BOTH sides keep both versions (the older edit
+        // moves to a fresh id) — see SyncEngine+FirstJoin.
+        duplicateFirstJoinConflicts()
+
         let now = Date()
 
         // Order matters, and it is not the obvious one. The stones must be
@@ -206,7 +211,7 @@ public final class SyncEngine: ObservableObject {
         applySettings()
     }
 
-    private func records<Record: Decodable>(of kind: Kind, as: Record.Type) -> [Record] {
+    func records<Record: Decodable>(of kind: Kind, as: Record.Type) -> [Record] {
         store.allKeys
             .filter { $0.hasPrefix(kind.rawValue) && $0 != kind.tombstonesKey }
             .compactMap { store.data(forKey: $0) }

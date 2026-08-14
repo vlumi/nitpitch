@@ -568,8 +568,12 @@ one of the drafts that lost.
   makes the catalog "my instruments" until pruned), chromatic, and
   settings. Locks, references and temperaments are the instance's own,
   edited on its detail screen; wrist writes are per-record and sync.
-  The target is deliberately NOT embedded in the iOS app until
-  declared ready — the project.yml target comment says how to flip it.
+  The target is EMBEDDED in the iOS app (an iOS-target dependency in
+  project.yml): every phone build carries it, and `make release
+  PLATFORM=ios` ships both. The embed renamed the watch bundle id to
+  the companion convention (`fi.misaki.nitpitch.watchkitapp`) — a
+  watch-only-era install is a different app to the wrist; sync carries
+  the data across.
   The killer interaction is haptic and shipped: the beat vocabulary
   (`HapticBeat` in Core, policy pinned by tests; `WatchHaptics` drives
   the actuator) — flat taps `.directionUp`, sharp `.directionDown`, at

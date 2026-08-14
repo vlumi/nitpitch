@@ -64,8 +64,9 @@ targets:
         PRODUCT_NAME: Nitpitch
         CODE_SIGN_ENTITLEMENTS: Sources/iOS/Nitpitch.entitlements
         MARKETING_VERSION: "0.2.0"
-        # Build number is shared across iOS + macOS (kept in lock-step by the
-        # release lane, `make release`) — bumped together so the apps never diverge.
+        # Build number is shared across iOS + macOS + watchOS (kept in lock-step
+        # by the release lane, `make release`) — bumped together so the apps
+        # never diverge; ASC also requires the embedded watch app to match.
         # 0 = never released; the first `make release` cuts build 1.
         CURRENT_PROJECT_VERSION: "8"
         GENERATE_INFOPLIST_FILE: NO
@@ -77,6 +78,9 @@ targets:
     dependencies:
       - package: NitpitchCore
         product: NitpitchKit
+      # Embeds the watch app in every iPhone build (Watch/ in the bundle) —
+      # xcodegen writes the Embed Watch Content phase from this one line.
+      - target: Nitpitch-watchOS
     # Stamp the git commit into the bundled Info.plist (GitCommitSHA) so every
     # build self-identifies its source. Runs last, after the plist is copied
     # into the product; fires on archive too. See Scripts/embed-commit-sha.sh.
@@ -106,13 +110,11 @@ targets:
       - target: Nitpitch-iOS
 
   # The wrist scaffold: a standalone chromatic tuner on NitpitchCore only —
-  # mic and DSP run on the watch, per the roadmap's settled architecture.
-  # DELIBERATELY NOT EMBEDDED in the iOS app yet: embedding would put it in
-  # the next release's bundle, and it hasn't earned shipping. When it does:
-  # flip WKWatchOnly off, add WKCompanionAppBundleIdentifier
-  # (fi.misaki.nitpitch), rename the bundle id to
-  # fi.misaki.nitpitch.watchkitapp, and add `- target: Nitpitch-watchOS`
-  # to the iOS app's dependencies.
+  # mic and DSP run on the watch, per the settled architecture (AGENTS.md
+  # "The watch"). EMBEDDED in the iOS app since the watch earned TestFlight:
+  # the iOS target's dependency below carries it into every phone build, so
+  # `make release PLATFORM=ios` ships both. Still fully standalone at
+  # runtime — companion-shaped only in data, riding iCloud sync.
   Nitpitch-watchOS:
     type: application
     platform: watchOS
@@ -131,11 +133,13 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.
         WKApplication: true
-        # Watch-only for now (see the target comment above).
-        WKWatchOnly: true
+        WKCompanionAppBundleIdentifier: fi.misaki.nitpitch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch.watch
+        # The companion convention (<ios-bundle-id>.watchkitapp). Renamed from
+        # fi.misaki.nitpitch.watch at embed time — local watch installs from
+        # the watch-only era are a different app; sync carries the data over.
+        PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch.watchkitapp
         PRODUCT_NAME: Nitpitch
         MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "8"
@@ -195,8 +199,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: fi.misaki.nitpitch
         PRODUCT_NAME: Nitpitch
         MARKETING_VERSION: "0.2.0"
-        # Build number is shared across iOS + macOS (kept in lock-step by the
-        # release lane, `make release`) — bumped together so the apps never diverge.
+        # Build number is shared across iOS + macOS + watchOS (kept in lock-step
+        # by the release lane, `make release`) — bumped together so the apps
+        # never diverge; ASC also requires the embedded watch app to match.
         # 0 = never released; the first `make release` cuts build 1.
         CURRENT_PROJECT_VERSION: "8"
         GENERATE_INFOPLIST_FILE: NO

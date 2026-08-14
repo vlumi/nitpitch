@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-bundle_id="fi.misaki.nitpitch.watch"
+bundle_id="fi.misaki.nitpitch.watchkitapp"
 derived=".build-xcode"
 
 # The newest available Apple Watch simulator.

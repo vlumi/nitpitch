@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The string view can follow your hands: a Follow toggle (the little
+  location arrow beside the string dots) walks the screen to the string
+  you're actually playing — a brushed neighbour never steals it, only a
+  string played on purpose, and once the current string has held in tune
+  a moment the next one takes over almost instantly. Off by default:
+  swiping and the arrows stay the only movers until you ask.
+
 ### build 8 — 2026-08-12
 
 - Tap a preset in the Manage-presets sheet to load it onto the

@@ -130,15 +130,14 @@ struct WatchTunerPane<Footer: View>: View {
             if window.lowerBound > 0 { ellipsis }
             ForEach(window, id: \.self) { index in
                 if index == tuner.focusIndex {
-                    HStack(spacing: 3) {
-                        Text(verbatim: tuner.stringNames[index])
-                            .font(.system(size: 28, weight: .semibold, design: .rounded))
-                        if tuner.isSettled {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.green)
-                        }
-                    }
+                    // Settled reads as COLOUR, not a checkmark: a mark adds
+                    // width, and width mid-session flipped a five-name row
+                    // into the three-name window at the moment of success
+                    // (field-found on a half-down five-string). Green is
+                    // the vocabulary the needle and cents already speak.
+                    Text(verbatim: tuner.stringNames[index])
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .foregroundStyle(tuner.isSettled ? .green : .primary)
                 } else {
                     Text(verbatim: tuner.stringNames[index])
                         .font(.system(size: 16, design: .rounded))

@@ -70,8 +70,12 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   tuner and editable in a crown-driven settings screen, stored locally
   until sync brings the real settings. Instrument LOCKS deliberately
   deferred with the same reasoning: a lock belongs to one of YOUR
-  instruments, and those arrive with sync. Remaining unknown: whether
-  MPM alone carries a bass.
+  instruments, and those arrive with sync. The bass question is now
+  half-closed by field test: tuning a bass WITH AN AMP works fine on
+  the wrist, and the hands-free string switching felt smooth in the
+  same session — the thresholds survived real hands. Unamplified bass
+  stays the hard case (E1's fundamental sits below the mic floor),
+  same as the phone.
   Wrist field notes (second session, 2026-08-14): the state so far is
   as designed — catalog only, no stars/presets/locks until sync — but
   one real finding: the "A=440 · Pure" footer IS the settings button,

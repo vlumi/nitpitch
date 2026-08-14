@@ -16,6 +16,10 @@ public final class Settings: ObservableObject {
         static let stripsLowOnTop = "stripsLowOnTop"
         static let rackExpanded = "rackExpandedInstruments"
         static let presetPins = "presetPins.v1"
+        static let favoriteStamps = "favoriteStamps.v1"
+        static let pinStamps = "pinStamps.v1"
+        static let favoritesOrderStamp = "favoritesOrderStamp.v1"
+        static let pinsOrderStamp = "pinsOrderStamp.v1"
     }
 
     private let defaults: UserDefaults
@@ -77,6 +81,12 @@ public final class Settings: ObservableObject {
         } else {
             presetPins.append(pin)
         }
+        // The user's own act, stamped AT THE MOMENT — sync on or off — so a
+        // device that joins sync weeks later carries proof of what was
+        // actually chosen here (merging is done BY SETTING; never-set can
+        // never wipe set).
+        pinStamps[pin.id] = Date()
+        pinsOrderStamp = Date()
     }
 
     public func isPinned(instrumentID: String, presetID: String) -> Bool {
@@ -89,6 +99,64 @@ public final class Settings: ObservableObject {
         } else {
             favorites.append(id)
         }
+        // Same stamp-at-the-act rule as the pins above.
+        favoriteStamps[id] = Date()
+        favoritesOrderStamp = Date()
+    }
+
+    // MARK: - Per-setting stamps (what makes settings merges safe)
+
+    /// Edit times per favorite/pin, present ONLY for values the user
+    /// actually set — install seeds carry none, which is what keeps a fresh
+    /// device humble in its first merge. The membership truth stays in
+    /// `favorites`/`presetPins`; these answer "when was it chosen".
+    public private(set) var favoriteStamps: [String: Date] {
+        didSet { Self.store(favoriteStamps, in: defaults, forKey: Key.favoriteStamps) }
+    }
+
+    public private(set) var pinStamps: [String: Date] {
+        didSet { Self.store(pinStamps, in: defaults, forKey: Key.pinStamps) }
+    }
+
+    /// The ORDERS are one whole value with one stamp each: a lost order
+    /// race costs cosmetics, never data.
+    public private(set) var favoritesOrderStamp: Date? {
+        didSet { defaults.set(favoritesOrderStamp, forKey: Key.favoritesOrderStamp) }
+    }
+
+    public private(set) var pinsOrderStamp: Date? {
+        didSet { defaults.set(pinsOrderStamp, forKey: Key.pinsOrderStamp) }
+    }
+
+    /// Install merged state from `SyncEngine`. Deliberately NOT an edit:
+    /// adopting the cloud's answer must not stamp it as this device's own
+    /// newer choice, or it would be pushed back forever.
+    public func adoptFavorites(_ ids: [String], stamps: [String: Date], orderStamp: Date?) {
+        if favorites != ids { favorites = ids }
+        if favoriteStamps != stamps { favoriteStamps = stamps }
+        if favoritesOrderStamp != orderStamp { favoritesOrderStamp = orderStamp }
+    }
+
+    public func adoptPins(_ pins: [PresetPin], stamps: [String: Date], orderStamp: Date?) {
+        if presetPins != pins { presetPins = pins }
+        if pinStamps != stamps { pinStamps = stamps }
+        if pinsOrderStamp != orderStamp { pinsOrderStamp = orderStamp }
+    }
+
+    private static func store(
+        _ stamps: [String: Date], in defaults: UserDefaults, forKey key: String
+    ) {
+        guard let data = try? JSONEncoder().encode(stamps) else { return }
+        defaults.set(data, forKey: key)
+    }
+
+    private static func loadStamps(
+        from defaults: UserDefaults, forKey key: String
+    ) -> [String: Date] {
+        guard let data = defaults.data(forKey: key),
+            let stamps = try? JSONDecoder().decode([String: Date].self, from: data)
+        else { return [:] }
+        return stamps
     }
 
     /// Which launch-rack rows show their pin chips — the accordion's
@@ -106,6 +174,10 @@ public final class Settings: ObservableObject {
         }
     }
 
+    /// What a fresh install stars, named so sync's v1-blob migration can
+    /// tell "absent because unstarred" from "absent because never seeded".
+    public static let seededFavorites = [Instrument.violin.id]
+
     public init(defaults: UserDefaults) {
         self.defaults = defaults
         // `double(forKey:)` returns 0 for a missing key, which ReferencePitch
@@ -121,7 +193,7 @@ public final class Settings: ObservableObject {
         // Violin starts pinned: it's the app's reason for existing, and the
         // one-tap chip is the whole point of the row. An empty default would
         // hide the feature exactly from the person it was built for.
-        self.favorites = defaults.stringArray(forKey: Key.favorites) ?? [Instrument.violin.id]
+        self.favorites = defaults.stringArray(forKey: Key.favorites) ?? Self.seededFavorites
         self.stripsOnMac = defaults.bool(forKey: Key.stripsOnMac)
         self.stripsLowOnTop = defaults.bool(forKey: Key.stripsLowOnTop)
         self.rackExpanded = defaults.stringArray(forKey: Key.rackExpanded) ?? []
@@ -132,6 +204,10 @@ public final class Settings: ObservableObject {
         } else {
             self.presetPins = []
         }
+        self.favoriteStamps = Self.loadStamps(from: defaults, forKey: Key.favoriteStamps)
+        self.pinStamps = Self.loadStamps(from: defaults, forKey: Key.pinStamps)
+        self.favoritesOrderStamp = defaults.object(forKey: Key.favoritesOrderStamp) as? Date
+        self.pinsOrderStamp = defaults.object(forKey: Key.pinsOrderStamp) as? Date
         migrateCatalogPins()
     }
 

@@ -76,19 +76,15 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   same session — the thresholds survived real hands. Unamplified bass
   stays the hard case (E1's fundamental sits below the mic floor),
   same as the phone.
-  **NEXT, decided from the first wrist⇄phone field session:
-  per-setting sync.** Whole-value LWW on the settings blob is too
-  coarse — two devices editing settings apart lose one side wholesale.
-  The design (the user's own words define acceptance): merging is done
-  BY SETTING, and each setting carries a timestamp only for values a
-  user actually set — the initial not-set state of a favorite flag
-  must never wipe the flag set on another device. Concretely: each
-  favorite/pin/preset-favorite becomes its own stamped KVS value
-  (absent = never set; a stamped OFF is a real act and beats an older
-  ON), the favorites ORDER stays one whole value whose lost race costs
-  cosmetics only, and the v1 `s.settings` blob is decomposed once on
-  first v2 sync. The fresh-joiner adoption rule (AGENTS rule 7) stays
-  as the blob-era backstop and the general principle.
+  **Per-setting sync: SHIPPED** (decided and built from the first
+  wrist⇄phone field session; AGENTS rule 8 has the semantics). Merging
+  is done BY SETTING — each star/pin/preset-favorite its own stamped
+  KVS value, stamped at the act, sync on or off — so the acceptance
+  words hold: the initial not-set state of a favorite flag can never
+  wipe the flag set on another device, devices used apart for weeks
+  union their real choices, a stamped OFF sticks, and only the ORDERS
+  remain whole-value (cosmetic stakes). The v1 blob decomposes once
+  and its key is deleted.
   Same session, second decision: **duplicate on first-join conflicts.**
   Whole-record LWW silently discards one side when the SAME id (the
   seeded records) was edited on two devices before ever syncing. In
@@ -125,6 +121,14 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   button clothing (chevron, tint, or a bordered capsule) when the
   watch UI gets its next pass.
   Parked ideas from the same conversation, for after the wrist v1:
+  - **Wrist double stops = the haptic beat vocabulary.** Detection
+    already reads a bowed pair on the watch (same per-string bank, and
+    `StringFocus` deliberately holds focus through a double stop that
+    includes the focused string) — what's missing is only the readout,
+    and the wrist's right form is not a shrunken chip but the
+    long-planned haptics: taps at the beat rate, slowing as the fifth
+    comes true, stopping when pure. Eyes never needed, which is the
+    watch's whole reason to exist.
   - **Harmonic tuning, minimal twiddling.** Mostly already true: a
     sounded harmonic is a clean tone at k× the fundamental, so its cent
     error IS the string's, and chromatic mode reads it today — the
@@ -176,16 +180,16 @@ Store release does.
   level should be the happy path (no mic rolloff, no gate flicker), and
   the device hot-plug handling should swap capture over live — confirm
   both.
-- **Guitar/bass detection, three open field findings** (one `-debug`
-  session, guitar in hand, likely one story):
-  1. Playing the high e, the low E's dial captures the note fairly
-     often. The shadow-memory theory is DISPROVEN (the confirmation gate
-     already covers single-frame dropouts, and the app ships hybrid, not
-     the MPM path it was tested against) — needs the debug screen's raw
-     per-string readings before another hypothesis.
-  2. The intonation Δ didn't visibly follow saddle adjustments in either
-     direction. Could be the app, measurement noise, or old strings —
-     undiagnosed, and not worth code until the raw readings say which.
+- **Guitar/bass detection field findings** (2026-08-14 retest: guitar
+  into the MAC via iRig — the line-level happy path):
+  1. RESOLVED on Mac/iRig: the high e reads confidently, no more
+     low-E dial flashing while playing it. (The original report was
+     air-mic; a phone-mic spot check would close it fully, but the
+     line-level path is the one the Mac exists for.)
+  2. LOOKING GOOD on Mac/iRig: all strings and intonations on standard
+     tuning landed in the correct buckets. The saddle-direction
+     question (does Δ follow adjustments?) wasn't re-run explicitly —
+     still worth one deliberate check with fresh strings.
   3. Two simultaneous PLUCKED strings rarely both register, unlike bowed
      double stops. Accepted as a physics-shaped limitation (two decaying
      transients, and fretted players tune string-by-string anyway) — but

@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Stars, pins and preset favorites now sync SETTING BY SETTING, each
+  stamped at the moment you set it — so devices used apart for weeks
+  combine your actual choices when they meet, instead of one device's
+  list overwriting the other's wholesale. Unstarring on one device
+  sticks everywhere; a device that never had an opinion can't erase
+  one you had.
 - A device joining sync for the first time now ADOPTS your existing
   setup instead of announcing its own factory state: the first sync
   treats never-touched settings as unstamped, so months of stars and

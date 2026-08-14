@@ -199,6 +199,58 @@ final class SyncMergeTests: XCTestCase {
             ["violin"])
     }
 
+    // MARK: - Per-setting flags
+
+    /// The rule that makes settings merges safe: a stamp exists only for a
+    /// value the user actually SET, and never-set can never wipe set.
+    func testUnsetFlagYieldsToAnySetFlag() {
+        let adopted = SyncMerge.mergedFlag(
+            localOn: true, localModifiedAt: nil,  // the install seed's star
+            remoteOn: false, remoteModifiedAt: at(1))  // the user unstarred it
+
+        XCTAssertEqual(adopted.on, false, "months of choices beat a fresh install")
+        XCTAssertEqual(adopted.modifiedAt, at(1), "and the stamp rides along")
+    }
+
+    /// A stamped OFF is a real act: it beats an older ON and loses to a
+    /// newer one — unstarring on one device sticks, restarring later wins.
+    func testStampedOffIsARealAct() {
+        let off = SyncMerge.mergedFlag(
+            localOn: true, localModifiedAt: at(1),
+            remoteOn: false, remoteModifiedAt: at(2))
+        XCTAssertEqual(off.on, false)
+
+        let backOn = SyncMerge.mergedFlag(
+            localOn: false, localModifiedAt: at(2),
+            remoteOn: true, remoteModifiedAt: at(3))
+        XCTAssertEqual(backOn.on, true)
+    }
+
+    /// Ties break to ON on BOTH sides — local-wins would resolve a tie
+    /// differently on each device, the one outcome that never converges.
+    func testFlagTiesBreakToOnEverywhere() {
+        let hereView = SyncMerge.mergedFlag(
+            localOn: true, localModifiedAt: at(5),
+            remoteOn: false, remoteModifiedAt: at(5))
+        let thereView = SyncMerge.mergedFlag(
+            localOn: false, localModifiedAt: at(5),
+            remoteOn: true, remoteModifiedAt: at(5))
+
+        XCTAssertEqual(hereView.on, true)
+        XCTAssertEqual(thereView.on, true, "both devices compute the same answer")
+    }
+
+    /// Two never-set sides have nothing to say: local stands, unstamped,
+    /// so nothing gets published as if it were a choice.
+    func testTwoUnsetFlagsStayUnset() {
+        let merged = SyncMerge.mergedFlag(
+            localOn: true, localModifiedAt: nil,
+            remoteOn: false, remoteModifiedAt: nil)
+
+        XCTAssertEqual(merged.on, true)
+        XCTAssertNil(merged.modifiedAt)
+    }
+
     // MARK: - Convergence
 
     /// The property that matters more than any single rule: whatever the

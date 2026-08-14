@@ -165,9 +165,30 @@ public final class PresetStore: ObservableObject {
         var ids = favoriteIDs
         if !ids.insert(id).inserted { ids.remove(id) }
         favoriteIDs = ids
+        // Stamped at the act, sync on or off — merging is done BY SETTING,
+        // and never-set can never wipe set (see Settings for the twin).
+        var stamps = favoriteStamps
+        stamps[id] = Date()
+        favoriteStamps = stamps
     }
 
     private static let favoritesKey = "presets.favorites.v1"
+    private static let favoriteStampsKey = "presets.favoriteStamps.v1"
+
+    /// Edit times per preset-favorite flag, present only for flags the user
+    /// actually touched.
+    var favoriteStamps: [String: Date] {
+        get {
+            guard let data = defaults.data(forKey: Self.favoriteStampsKey),
+                let stamps = try? JSONDecoder().decode([String: Date].self, from: data)
+            else { return [:] }
+            return stamps
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            defaults.set(data, forKey: Self.favoriteStampsKey)
+        }
+    }
 
     /// An existing preset that a save under `name` would replace: same
     /// template, same name (case-insensitively — "gig" and "Gig" are one
@@ -357,7 +378,10 @@ public final class PresetStore: ObservableObject {
         set { defaults.set(Array(newValue).sorted(), forKey: Self.favoritesKey) }
     }
 
-    func adoptFavorites(_ ids: Set<String>) {
+    /// Install merged flags from `SyncEngine` — an adoption, not an edit,
+    /// so no new stamps are minted.
+    func adoptFavorites(_ ids: Set<String>, stamps: [String: Date]) {
+        if stamps != favoriteStamps { favoriteStamps = stamps }
         guard ids != favoriteIDs else { return }
         objectWillChange.send()
         favoriteIDs = ids

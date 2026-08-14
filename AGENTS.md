@@ -556,6 +556,30 @@ one of the drafts that lost.
   that styles note letters, and the scientific octave is the app's own
   cross-reference (A4=440, presets, docs). It could return as a third
   notation option if real users ask; it is not a relabeling.
+- **The watch, settled (2026-08, field-verified).** Standalone where it
+  counts: mic and DSP run on the watch (`Sources/watchOS` on
+  NitpitchCore + NitpitchData only — NitpitchKit is iOS/macOS), and
+  it's companion-shaped only in data, riding the shipped iCloud sync
+  rather than a bespoke WatchConnectivity protocol. The mic carries
+  plucked violin and bass; unamplified bass stays the hard case (E1's
+  fundamental sits below the reported 125 Hz floor; through an amp it
+  reads fine). No editors on a 40 mm screen: creating instruments is a
+  phone/Mac job, and the root lists only YOUR instruments (seeding
+  makes the catalog "my instruments" until pruned), chromatic, and
+  settings. Locks, references and temperaments are the instance's own,
+  edited on its detail screen; wrist writes are per-record and sync.
+  The target is deliberately NOT embedded in the iOS app until
+  declared ready — the project.yml target comment says how to flip it.
+  The killer interaction remains haptic (see ROADMAP): taps at the
+  beat rate, because on the wrist you tune without looking.
+- **The App Store copy constraints.** Two promises the listing text
+  must keep, baked into `Scripts/asc/listing.json`'s header comment:
+  privacy wording says exactly what PRIVACY.md says (nothing leaves
+  the device unless iCloud sync is opted into, then only setup data
+  into the user's own account), and the interval/beat display is
+  advertised for BOWED double stops only — plucked pairs rarely
+  register both strings (two decaying transients; physics, accepted),
+  and fretted players tune string-by-string anyway.
 
 ## Commands
 

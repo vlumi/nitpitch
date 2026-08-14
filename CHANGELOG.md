@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 9 — 2026-08-15
+
 - The Apple Watch app ships with the iPhone build: a standalone tuner on
   the wrist — your instruments, presets and settings ride iCloud sync;
   one string at a time, hands-free, with the crown and swipes to move

@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import NitpitchCore
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// Temperament through the app's seams: the instance holds it, presets

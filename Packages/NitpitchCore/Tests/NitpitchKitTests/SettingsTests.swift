@@ -1,6 +1,7 @@
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 final class SettingsTests: XCTestCase {

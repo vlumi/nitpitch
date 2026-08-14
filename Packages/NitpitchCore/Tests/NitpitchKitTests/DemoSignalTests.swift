@@ -1,6 +1,7 @@
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The demo is the real pipeline hearing a synthetic signal — so the signal

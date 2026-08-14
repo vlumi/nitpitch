@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import NitpitchCore
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The grid's intonation layer, at the view-model seam: parity-flagged

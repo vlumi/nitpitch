@@ -1,5 +1,6 @@
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The grid's visual arrangement, as the pure function it had to become:

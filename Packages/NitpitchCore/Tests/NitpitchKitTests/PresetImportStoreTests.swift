@@ -1,6 +1,7 @@
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// What accepting a shared preset actually writes.

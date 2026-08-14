@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import NitpitchCore
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The per-frame decision between the two tuners, as arithmetic. The field

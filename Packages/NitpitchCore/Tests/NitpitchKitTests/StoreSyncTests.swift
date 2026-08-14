@@ -1,6 +1,7 @@
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// What the stores owe the merge: a stamp on everything that changes, and a

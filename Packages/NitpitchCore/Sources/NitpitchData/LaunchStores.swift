@@ -36,18 +36,9 @@ public enum LaunchStores {
         return arguments[index + 1]
     }()
 
-    /// The capture source the session controller should be built on — the
-    /// microphone, or the demo's synthesized instrument. A dev-only fork,
-    /// resolved once at app construction; a MISTYPED pose refuses loudly
-    /// rather than silently drifting through a screenshot session.
-    public static func audioInput() -> any AudioCapturing {
-        guard isDemo else { return AudioInput() }
-        guard let pose = demoPose else { return DemoSignalInput(score: .drift) }
-        guard let score = DemoScore.parse(pose) else {
-            preconditionFailure("Unreadable -demo-pose: \(pose)")
-        }
-        return DemoSignalInput(score: score)
-    }
+    // The audio-side fork (`audioInput()`, choosing microphone vs the
+    // demo's synthesized instrument) lives in NitpitchKit — the audio layer
+    // is iOS/macOS, while this gate must ride wherever the stores do.
 
     /// Under `-demo`, start on an instrument's grid instead of the chromatic
     /// root: `-demo -demo-open violin`. Demo mode exists for judging layout

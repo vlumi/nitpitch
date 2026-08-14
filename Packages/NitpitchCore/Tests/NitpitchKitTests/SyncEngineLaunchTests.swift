@@ -2,6 +2,7 @@ import Combine
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The launch path: what the engine is allowed to do while the first frame

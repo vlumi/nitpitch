@@ -19,21 +19,39 @@ for a release that earns it.
   place; a translation task, deferred until the UI text settles.
 - **The watch's remaining wants** (architecture and scope are settled —
   AGENTS.md "The watch"):
-  - **The haptic beat vocabulary** — the killer interaction, and the
-    wrist's answer to double stops: taps at the beat rate, slowing as
-    the fifth comes true, stopping when pure, within watchOS's preset
-    haptic palette. Detection already reads a bowed pair on the watch
-    (`StringFocus` deliberately holds focus through a double stop that
-    includes the focused string); only the readout is missing, and its
-    right form is taps, not a shrunken chip.
-  - **Harmonic tuning, minimal twiddling** — mostly already true: a
-    sounded harmonic's cent error IS the string's, and chromatic mode
-    reads it today. The refinement: map a recognized pitch back to
-    "that's the D string's 3rd harmonic" (targets × harmonics 1–4,
-    nearest wins) so the display names the string. The near-unison
-    two-harmonics-together technique stays the hard case (two tones
-    ~1 Hz apart defeat a 93 ms window); one harmonic at a time against
-    the watch's ear is the honest answer.
+  - **The haptic beat vocabulary** — the killer interaction, concretely.
+    The vocabulary, all watchOS preset haptics: FLAT taps
+    `.directionUp` ("come up"), SHARP taps `.directionDown`, at a
+    cadence equal to the string's physical beat rate against its
+    target (|f − f_target| Hz — A4 10¢ flat ≈ 2.5 taps/s), capped
+    ~8/s; in tune is SILENCE; the settle keeps its `.success` (already
+    shipped). The use, single string: bow the A, feel "up-up-up"
+    slowing as the peg turns, silence inside the band, the success tap
+    when settled — eyes never leave the fingerboard, or stay closed.
+    Double stops: bow A+D and the taps are `.click` at the PAIR'S true
+    beat rate (|3·f_D − 2·f_A| for the fifth), slowing and stopping
+    exactly as the audible beats do — the wrist renders the same
+    physics the ear hears, then the settled advance clicks focus to
+    the next string. Screen unchanged (arc, cents and strip keep
+    working); haptics are the layer on top, on by default in the
+    instrument tuner.
+  - **Harmonic tuning, minimal twiddling** — concretely: NO mode, no
+    setting. Playing a string's OCTAVE harmonic instead of its open
+    already works today — the spectral engine folds even-partials-only
+    content back to the fundamental (field-verified: the demo's G4
+    phase reading +10¢ on the G string), so dial, arc and the future
+    haptics behave identically whether you bow the open or touch the
+    node. Two refinements earn the name: (1) a LABEL — when the sound
+    is best explained as harmonic k of the focused string, the header
+    adds "· 2nd harmonic" under the string name, so the display
+    explains why it says D2 while the ear hears D3; (2) the 3rd/4th
+    harmonics — today only k=2 folds (the estimator's anchor-≤2 rule
+    refuses a 3rd-harmonic-only reading), so bass-style 5th/7th-fret
+    harmonics need the anchor rule relaxed behind an explicit
+    harmonic-aware mapping (targets × harmonics 1–4, nearest wins),
+    never silently. The near-unison two-harmonics-together technique
+    stays out: two tones ~1 Hz apart defeat a 93 ms window, and with
+    beat-rate haptics, one harmonic at a time is equally eyes-free.
   - **Embed in the iOS app** once the wrist is declared ready — the
     project.yml target comment says exactly how to flip it; the release
     lane then carries it to TestFlight with the phone build.

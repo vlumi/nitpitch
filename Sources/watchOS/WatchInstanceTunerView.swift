@@ -28,7 +28,10 @@ struct WatchInstanceTunerView: View {
             wrappedValue: WatchInstrumentTunerViewModel(
                 instrument: instance.instrument,
                 reference: instance.reference,
-                temperament: instance.appliedTemperament))
+                temperament: instance.appliedTemperament,
+                // Bowed instruments open on the A — the note the orchestra
+                // gives, tuned first, fifths outward from there.
+                initialIndex: instance.instrument.firstTuningIndex))
     }
 
     private var instance: InstrumentInstance {

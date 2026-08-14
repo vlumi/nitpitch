@@ -2,6 +2,7 @@ import Combine
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The transport half of syncing: what reaches the cloud, what comes back,

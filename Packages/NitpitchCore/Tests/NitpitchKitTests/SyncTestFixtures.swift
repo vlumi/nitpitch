@@ -2,6 +2,7 @@ import Combine
 import NitpitchCore
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// A key-value store that behaves like iCloud's without being it: a

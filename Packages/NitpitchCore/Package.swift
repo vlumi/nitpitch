@@ -19,7 +19,11 @@ let package = Package(
     products: [
         // Pure DSP + music theory — no AVFoundation, no UI. Headlessly testable.
         .library(name: "NitpitchCore", targets: ["NitpitchCore"]),
-        // Audio capture (AVAudioEngine) + SwiftUI. Depends on NitpitchCore.
+        // The app's state: stores, settings, and iCloud sync — Foundation +
+        // Combine only, so it ports everywhere NitpitchCore does (the watch
+        // is the second device that makes sync earn its keep).
+        .library(name: "NitpitchData", targets: ["NitpitchData"]),
+        // Audio capture (AVAudioEngine) + SwiftUI. iOS/macOS.
         .library(name: "NitpitchKit", targets: ["NitpitchKit"]),
     ],
     targets: [
@@ -28,8 +32,12 @@ let package = Package(
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .target(
+            name: "NitpitchData",
+            dependencies: ["NitpitchCore"]
+        ),
+        .target(
             name: "NitpitchKit",
-            dependencies: ["NitpitchCore"],
+            dependencies: ["NitpitchCore", "NitpitchData"],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(

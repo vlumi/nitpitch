@@ -1,5 +1,6 @@
 import XCTest
 
+@testable import NitpitchData
 @testable import NitpitchKit
 
 /// The fan-out is the whole reason this type exists — a screen must be able to

@@ -26,7 +26,7 @@
 	<string>Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.</string>
 	<key>WKApplication</key>
 	<true/>
-	<key>WKWatchOnly</key>
-	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>fi.misaki.nitpitch</string>
 </dict>
 </plist>

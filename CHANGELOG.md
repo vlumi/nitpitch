@@ -24,6 +24,14 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The Apple Watch app ships with the iPhone build: a standalone tuner on
+  the wrist — your instruments, presets and settings ride iCloud sync;
+  one string at a time, hands-free, with the crown and swipes to move
+  between strings — and the tuning itself is haptic: taps at the
+  string's real beat rate against its target ("come up" / "come down"),
+  silence when in tune, a success tap when the string settles. Bow a
+  fifth and the taps become the pair's own beats, slowing and stopping
+  exactly as the audible ones do.
 - The notation setting (how note names are spelled) syncs now: choose
   German on one device and every device says H — it's a preference of
   yours, not of the screen it was set on. A device that never touched

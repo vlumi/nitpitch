@@ -5,10 +5,10 @@ their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
 in [CHANGELOG.md](CHANGELOG.md).
 
 **Where things stand:** v0.2.0 build 8 on beta — iPhone, Mac, and the watch
-(the watch target runs from Xcode; it is deliberately not embedded in the iOS
-app yet). The sync-robustness round is built and unit-proven; its
-cross-device field pass is the open verification. The version number waits
-for a release that earns it.
+(embedded in the iPhone build; the next cut carries it to TestFlight). The
+sync-robustness round is built and unit-proven; its cross-device field pass
+is the open verification. The version number waits for a release that earns
+it.
 
 ## 1. Other features worth considering
 
@@ -36,9 +36,6 @@ for a release that earns it.
     never silently. The near-unison two-harmonics-together technique
     stays out: two tones ~1 Hz apart defeat a 93 ms window, and with
     beat-rate haptics, one harmonic at a time is equally eyes-free.
-  - **Embed in the iOS app** once the wrist is declared ready — the
-    project.yml target comment says exactly how to flip it; the release
-    lane then carries it to TestFlight with the phone build.
 - **"Everything sounding" display** (watch first, maybe iOS/Mac): show
   all recognized pitches with debounced switching — appearance is
   already confirmation-gated and disappearance quiet-frames-gated; the

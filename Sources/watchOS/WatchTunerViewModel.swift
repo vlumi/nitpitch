@@ -24,7 +24,7 @@ final class WatchTunerViewModel: ObservableObject {
     private let audio = WatchAudioInput()
     private let detector: PitchDetector
     private var smoother = ReadingSmoother()
-    private var reference = WatchTuning.storedReference()
+    private var reference = ReferencePitch.standard
     private var quietFrames = 0
     private static let quietFramesBeforeIdle = 8
 

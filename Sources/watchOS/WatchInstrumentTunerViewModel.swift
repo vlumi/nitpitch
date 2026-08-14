@@ -24,24 +24,29 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     @Published private(set) var focusIndex: Int
     @Published private(set) var isSettled = false
 
-    let instrument: Instrument
-    /// Per-string labels for the screen and the crown ("G3", "D4"…).
-    let stringNames: [String]
+    /// Per-string labels for the screen and the crown ("G3", "D4"…) —
+    /// published, because a synced retune renames them under a live screen.
+    @Published private(set) var stringNames: [String]
 
     private let audio = WatchAudioInput()
     private let bank: DetectorBank
+    private var instrument: Instrument
     private var targets: [Double]
     private var focus: StringFocus
     private var smoother = ReadingSmoother()
     private var reference: ReferencePitch
     private var temperament: Temperament
 
-    init(instrument: Instrument, initialIndex: Int = 0) {
+    /// `instrument` carries the strings being tuned — a catalog template,
+    /// or an instance's own (possibly custom) tuning via
+    /// `InstrumentInstance.instrument`. Reference and temperament come from
+    /// wherever the caller's truth lives: synced Settings for the catalog,
+    /// the instance itself for instances.
+    init(
+        instrument: Instrument, reference: ReferencePitch, temperament: Temperament,
+        initialIndex: Int = 0
+    ) {
         self.instrument = instrument
-        // The wrist's stored knobs (see `WatchTuning`) — the phone's
-        // defaults until touched: A=440, pure fifths on bowed instruments.
-        let reference = WatchTuning.storedReference()
-        let temperament = WatchTuning.storedTemperament(for: instrument.family)
         self.reference = reference
         self.temperament = temperament
         targets = Self.temperedTargets(
@@ -61,15 +66,30 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         }
     }
 
-    /// The settings sheet changed a knob: retarget in place. Focus and its
-    /// settled state survive — moving the orchestra's A doesn't change which
-    /// string you were working on, only what "in tune" means for it.
-    func configure(reference: ReferencePitch, temperament: Temperament) {
-        guard reference != self.reference || temperament != self.temperament else { return }
+    /// A knob moved — the settings screen's, or a synced edit arriving from
+    /// the phone mid-view: retarget in place. Focus and its settled state
+    /// survive when the shape allows — moving the orchestra's A doesn't
+    /// change which string you were working on, only what "in tune" means
+    /// for it. A string-count change (sync replaced the tuning wholesale)
+    /// rebuilds focus; the caller's `.id` should normally prevent that.
+    func configure(
+        instrument: Instrument, reference: ReferencePitch, temperament: Temperament
+    ) {
+        guard
+            instrument != self.instrument || reference != self.reference
+                || temperament != self.temperament
+        else { return }
+        let countChanged = instrument.strings.count != targets.count
+        self.instrument = instrument
         self.reference = reference
         self.temperament = temperament
         targets = Self.temperedTargets(
             instrument: instrument, reference: reference, temperament: temperament)
+        stringNames = instrument.notes.map(\.fullName)
+        if countChanged {
+            focus = StringFocus(stringCount: targets.count)
+            focusIndex = focus.focusIndex
+        }
         bank.configure(
             targets: targets, bands: instrument.stringBands(reference: reference),
             tuning: .default)

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- iCloud Key-Value Storage, for the opt-in sync of instruments,
+	     presets and favorites (SyncEngine). Pinned explicitly and IDENTICAL
+	     to iOS and macOS so all three platforms share one store — the watch
+	     is the second device that makes sync earn its keep, and a derived
+	     identifier would give it a store nobody else can see (donpa learned
+	     this the slow way). Off by default: nothing is written until the
+	     user turns the sync switch on, same promise as everywhere else. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)fi.misaki.nitpitch</string>
+</dict>
+</plist>

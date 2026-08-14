@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Turning on sync for the first time keeps BOTH versions when the same
+  built-in instrument or preset was edited on two devices while apart:
+  the later edit keeps its place, the earlier one becomes its own entry
+  ("Guitar 2" if the names collide) — nothing you did on either device
+  vanishes at the moment sync is first trusted. Tidying the extras back
+  into one is yours to do, however you prefer.
 - The iCloud sync switch moved to Settings (the gear on iPhone, ⌘, on
   the Mac) from the foot of the instrument list — an account-scoped
   mode belongs where settings are looked for, and the instrument list

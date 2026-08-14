@@ -85,7 +85,8 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   union their real choices, a stamped OFF sticks, and only the ORDERS
   remain whole-value (cosmetic stakes). The v1 blob decomposes once
   and its key is deleted.
-  Same session, second decision: **duplicate on first-join conflicts.**
+  Same session, second decision, since SHIPPED (SyncEngine+FirstJoin,
+  with its own test suite): **duplicate on first-join conflicts.**
   Whole-record LWW silently discards one side when the SAME id (the
   seeded records) was edited on two devices before ever syncing. In
   steady state a true concurrent edit is undetectable without

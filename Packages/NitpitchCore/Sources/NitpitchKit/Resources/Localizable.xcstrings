@@ -138,6 +138,9 @@
     "Filter by instrument" : {
       "comment" : "Accessibility label for the preset browser's filter menu"
     },
+    "Follow the playing" : {
+      "comment" : "Toggle in the single-string view: the screen follows the string being played"
+    },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments",
       "extractionState" : "manual"

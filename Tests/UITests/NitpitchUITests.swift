@@ -102,6 +102,39 @@ final class NitpitchUITests: XCTestCase {
 
     // MARK: - The string view
 
+    /// The Follow toggle: hands-free, the screen walks to the string being
+    /// played. Under the demo's drift score the D+A pair sounds for 1.6 s
+    /// each loop — past the policy's sustained-rival threshold — so the
+    /// view must leave G3 by itself once Follow is on. Off by default:
+    /// the founding no-yank rule stays until asked.
+    func testFollowWalksToThePlayedString() {
+        let app = launch(extraArguments: ["-demo"])
+        openViolinGrid(app)
+        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+
+        let target = app.descendants(matching: .any)["string.target"]
+        XCTAssertTrue(target.waitForExistence(timeout: 5))
+        XCTAssertTrue(target.label.hasPrefix("G"), "first violin string is G3")
+
+        let follow = app.descendants(matching: .any)["string.follow"].firstMatch
+        XCTAssertTrue(follow.waitForExistence(timeout: 5))
+        XCTAssertEqual(follow.value as? String, "Off", "follow is opt-in")
+        follow.tap()
+        XCTAssertEqual(follow.value as? String, "On")
+
+        // One full drift loop is 3.3 s; the pair phase's sustained D and A
+        // must pull the screen off G within a couple of loops.
+        let moved = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "NOT (label BEGINSWITH %@)", "G"),
+            object: target)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [moved], timeout: 10), .completed,
+            "the screen should follow the sustained pair")
+
+        follow.tap()
+        XCTAssertEqual(follow.value as? String, "Off", "and it turns back off")
+    }
+
     /// A grid cell opens its string full screen; the arrows walk the strings;
     /// back returns to the grid.
     func testCellOpensStringViewAndArrowsWalkStrings() {

@@ -24,6 +24,13 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- A device joining sync for the first time now ADOPTS your existing
+  setup instead of announcing its own factory state: the first sync
+  treats never-touched settings as unstamped, so months of stars and
+  pins on iCloud can no longer be wiped by a fresh install's defaults
+  (found the hard way by the first watch to join). The watch's sync
+  switch also works now — watchOS pretends to be signed out of iCloud
+  to the check the other platforms use, and got its own.
 - The string view can follow your hands: a Follow toggle (the little
   location arrow beside the string dots) walks the screen to the string
   you're actually playing — a brushed neighbour never steals it, only a

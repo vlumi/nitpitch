@@ -76,6 +76,34 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   same session — the thresholds survived real hands. Unamplified bass
   stays the hard case (E1's fundamental sits below the mic floor),
   same as the phone.
+  **NEXT, decided from the first wrist⇄phone field session:
+  per-setting sync.** Whole-value LWW on the settings blob is too
+  coarse — two devices editing settings apart lose one side wholesale.
+  The design (the user's own words define acceptance): merging is done
+  BY SETTING, and each setting carries a timestamp only for values a
+  user actually set — the initial not-set state of a favorite flag
+  must never wipe the flag set on another device. Concretely: each
+  favorite/pin/preset-favorite becomes its own stamped KVS value
+  (absent = never set; a stamped OFF is a real act and beats an older
+  ON), the favorites ORDER stays one whole value whose lost race costs
+  cosmetics only, and the v1 `s.settings` blob is decomposed once on
+  first v2 sync. The fresh-joiner adoption rule (AGENTS rule 7) stays
+  as the blob-era backstop and the general principle.
+  Same session, second decision: **duplicate on first-join conflicts.**
+  Whole-record LWW silently discards one side when the SAME id (the
+  seeded records) was edited on two devices before ever syncing. In
+  steady state a true concurrent edit is undetectable without
+  per-record base-version bookkeeping (differing stamps are what every
+  routine sync looks like) — but at FIRST JOIN there is no shared
+  history, so the rule is clean: same id, both sides really stamped,
+  contents differ → keep both. The later edit keeps the id; the other
+  becomes a copy with a fresh id and a name suffix — the keep-both
+  vocabulary the preset-import collision flow already taught the app.
+  Pins follow the id-keeper; the copy arrives unpinned. Nothing anyone
+  did vanishes at the moment sync is first trusted; merging "Guitar"
+  and "Guitar 2" back into one is the USER'S cleanup, done however
+  they prefer with tools that already exist (delete, rename, re-pin) —
+  the app's job ends at not deciding for them.
   SYNC HAS REACHED THE WRIST (in code; the wrist⇄phone field test is
   the remaining proof): the stores and engine moved to the portable
   NitpitchData target, the watch carries the same explicit KVS store

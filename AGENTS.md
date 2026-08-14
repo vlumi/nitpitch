@@ -523,6 +523,19 @@ one of the drafts that lost.
      first round trip. `begin()` is idempotent because SwiftUI re-runs a
      `.task` on reappearance. `SyncEngineLaunchTests` asserts that
      construction touches nothing, and fails if this is undone.
+  7. **A fresh joiner adopts the cloud's settings — it never announces
+     its own.** A device that has never stamped is carrying install
+     seeds, and "never stamped" must not read as "everything just
+     changed": the first `stampSettingsIfChanged()` records the baseline
+     WITHOUT a stamp, so the cloud's real settings win the first merge
+     (rule 2, spoken in whole-value terms). Field-found: the first
+     watch to join stamped its factory favorites fresh and wiped months
+     of the phone's stars and pins off iCloud. Also two watch-platform
+     facts from the same session: `ubiquityIdentityToken` is DEFINED as
+     always-nil on watchOS (the signed-out gate must not use it there —
+     KVS itself works), and whole-value LWW on the settings blob is
+     known-coarse: two devices editing settings apart still lose one
+     side (ROADMAP has the per-record pins/favorites design).
 - **Readouts are the local note name on scientific octaves.** Every
   readout — targets and detections alike — leads with the player's own
   spelling ("H₃", "Si₃"), the octave as a scientific subscript, and the

@@ -300,9 +300,22 @@ public final class SyncEngine: ObservableObject {
     /// an instrument would mark this device's untouched pins as freshly
     /// edited, and they would then beat the other device's real ones. A
     /// stamp has to mean "this value changed here", nothing looser.
+    ///
+    /// And a device that has NEVER stamped is a fresh joiner: its settings
+    /// are whatever install seeded, and a seed must lose its first merge —
+    /// the instrument seeds' `.distantPast` rule, spoken in whole-value
+    /// terms. Record the baseline WITHOUT a stamp, so the cloud's real
+    /// settings win; the first change made after that stamps normally.
+    /// Field-found the hard way: "never stamped" read as "everything just
+    /// changed", and a new watch's factory favorites beat months of the
+    /// phone's the moment its sync switch went on.
     private func stampSettingsIfChanged() {
+        guard let baseline = lastStampedSettings else {
+            lastStampedSettings = localSettings
+            return
+        }
         let current = localSettings
-        guard current != lastStampedSettings else { return }
+        guard current != baseline else { return }
         lastStampedSettings = current
         defaults.set(Date(), forKey: Key.settingsStamp)
     }

@@ -51,7 +51,7 @@ struct WatchTunerView: View {
     private func reading(note: Note, cents: Double) -> some View {
         VStack(spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(verbatim: note.name)
+                Text(verbatim: note.name(in: settings.naming))
                     .font(.system(size: 46, weight: .semibold, design: .rounded))
                 Text(verbatim: "\(note.octave)")
                     .font(.system(size: 24, weight: .medium, design: .rounded))

@@ -18,6 +18,12 @@ public struct SettingsView: View {
         self.sync = sync
     }
 
+    /// Through `setNaming`, the user's act that stamps — notation syncs
+    /// per-setting like every other preference the user actually set.
+    private var namingBinding: Binding<NoteNaming> {
+        Binding(get: { settings.naming }, set: { settings.setNaming($0) })
+    }
+
     public var body: some View {
         #if os(macOS)
         // A preferences window is already a window: no navigation stack, no
@@ -45,7 +51,7 @@ public struct SettingsView: View {
             .pickerStyle(.segmented)
             .accessibilityIdentifier("settings.appearance")
 
-            Picker(selection: $settings.naming) {
+            Picker(selection: namingBinding) {
                 ForEach(NoteNaming.allCases, id: \.self) { naming in
                     Text(verbatim: naming.label).tag(naming)
                 }
@@ -124,7 +130,7 @@ public struct SettingsView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Notation", bundle: .module)
-                        Picker(selection: $settings.naming) {
+                        Picker(selection: namingBinding) {
                             ForEach(NoteNaming.allCases, id: \.self) { naming in
                                 Text(verbatim: naming.label).tag(naming)
                             }

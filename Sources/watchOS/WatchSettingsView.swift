@@ -48,6 +48,21 @@ struct WatchSettingsView: View {
             } footer: {
                 Text(verbatim: "The chromatic tuner's A; your instruments carry their own.")
             }
+            Section {
+                Picker(
+                    selection: Binding(
+                        get: { settings.naming },
+                        set: { settings.setNaming($0) }
+                    ),
+                    label: Text(verbatim: "Notation")
+                ) {
+                    ForEach(NoteNaming.allCases, id: \.self) { naming in
+                        Text(verbatim: naming.label).tag(naming)
+                    }
+                }
+            } footer: {
+                Text(verbatim: "How note names are spelled — synced, like the phone's.")
+            }
         }
         .navigationTitle("Settings")
     }

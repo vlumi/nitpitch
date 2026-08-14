@@ -10,6 +10,7 @@ public final class Settings: ObservableObject {
     private enum Key {
         static let referenceHz = "referenceHz"
         static let noteNaming = "noteNaming"
+        static let namingStamp = "namingStamp.v1"
         static let appearance = "appearance"
         static let favorites = "favoriteInstruments"
         static let stripsOnMac = "stripsOnMac"
@@ -28,8 +29,26 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(reference.hz, forKey: Key.referenceHz) }
     }
 
-    @Published public var naming: NoteNaming {
+    /// Read everywhere; WRITTEN through `setNaming` (the user's act, which
+    /// stamps) or `adoptNaming` (sync's, which must not) — notation is a
+    /// user preference, not device-shaped state, so it travels.
+    @Published public private(set) var naming: NoteNaming {
         didSet { defaults.set(naming.rawValue, forKey: Key.noteNaming) }
+    }
+
+    public private(set) var namingStamp: Date? {
+        didSet { defaults.set(namingStamp, forKey: Key.namingStamp) }
+    }
+
+    public func setNaming(_ naming: NoteNaming) {
+        guard naming != self.naming else { return }
+        self.naming = naming
+        namingStamp = Date()
+    }
+
+    public func adoptNaming(_ naming: NoteNaming, stamp: Date?) {
+        if naming != self.naming { self.naming = naming }
+        if stamp != namingStamp { namingStamp = stamp }
     }
 
     @Published public var appearance: AppearancePreference {
@@ -187,6 +206,7 @@ public final class Settings: ObservableObject {
         self.naming =
             (defaults.string(forKey: Key.noteNaming).flatMap(NoteNaming.init(rawValue:)))
             ?? .english
+        self.namingStamp = defaults.object(forKey: Key.namingStamp) as? Date
         self.appearance =
             (defaults.string(forKey: Key.appearance).flatMap(AppearancePreference.init(rawValue:)))
             ?? .system

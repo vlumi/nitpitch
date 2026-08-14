@@ -141,6 +141,58 @@ final class SyncSettingsTests: XCTestCase {
             "and the phone's older ON does not resurrect it")
     }
 
+    /// Notation is a user preference, not device-shaped state: set it on
+    /// one device and every device spells notes the same way — while a
+    /// device that never touched it stays humble (its default is not an
+    /// opinion and never travels).
+    func testNotationSyncs() {
+        let cloud = FakeSyncStore()
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
+        phone.engine.sync()
+        mac.engine.sync()
+
+        phone.settings.setNaming(.german)
+        phone.engine.sync()
+        mac.engine.sync()
+
+        XCTAssertEqual(mac.settings.naming, .german, "the choice travels")
+
+        // A fresh joiner adopts it rather than announcing its default.
+        let watch = SyncTestDevice(sharing: cloud)
+        defer { watch.destroy() }
+        watch.engine.sync()
+        XCTAssertEqual(watch.settings.naming, .german, "the joiner adopts")
+
+        // And the adoption isn't a claim: nothing bounces back stamped.
+        watch.engine.sync()
+        phone.engine.sync()
+        XCTAssertEqual(phone.settings.naming, .german)
+    }
+
+    /// A notation stamp TIE with differing values must break the same way
+    /// on both sides — greater raw value wins — because a local-wins tie
+    /// never converges: each device would keep insisting on its own.
+    func testANotationStampTieBreaksTheSameWayOnBothSides() {
+        let cloud = FakeSyncStore()
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
+        // Staged through `adoptNaming`, the one door that takes a caller's
+        // stamp — two real acts can't land on the identical Date, but two
+        // KVS replicas absolutely can present one.
+        let instant = Date()
+        phone.settings.adoptNaming(.german, stamp: instant)
+        mac.settings.adoptNaming(.english, stamp: instant)
+        phone.engine.sync()
+        mac.engine.sync()
+        phone.engine.sync()
+
+        XCTAssertEqual(mac.settings.naming, .german, "the tie breaks to the greater raw value")
+        XCTAssertEqual(phone.settings.naming, .german, "identically on both devices")
+    }
+
     /// The LOCAL half of the v1 migration: a device that had stamped the
     /// old blob (it made real choices in the whole-value era) carries that
     /// one date onto every membership it holds — once — so those choices

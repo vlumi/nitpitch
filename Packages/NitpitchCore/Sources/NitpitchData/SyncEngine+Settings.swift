@@ -46,6 +46,33 @@ extension SyncEngine {
             localOn: presets.favoriteIDs,
             localStamps: presets.favoriteStamps)
         presets.adoptFavorites(presetFavorites.on, stamps: presetFavorites.stamps)
+
+        applyNaming()
+    }
+
+    /// Notation is a USER preference (how note names are spelled), not
+    /// device-shaped state, so it travels — one stamped scalar, same rules
+    /// as every flag: never-set yields, newer wins, and a stamp tie with
+    /// differing values breaks on the greater raw value, identically on
+    /// both sides (local-wins ties never converge).
+    private func applyNaming() {
+        var remote: SettingScalar?
+        if let data = store.data(forKey: Key.naming) {
+            remote = try? JSONDecoder().decode(SettingScalar.self, from: data)
+        }
+        guard let remote else { return }
+        let local = SettingScalar(
+            value: settings.naming.rawValue, modifiedAt: settings.namingStamp)
+        let winner: SettingScalar
+        if local.modifiedAt == remote.modifiedAt, local.value != remote.value {
+            winner = local.value > remote.value ? local : remote
+        } else {
+            winner = SyncMerge.mergedValue(
+                local: local, localModifiedAt: local.modifiedAt,
+                remote: remote, remoteModifiedAt: remote.modifiedAt)
+        }
+        guard let naming = NoteNaming(rawValue: winner.value) else { return }
+        settings.adoptNaming(naming, stamp: winner.modifiedAt)
     }
 
     /// Merge every flag either side knows about. Absent everywhere = never

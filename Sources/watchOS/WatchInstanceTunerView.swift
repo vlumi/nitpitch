@@ -29,6 +29,7 @@ struct WatchInstanceTunerView: View {
                 instrument: instance.instrument,
                 reference: instance.reference,
                 temperament: instance.appliedTemperament,
+                naming: settings.naming,
                 // Bowed instruments open on the A — the note the orchestra
                 // gives, tuned first, fifths outward from there.
                 initialIndex: instance.instrument.firstTuningIndex))
@@ -60,11 +61,21 @@ struct WatchInstanceTunerView: View {
         // instance's A, retuned a string, flipped its temperament —
         // retargets the live screen.
         .onChange(of: instance) { _, current in
-            tuner.configure(
-                instrument: current.instrument,
-                reference: current.reference,
-                temperament: current.appliedTemperament)
+            retune(to: current)
         }
+        // The notation is a synced preference now: a phone-side change
+        // renames the live header.
+        .onChange(of: settings.naming) { _, _ in
+            retune(to: instance)
+        }
+    }
+
+    private func retune(to current: InstrumentInstance) {
+        tuner.configure(
+            instrument: current.instrument,
+            reference: current.reference,
+            temperament: current.appliedTemperament,
+            naming: settings.naming)
     }
 
     private var footerLabel: String {

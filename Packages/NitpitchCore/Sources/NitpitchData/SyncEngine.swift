@@ -46,6 +46,7 @@ public final class SyncEngine: ObservableObject {
         static let localStampsMigrated = "sync.perSetting.localMigrated.v1"
         static let favoritesOrder = "s.favoritesOrder"
         static let pinsOrder = "s.pinsOrder"
+        static let naming = "s.naming"
     }
 
     /// One KVS key per user-set flag: the id rides after the prefix.
@@ -275,6 +276,11 @@ public final class SyncEngine: ObservableObject {
                 SettingsOrder(order: settings.presetPins.map(\.id), modifiedAt: stamp),
                 key: Key.pinsOrder)
         }
+        if let stamp = settings.namingStamp {
+            write(
+                SettingScalar(value: settings.naming.rawValue, modifiedAt: stamp),
+                key: Key.naming)
+        }
     }
 
     func write<Value: Encodable>(_ value: Value, key: String) {
@@ -304,6 +310,12 @@ struct SettingFlag: Codable, Equatable {
 /// A whole-value order (favorites, pins) — one stamp, cosmetic stakes.
 struct SettingsOrder: Codable, Equatable {
     var order: [String]
+    var modifiedAt: Date?
+}
+
+/// One stamped scalar preference on the wire (notation today).
+struct SettingScalar: Codable, Equatable {
+    var value: String
     var modifiedAt: Date?
 }
 

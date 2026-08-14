@@ -375,4 +375,18 @@ final class PitchTests: XCTestCase {
         let stringless = Instrument.all.filter(\.strings.isEmpty)
         XCTAssertEqual(stringless, [.chromatic])
     }
+
+    // MARK: - Where tuning starts
+
+    /// Bowed instruments tune the A first — the note the orchestra gives —
+    /// then fifths outward; fretted ones go low to high.
+    func testBowedInstrumentsStartOnTheA() {
+        XCTAssertEqual(Instrument.violin.strings[Instrument.violin.firstTuningIndex], 69)
+        XCTAssertEqual(Instrument.viola.strings[Instrument.viola.firstTuningIndex], 69)
+        XCTAssertEqual(Instrument.cello.strings[Instrument.cello.firstTuningIndex], 57)
+        XCTAssertEqual(
+            Instrument.doubleBass.strings[Instrument.doubleBass.firstTuningIndex], 33)
+        XCTAssertEqual(Instrument.guitar.firstTuningIndex, 0, "fretted goes low to high")
+        XCTAssertEqual(Instrument.chromatic.firstTuningIndex, 0, "no strings, no surprises")
+    }
 }

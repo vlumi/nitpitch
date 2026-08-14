@@ -130,7 +130,9 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     }
 
     private var quietFrames = 0
-    private static let quietFramesBeforeIdle = 8
+    /// ~1.1 s: plucked notes decay and rests between plucks are the norm
+    /// on the wrist — the phone's 8 frames serve continuous bowing.
+    private static let quietFramesBeforeIdle = 24
 
     private func consume(_ results: [DetectionResult]) {
         let sounding = results.map { $0.frequency != nil }

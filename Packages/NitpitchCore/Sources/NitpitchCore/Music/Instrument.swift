@@ -41,6 +41,16 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
 
     public var notes: [Note] { strings.map(Note.init(midi:)) }
 
+    /// Where tuning STARTS: bowed instruments tune the A first — it's the
+    /// note the orchestra gives — then fifths outward; everyone else goes
+    /// low to high. The index the wrist's hands-free mode opens on.
+    public var firstTuningIndex: Int {
+        guard family == .bowed,
+            let index = strings.firstIndex(where: { $0 % 12 == 9 })
+        else { return 0 }
+        return index
+    }
+
     /// The frequency band the detector should search for this instrument, with
     /// headroom below the lowest and above the highest open string.
     ///

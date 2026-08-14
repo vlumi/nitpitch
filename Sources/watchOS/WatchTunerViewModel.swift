@@ -26,7 +26,9 @@ final class WatchTunerViewModel: ObservableObject {
     private var smoother = ReadingSmoother()
     private var reference = ReferencePitch.standard
     private var quietFrames = 0
-    private static let quietFramesBeforeIdle = 8
+    /// ~1.1 s: plucked notes decay and rests between plucks are the norm
+    /// on the wrist — the phone's 8 frames serve continuous bowing.
+    private static let quietFramesBeforeIdle = 24
 
     /// The settings sheet moved the A: names and cents follow. The detector
     /// itself searches the full band and needs no rebuild.

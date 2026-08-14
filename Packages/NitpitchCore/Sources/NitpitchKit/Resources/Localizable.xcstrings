@@ -103,9 +103,6 @@
       "comment" : "Tuning name (guitar)",
       "extractionState" : "manual"
     },
-    "Dark" : {
-      "comment" : "Appearance option: always dark"
-    },
     "Db" : {
       "comment" : "Kind tag: double bass (orchestra abbreviation)",
       "extractionState" : "manual"
@@ -173,9 +170,6 @@
     },
     "Keep both" : {
       "comment" : "Button: save a received preset alongside the one of the same name"
-    },
-    "Light" : {
-      "comment" : "Appearance option: always light"
     },
     "Load once" : {
       "comment" : "Button: apply a received preset without saving it"
@@ -365,9 +359,6 @@
     },
     "Sync with iCloud" : {
       "comment" : "Instrument list: the opt-in switch for iCloud syncing"
-    },
-    "System" : {
-      "comment" : "Appearance option: follow the system setting"
     },
     "Temperament" : {
       "comment" : "Tuning-menu picker: how the open-string targets divide their intervals"

@@ -74,10 +74,22 @@ public final class UbiquitousSyncStore: KeyValueSyncStore {
     /// and the answer only changes when the account does (which arrives as
     /// `NSUbiquityIdentityDidChange`, where the cache is dropped).
     public var isAvailable: Bool {
+        #if os(watchOS)
+        // watchOS DEFINES `ubiquityIdentityToken` as always nil — signed in
+        // or not — while KVS itself works there (watchOS 9+), and there is
+        // no public account signal without a CloudKit container this app
+        // doesn't have. So the wrist reports available and lets the OS do
+        // what it does when genuinely signed out: keep writes local until
+        // an account appears. Less honest than the phone's gate, but the
+        // alternative was a sync switch that could never be turned on
+        // (field-found on the first wrist sync attempt).
+        return true
+        #else
         if let cachedAvailability { return cachedAvailability }
         let available = FileManager.default.ubiquityIdentityToken != nil
         cachedAvailability = available
         return available
+        #endif
     }
 
     private var cachedAvailability: Bool?

@@ -504,6 +504,10 @@ final class NitpitchUITests: XCTestCase {
     /// become strips — strings drawn as strings — rotate back and the grid
     /// returns.
     func testWideViewportShowsStrips() {
+        // Start from PORTRAIT explicitly: the runner daemon remembers the
+        // last orientation across test sessions, so a run killed mid-
+        // rotation poisons every later run that merely assumed portrait.
+        XCUIDevice.shared.orientation = .portrait
         let app = launch()
         openViolinGrid(app)
         XCTAssertTrue(

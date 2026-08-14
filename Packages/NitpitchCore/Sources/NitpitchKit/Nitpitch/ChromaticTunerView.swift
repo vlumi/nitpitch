@@ -40,10 +40,13 @@ public struct ChromaticTunerView: View {
     /// A pin's path: the instrument opened INTO a preset — or, locked,
     /// merely opened (the navigation half of a pin is not a change).
     let onChoosePin: (String, String) -> Void
+    /// Passed through to the settings sheet's sync switch — the engine
+    /// itself lives in the app shell.
+    @ObservedObject var sync: SyncEngine
 
     public init(
         settings: Settings, audio: AudioSessionController, store: InstrumentStore,
-        presets: PresetStore,
+        presets: PresetStore, sync: SyncEngine,
         onOpenChooser: @escaping () -> Void,
         onChooseInstance: @escaping (String) -> Void,
         onChoosePin: @escaping (String, String) -> Void,
@@ -52,6 +55,7 @@ public struct ChromaticTunerView: View {
         self.settings = settings
         self.store = store
         self.presets = presets
+        self.sync = sync
         self.audio = audio
         self.onOpenChooser = onOpenChooser
         self.onChooseInstance = onChooseInstance
@@ -90,7 +94,7 @@ public struct ChromaticTunerView: View {
                 isPresented: $isShowingSettings,
                 scheme: settings.appearance.resolvedScheme(systemFallback: systemScheme)
             ) {
-                SettingsView(settings: settings)
+                SettingsView(settings: settings, sync: sync)
             }
             .appearanceSheet(
                 isPresented: $isShowingPresets,

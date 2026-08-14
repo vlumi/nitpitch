@@ -9,11 +9,13 @@ import SwiftUI
 /// without opening anything.
 public struct SettingsView: View {
     @ObservedObject private var settings: Settings
+    @ObservedObject private var sync: SyncEngine
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingAbout = false
 
-    public init(settings: Settings) {
+    public init(settings: Settings, sync: SyncEngine) {
         self.settings = settings
+        self.sync = sync
     }
 
     public var body: some View {
@@ -58,10 +60,44 @@ public struct SettingsView: View {
                 Text("Low string on top", bundle: .module)
             }
             .accessibilityIdentifier("settings.stripsLowOnTop")
+
+            syncToggle
+            syncFooter
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
         .padding(20)
     }
     #endif
+
+    /// iCloud syncing — opt-in, and phrased as what it does rather than
+    /// what it is. It lives HERE (it used to sit at the foot of the
+    /// instrument list): an account-scoped mode is looked for in Settings,
+    /// and the footer states the promise the app makes when it's off,
+    /// since that promise is the reason the toggle exists at all.
+    private var syncToggle: some View {
+        Toggle(isOn: Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) })) {
+            Text("Sync with iCloud", bundle: .module)
+        }
+        // Disabled, not hidden, when there's no iCloud account: KVS would
+        // accept every write locally and move none of them, so an enabled
+        // switch would claim a sync that isn't happening. The footer says
+        // what would make it work.
+        .disabled(!sync.isCloudAvailable)
+        .accessibilityIdentifier("settings.sync")
+    }
+
+    @ViewBuilder private var syncFooter: some View {
+        if !sync.isCloudAvailable {
+            Text("Sign in to iCloud on this device to sync.", bundle: .module)
+        } else if sync.isEnabled {
+            Text(
+                "Instruments, presets and favorites stay the same on every device.",
+                bundle: .module)
+        } else {
+            Text("Nothing leaves this device.", bundle: .module)
+        }
+    }
 
     private var sheetForm: some View {
         NavigationStack {
@@ -112,6 +148,12 @@ public struct SettingsView: View {
                     Text(
                         "In the dial grid and the strips. Off: lowest at the bottom, as tabs are written.",
                         bundle: .module)
+                }
+
+                Section {
+                    syncToggle
+                } footer: {
+                    syncFooter
                 }
 
                 Section {

@@ -570,8 +570,14 @@ one of the drafts that lost.
   edited on its detail screen; wrist writes are per-record and sync.
   The target is deliberately NOT embedded in the iOS app until
   declared ready — the project.yml target comment says how to flip it.
-  The killer interaction remains haptic (see ROADMAP): taps at the
-  beat rate, because on the wrist you tune without looking.
+  The killer interaction is haptic and shipped: the beat vocabulary
+  (`HapticBeat` in Core, policy pinned by tests; `WatchHaptics` drives
+  the actuator) — flat taps `.directionUp`, sharp `.directionDown`, at
+  the string's physical beat rate against its target capped ~8/s; a
+  sounding pair swaps to `.click` at the PAIR's true beat rate
+  (`IntervalBeat`); in tune is silence, the settle keeps `.success`.
+  On by default in the instrument tuner, no setting — because on the
+  wrist you tune without looking.
 - **The App Store copy constraints.** Two promises the listing text
   must keep, baked into `Scripts/asc/listing.json`'s header comment:
   privacy wording says exactly what PRIVACY.md says (nothing leaves

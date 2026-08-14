@@ -19,27 +19,11 @@ for a release that earns it.
   place; a translation task, deferred until the UI text settles.
 - **The watch's remaining wants** (architecture and scope are settled —
   AGENTS.md "The watch"):
-  - **The haptic beat vocabulary** — the killer interaction, concretely.
-    The vocabulary, all watchOS preset haptics: FLAT taps
-    `.directionUp` ("come up"), SHARP taps `.directionDown`, at a
-    cadence equal to the string's physical beat rate against its
-    target (|f − f_target| Hz — A4 10¢ flat ≈ 2.5 taps/s), capped
-    ~8/s; in tune is SILENCE; the settle keeps its `.success` (already
-    shipped). The use, single string: bow the A, feel "up-up-up"
-    slowing as the peg turns, silence inside the band, the success tap
-    when settled — eyes never leave the fingerboard, or stay closed.
-    Double stops: bow A+D and the taps are `.click` at the PAIR'S true
-    beat rate (|3·f_D − 2·f_A| for the fifth), slowing and stopping
-    exactly as the audible beats do — the wrist renders the same
-    physics the ear hears, then the settled advance clicks focus to
-    the next string. Screen unchanged (arc, cents and strip keep
-    working); haptics are the layer on top, on by default in the
-    instrument tuner.
   - **Harmonic tuning, minimal twiddling** — concretely: NO mode, no
     setting. Playing a string's OCTAVE harmonic instead of its open
     already works today — the spectral engine folds even-partials-only
     content back to the fundamental (field-verified: the demo's G4
-    phase reading +10¢ on the G string), so dial, arc and the future
+    phase reading +10¢ on the G string), so dial, arc and the
     haptics behave identically whether you bow the open or touch the
     node. Two refinements earn the name: (1) a LABEL — when the sound
     is best explained as harmonic k of the focused string, the header

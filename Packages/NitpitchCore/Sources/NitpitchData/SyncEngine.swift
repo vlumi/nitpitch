@@ -27,22 +27,32 @@ public final class SyncEngine: ObservableObject {
     /// a sync that would silently move nothing.
     @Published public private(set) var isCloudAvailable: Bool
 
-    private let store: KeyValueSyncStore
-    private let instruments: InstrumentStore
-    private let presets: PresetStore
-    private let settings: Settings
-    private let defaults: UserDefaults
+    let store: KeyValueSyncStore
+    let instruments: InstrumentStore
+    let presets: PresetStore
+    let settings: Settings
+    let defaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
     /// True while `apply` is writing into the stores, so the store's own
     /// change notification doesn't bounce straight back out as a push.
     private var isApplying = false
 
-    private enum Key {
+    enum Key {
         static let enabled = "sync.enabled.v1"
         static let lastSyncedAt = "sync.lastSyncedAt.v1"
+        /// The v1 blob's stamp and key, read only by the one-shot migration.
         static let settingsStamp = "sync.settingsModifiedAt.v1"
         static let remoteSettings = "s.settings"
-        static let lastStampedSettings = "sync.lastStampedSettings.v1"
+        static let localStampsMigrated = "sync.perSetting.localMigrated.v1"
+        static let favoritesOrder = "s.favoritesOrder"
+        static let pinsOrder = "s.pinsOrder"
+    }
+
+    /// One KVS key per user-set flag: the id rides after the prefix.
+    enum FlagKind: String, CaseIterable {
+        case instrumentFavorite = "sf.i."
+        case presetPin = "sf.pin."
+        case presetFavorite = "sf.pf."
     }
 
     public init(
@@ -146,11 +156,9 @@ public final class SyncEngine: ObservableObject {
         // writes with no account and never moves them, so "synced" here
         // would be a lie the UI then repeats.
         guard isEnabled, store.isAvailable else { return }
-        // Stamp FIRST. A local edit made since the last sync is not yet
-        // dated, and `apply` is about to weigh it against the cloud's
-        // copy — undated, it loses, and the merge overwrites the very
-        // change the user just made.
-        stampSettingsIfChanged()
+        // No pre-merge settings stamping anymore: every flag is stamped AT
+        // THE ACT by its store (merging is done BY SETTING), so there is
+        // nothing here to bring up to date — and nothing here to get wrong.
         apply()
         push()
         store.synchronize()
@@ -198,32 +206,6 @@ public final class SyncEngine: ObservableObject {
         applySettings()
     }
 
-    /// The synced slice of Settings — pins and their order, and the preset
-    /// favorites. Device-shaped state (which rack rows are expanded, strips
-    /// on the Mac) deliberately stays local: it describes this screen, not
-    /// this user's setup.
-    private func applySettings() {
-        guard let data = store.data(forKey: Key.remoteSettings),
-            let remote = try? JSONDecoder().decode(SyncedSettings.self, from: data)
-        else { return }
-        let local = SyncedSettings(
-            favorites: settings.favorites,
-            presetPins: settings.presetPins,
-            presetFavorites: presets.favoriteIDs,
-            modifiedAt: settingsStamp)
-        let winner = SyncMerge.mergedValue(
-            local: local, localModifiedAt: local.modifiedAt,
-            remote: remote, remoteModifiedAt: remote.modifiedAt)
-        guard winner != local else { return }
-        settings.favorites = winner.favorites
-        settings.presetPins = winner.presetPins
-        presets.adoptFavorites(winner.presetFavorites)
-        // Adopt the winner's stamp too, or this device claims the merged
-        // value as its own newer edit and pushes it back forever.
-        defaults.set(winner.modifiedAt, forKey: Key.settingsStamp)
-        lastStampedSettings = winner
-    }
-
     private func records<Record: Decodable>(of kind: Kind, as: Record.Type) -> [Record] {
         store.allKeys
             .filter { $0.hasPrefix(kind.rawValue) && $0 != kind.tombstonesKey }
@@ -244,10 +226,6 @@ public final class SyncEngine: ObservableObject {
     /// and the synced settings.
     private func push() {
         guard isEnabled, store.isAvailable else { return }
-        // Every outbound path lands here, so this is where the settings
-        // stamp has to be brought up to date: a value pushed without one
-        // is a value that loses every merge it takes part in.
-        stampSettingsIfChanged()
         for instance in instruments.instances {
             write(instance, key: Kind.instrument.rawValue + instance.id)
         }
@@ -271,16 +249,30 @@ public final class SyncEngine: ObservableObject {
             store.set(nil, forKey: key)
         }
 
-        write(
-            SyncedSettings(
-                favorites: settings.favorites,
-                presetPins: settings.presetPins,
-                presetFavorites: presets.favoriteIDs,
-                modifiedAt: settingsStamp),
-            key: Key.remoteSettings)
+        // Per-setting flags: ONLY stamped ones travel — an unstamped flag
+        // is an install seed, and every device grows its own.
+        pushFlags(
+            kind: .instrumentFavorite,
+            on: Set(settings.favorites), stamps: settings.favoriteStamps)
+        pushFlags(
+            kind: .presetPin,
+            on: Set(settings.presetPins.map(\.id)), stamps: settings.pinStamps)
+        pushFlags(
+            kind: .presetFavorite,
+            on: presets.favoriteIDs, stamps: presets.favoriteStamps)
+        if let stamp = settings.favoritesOrderStamp {
+            write(
+                SettingsOrder(order: settings.favorites, modifiedAt: stamp),
+                key: Key.favoritesOrder)
+        }
+        if let stamp = settings.pinsOrderStamp {
+            write(
+                SettingsOrder(order: settings.presetPins.map(\.id), modifiedAt: stamp),
+                key: Key.pinsOrder)
+        }
     }
 
-    private func write<Value: Encodable>(_ value: Value, key: String) {
+    func write<Value: Encodable>(_ value: Value, key: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         // KVS coalesces identical writes anyway, but skipping them keeps
         // the change notification from ping-ponging between devices.
@@ -294,68 +286,38 @@ public final class SyncEngine: ObservableObject {
         defaults.object(forKey: Key.settingsStamp) as? Date
     }
 
-    /// Stamp the synced settings only when they actually moved.
-    ///
-    /// Stamping on every store change looks harmless and is not: renaming
-    /// an instrument would mark this device's untouched pins as freshly
-    /// edited, and they would then beat the other device's real ones. A
-    /// stamp has to mean "this value changed here", nothing looser.
-    ///
-    /// And a device that has NEVER stamped is a fresh joiner: its settings
-    /// are whatever install seeded, and a seed must lose its first merge —
-    /// the instrument seeds' `.distantPast` rule, spoken in whole-value
-    /// terms. Record the baseline WITHOUT a stamp, so the cloud's real
-    /// settings win; the first change made after that stamps normally.
-    /// Field-found the hard way: "never stamped" read as "everything just
-    /// changed", and a new watch's factory favorites beat months of the
-    /// phone's the moment its sync switch went on.
-    private func stampSettingsIfChanged() {
-        guard let baseline = lastStampedSettings else {
-            lastStampedSettings = localSettings
-            return
-        }
-        let current = localSettings
-        guard current != baseline else { return }
-        lastStampedSettings = current
-        defaults.set(Date(), forKey: Key.settingsStamp)
-    }
-
-    /// The synced slice as it stands locally.
-    private var localSettings: SyncedSettings {
-        SyncedSettings(
-            favorites: settings.favorites,
-            presetPins: settings.presetPins,
-            presetFavorites: presets.favoriteIDs,
-            modifiedAt: settingsStamp)
-    }
-
-    /// The last synced-settings value this device stamped, compared field
-    /// by field — the stamp itself is excluded, since it's the answer and
-    /// not part of the question.
-    private var lastStampedSettings: SyncedSettings? {
-        get {
-            guard let data = defaults.data(forKey: Key.lastStampedSettings) else { return nil }
-            return try? JSONDecoder().decode(SyncedSettings.self, from: data)
-        }
-        set {
-            guard let value = newValue, let data = try? JSONEncoder().encode(value) else { return }
-            defaults.set(data, forKey: Key.lastStampedSettings)
-        }
-    }
 }
 
-/// The slice of `Settings` that describes the user's setup rather than this
-/// device's screen, as one synced value.
+/// One user-set flag on the wire — a star, a pin — stamped with the moment
+/// the user set it. Unstamped flags never travel: they're install seeds,
+/// and every device grows its own.
+struct SettingFlag: Codable, Equatable {
+    var on: Bool
+    var modifiedAt: Date?
+}
+
+/// A whole-value order (favorites, pins) — one stamp, cosmetic stakes.
+struct SettingsOrder: Codable, Equatable {
+    var order: [String]
+    var modifiedAt: Date?
+}
+
+/// The v1 settings blob, kept decode-only for the one-shot migration into
+/// per-setting flags. Whole-value LWW on this is what a wrong stamp once
+/// used to wipe months of stars with — see `migrateSettingsBlobIfNeeded`.
 struct SyncedSettings: Codable, Equatable {
     var favorites: [String]
     var presetPins: [PresetPin]
     var presetFavorites: Set<String>
     var modifiedAt: Date?
+}
 
-    /// Equality over the CONTENT, ignoring the stamp: "did this value
-    /// change?" must not be answered by the date that records the answer.
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.favorites == rhs.favorites && lhs.presetPins == rhs.presetPins
-            && lhs.presetFavorites == rhs.presetFavorites
+extension PresetPin {
+    /// The flag id ("instrumentID→presetID") read back into a pin — the
+    /// separator can't occur in either half (template ids, UUIDs, seed ids).
+    init?(flagID: String) {
+        let parts = flagID.split(separator: "→", maxSplits: 1)
+        guard parts.count == 2 else { return nil }
+        self.init(instrumentID: String(parts[0]), presetID: String(parts[1]))
     }
 }

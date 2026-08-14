@@ -530,12 +530,22 @@ one of the drafts that lost.
      WITHOUT a stamp, so the cloud's real settings win the first merge
      (rule 2, spoken in whole-value terms). Field-found: the first
      watch to join stamped its factory favorites fresh and wiped months
-     of the phone's stars and pins off iCloud. Also two watch-platform
-     facts from the same session: `ubiquityIdentityToken` is DEFINED as
+     of the phone's stars and pins off iCloud. Also a watch-platform
+     fact from the same session: `ubiquityIdentityToken` is DEFINED as
      always-nil on watchOS (the signed-out gate must not use it there —
-     KVS itself works), and whole-value LWW on the settings blob is
-     known-coarse: two devices editing settings apart still lose one
-     side (ROADMAP has the per-record pins/favorites design).
+     KVS itself works).
+  8. **Settings merge BY SETTING, stamped at the act.** Each star/pin/
+     preset-favorite is its own KVS value (`SyncMerge.mergedFlag`),
+     stamped by its store THE MOMENT the user toggles it — sync on or
+     off — so devices used apart for weeks union their real choices on
+     joining. A stamp exists only for values a user actually set:
+     never-set can never wipe set, a stamped OFF is a real act (beats
+     an older ON, loses to a newer one), and ties break to ON on both
+     sides (local-wins ties never converge). Only the ORDERS stay
+     whole-value — a lost order race costs cosmetics, not data. The v1
+     `s.settings` blob decomposes into flags once (a stamped blob's
+     absent universal seed becomes a stamped OFF — "exactly these" was
+     its word) and the key is deleted.
 - **Readouts are the local note name on scientific octaves.** Every
   readout — targets and detections alike — leads with the player's own
   spelling ("H₃", "Si₃"), the octave as a scientific subscript, and the

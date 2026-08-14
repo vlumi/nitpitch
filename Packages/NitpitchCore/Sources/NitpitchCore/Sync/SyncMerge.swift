@@ -113,10 +113,10 @@ public enum SyncMerge {
         return Set(latest.values.filter { !$0.isExpired(at: now) })
     }
 
-    /// A whole-value setting — the pinned list, its order, the preset
-    /// favorites: things that are one value, not a collection of records.
-    /// Same rule, one stamp: newer wins, and a side that has never been
-    /// stamped yields.
+    /// A whole-value setting — an ORDER of favorites or pins: one value,
+    /// one stamp, newer wins, and a side that has never been stamped
+    /// yields. Reserved for values whose lost race costs cosmetics only;
+    /// anything whose loss would be DATA syncs per flag (`mergedFlag`).
     public static func mergedValue<Value>(
         local: Value, localModifiedAt: Date?,
         remote: Value, remoteModifiedAt: Date?
@@ -124,6 +124,29 @@ public enum SyncMerge {
         guard let remoteDate = remoteModifiedAt else { return local }
         guard let localDate = localModifiedAt else { return remote }
         return remoteDate > localDate ? remote : local
+    }
+
+    /// One user-set flag — a star, a pin: merging is done BY SETTING, and
+    /// a stamp exists only for a value the user actually set. The rules,
+    /// each one a promise:
+    ///
+    /// - **Never-set can never wipe set**: a nil stamp yields to any stamp,
+    ///   so a fresh install's unset (or seeded) state loses to months of
+    ///   the other device's choices.
+    /// - **A stamped OFF is a real act**: it beats an older ON — unstarring
+    ///   on one device sticks — and loses to a newer ON.
+    /// - **Ties break to ON, on both sides**: `Date()` is coarse enough for
+    ///   two devices to collide, and local-wins would resolve the tie
+    ///   differently on each device — the one outcome that never converges.
+    ///   ON is the deterministic pick that keeps the star.
+    public static func mergedFlag(
+        localOn: Bool, localModifiedAt: Date?,
+        remoteOn: Bool, remoteModifiedAt: Date?
+    ) -> (on: Bool, modifiedAt: Date?) {
+        guard let remoteDate = remoteModifiedAt else { return (localOn, localModifiedAt) }
+        guard let localDate = localModifiedAt else { return (remoteOn, remoteDate) }
+        guard localDate != remoteDate else { return (localOn || remoteOn, localDate) }
+        return remoteDate > localDate ? (remoteOn, remoteDate) : (localOn, localDate)
     }
 
     private static func newer<Record: SyncRecord>(_ lhs: Record, _ rhs: Record) -> Record {

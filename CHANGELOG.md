@@ -24,6 +24,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The iCloud sync switch moved to Settings (the gear on iPhone, ⌘, on
+  the Mac) from the foot of the instrument list — an account-scoped
+  mode belongs where settings are looked for, and the instrument list
+  reads a little quieter for everyone who never needed it.
 - Stars, pins and preset favorites now sync SETTING BY SETTING, each
   stamped at the moment you set it — so devices used apart for weeks
   combine your actual choices when they meet, instead of one device's

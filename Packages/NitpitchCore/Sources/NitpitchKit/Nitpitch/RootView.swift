@@ -22,47 +22,38 @@ public enum TunerRoute: Hashable {
 public struct RootView: View {
     @ObservedObject private var settings: Settings
     private let audio: AudioSessionController
-    /// The instruments you own. Created here: it lives exactly as long as the
-    /// navigation that hands its instances out.
-    @StateObject private var store: InstrumentStore
-    @StateObject private var presets: PresetStore
+    /// The stores and the engine live in the APP SHELLS now (the watch
+    /// taught the pattern): the Mac's Settings scene is a sibling of the
+    /// tuner window, and the sync switch that lives there needs the same
+    /// engine this hierarchy syncs through.
+    @ObservedObject private var store: InstrumentStore
+    @ObservedObject private var presets: PresetStore
+    @ObservedObject private var sync: SyncEngine
     @State private var path: [TunerRoute] = []
     /// Created here rather than passed in: it lives for the session, resets on
     /// every launch, and nothing outside the tuner hierarchy has any business
     /// reading it.
     @StateObject private var detection = DetectionSettings()
-    /// iCloud syncing, off unless the user asked for it. Created here
-    /// because it needs every store at once, and they all meet here.
-    @StateObject private var sync: SyncEngine
     /// A shared preset that just arrived, driving the import sheet.
     @State private var arrival: PresetArrival?
     /// An instrument shape to create — an orphaned preset's way back.
     @State private var pendingInstrumentShape: InstrumentShape?
 
-    public init(settings: Settings, audio: AudioSessionController) {
+    public init(
+        settings: Settings, audio: AudioSessionController,
+        store: InstrumentStore, presets: PresetStore, sync: SyncEngine
+    ) {
         self.settings = settings
         self.audio = audio
-        // A new instrument's reference seeds from the chromatic screen's —
-        // "from wherever you came from".
-        let store = InstrumentStore(defaults: LaunchStores.defaults) {
-            settings.reference
-        }
-        let presets = PresetStore(defaults: LaunchStores.defaults)
-        _store = StateObject(wrappedValue: store)
-        _presets = StateObject(wrappedValue: presets)
-        // Constructed cheaply — the engine touches iCloud only from
-        // `begin()`, which the body schedules in a task (see below).
-        _sync = StateObject(
-            wrappedValue: SyncEngine(
-                store: LaunchStores.syncStore(),
-                instruments: store, presets: presets, settings: settings,
-                defaults: LaunchStores.defaults))
+        self.store = store
+        self.presets = presets
+        self.sync = sync
     }
 
     public var body: some View {
         NavigationStack(path: $path) {
             ChromaticTunerView(
-                settings: settings, audio: audio, store: store, presets: presets,
+                settings: settings, audio: audio, store: store, presets: presets, sync: sync,
                 onOpenChooser: { path.append(.chooser) },
                 onChooseInstance: { id in path.append(.instrument(id)) },
                 onChoosePin: { id, presetID in openPin(instrument: id, preset: presetID) },
@@ -75,7 +66,7 @@ public struct RootView: View {
                 switch route {
                 case .chooser:
                     InstrumentChooser(
-                        settings: settings, store: store, presets: presets, sync: sync,
+                        settings: settings, store: store, presets: presets,
                         // Set when an orphaned preset asked for an
                         // instrument that fits it; the chooser opens its
                         // creation sheet already shaped, then clears this.

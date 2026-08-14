@@ -826,13 +826,14 @@ final class NitpitchUITests: XCTestCase {
     /// SwiftUI Toggles don't expose the trait to XCUITest.
     func testSyncIsOffUntilAskedFor() {
         let app = launch()
-        let button = app.descendants(matching: .any)["tuner.instrument"]
-        XCTAssertTrue(button.waitForExistence(timeout: 10))
-        button.tap()
+        // The switch lives in Settings now (it used to sit at the foot of
+        // the instrument list): an account-scoped mode is looked for here,
+        // and the two-device user who needs it will find Settings.
+        let gear = app.descendants(matching: .any)["tuner.settings"].firstMatch
+        XCTAssertTrue(gear.waitForExistence(timeout: 10))
+        gear.tap()
 
-        // The switch lives below the whole instrument list, so reaching it
-        // is part of what this asserts.
-        let toggle = app.descendants(matching: .any)["chooser.sync"].firstMatch
+        let toggle = app.descendants(matching: .any)["settings.sync"].firstMatch
         XCTAssertTrue(scrollToReveal(toggle, in: app), "the sync switch is reachable")
         XCTAssertEqual(toggle.value as? String, "0", "off until asked for")
         XCTAssertTrue(

@@ -17,19 +17,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct NitpitchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var settings = Settings(defaults: LaunchStores.defaults)
+    // Qualified: SwiftUI's `Settings` SCENE shares the bare name on macOS,
+    // and an annotation can't lean on inference the way the old inline
+    // initializer could.
+    @StateObject private var settings: NitpitchKit.Settings
+    @StateObject private var store: InstrumentStore
+    @StateObject private var presets: PresetStore
+    @StateObject private var sync: SyncEngine
     /// One microphone for the whole app — see `AudioSessionController` for why
     /// screens subscribe to it rather than each starting their own engine.
     /// (Under `-demo` the source is a synthesized instrument, chosen at this
     /// one seam — see `LaunchStores.audioInput`.)
     @StateObject private var audio = AudioSessionController(input: LaunchStores.audioInput())
+
+    init() {
+        // The stores and the engine are owned HERE (the watch taught the
+        // pattern): the Settings screen carries the sync switch on every
+        // platform, and on the Mac that screen is a sibling SCENE the tuner
+        // hierarchy can't reach into.
+        let settings = Settings(defaults: LaunchStores.defaults)
+        // A new instrument's reference seeds from the chromatic screen's —
+        // "from wherever you came from".
+        let store = InstrumentStore(defaults: LaunchStores.defaults) {
+            settings.reference
+        }
+        let presets = PresetStore(defaults: LaunchStores.defaults)
+        _settings = StateObject(wrappedValue: settings)
+        _store = StateObject(wrappedValue: store)
+        _presets = StateObject(wrappedValue: presets)
+        // Constructed cheaply — the engine touches iCloud only from
+        // `begin()`, which RootView schedules in a task.
+        _sync = StateObject(
+            wrappedValue: SyncEngine(
+                store: LaunchStores.syncStore(),
+                instruments: store, presets: presets, settings: settings,
+                defaults: LaunchStores.defaults))
+    }
     @Environment(\.openWindow) private var openWindow
 
     private static let aboutWindowID = "about"
 
     var body: some Scene {
         WindowGroup {
-            RootView(settings: settings, audio: audio)
+            RootView(settings: settings, audio: audio, store: store, presets: presets, sync: sync)
                 // Wide enough that the toolbar never collapses the back
                 // button into the » overflow (observed at 420), tall enough
                 // for the dial to breathe.
@@ -81,7 +111,7 @@ struct NitpitchApp: App {
         // the bundle. A second About inside preferences would be a different
         // screen showing the same facts.
         Settings {
-            SettingsView(settings: settings)
+            SettingsView(settings: settings, sync: sync)
                 // A separate scene doesn't inherit the main window's
                 // `.preferredColorScheme`, so without this the preferences
                 // window stays on the system appearance while the tuner

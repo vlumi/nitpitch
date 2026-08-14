@@ -141,11 +141,15 @@ targets:
         CURRENT_PROJECT_VERSION: "8"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # iCloud KVS for sync — the same explicit store id as iOS/macOS.
+        CODE_SIGN_ENTITLEMENTS: Sources/watchOS/Nitpitch.entitlements
         DEVELOPMENT_TEAM: U84DT7P75P
         CODE_SIGN_STYLE: Automatic
     dependencies:
       - package: NitpitchCore
         product: NitpitchCore
+      - package: NitpitchCore
+        product: NitpitchData
     # Shared scheme so `xcodebuild -scheme Nitpitch-watchOS` works on a fresh
     # checkout (CI, make build-watch) — same reason as the macOS target.
     scheme:

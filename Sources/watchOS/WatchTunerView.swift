@@ -1,4 +1,5 @@
 import NitpitchCore
+import NitpitchData
 import SwiftUI
 
 /// One glance, one answer: the note, its cents, and the light strip — the
@@ -6,8 +7,9 @@ import SwiftUI
 /// that rather than a shrunken arc. Chromatic only for now: play anything
 /// (a harmonic included — its cent error IS the string's) and read it.
 struct WatchTunerView: View {
+    @ObservedObject var settings: Settings
+    @ObservedObject var sync: SyncEngine
     @StateObject private var tuner = WatchTunerViewModel()
-    @AppStorage(WatchTuning.referenceKey) private var referenceHz: Double = 440
 
     var body: some View {
         VStack(spacing: 6) {
@@ -28,18 +30,21 @@ struct WatchTunerView: View {
                 status(" ")
             }
             NavigationLink {
-                WatchSettingsView(showsTemperament: false)
+                WatchSettingsView(settings: settings, sync: sync)
             } label: {
-                Text(verbatim: "A=\(Int(referenceHz))")
+                Text(verbatim: "A=\(Int(settings.reference.hz))")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
         }
-        .task { await tuner.begin() }
+        .task {
+            tuner.configure(reference: settings.reference)
+            await tuner.begin()
+        }
         .onDisappear { tuner.end() }
-        .onChange(of: referenceHz) { _, _ in
-            tuner.configure(reference: WatchTuning.storedReference())
+        .onChange(of: settings.reference) { _, reference in
+            tuner.configure(reference: reference)
         }
     }
 

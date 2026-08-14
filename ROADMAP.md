@@ -76,6 +76,19 @@ retired as a concern (pinned by `DetectorBankPerformanceTests`).
   same session — the thresholds survived real hands. Unamplified bass
   stays the hard case (E1's fundamental sits below the mic floor),
   same as the phone.
+  SYNC HAS REACHED THE WRIST (in code; the wrist⇄phone field test is
+  the remaining proof): the stores and engine moved to the portable
+  NitpitchData target, the watch carries the same explicit KVS store
+  id as iOS/macOS, and the root lists YOUR instruments — seeded on
+  first launch like everywhere, starred first — each opening the
+  hands-free tuner on ITS reference/temperament, with a detail screen
+  for the lock, the knobs, and tap-to-load presets (pinned first).
+  The sync switch lives in the watch settings with the phone's
+  honesty: off by default, disabled-with-reason when signed out. The
+  catalog section is GONE from the root — seeding makes it "my
+  instruments" until pruned, and creating instruments stays a
+  phone/Mac job. The settings footer wears button clothing now (the
+  field note's discoverability fix).
   Wrist field notes (second session, 2026-08-14): the state so far is
   as designed — catalog only, no stars/presets/locks until sync — but
   one real finding: the "A=440 · Pure" footer IS the settings button,

@@ -1,26 +1,18 @@
 import NitpitchCore
 import SwiftUI
 
-/// The focused string's screen: its name, the cents against ITS target, the
-/// light strip — and a checkmark once it settles. The crown steps between
-/// strings (explicit always wins); everything else is `StringFocus` deciding
+/// The focused string's pane, shared by the catalog and instance screens:
+/// the string's name with a checkmark once it settles, the cents against ITS
+/// target, the light strip — and the crown stepping between strings
+/// (explicit always wins); everything else is `StringFocus` deciding
 /// hands-free, announced by the wrist's haptics rather than demanding eyes.
-struct WatchInstrumentTunerView: View {
-    @StateObject private var tuner: WatchInstrumentTunerViewModel
+struct WatchTunerPane<Footer: View>: View {
+    @ObservedObject var tuner: WatchInstrumentTunerViewModel
+    @ViewBuilder let footer: () -> Footer
+
     /// The crown's position, kept in step with inferred focus moves so a
     /// twist always starts from where the screen already is.
     @State private var crown: Double = 0
-    @AppStorage(WatchTuning.referenceKey) private var referenceHz: Double = 440
-    @AppStorage(WatchTuning.temperamentKey) private var temperamentMode: String =
-        WatchTuning.TemperamentMode.auto.rawValue
-
-    private let instrument: Instrument
-
-    init(instrument: Instrument) {
-        self.instrument = instrument
-        _tuner = StateObject(
-            wrappedValue: WatchInstrumentTunerViewModel(instrument: instrument))
-    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -47,17 +39,7 @@ struct WatchInstrumentTunerView: View {
             case .idle:
                 Text(verbatim: " ")
             }
-            // The knobs, visible where they act (a tuner that silently
-            // applies 442 or pure fifths would look broken next to a phone
-            // on different settings) — and the door to changing them.
-            NavigationLink {
-                WatchSettingsView(showsTemperament: true)
-            } label: {
-                Text(verbatim: footerLabel)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
+            footer()
         }
         .focusable()
         .digitalCrownRotation(
@@ -74,21 +56,6 @@ struct WatchInstrumentTunerView: View {
         }
         .task { await tuner.begin() }
         .onDisappear { tuner.end() }
-        .onChange(of: referenceHz) { _, _ in retune() }
-        .onChange(of: temperamentMode) { _, _ in retune() }
-    }
-
-    private var footerLabel: String {
-        let mode =
-            WatchTuning.TemperamentMode(rawValue: temperamentMode) ?? .auto
-        let temperament = mode.temperament(for: instrument.family)
-        return "A=\(Int(referenceHz)) · \(temperament == .pure ? "Pure" : "Equal")"
-    }
-
-    private func retune() {
-        tuner.configure(
-            reference: WatchTuning.storedReference(),
-            temperament: WatchTuning.storedTemperament(for: instrument.family))
     }
 
     /// The string's name, flanked by its neighbours — where the crown leads,

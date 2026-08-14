@@ -171,6 +171,28 @@ final class SyncSettingsTests: XCTestCase {
         XCTAssertEqual(phone.settings.naming, .german)
     }
 
+    /// A notation stamp TIE with differing values must break the same way
+    /// on both sides — greater raw value wins — because a local-wins tie
+    /// never converges: each device would keep insisting on its own.
+    func testANotationStampTieBreaksTheSameWayOnBothSides() {
+        let cloud = FakeSyncStore()
+        let phone = SyncTestDevice(sharing: cloud)
+        let mac = SyncTestDevice(sharing: cloud)
+        defer { phone.destroy(); mac.destroy() }
+        // Staged through `adoptNaming`, the one door that takes a caller's
+        // stamp — two real acts can't land on the identical Date, but two
+        // KVS replicas absolutely can present one.
+        let instant = Date()
+        phone.settings.adoptNaming(.german, stamp: instant)
+        mac.settings.adoptNaming(.english, stamp: instant)
+        phone.engine.sync()
+        mac.engine.sync()
+        phone.engine.sync()
+
+        XCTAssertEqual(mac.settings.naming, .german, "the tie breaks to the greater raw value")
+        XCTAssertEqual(phone.settings.naming, .german, "identically on both devices")
+    }
+
     /// The LOCAL half of the v1 migration: a device that had stamped the
     /// old blob (it made real choices in the whole-value era) carries that
     /// one date onto every membership it holds — once — so those choices

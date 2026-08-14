@@ -29,6 +29,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     @Published private(set) var stringNames: [String]
 
     private let audio = WatchAudioInput()
+    private let haptics = WatchHaptics()
     private let bank: DetectorBank
     private var instrument: Instrument
     private var targets: [Double]
@@ -120,6 +121,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
 
     func end() {
         audio.stop()
+        haptics.stop()
         smoother.reset()
         state = .idle
     }
@@ -129,6 +131,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         guard index != focus.focusIndex else { return }
         focus.select(index)
         apply(event: .none)
+        haptics.stop()
         smoother.reset()
         state = .listening
     }
@@ -151,6 +154,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             sounding: sounding,
             focusedInTune: cents.map(TuningDisplay.isInTune(cents:)))
         apply(event: event)
+        haptics.update(hapticCue(results: results, cents: cents))
 
         if let cents {
             quietFrames = 0
@@ -165,6 +169,22 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
                 state = .listening
             }
         }
+    }
+
+    /// The wrist's word for this frame — the haptic beat vocabulary
+    /// (`HapticBeat`): a sounding pair's beat wins, else the focused
+    /// string's own beat against its target, from the same smoothed cents
+    /// the screen shows. Octave claims are parity-flagged and never
+    /// masquerade as a pair member (the interval readout's rule).
+    private func hapticCue(results: [DetectionResult], cents: Double?) -> HapticBeat.Cue? {
+        if let pair = IntervalBeat.resolve(
+            frequencies: results.map { $0.evenPartialsOnly ? nil : $0.frequency },
+            midis: instrument.strings)
+        {
+            return HapticBeat.cue(pair: pair)
+        }
+        guard let cents else { return nil }
+        return HapticBeat.cue(cents: cents, targetHz: targets[focus.focusIndex])
     }
 
     private func apply(event: StringFocus.Event) {

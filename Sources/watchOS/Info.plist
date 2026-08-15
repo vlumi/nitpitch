@@ -28,5 +28,7 @@
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
 	<string>fi.misaki.nitpitch</string>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<true/>
 </dict>
 </plist>

@@ -36,6 +36,19 @@ it.
     never silently. The near-unison two-harmonics-together technique
     stays out: two tones ~1 Hz apart defeat a 93 ms window, and with
     beat-rate haptics, one harmonic at a time is equally eyes-free.
+- **Sync discoverability, designed rather than patched** — a user on a
+  second device (most sharply: a watch installed alone from its own
+  App Store) probably wants iCloud sync on, and today nothing says so
+  until they go looking in Settings. The constraint that makes this a
+  DESIGN task: whatever advertises sync must earn its place in both
+  states — a main-screen toggle sells the feature well but is pure
+  noise once it's on, and one-time hints/badges are out (a one-shot
+  hack reeks of patching bad design). Candidate directions to weigh
+  when this is picked up: a surface that reports sync state usefully
+  forever (and therefore may sit on the main screen honestly), or
+  making the seeded-only state itself communicate ("your instruments
+  from iPhone arrive here" as the empty-custom-data framing), never a
+  dismissable banner.
 - **"Everything sounding" display** (watch first, maybe iOS/Mac): show
   all recognized pitches with debounced switching — appearance is
   already confirmation-gated and disappearance quiet-frames-gated; the

@@ -2,14 +2,15 @@ import NitpitchCore
 import NitpitchData
 import SwiftUI
 
-/// The wrist's front door: YOUR instruments (synced — the watch is the
-/// second device that makes sync earn its keep), chromatic, and the
-/// settings with the sync switch. No catalog section: the store seeds an
-/// instance per template on first launch (stable ids, so a later first
-/// sync merges clean), so the catalog IS "my instruments" until the user
-/// prunes it — and creating new instruments stays a phone/Mac job, no
-/// editors on a 40 mm screen. Starred instruments lead, in the order the
-/// phone's launch screen keeps them.
+/// The wrist's front door: your STARRED instruments (synced — the watch is
+/// the second device that makes sync earn its keep), the rest behind one
+/// row (grouped by family, where the whole seeded catalog stops being
+/// clutter), chromatic, and the settings with the sync switch. Starring
+/// works from here too — swipe a row, or the toggle on the instrument's
+/// detail — because the watch is a full citizen of the favorites now, not
+/// a window onto the phone's. Creating new instruments stays a phone/Mac
+/// job: no editors on a 40 mm screen. Favorites keep the order the phone's
+/// launch screen keeps them.
 struct WatchRootView: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var presets: PresetStore
@@ -21,26 +22,16 @@ struct WatchRootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             List {
-                if !store.instances.isEmpty {
+                if !favoriteInstances.isEmpty {
                     Section("My instruments") {
-                        ForEach(orderedInstances, id: \.id) { instance in
-                            NavigationLink(value: instance.id) {
-                                HStack {
-                                    Text(verbatim: instance.name)
-                                    Spacer()
-                                    if instance.isLocked {
-                                        Image(systemName: "lock.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(.tertiary)
-                                    }
-                                    if settings.favorites.contains(instance.id) {
-                                        Image(systemName: "star.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(.yellow)
-                                    }
-                                }
-                            }
+                        ForEach(favoriteInstances, id: \.id) { instance in
+                            WatchInstanceRow(instance: instance, settings: settings)
                         }
+                    }
+                }
+                if !restInstances.isEmpty {
+                    NavigationLink(value: "all") {
+                        Label("All instruments", systemImage: "guitars")
                     }
                 }
                 NavigationLink(value: "chromatic") {
@@ -69,18 +60,22 @@ struct WatchRootView: View {
         }
     }
 
-    /// Starred first, in the phone rack's own order, then the rest.
-    private var orderedInstances: [InstrumentInstance] {
-        let starred = settings.favorites.compactMap { id in
+    /// The stars, in the phone rack's own order.
+    private var favoriteInstances: [InstrumentInstance] {
+        settings.favorites.compactMap { id in
             store.instances.first { $0.id == id }
         }
-        let rest = store.instances.filter { !settings.favorites.contains($0.id) }
-        return starred + rest
+    }
+
+    private var restInstances: [InstrumentInstance] {
+        store.instances.filter { !settings.favorites.contains($0.id) }
     }
 
     @ViewBuilder
     private func destination(for route: String) -> some View {
-        if route == "chromatic" {
+        if route == "all" {
+            WatchAllInstrumentsView(store: store, settings: settings)
+        } else if route == "chromatic" {
             WatchTunerView(settings: settings, sync: sync)
                 .navigationTitle("Chromatic")
         } else if route == "settings" {
@@ -94,5 +89,65 @@ struct WatchRootView: View {
             // string count needs fresh tuners (the phone's `.id` lesson).
             .id("\(instance.id):\(instance.strings.count)")
         }
+    }
+}
+
+/// One instrument row, shared by the front door and the all-instruments
+/// list: tap opens its tuner, swipe stars or unstars it — the wrist-native
+/// verb for a list row, and a stamped act that syncs like the phone's.
+private struct WatchInstanceRow: View {
+    let instance: InstrumentInstance
+    @ObservedObject var settings: Settings
+
+    private var starred: Bool { settings.favorites.contains(instance.id) }
+
+    var body: some View {
+        NavigationLink(value: instance.id) {
+            HStack {
+                Text(verbatim: instance.name)
+                Spacer()
+                if instance.isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                settings.toggleFavorite(instance.id)
+            } label: {
+                Image(systemName: starred ? "star.slash.fill" : "star.fill")
+            }
+            .tint(.yellow)
+        }
+    }
+}
+
+/// Everything not starred, grouped the chooser's way — by family, bowed
+/// first — so the seeded catalog reads as a shelf rather than clutter.
+/// Swipe a row to star it: it moves to the front door and out of here.
+struct WatchAllInstrumentsView: View {
+    @ObservedObject var store: InstrumentStore
+    @ObservedObject var settings: Settings
+
+    var body: some View {
+        List {
+            ForEach(InstrumentFamily.allCases, id: \.self) { family in
+                let members = rest.filter { ($0.template?.family ?? .other) == family }
+                if !members.isEmpty {
+                    Section(family.name) {
+                        ForEach(members, id: \.id) { instance in
+                            WatchInstanceRow(instance: instance, settings: settings)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("All instruments")
+    }
+
+    private var rest: [InstrumentInstance] {
+        store.instances.filter { !settings.favorites.contains($0.id) }
     }
 }

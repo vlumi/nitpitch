@@ -24,6 +24,11 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- The watch app stands on its own in the store: it can be installed
+  straight from the Apple Watch's App Store, no iPhone app needed —
+  the watch tunes with its own microphone either way. Installing the
+  iPhone app still brings the watch app along as before.
+
 ### build 9 — 2026-08-15
 
 - The Apple Watch app ships with the iPhone build: a standalone tuner on

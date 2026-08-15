@@ -134,6 +134,11 @@ targets:
         NSMicrophoneUsageDescription: Hear your instrument to show its pitch. Audio is analyzed on-device and never recorded or sent anywhere.
         WKApplication: true
         WKCompanionAppBundleIdentifier: fi.misaki.nitpitch
+        # The truthful declaration of what this app is (mic + DSP on the
+        # watch, no phone required): purely ADDITIVE to the embed above —
+        # still bundled with every iPhone install, and also installable
+        # straight from the watch's own App Store without the iOS app.
+        WKRunsIndependentlyOfCompanionApp: true
     settings:
       base:
         # The companion convention (<ios-bundle-id>.watchkitapp). Renamed from

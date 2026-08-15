@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Watch: the front door shows your starred instruments only — the whole
+  collection moved behind one "All instruments" row, grouped by family
+  (bowed first) so it reads as a shelf rather than clutter. Starring
+  works from the wrist now too: swipe any instrument row, or use the
+  new Favorite toggle on its detail screen — and it syncs, so a star
+  given on the watch shines on the phone's launch screen.
 - Watch: Standard is back on the menu — the instrument screen's preset
   list now starts with it, so loading a preset is no longer a one-way
   trip (an equals mark shows the tuning you're already on, same as the

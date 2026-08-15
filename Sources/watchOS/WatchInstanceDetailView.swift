@@ -46,6 +46,21 @@ struct WatchInstanceDetailView: View {
 
     private func lockSection(for instance: InstrumentInstance) -> some View {
         Section {
+            // Deliberately NOT behind the lock: starring is a launch-screen
+            // fact about the instrument, not an edit of it — the phone's
+            // rule, kept. The swipe on the lists does the same; this is the
+            // discoverable spelling.
+            Toggle(
+                isOn: Binding(
+                    get: { settings.favorites.contains(instance.id) },
+                    set: { _ in settings.toggleFavorite(instance.id) }
+                )
+            ) {
+                Label(
+                    "Favorite",
+                    systemImage: settings.favorites.contains(instance.id)
+                        ? "star.fill" : "star")
+            }
             Toggle(
                 isOn: Binding(
                     get: { instance.isLocked },

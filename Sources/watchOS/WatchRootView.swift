@@ -29,7 +29,7 @@ struct WatchRootView: View {
                         }
                     }
                 }
-                if !restInstances.isEmpty {
+                if !store.instances.isEmpty {
                     NavigationLink(value: "all") {
                         Label("All instruments", systemImage: "guitars")
                     }
@@ -67,10 +67,6 @@ struct WatchRootView: View {
         }
     }
 
-    private var restInstances: [InstrumentInstance] {
-        store.instances.filter { !settings.favorites.contains($0.id) }
-    }
-
     @ViewBuilder
     private func destination(for route: String) -> some View {
         if route == "all" {
@@ -95,6 +91,9 @@ struct WatchRootView: View {
 /// One instrument row, shared by the front door and the all-instruments
 /// list: tap opens its tuner, swipe stars or unstars it — the wrist-native
 /// verb for a list row, and a stamped act that syncs like the phone's.
+/// Starred rows wear the star EVERYWHERE, front door included: there it
+/// spells out the membership rule ("these are here because of this"), in
+/// the full list it marks which ones made the door.
 private struct WatchInstanceRow: View {
     let instance: InstrumentInstance
     @ObservedObject var settings: Settings
@@ -111,6 +110,11 @@ private struct WatchInstanceRow: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+                if starred {
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.yellow)
+                }
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -124,9 +128,10 @@ private struct WatchInstanceRow: View {
     }
 }
 
-/// Everything not starred, grouped the chooser's way — by family, bowed
-/// first — so the seeded catalog reads as a shelf rather than clutter.
-/// Swipe a row to star it: it moves to the front door and out of here.
+/// The whole collection — ALL means all, favorites included, starred rows
+/// wearing their star — grouped the chooser's way: by family, bowed first,
+/// so the seeded catalog reads as a shelf rather than clutter. Swipe a row
+/// to star or unstar; the front door follows.
 struct WatchAllInstrumentsView: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
@@ -134,7 +139,9 @@ struct WatchAllInstrumentsView: View {
     var body: some View {
         List {
             ForEach(InstrumentFamily.allCases, id: \.self) { family in
-                let members = rest.filter { ($0.template?.family ?? .other) == family }
+                let members = store.instances.filter {
+                    ($0.template?.family ?? .other) == family
+                }
                 if !members.isEmpty {
                     Section(family.name) {
                         ForEach(members, id: \.id) { instance in
@@ -145,9 +152,5 @@ struct WatchAllInstrumentsView: View {
             }
         }
         .navigationTitle("All instruments")
-    }
-
-    private var rest: [InstrumentInstance] {
-        store.instances.filter { !settings.favorites.contains($0.id) }
     }
 }

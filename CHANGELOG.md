@@ -24,6 +24,9 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Watch: Settings now ends with the app version — the one fact an About
+  screen exists for, without the screen.
+
 ### build 10 — 2026-08-15
 
 - Watch: the front door shows your starred instruments only — the whole

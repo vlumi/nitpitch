@@ -63,7 +63,22 @@ struct WatchSettingsView: View {
             } footer: {
                 Text(verbatim: "How note names are spelled — synced, like the phone's.")
             }
+            // The whole About screen the wrist needs: which build this is.
+            // Read from the bundle so it can't drift from what shipped —
+            // the phone's rule, without the phone's screen.
+            Text(verbatim: "Version \(versionLine)")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
         }
         .navigationTitle("Settings")
+    }
+
+    private var versionLine: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "\(version) (\(build))"
     }
 }

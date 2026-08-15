@@ -24,6 +24,8 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+### build 10 — 2026-08-15
+
 - Watch: the front door shows your starred instruments only — the whole
   collection lives under one "All instruments" row, grouped by family
   (bowed first) so it reads as a shelf rather than clutter, with your

@@ -24,6 +24,12 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- Watch: Standard is back on the menu — the instrument screen's preset
+  list now starts with it, so loading a preset is no longer a one-way
+  trip (an equals mark shows the tuning you're already on, same as the
+  phone). And the tuner's bottom button now leads with the NAME of the
+  tuning you're on — your preset's name, Standard, or Custom — with the
+  reference and temperament beneath it.
 - The watch app stands on its own in the store: it can be installed
   straight from the Apple Watch's App Store, no iPhone app needed —
   the watch tunes with its own microphone either way. Installing the

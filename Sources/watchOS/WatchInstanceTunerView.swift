@@ -46,12 +46,20 @@ struct WatchInstanceTunerView: View {
                     store: store, presets: presets, settings: settings,
                     instanceID: instanceID)
             } label: {
-                HStack(spacing: 4) {
-                    if instance.isLocked {
-                        Image(systemName: "lock.fill").font(.caption2)
+                // What you'd ask of the button before pressing it: WHICH
+                // tuning is on (your preset's name, Standard, or Custom —
+                // `tuningDisplayName`, the phone's naming), with the knobs'
+                // facts beneath in smaller type.
+                VStack(spacing: 1) {
+                    HStack(spacing: 4) {
+                        if instance.isLocked {
+                            Image(systemName: "lock.fill").font(.caption2)
+                        }
+                        Text(verbatim: presets.tuningDisplayName(for: instance))
+                            .font(.footnote.weight(.semibold))
                     }
                     Text(verbatim: footerLabel)
-                        .font(.footnote)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }

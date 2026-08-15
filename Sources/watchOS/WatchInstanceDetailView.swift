@@ -35,7 +35,9 @@ struct WatchInstanceDetailView: View {
         List {
             lockSection(for: instance)
             tuningSection(for: instance)
-            if !fittingPresets(for: instance).isEmpty {
+            // Standard alone earns the section: it's the way back after
+            // any preset, catalog by nature, so it can't be deleted away.
+            if instance.template != nil || !fittingPresets(for: instance).isEmpty {
                 presetSection(for: instance)
             }
         }
@@ -78,6 +80,14 @@ struct WatchInstanceDetailView: View {
 
     private func presetSection(for instance: InstrumentInstance) -> some View {
         Section {
+            // The catalog first: Standard is what the instrument's name
+            // means, and the way BACK once any preset has been loaded —
+            // the phone's Manage sheet offers it, so the wrist does too.
+            if let template = instance.template {
+                ForEach(template.knownTunings, id: \.strings) { tuning in
+                    tuningRow(tuning, for: instance)
+                }
+            }
             ForEach(fittingPresets(for: instance), id: \.id) { preset in
                 Button {
                     presets.load(preset, onto: instance, in: store)
@@ -87,6 +97,7 @@ struct WatchInstanceDetailView: View {
                     HStack {
                         Text(verbatim: preset.name)
                         Spacer()
+                        loadIndicator(matches: preset.strings == instance.strings)
                         if settings.isPinned(instrumentID: instance.id, presetID: preset.id) {
                             Image(systemName: "pin.fill")
                                 .font(.caption2)
@@ -100,6 +111,37 @@ struct WatchInstanceDetailView: View {
             Text(verbatim: "Presets")
         } footer: {
             Text(verbatim: "Tap to load onto this instrument.")
+        }
+    }
+
+    private func tuningRow(_ tuning: Tuning, for instance: InstrumentInstance) -> some View {
+        Button {
+            // Pitches only, an explicit pick — the phone's semantics. The
+            // no-change tap just leaves: `setTuning` would re-stamp the
+            // record and ripple through sync for nothing.
+            if tuning.strings != instance.strings {
+                store.setTuning(id: instance.id, strings: tuning.strings)
+                WKInterfaceDevice.current().play(.success)
+            }
+            dismiss()
+        } label: {
+            HStack {
+                Text(verbatim: tuning.name ?? "Custom")
+                Spacer()
+                loadIndicator(matches: tuning.strings == instance.strings)
+            }
+        }
+        .disabled(instance.isLocked)
+    }
+
+    /// The row's "already on" mark — the phone's equals sign, kept: a
+    /// tappable row should say when tapping it would change nothing.
+    @ViewBuilder
+    private func loadIndicator(matches: Bool) -> some View {
+        if matches {
+            Image(systemName: "equal")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
     }
 

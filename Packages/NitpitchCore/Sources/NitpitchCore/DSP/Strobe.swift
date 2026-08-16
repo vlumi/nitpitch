@@ -23,7 +23,7 @@ public struct StrobeIntegrator: Equatable, Sendable {
     /// The frequency error a cents offset means at a given target — the
     /// strobe's velocity, in revolutions (= hertz) per second.
     public static func hzError(cents: Double, targetHz: Double) -> Double {
-        targetHz * (pow(2, cents / 1200) - 1)
+        PitchMath.hzError(cents: cents, targetHz: targetHz)
     }
 
     /// Advance by one reading's worth of time.

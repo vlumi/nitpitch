@@ -43,9 +43,8 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// One window's verdict.
     public struct Frame: Equatable, Sendable {
         public let sounding: IntonationSounding
-        /// Meter drive, 0...1 — the same curve as
-        /// `DetectionResult.displayLevel`, so the meter reads identically in
-        /// and out of the mode.
+        /// Meter drive, 0...1 — `Detection.displayLevel`, so the meter
+        /// reads identically in and out of the mode.
         public let level: Double
 
         public init(sounding: IntonationSounding, level: Double) {
@@ -106,7 +105,7 @@ public final class IntonationAnalyzer: @unchecked Sendable {
 
         var rms: Float = 0
         vDSP_rmsqv(window, 1, &rms, vDSP_Length(window.count))
-        let level = min(1, sqrt(Double(rms)) * 3)
+        let level = Detection.displayLevel(rms: Double(rms))
         guard rms > tuning.silenceRMS else {
             estimator?.reset()
             return Frame(sounding: .nothing, level: level)
@@ -126,7 +125,7 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         else {
             return Frame(sounding: .nothing, level: level)
         }
-        let cents = 1200 * log2(reading.frequency / target)
+        let cents = PitchMath.cents(from: target, to: reading.frequency)
         let slot: IntonationSlot = reading.evenPartialsOnly ? .octave : .open
         return Frame(
             sounding: .note(slot: slot, cents: cents, clarity: reading.agreement),

@@ -114,10 +114,10 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
             // bands tile with no gaps. `maxSemitones` only ever narrows, so a
             // band never grows into its neighbour's; at the default it binds on
             // nothing and every instrument keeps its midpoints.
-            let low = Self.frequency(
-                atMidi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference)
-            let high = Self.frequency(
-                atMidi: min(upperMidi, Double(midi) + maxSemitones), reference: reference)
+            let low = PitchMath.frequency(
+                midi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference)
+            let high = PitchMath.frequency(
+                midi: min(upperMidi, Double(midi) + maxSemitones), reference: reference)
             return low...high
         }
     }
@@ -162,12 +162,6 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     /// string: a newly fitted string can start far below pitch and still needs
     /// to be found.
     public static let outerHeadroomSemitones = 4.0
-
-    /// A fractional MIDI number's frequency — the boundaries fall between
-    /// notes, so `Note.frequency` (which takes an integer) can't serve.
-    private static func frequency(atMidi midi: Double, reference: ReferencePitch) -> Double {
-        reference.hz * pow(2, (midi - 69) / 12)
-    }
 
     // Standard tunings. MIDI: C4 = 60, A4 = 69.
     public static let violin = Instrument(

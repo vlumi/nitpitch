@@ -218,7 +218,7 @@ public final class HarmonicEstimator {
         let mean = zip(estimates, weights).map(*).reduce(0, +) / total
         // Agreement: how tightly the partials cluster around their mean, in
         // cents. Real partials of one string agree to a couple of cents.
-        let spread = estimates.map { abs(1200 * log2($0 / mean)) }.max() ?? 0
+        let spread = estimates.map { abs(PitchMath.cents(from: mean, to: $0)) }.max() ?? 0
         guard spread <= Self.agreementCents else { return nil }
 
         // Strength: decades above the presence gate, so a reading that barely
@@ -243,7 +243,7 @@ public final class HarmonicEstimator {
     private func collides(_ hz: Double, with others: [Double]) -> Bool {
         for other in others where other > 0 {
             for m in 1...Self.harmonics
-            where abs(1200 * log2(hz / (other * Double(m)))) < Self.collisionCents {
+            where abs(PitchMath.cents(from: other * Double(m), to: hz)) < Self.collisionCents {
                 return true
             }
         }

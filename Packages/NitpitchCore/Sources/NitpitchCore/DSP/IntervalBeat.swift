@@ -76,7 +76,7 @@ public enum IntervalBeat {
             else { continue }
             let beat = abs(
                 Double(kind.lowerHarmonic) * lower - Double(kind.upperHarmonic) * upper)
-            let wide = 1200 * log2(upper / lower) - kind.pureCents
+            let wide = PitchMath.cents(from: lower, to: upper) - kind.pureCents
             return Reading(
                 lowerIndex: index, kind: kind, beatHz: beat, wideCents: wide)
         }

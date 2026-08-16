@@ -120,7 +120,7 @@ public struct Note: Equatable, Hashable, Sendable {
 
     /// The note's own frequency under a given reference.
     public func frequency(reference: ReferencePitch = .standard) -> Double {
-        reference.hz * pow(2, Double(midi - 69) / 12)
+        PitchMath.frequency(midi: Double(midi), reference: reference)
     }
 
     /// Sharps rather than flats throughout: a tuner shows one spelling, and

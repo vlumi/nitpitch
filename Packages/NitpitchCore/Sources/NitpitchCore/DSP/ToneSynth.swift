@@ -74,7 +74,7 @@ public struct ToneSynth {
             amplitude = max(targetAmplitude, amplitude - step)
         }
         if frequency != targetFrequency {
-            let diffCents = 1200 * log2(targetFrequency / frequency)
+            let diffCents = PitchMath.cents(from: frequency, to: targetFrequency)
             if abs(diffCents) <= Self.glideSnapCents {
                 frequency = targetFrequency
             } else {

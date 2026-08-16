@@ -2,6 +2,15 @@ import Combine
 import Foundation
 import NitpitchCore
 
+/// Moves records between the local stores and a key-value store, applying
+/// `SyncMerge`'s rules in both directions.
+///
+/// **One key per record, not one blob per store.** A blob makes every edit
+/// a whole-collection write, so two devices editing different instruments
+/// at the same time is a conflict rather than two independent facts — and
+/// KVS resolves whole-key conflicts by discarding one side entirely. Per
+/// record, that same pair of edits merges cleanly because they never touch
+/// the same key.
 @MainActor
 public final class SyncEngine: ObservableObject {
     /// Where a record lives, and what it is. The prefix keeps instruments
@@ -289,12 +298,6 @@ public final class SyncEngine: ObservableObject {
         // the change notification from ping-ponging between devices.
         guard store.data(forKey: key) != data else { return }
         store.set(data, forKey: key)
-    }
-
-    /// Settings carry one stamp for the whole synced slice — they're a
-    /// value, not a collection of records, so one date is the currency.
-    private var settingsStamp: Date? {
-        defaults.object(forKey: Key.settingsStamp) as? Date
     }
 
 }

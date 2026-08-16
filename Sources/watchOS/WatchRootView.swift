@@ -72,7 +72,7 @@ struct WatchRootView: View {
         if route == "all" {
             WatchAllInstrumentsView(store: store, settings: settings)
         } else if route == "chromatic" {
-            WatchTunerView(settings: settings, sync: sync)
+            WatchChromaticTunerView(settings: settings, sync: sync)
                 .navigationTitle("Chromatic")
         } else if route == "settings" {
             WatchSettingsView(settings: settings, sync: sync)

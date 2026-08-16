@@ -79,3 +79,35 @@ public enum LaunchStores {
         return defaults
     }()
 }
+
+/// The four stores an app shell owns, constructed together — one definition
+/// of the wiring the three platform shells used to paste verbatim.
+///
+/// Built in the one order the seams require: Settings first (a new
+/// instrument's reference seeds from the chromatic screen's — "from
+/// wherever you came from"), then the stores, then the engine — which
+/// touches iCloud only from `begin()`, so constructing it here is cheap.
+/// Owned by the SHELL on every platform (the watch taught the pattern):
+/// the Settings screen carries the sync switch, and on the Mac that screen
+/// is a sibling scene the tuner hierarchy can't reach into.
+public struct AppStores {
+    public let settings: Settings
+    public let instruments: InstrumentStore
+    public let presets: PresetStore
+    public let sync: SyncEngine
+
+    @MainActor
+    public static func make() -> AppStores {
+        let settings = Settings(defaults: LaunchStores.defaults)
+        let instruments = InstrumentStore(defaults: LaunchStores.defaults) {
+            settings.reference
+        }
+        let presets = PresetStore(defaults: LaunchStores.defaults)
+        let sync = SyncEngine(
+            store: LaunchStores.syncStore(),
+            instruments: instruments, presets: presets, settings: settings,
+            defaults: LaunchStores.defaults)
+        return AppStores(
+            settings: settings, instruments: instruments, presets: presets, sync: sync)
+    }
+}

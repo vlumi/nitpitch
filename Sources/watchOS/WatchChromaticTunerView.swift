@@ -6,10 +6,10 @@ import SwiftUI
 /// strips' light-dot vocabulary is already watch-sized, so the wrist gets
 /// that rather than a shrunken arc. Chromatic only for now: play anything
 /// (a harmonic included — its cent error IS the string's) and read it.
-struct WatchTunerView: View {
+struct WatchChromaticTunerView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var sync: SyncEngine
-    @StateObject private var tuner = WatchTunerViewModel()
+    @StateObject private var tuner = WatchChromaticTunerViewModel()
 
     var body: some View {
         VStack(spacing: 6) {

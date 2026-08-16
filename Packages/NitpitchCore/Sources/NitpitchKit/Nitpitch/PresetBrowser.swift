@@ -176,35 +176,20 @@ struct PresetBrowser: View {
     }
 
     private func favoriteButton(for preset: Preset) -> some View {
-        Button {
-            presets.toggleFavorite(preset.id)
-        } label: {
-            Image(systemName: presets.isFavorite(preset.id) ? "star.fill" : "star")
-                .foregroundStyle(
-                    presets.isFavorite(preset.id)
-                        ? AnyShapeStyle(Color.orange)
-                        : AnyShapeStyle(Color.secondary.opacity(0.5))
-                )
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("browser.favorite.\(preset.id)")
-        .accessibilityLabel(Text("Favorite", bundle: .module))
+        RowIconButton(
+            systemName: presets.isFavorite(preset.id) ? "star.fill" : "star",
+            tint: .yellow, isOn: presets.isFavorite(preset.id),
+            identifier: "browser.favorite.\(preset.id)",
+            label: Text("Favorite", bundle: .module)
+        ) { presets.toggleFavorite(preset.id) }
     }
 
     private func shareButton(for preset: Preset) -> some View {
-        Button {
-            sharing = preset
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("browser.share.\(preset.id)")
-        .accessibilityLabel(Text("Share", bundle: .module))
+        RowIconButton(
+            systemName: "square.and.arrow.up",
+            identifier: "browser.share.\(preset.id)",
+            label: Text("Share", bundle: .module)
+        ) { sharing = preset }
     }
 
     /// Load it: straight on when exactly one instrument fits, asking which

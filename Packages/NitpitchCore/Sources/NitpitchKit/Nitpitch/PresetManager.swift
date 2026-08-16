@@ -194,71 +194,41 @@ struct PresetManager: View {
     /// catalog tunings are already everywhere the app is, so a link to one
     /// would carry nothing the receiver doesn't have.
     private func shareButton(for preset: Preset) -> some View {
-        Button {
-            sharing = preset
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("presets.share.\(preset.id)")
-        .accessibilityLabel(Text("Share", bundle: .module))
+        RowIconButton(
+            systemName: "square.and.arrow.up",
+            identifier: "presets.share.\(preset.id)",
+            label: Text("Share", bundle: .module)
+        ) { sharing = preset }
     }
 
     private func favoriteButton(for preset: Preset) -> some View {
-        Button {
-            presets.toggleFavorite(preset.id)
-        } label: {
-            Image(systemName: presets.isFavorite(preset.id) ? "star.fill" : "star")
-                .foregroundStyle(
-                    presets.isFavorite(preset.id)
-                        ? AnyShapeStyle(Color.yellow)
-                        : AnyShapeStyle(Color.secondary.opacity(0.5))
-                )
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("presets.fav.\(preset.name)")
-        .accessibilityLabel(Text("Favorite", bundle: .module))
+        RowIconButton(
+            systemName: presets.isFavorite(preset.id) ? "star.fill" : "star",
+            tint: .yellow, isOn: presets.isFavorite(preset.id),
+            identifier: "presets.fav.\(preset.name)",
+            label: Text("Favorite", bundle: .module)
+        ) { presets.toggleFavorite(preset.id) }
     }
 
     private func pinButton(for preset: Preset) -> some View {
         let pinned = settings.isPinned(instrumentID: instance.id, presetID: preset.id)
-        return Button {
-            settings.togglePin(instrumentID: instance.id, presetID: preset.id)
-        } label: {
-            Image(systemName: pinned ? "pin.fill" : "pin")
-                .foregroundStyle(
-                    pinned
-                        ? AnyShapeStyle(Color.orange)
-                        : AnyShapeStyle(Color.secondary.opacity(0.5))
-                )
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
+        return RowIconButton(
+            systemName: pinned ? "pin.fill" : "pin",
+            tint: .orange, isOn: pinned,
+            identifier: "presets.pin.\(preset.name)",
+            label: Text("Pin to launch screen", bundle: .module)
+        ) { settings.togglePin(instrumentID: instance.id, presetID: preset.id) }
         // A preset that doesn't fit this instrument can't be its
         // shortcut — the pin is only offered where loading is.
         .disabled(!preset.fits(instance))
-        .accessibilityIdentifier("presets.pin.\(preset.name)")
-        .accessibilityLabel(Text("Pin to launch screen", bundle: .module))
     }
 
     private func deleteButton(for preset: Preset) -> some View {
-        Button {
-            presets.remove(id: preset.id)
-        } label: {
-            Image(systemName: "trash")
-                .foregroundStyle(.red)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("presets.delete.\(preset.id)")
-        .accessibilityLabel(Text("Delete", bundle: .module))
+        RowIconButton(
+            systemName: "trash", tint: .red,
+            identifier: "presets.delete.\(preset.id)",
+            label: Text("Delete", bundle: .module)
+        ) { presets.remove(id: preset.id) }
     }
 
     /// What loading would do, spelled out: the pitches, the reference if it

@@ -371,3 +371,32 @@ struct NoteNameLabel: View {
         return "\(readout.name)\(readout.octave)"
     }
 }
+
+/// One row-trailing icon button — star, pin, share, trash — shared by the
+/// preset sheets so the same verb wears the same face everywhere. (The
+/// browser's favorite star had drifted orange while the manager's and the
+/// chooser's stayed yellow; a shared control makes that impossible.) Each
+/// call site keeps its own accessibility identifier — the UI tests' names
+/// for these buttons predate the sharing.
+struct RowIconButton: View {
+    let systemName: String
+    var tint: Color = .accentColor
+    var isOn = true
+    let identifier: String
+    let label: Text
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .foregroundStyle(
+                    isOn ? AnyShapeStyle(tint) : AnyShapeStyle(Color.secondary.opacity(0.5))
+                )
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(label)
+    }
+}

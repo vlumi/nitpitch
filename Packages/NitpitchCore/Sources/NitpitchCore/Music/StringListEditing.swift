@@ -14,20 +14,27 @@ public enum StringListEditing {
             : outer < Detection.targetMIDIRange.upperBound
     }
 
+    /// The interval "one more string" continues at an end: the outermost
+    /// gap. A single string has no interval to continue; a fifth is the
+    /// least surprising guess for anything strung — and it must be the SAME
+    /// guess wherever growing happens, or what "add a string" proposes
+    /// depends on who asked (`Instrument.strings(count:)` grows with this
+    /// too).
+    public static func continuationInterval(of strings: [Int], lowEnd: Bool) -> Int {
+        let count = strings.count
+        guard count >= 2 else { return 7 }
+        return lowEnd ? strings[1] - strings[0] : strings[count - 1] - strings[count - 2]
+    }
+
     /// The list grown by one string at the chosen end. The proposed pitch
     /// continues the outermost interval — a violin grows a viola's C3 below
     /// or a B5 above, a guitar grows a 7-string's B1 — clamped to the
-    /// detectable range. A single string has no interval to continue; a
-    /// fifth is the least surprising guess for anything strung.
+    /// detectable range.
     public static func extended(_ strings: [Int], lowEnd: Bool) -> [Int] {
         guard canExtend(strings, lowEnd: lowEnd),
             let outer = lowEnd ? strings.first : strings.last
         else { return strings }
-        let count = strings.count
-        let interval =
-            count >= 2
-            ? (lowEnd ? strings[1] - strings[0] : strings[count - 1] - strings[count - 2])
-            : 7
+        let interval = continuationInterval(of: strings, lowEnd: lowEnd)
         let proposed = lowEnd ? outer - interval : outer + interval
         let clamped = min(
             max(proposed, Detection.targetMIDIRange.lowerBound),

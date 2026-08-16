@@ -137,9 +137,8 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     public func strings(count: Int) -> [Int] {
         guard !strings.isEmpty, count > 0, count != strings.count else { return strings }
         if count < strings.count { return Array(strings.suffix(count)) }
-        let lowInterval = strings.count > 1 ? strings[1] - strings[0] : 5
-        let highInterval =
-            strings.count > 1 ? strings[strings.count - 1] - strings[strings.count - 2] : 5
+        let lowInterval = StringListEditing.continuationInterval(of: strings, lowEnd: true)
+        let highInterval = StringListEditing.continuationInterval(of: strings, lowEnd: false)
         var result = strings
         for _ in 0..<(count - strings.count) {
             let below = result[0] - lowInterval

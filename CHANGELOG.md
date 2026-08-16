@@ -13,7 +13,8 @@ script (`Scripts/release-lib.sh`) matches it exactly, and expects its list items
 to follow immediately with nothing in between.
 
 Apple builds are identified as `version (build)`; the build number is shared
-across iOS and macOS and bumped on every release so the two never diverge.
+across iOS, macOS and watchOS and bumped on every release so the apps never
+diverge.
 
 ## [0.2.0] — unreleased
 

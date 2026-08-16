@@ -6,7 +6,7 @@ opt-in switch, off by default — your instrument setups travel between your own
 devices through your Apple iCloud account, and that is the only thing that
 ever leaves the device.
 
-Last updated: 7 August 2026.
+Last updated: 16 August 2026.
 
 ## What the app does with the microphone
 
@@ -39,7 +39,7 @@ removed when you delete the app.
 
 ## iCloud sync — opt-in, and what it moves
 
-A switch at the foot of the instrument list (off by default, and off until
+A switch in Settings (off by default, and off until
 you touch it) syncs your instruments, presets and favorites between your own
 devices signed in to the same iCloud account.
 

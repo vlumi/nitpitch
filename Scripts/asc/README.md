@@ -5,7 +5,7 @@ donpa's `Scripts/asc/`, minus its game-specific achievement parts.
 
 - `listing.json` is the **single source of truth** for the listing text (name,
   subtitle, description, keywords, promo, URLs); edit it here, never in ASC.
-  Its copy carries two commitments from ROADMAP § Toward 1.0: privacy wording
+  Its copy carries two commitments from AGENTS.md "The App Store copy constraints": privacy wording
   that matches PRIVACY.md exactly (nothing leaves the device unless iCloud
   sync is opted into), and the interval/beat display advertised for **bowed**
   double stops only.

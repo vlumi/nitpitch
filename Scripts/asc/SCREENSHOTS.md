@@ -14,9 +14,9 @@ reading a 2¢-sharp string. No waiting for a drift to pass through the right
 moment, and identical pixels on every retake.
 
 **The copy rules apply to images too:** the interval/beat display is staged on
-a VIOLIN, bowed pairs only — never framed as a fretted feature (ROADMAP
-§ Toward 1.0). And nothing in a shot may imply audio goes anywhere: there is
-no such screen, which makes this easy.
+a VIOLIN, bowed pairs only — never framed as a fretted feature (AGENTS.md,
+"The App Store copy constraints"). And nothing in a shot may imply audio goes
+anywhere: there is no such screen, which makes this easy.
 
 ## Workflow — one command
 

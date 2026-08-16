@@ -3,9 +3,9 @@
 [![CI](https://github.com/vlumi/nitpitch/actions/workflows/ci.yml/badge.svg)](https://github.com/vlumi/nitpitch/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/vlumi/nitpitch/branch/main/graph/badge.svg)](https://codecov.io/gh/vlumi/nitpitch)
 
-An instrument tuner for iPhone, iPad, and Mac. Built for **violin** first —
-that's the reason it exists — with the other string instruments along for the
-ride.
+A tuner for violin, guitar, bass, and more — on iPhone, iPad, Mac, and Apple
+Watch. Born **violin**-first, for the way string players actually tune, and
+every bit as at home on a guitar or bass.
 
 *Nitpicking about pitch, which is the entire job.*
 
@@ -27,6 +27,11 @@ ride.
   exactly as you left it; favorites sit on the launch screen with one-tap
   preset pins ("Strat → Gig"), and any shape can be strung up — a 9-string
   guitar is a creation choice, not a missing feature.
+- **A tuner on the wrist.** The Apple Watch app tunes with its own microphone
+  and speaks in haptics: taps at the string's real beat rate against its
+  target — up for flat, down for sharp, silence when true — so tuning never
+  needs eyes. Ships inside the iPhone app and stands alone in the watch's App
+  Store; setups arrive over iCloud sync.
 - **Nothing leaves the device — unless you enable iCloud sync.** Audio is
   analyzed frame by frame in memory and discarded, always: no recording, and
   the app itself makes no network connections — the macOS build doesn't even
@@ -85,6 +90,7 @@ make test          # logic tests — the fast inner loop, no Xcode project neede
 make generate      # regenerate Nitpitch.xcodeproj from project.yml
 make run-iphone    # build + launch on a simulator (DEVICE="SE" to pick)
 make run-mac       # build + launch the Mac app
+make demo-watch    # the watch app in a simulator, on a synthesized signal
 make uitest        # local-only UI tests (CI never runs these)
 make               # list every target
 ```

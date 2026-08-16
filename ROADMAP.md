@@ -4,11 +4,11 @@ Planned work only — if it's not planned, it's not here. Settled decisions and
 their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is
 in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.2.0 build 8 on beta — iPhone, Mac, and the watch
-(embedded in the iPhone build; the next cut carries it to TestFlight). The
-sync-robustness round is built and unit-proven; its cross-device field pass
-is the open verification. The version number waits for a release that earns
-it.
+**Where things stand:** v0.2.0 build 10 on beta — iPhone, Mac, and the watch
+(embedded in every iPhone build and standalone-installable from the watch's
+own App Store). The sync-robustness round is built and unit-proven; its
+cross-device field pass is the open verification. The version number waits
+for a release that earns it.
 
 ## 1. Other features worth considering
 

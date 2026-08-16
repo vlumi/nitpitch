@@ -8,16 +8,21 @@ the canonical guidance for both humans and AI coding agents working in this repo
 
 ## Project facts
 
-- **Platforms:** iOS 16+ (mostly iPhone) and macOS 14+.
+- **Platforms:** iOS 16+ (mostly iPhone), macOS 14+, watchOS 10+.
   - iOS is the primary target: a phone in a case on a music stand.
   - macOS exists because electric instruments are easier to tune over a cable —
     a guitar or bass through a DI or audio interface into line-in, rather than a
     microphone hearing an amp across the room.
+  - watchOS is embedded in the iOS app AND standalone-installable from the
+    watch's own App Store; mic and DSP run on the watch (see "The watch,
+    settled" below).
 - **Toolchain:** Xcode 16+ / Swift 6, XcodeGen.
-- **Bundle id:** `fi.misaki.nitpitch`, shared by both platforms for Universal
+- **Bundle id:** `fi.misaki.nitpitch`, shared by iOS and macOS for Universal
   Purchase, and matching the App Store Connect record. **Don't change it** — an
-  ASC bundle id can't be edited or reused once the record exists.
-  **License:** MIT. No monetization.
+  ASC bundle id can't be edited or reused once the record exists. The watch
+  uses the companion convention (`fi.misaki.nitpitch.watchkitapp`), a signing
+  App ID rather than a store entry.
+- **License:** MIT. No monetization.
 - **No third-party runtime dependencies.** Everything needed ships with the OS:
   AVFoundation for capture, Accelerate/vDSP for the DSP, SwiftUI for the view.
   Dev tools (SwiftLint, XcodeGen) don't count and aren't SPM deps.
@@ -27,12 +32,17 @@ the canonical guidance for both humans and AI coding agents working in this repo
 ## Architecture: pure DSP below, platform glue above
 
 One seam carries the whole design: **everything that can be tested without a
-microphone lives in `NitpitchCore`, and everything that can't lives in `NitpitchKit`.**
+microphone lives in `NitpitchCore` or `NitpitchData`, and everything that
+can't lives in `NitpitchKit`.**
 
 - **`NitpitchCore`** — note math (`Pitch.swift`), instrument definitions, the pitch
   detector, and the display smoother. No AVFoundation, no SwiftUI. Every type
   here is a deterministic function over plain values, so it's tested against
   *synthesized* waveforms with no audio hardware. Coverage-gated at 80%.
+- **`NitpitchData`** — the stores (Settings, InstrumentStore, PresetStore) and
+  the iCloud sync engine. Foundation + Combine only, split out of Kit so the
+  watch can reach them. Coverage-gated like Core (codecov.yml lists the few
+  deliberate exceptions, each with its rationale).
 - **`NitpitchKit`** — `AudioInput` (AVAudioEngine), the view model, and the SwiftUI
   views. Needs a real microphone and a UI to exercise, so it's coverage-ignored
   wholesale and verified by hand (`make run-mac`, then on a device).
@@ -45,24 +55,27 @@ detector bugs found during the initial build (see below) were all caught by
 
 ```text
 nitpitch/
-├── project.yml                     XcodeGen spec (iOS + macOS app targets)
+├── project.yml                     XcodeGen spec (iOS + macOS + watchOS app targets)
 ├── Scripts/generate.sh             Regenerates the .xcodeproj (refuses if THIS project is open in Xcode)
 ├── Sources/{iOS,macOS}/            Thin @main app shells + Info.plist + entitlements
-├── Sources/Shared/                 Assets shared by both targets (the AppIcon set)
+├── Sources/watchOS/                The watch app: shell + views + view models on Core + Data
+├── Sources/Shared/                 Assets shared by all app targets (the AppIcon set)
 └── Packages/NitpitchCore/          Swift package — most of the code
     ├── Sources/NitpitchCore/       Pure logic: DSP + music theory, tested + coverage-gated
     │   ├── DSP/                    PitchDetector (MPM), HarmonicEstimator (spectral),
     │   │                           DetectorBank (engines + arbitration), SubharmonicFilter,
     │   │                           Detection constants, DetectionTuning, ReadingSmoother
-    │   ├── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands)
+    │   ├── Music/                  Pitch/Note/ReferencePitch, Instrument (+ string bands),
+    │   │                           HapticBeat (the wrist's beat vocabulary)
     │   ├── Sharing/                PresetLink (+ codec), PresetImport rules
-    │   └── Sync/                   SyncMerge (last-writer-wins + tombstones)
-    │                               (transport: NitpitchKit/App/
-    │                               {KeyValueSyncStore,SyncEngine}.swift)
-    └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core; coverage-ignored
+    │   ├── Sync/                   SyncMerge (last-writer-wins + tombstones)
+    │   └── Demo/                   DemoScore + DemoSignal (synthesized demo input)
+    ├── Sources/NitpitchData/       Stores + sync, Foundation+Combine only, coverage-gated:
+    │                               Settings, InstrumentStore, PresetStore, LaunchStores,
+    │                               KeyValueSyncStore, SyncEngine (+FirstJoin, +Settings)
+    └── Sources/NitpitchKit/        AVFoundation + SwiftUI, depends on Core + Data; coverage-ignored
         ├── Audio/                  AudioInput, AudioSessionController (one engine, fan-out)
-        ├── App/                    Settings + SettingsView, DetectionSettings, LaunchStores,
-        │                           AppearancePreference
+        ├── App/                    SettingsView, DetectionSettings, AppearanceSheet
         └── Nitpitch/               RootView, ChromaticTunerView, InstrumentGridView,
                                     StringTuners + StringTunerViewModel, DialView + CompactDial,
                                     DetectorDebugView
@@ -604,6 +617,7 @@ make build-ios / make build-mac
 # Build + launch
 make run-iphone    # DEVICE="SE" / "17 Pro" to pick a simulator
 make run-mac
+make build-watch / make demo-watch   # the watch loop (simulator; demo input)
 
 # Local-only UI regression tests (XCUITest)
 make uitest        # NOT run by CI
@@ -715,8 +729,8 @@ Branch off `main`, one focused change per PR (details in
   `### Unreleased (next build)` — the release lane only stamps the build number,
   it never writes entries.
 - **The whole NitpitchKit target is coverage-ignored** (the capture + SwiftUI
-  layer). Keep testable logic OUT of it — it belongs in NitpitchCore, where it's
-  tracked. Target is 80% on new, non-ignored code.
+  layer). Keep testable logic OUT of it — it belongs in NitpitchCore or
+  NitpitchData, where it's tracked. Target is 80% on new, non-ignored code.
 
 ## Conventions
 

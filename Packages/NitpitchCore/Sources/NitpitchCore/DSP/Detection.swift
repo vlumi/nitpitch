@@ -81,11 +81,27 @@ public struct DetectionResult: Equatable, Sendable {
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)
 
-    /// The frame's RMS as a 0...1 meter value: a short log-ish curve, because
-    /// RMS is tiny for quiet playing and a linear meter would sit near zero
-    /// for everything but a loud bow. The one curve every meter in the app
-    /// uses, so they all agree about how loud "loud" looks.
+    /// A frame the detector REJECTED: no frequency, no authority — only the
+    /// clarity and level it was judged on, which the diagnostics screen
+    /// still shows.
+    public static func rejected(
+        clarity: Double, rms: Double, level: Double = 0
+    ) -> DetectionResult {
+        DetectionResult(frequency: nil, clarity: clarity, rms: rms, level: level)
+    }
+
+    /// The frame's RMS as a 0...1 meter value — `Detection.displayLevel`.
     public var displayLevel: Double {
+        Detection.displayLevel(rms: rms)
+    }
+}
+
+extension Detection {
+    /// An RMS as a 0...1 meter value: a short log-ish curve, because RMS is
+    /// tiny for quiet playing and a linear meter would sit near zero for
+    /// everything but a loud bow. The one curve every meter in the app
+    /// uses, so they all agree about how loud "loud" looks.
+    public static func displayLevel(rms: Double) -> Double {
         min(1, sqrt(rms) * 3)
     }
 }

@@ -76,7 +76,7 @@ public final class PitchDetector {
         // Reject silence before doing any real work — most frames between notes
         // are this, and the NSDF of near-zero input is numerically meaningless.
         guard rms > tuning.silenceRMS else {
-            return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
+            return .rejected(clarity: 0, rms: Double(rms))
         }
 
         vDSP_vspdp(samples, 1, &windowed, 1, vDSP_Length(windowSize))
@@ -90,10 +90,10 @@ public final class PitchDetector {
         computeNSDF()
 
         guard let (lag, value) = pickPeak() else {
-            return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
+            return .rejected(clarity: 0, rms: Double(rms))
         }
         guard value >= tuning.clarityThreshold else {
-            return DetectionResult(frequency: nil, clarity: value, rms: Double(rms))
+            return .rejected(clarity: value, rms: Double(rms))
         }
         let frequency = sampleRate / lag
         // Report nothing rather than something outside the band we searched.
@@ -102,7 +102,7 @@ public final class PitchDetector {
         // but with a dial per string it means one played note lights a
         // neighbour's dial with a pitch that neighbour never owned.
         guard band.contains(frequency) else {
-            return DetectionResult(frequency: nil, clarity: value, rms: Double(rms))
+            return .rejected(clarity: value, rms: Double(rms))
         }
         return DetectionResult(frequency: frequency, clarity: value, rms: Double(rms))
     }
@@ -218,7 +218,7 @@ public final class PitchDetector {
         // that means the samples aren't peak-shaped — a near-flat denominator
         // sends it arbitrarily far, and the reported frequency then lands
         // outside the band that was searched.
-        let shift = min(0.5, max(-0.5, 0.5 * (y0 - y2) / denom))
+        let shift = (0.5 * (y0 - y2) / denom).clamped(to: -0.5...0.5)
         // The NSDF is normalized to at most 1; interpolation can overshoot,
         // and a "clarity" above 1 would sail past the confidence gate.
         let value = min(1, y1 - 0.25 * (y0 - y2) * shift)

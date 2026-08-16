@@ -114,10 +114,10 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
             // bands tile with no gaps. `maxSemitones` only ever narrows, so a
             // band never grows into its neighbour's; at the default it binds on
             // nothing and every instrument keeps its midpoints.
-            let low = Self.frequency(
-                atMidi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference)
-            let high = Self.frequency(
-                atMidi: min(upperMidi, Double(midi) + maxSemitones), reference: reference)
+            let low = PitchMath.frequency(
+                midi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference)
+            let high = PitchMath.frequency(
+                midi: min(upperMidi, Double(midi) + maxSemitones), reference: reference)
             return low...high
         }
     }
@@ -137,9 +137,8 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     public func strings(count: Int) -> [Int] {
         guard !strings.isEmpty, count > 0, count != strings.count else { return strings }
         if count < strings.count { return Array(strings.suffix(count)) }
-        let lowInterval = strings.count > 1 ? strings[1] - strings[0] : 5
-        let highInterval =
-            strings.count > 1 ? strings[strings.count - 1] - strings[strings.count - 2] : 5
+        let lowInterval = StringListEditing.continuationInterval(of: strings, lowEnd: true)
+        let highInterval = StringListEditing.continuationInterval(of: strings, lowEnd: false)
         var result = strings
         for _ in 0..<(count - strings.count) {
             let below = result[0] - lowInterval
@@ -162,12 +161,6 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     /// string: a newly fitted string can start far below pitch and still needs
     /// to be found.
     public static let outerHeadroomSemitones = 4.0
-
-    /// A fractional MIDI number's frequency — the boundaries fall between
-    /// notes, so `Note.frequency` (which takes an integer) can't serve.
-    private static func frequency(atMidi midi: Double, reference: ReferencePitch) -> Double {
-        reference.hz * pow(2, (midi - 69) / 12)
-    }
 
     // Standard tunings. MIDI: C4 = 60, A4 = 69.
     public static let violin = Instrument(

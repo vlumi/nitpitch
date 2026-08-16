@@ -43,7 +43,7 @@ public enum HapticBeat {
     public static func cue(cents: Double, targetHz: Double) -> Cue? {
         guard cents.isFinite, targetHz > 0, !TuningDisplay.isInTune(cents: cents)
         else { return nil }
-        let rate = targetHz * abs(pow(2, cents / 1200) - 1)
+        let rate = abs(PitchMath.hzError(cents: cents, targetHz: targetHz))
         guard rate >= stoppedHz else { return nil }
         return Cue(
             pattern: cents < 0 ? .up : .down,

@@ -74,13 +74,20 @@ public enum IntervalBeat {
             guard let lower = frequencies[index], let upper = frequencies[index + 1],
                 let kind = Kind(semitones: midis[index + 1] - midis[index])
             else { continue }
-            let beat = abs(
-                Double(kind.lowerHarmonic) * lower - Double(kind.upperHarmonic) * upper)
-            let wide = 1200 * log2(upper / lower) - kind.pureCents
+            let wide = PitchMath.cents(from: lower, to: upper) - kind.pureCents
             return Reading(
-                lowerIndex: index, kind: kind, beatHz: beat, wideCents: wide)
+                lowerIndex: index, kind: kind,
+                beatHz: beatHz(kind: kind, lowerHz: lower, upperHz: upper),
+                wideCents: wide)
         }
         return nil
+    }
+
+    /// The pulse two frequencies make at an interval's coincidence partials,
+    /// |m·f_L − n·f_U| — the file's one formula, for measured pitches and
+    /// targets alike.
+    public static func beatHz(kind: Kind, lowerHz: Double, upperHz: Double) -> Double {
+        abs(Double(kind.lowerHarmonic) * lowerHz - Double(kind.upperHarmonic) * upperHz)
     }
 
     /// What the beat SHOULD read once both strings sit on their targets —
@@ -91,8 +98,6 @@ public enum IntervalBeat {
     public static func targetBeatHz(
         kind: Kind, lowerTargetHz: Double, upperTargetHz: Double
     ) -> Double {
-        abs(
-            Double(kind.lowerHarmonic) * lowerTargetHz
-                - Double(kind.upperHarmonic) * upperTargetHz)
+        beatHz(kind: kind, lowerHz: lowerTargetHz, upperHz: upperTargetHz)
     }
 }

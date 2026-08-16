@@ -60,6 +60,6 @@ public enum SubharmonicFilter {
         let ratio = higher / lower
         let nearest = ratio.rounded()
         guard nearest >= 2 else { return false }
-        return abs(1200 * log2(ratio / nearest)) < toleranceCents
+        return abs(PitchMath.cents(from: nearest, to: ratio)) < toleranceCents
     }
 }

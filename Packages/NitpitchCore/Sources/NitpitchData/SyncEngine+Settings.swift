@@ -189,6 +189,36 @@ extension SyncEngine {
         Dictionary(uniqueKeysWithValues: ids.map { ($0, stamp) })
     }
 
+    /// The outbound half, `applySettings`' twin. Per-setting flags: ONLY
+    /// stamped ones travel — an unstamped flag is an install seed, and
+    /// every device grows its own.
+    func pushSettings() {
+        pushFlags(
+            kind: .instrumentFavorite,
+            on: Set(settings.favorites), stamps: settings.favoriteStamps)
+        pushFlags(
+            kind: .presetPin,
+            on: Set(settings.presetPins.map(\.id)), stamps: settings.pinStamps)
+        pushFlags(
+            kind: .presetFavorite,
+            on: presets.favoriteIDs, stamps: presets.favoriteStamps)
+        if let stamp = settings.favoritesOrderStamp {
+            write(
+                SettingsOrder(order: settings.favorites, modifiedAt: stamp),
+                key: Key.favoritesOrder)
+        }
+        if let stamp = settings.pinsOrderStamp {
+            write(
+                SettingsOrder(order: settings.presetPins.map(\.id), modifiedAt: stamp),
+                key: Key.pinsOrder)
+        }
+        if let stamp = settings.namingStamp {
+            write(
+                SettingScalar(value: settings.naming.rawValue, modifiedAt: stamp),
+                key: Key.naming)
+        }
+    }
+
     func pushFlags(kind: FlagKind, on: Set<String>, stamps: [String: Date]) {
         for (id, stamp) in stamps {
             write(

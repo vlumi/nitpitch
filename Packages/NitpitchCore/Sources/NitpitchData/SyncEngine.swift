@@ -20,6 +20,13 @@ public final class SyncEngine: ObservableObject {
         case preset = "p."
 
         var tombstonesKey: String { "\(rawValue)tombstones" }
+
+        /// Whether a store key holds one record's payload (not a
+        /// tombstones list, not a settings key).
+        static func isRecordKey(_ key: String) -> Bool {
+            allCases.contains { key.hasPrefix($0.rawValue) }
+                && !allCases.map(\.tombstonesKey).contains(key)
+        }
     }
 
     /// Whether syncing is on. Off by default — "nothing leaves the device"
@@ -234,9 +241,16 @@ public final class SyncEngine: ObservableObject {
     // MARK: - Outbound
 
     /// Publish the local state: one key per record, plus the tombstones
-    /// and the synced settings.
+    /// and the synced settings (whose half lives in SyncEngine+Settings,
+    /// beside its inbound twin).
     private func push() {
         guard isEnabled, store.isAvailable else { return }
+        pushRecords()
+        pruneDeletedRecordKeys()
+        pushSettings()
+    }
+
+    private func pushRecords() {
         for instance in instruments.instances {
             write(instance, key: Kind.instrument.rawValue + instance.id)
         }
@@ -245,46 +259,17 @@ public final class SyncEngine: ObservableObject {
         }
         write(instruments.tombstones, key: Kind.instrument.tombstonesKey)
         write(presets.tombstones, key: Kind.preset.tombstonesKey)
+    }
 
-        // A deleted record's key goes too — the tombstone is what carries
-        // the deletion, and leaving the payload behind would have every
-        // future device download a record it must immediately discard.
+    /// A deleted record's key goes too — the tombstone is what carries
+    /// the deletion, and leaving the payload behind would have every
+    /// future device download a record it must immediately discard.
+    private func pruneDeletedRecordKeys() {
         let live =
             Set(instruments.instances.map { Kind.instrument.rawValue + $0.id })
             .union(presets.presets.map { Kind.preset.rawValue + $0.id })
-        for key in store.allKeys
-        where Kind.allCases.contains(where: { key.hasPrefix($0.rawValue) })
-            && !Kind.allCases.map(\.tombstonesKey).contains(key)
-            && !live.contains(key)
-        {
+        for key in store.allKeys where Kind.isRecordKey(key) && !live.contains(key) {
             store.set(nil, forKey: key)
-        }
-
-        // Per-setting flags: ONLY stamped ones travel — an unstamped flag
-        // is an install seed, and every device grows its own.
-        pushFlags(
-            kind: .instrumentFavorite,
-            on: Set(settings.favorites), stamps: settings.favoriteStamps)
-        pushFlags(
-            kind: .presetPin,
-            on: Set(settings.presetPins.map(\.id)), stamps: settings.pinStamps)
-        pushFlags(
-            kind: .presetFavorite,
-            on: presets.favoriteIDs, stamps: presets.favoriteStamps)
-        if let stamp = settings.favoritesOrderStamp {
-            write(
-                SettingsOrder(order: settings.favorites, modifiedAt: stamp),
-                key: Key.favoritesOrder)
-        }
-        if let stamp = settings.pinsOrderStamp {
-            write(
-                SettingsOrder(order: settings.presetPins.map(\.id), modifiedAt: stamp),
-                key: Key.pinsOrder)
-        }
-        if let stamp = settings.namingStamp {
-            write(
-                SettingScalar(value: settings.naming.rawValue, modifiedAt: stamp),
-                key: Key.naming)
         }
     }
 

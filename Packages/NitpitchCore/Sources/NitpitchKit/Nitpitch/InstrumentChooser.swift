@@ -259,7 +259,7 @@ struct InstrumentChooser: View {
             }
         }
         Button {
-            beginRename(entry, template: template)
+            beginRename(entry)
         } label: {
             Label {
                 Text("Rename", bundle: .module)
@@ -295,7 +295,7 @@ struct InstrumentChooser: View {
         .accessibilityIdentifier("chooser.more.\(entry.id)")
     }
 
-    private func beginRename(_ entry: InstrumentInstance, template: Instrument) {
+    private func beginRename(_ entry: InstrumentInstance) {
         renameText = entry.name
         renamingID = entry.id
     }
@@ -308,7 +308,7 @@ struct InstrumentChooser: View {
         creating = Creation(template: template, source: entry)
     }
 
-    private func beginEditStrings(_ entry: InstrumentInstance, template: Instrument) {
+    private func beginEditStrings(_ entry: InstrumentInstance) {
         editing = EditingStrings(id: entry.id)
     }
 
@@ -319,7 +319,7 @@ struct InstrumentChooser: View {
         for entry: InstrumentInstance, template: Instrument
     ) -> some View {
         Button {
-            beginRename(entry, template: template)
+            beginRename(entry)
         } label: {
             Label {
                 Text("Rename", bundle: .module)
@@ -340,7 +340,7 @@ struct InstrumentChooser: View {
         // shape, so the door is here with the other instrument management —
         // and closed while the padlock holds the setup frozen.
         Button {
-            beginEditStrings(entry, template: template)
+            beginEditStrings(entry)
         } label: {
             Label {
                 Text("Edit strings…", bundle: .module)

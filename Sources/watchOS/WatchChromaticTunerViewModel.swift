@@ -6,7 +6,7 @@ import NitpitchCore
 /// across note boundaries, re-resolution so the name agrees with the needle,
 /// and the quiet-frames dropout so the screen clears instead of freezing.
 @MainActor
-final class WatchTunerViewModel: ObservableObject {
+final class WatchChromaticTunerViewModel: ObservableObject {
     enum State: Equatable {
         case idle
         case listening

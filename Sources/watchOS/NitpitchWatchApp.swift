@@ -17,21 +17,11 @@ struct NitpitchWatchApp: App {
     init() {
         // LaunchStores is the single isolation gate, same as the phone:
         // under -uitest-clean everything swaps to a wiped ephemeral suite.
-        let settings = Settings(defaults: LaunchStores.defaults)
-        let store = InstrumentStore(defaults: LaunchStores.defaults) {
-            settings.reference
-        }
-        let presets = PresetStore(defaults: LaunchStores.defaults)
-        _settings = StateObject(wrappedValue: settings)
-        _store = StateObject(wrappedValue: store)
-        _presets = StateObject(wrappedValue: presets)
-        // Constructed cheaply — the engine touches iCloud only from
-        // `begin()`, scheduled below after the first frame.
-        _sync = StateObject(
-            wrappedValue: SyncEngine(
-                store: LaunchStores.syncStore(),
-                instruments: store, presets: presets, settings: settings,
-                defaults: LaunchStores.defaults))
+        let stores = AppStores.make()
+        _settings = StateObject(wrappedValue: stores.settings)
+        _store = StateObject(wrappedValue: stores.instruments)
+        _presets = StateObject(wrappedValue: stores.presets)
+        _sync = StateObject(wrappedValue: stores.sync)
     }
 
     var body: some Scene {

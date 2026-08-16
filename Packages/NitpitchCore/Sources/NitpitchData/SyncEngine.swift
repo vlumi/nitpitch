@@ -196,36 +196,37 @@ public final class SyncEngine: ObservableObject {
         duplicateFirstJoinConflicts()
 
         let now = Date()
-
-        // Order matters, and it is not the obvious one. The stones must be
-        // applied to the records BEFORE being pruned against them:
-        // pruning first asks "does this record still exist?" of a list
-        // that hasn't heard about the deletion yet, so the device holding
-        // the doomed record drops the very stone that was meant to kill it
-        // — and re-uploads the record forever.
-        let instrumentStones = instruments.tombstones.union(tombstones(for: .instrument))
-        let mergedInstruments = SyncMerge.mergedRecords(
-            local: instruments.instances,
-            remote: records(of: .instrument, as: InstrumentInstance.self),
-            tombstones: instrumentStones)
-        instruments.adopt(
-            mergedInstruments,
-            tombstones: SyncMerge.mergedTombstones(
-                local: instrumentStones, remote: [],
-                survivors: mergedInstruments, now: now))
-
-        let presetStones = presets.tombstones.union(tombstones(for: .preset))
-        let mergedPresets = SyncMerge.mergedRecords(
-            local: presets.presets,
-            remote: records(of: .preset, as: Preset.self),
-            tombstones: presetStones)
-        presets.adopt(
-            mergedPresets,
-            tombstones: SyncMerge.mergedTombstones(
-                local: presetStones, remote: [],
-                survivors: mergedPresets, now: now))
+        applyRecords(
+            of: .instrument, local: instruments.instances,
+            localStones: instruments.tombstones, now: now
+        ) { instruments.adopt($0, tombstones: $1) }
+        applyRecords(
+            of: .preset, local: presets.presets,
+            localStones: presets.tombstones, now: now
+        ) { presets.adopt($0, tombstones: $1) }
 
         applySettings()
+    }
+
+    /// One kind's inbound merge. Order matters, and it is not the obvious
+    /// one: the stones must be applied to the records BEFORE being pruned
+    /// against them — pruning first asks "does this record still exist?"
+    /// of a list that hasn't heard about the deletion yet, so the device
+    /// holding the doomed record drops the very stone that was meant to
+    /// kill it, and re-uploads the record forever.
+    private func applyRecords<Record: SyncRecord & Decodable>(
+        of kind: Kind, local: [Record], localStones: Set<Tombstone>, now: Date,
+        adopt: ([Record], Set<Tombstone>) -> Void
+    ) {
+        let stones = localStones.union(tombstones(for: kind))
+        let merged = SyncMerge.mergedRecords(
+            local: local,
+            remote: records(of: kind, as: Record.self),
+            tombstones: stones)
+        adopt(
+            merged,
+            SyncMerge.mergedTombstones(
+                local: stones, remote: [], survivors: merged, now: now))
     }
 
     func records<Record: Decodable>(of kind: Kind, as: Record.Type) -> [Record] {

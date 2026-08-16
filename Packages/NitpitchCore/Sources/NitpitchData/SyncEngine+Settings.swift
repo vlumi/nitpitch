@@ -15,31 +15,20 @@ extension SyncEngine {
     func applySettings() {
         migrateSettingsBlobIfNeeded()
 
-        let favorites = mergedFlags(
-            kind: .instrumentFavorite,
-            localOn: Set(settings.favorites),
-            localStamps: settings.favoriteStamps)
-        let favoritesOrder = mergedOrder(
-            key: Key.favoritesOrder,
-            local: settings.favorites,
-            localStamp: settings.favoritesOrderStamp)
+        let favorites = mergedOrderedFlags(
+            kind: .instrumentFavorite, orderKey: Key.favoritesOrder,
+            localOrder: settings.favorites, localStamps: settings.favoriteStamps,
+            localOrderStamp: settings.favoritesOrderStamp)
         settings.adoptFavorites(
-            ordered(members: favorites.on, by: favoritesOrder.order),
-            stamps: favorites.stamps,
-            orderStamp: favoritesOrder.modifiedAt)
+            favorites.members, stamps: favorites.stamps, orderStamp: favorites.orderStamp)
 
-        let pins = mergedFlags(
-            kind: .presetPin,
-            localOn: Set(settings.presetPins.map(\.id)),
-            localStamps: settings.pinStamps)
-        let pinsOrder = mergedOrder(
-            key: Key.pinsOrder,
-            local: settings.presetPins.map(\.id),
-            localStamp: settings.pinsOrderStamp)
+        let pins = mergedOrderedFlags(
+            kind: .presetPin, orderKey: Key.pinsOrder,
+            localOrder: settings.presetPins.map(\.id), localStamps: settings.pinStamps,
+            localOrderStamp: settings.pinsOrderStamp)
         settings.adoptPins(
-            ordered(members: pins.on, by: pinsOrder.order).compactMap(PresetPin.init(flagID:)),
-            stamps: pins.stamps,
-            orderStamp: pinsOrder.modifiedAt)
+            pins.members.compactMap(PresetPin.init(flagID:)),
+            stamps: pins.stamps, orderStamp: pins.orderStamp)
 
         let presetFavorites = mergedFlags(
             kind: .presetFavorite,
@@ -48,6 +37,20 @@ extension SyncEngine {
         presets.adoptFavorites(presetFavorites.on, stamps: presetFavorites.stamps)
 
         applyNaming()
+    }
+
+    /// One ordered flag set's whole inbound pipeline: merge the flags BY
+    /// SETTING, merge the one whole-value order, apply the order's word to
+    /// the merged membership. The local list serves as both membership and
+    /// order — it is both.
+    private func mergedOrderedFlags(
+        kind: FlagKind, orderKey: String,
+        localOrder: [String], localStamps: [String: Date], localOrderStamp: Date?
+    ) -> (members: [String], stamps: [String: Date], orderStamp: Date?) {
+        let flags = mergedFlags(
+            kind: kind, localOn: Set(localOrder), localStamps: localStamps)
+        let order = mergedOrder(key: orderKey, local: localOrder, localStamp: localOrderStamp)
+        return (ordered(members: flags.on, by: order.order), flags.stamps, order.modifiedAt)
     }
 
     /// Notation is a USER preference (how note names are spelled), not

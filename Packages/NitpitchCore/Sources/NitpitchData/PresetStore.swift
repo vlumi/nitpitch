@@ -67,13 +67,10 @@ public final class PresetStore: ObservableObject {
     /// on (`FactoryTuningSeedTests`).
     public init(defaults: UserDefaults, seedingFactoryTunings: Bool = true) {
         self.defaults = defaults
-        if let data = defaults.data(forKey: Self.key),
-            let stored = try? JSONDecoder().decode([Preset].self, from: data)
-        {
-            presets = stored
-        } else {
-            presets = []
-        }
+        presets = defaults.decoded([Preset].self, forKey: Self.key) ?? []
+        tombstones = defaults.decoded(Set<Tombstone>.self, forKey: Self.tombstonesKey) ?? []
+        favoriteStamps =
+            defaults.decoded([String: Date].self, forKey: Self.favoriteStampsKey) ?? [:]
         if seedingFactoryTunings { seedFactoryTunings() }
     }
 
@@ -167,9 +164,7 @@ public final class PresetStore: ObservableObject {
         favoriteIDs = ids
         // Stamped at the act, sync on or off — merging is done BY SETTING,
         // and never-set can never wipe set (see Settings for the twin).
-        var stamps = favoriteStamps
-        stamps[id] = Date()
-        favoriteStamps = stamps
+        favoriteStamps[id] = Date()
     }
 
     private static let favoritesKey = "presets.favorites.v1"
@@ -178,16 +173,7 @@ public final class PresetStore: ObservableObject {
     /// Edit times per preset-favorite flag, present only for flags the user
     /// actually touched.
     var favoriteStamps: [String: Date] {
-        get {
-            guard let data = defaults.data(forKey: Self.favoriteStampsKey),
-                let stamps = try? JSONDecoder().decode([String: Date].self, from: data)
-            else { return [:] }
-            return stamps
-        }
-        set {
-            guard let data = try? JSONEncoder().encode(newValue) else { return }
-            defaults.set(data, forKey: Self.favoriteStampsKey)
-        }
+        didSet { defaults.encode(favoriteStamps, forKey: Self.favoriteStampsKey) }
     }
 
     /// An existing preset that a save under `name` would replace: same
@@ -337,16 +323,7 @@ public final class PresetStore: ObservableObject {
     /// everything else, pruned by age (`Tombstone.lifetime`) whenever one
     /// is added.
     public private(set) var tombstones: Set<Tombstone> {
-        get {
-            guard let data = defaults.data(forKey: Self.tombstonesKey),
-                let stored = try? JSONDecoder().decode(Set<Tombstone>.self, from: data)
-            else { return [] }
-            return stored
-        }
-        set {
-            guard let data = try? JSONEncoder().encode(newValue) else { return }
-            defaults.set(data, forKey: Self.tombstonesKey)
-        }
+        didSet { defaults.encode(tombstones, forKey: Self.tombstonesKey) }
     }
 
     private static let tombstonesKey = "presets.tombstones.v1"

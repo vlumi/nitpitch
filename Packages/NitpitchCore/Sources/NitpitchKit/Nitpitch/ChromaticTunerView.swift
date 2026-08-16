@@ -121,7 +121,6 @@ public struct ChromaticTunerView: View {
             .onChangeCompat(of: settings.reference) { _ in reconfigure() }
     }
 
-    /// Portrait: everything in one column.
     /// What fills the window, before the shared chrome goes on.
     ///
     /// The two platforms want opposite things here. A PHONE has a fixed

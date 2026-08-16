@@ -265,10 +265,7 @@ extension InstrumentGridView {
 
     /// Whether loading this preset would change nothing — the equals mark.
     func valuesMatch(_ preset: Preset) -> Bool {
-        instance.strings == preset.strings
-            && (preset.referenceHz == nil || preset.referenceHz == instance.referenceHz)
-            && (preset.temperament == nil
-                || preset.temperament == instance.appliedTemperament)
+        preset.matchesValues(of: instance)
     }
 
     @ViewBuilder
@@ -316,10 +313,7 @@ extension InstrumentGridView {
         return pinned + all.filter { pin in !pinned.contains(pin) }
     }
 
-    var fittingTunings: [Tuning] {
-        guard let template = instance.template else { return [] }
-        return template.knownTunings.filter { $0.strings.count == instance.strings.count }
-    }
+    var fittingTunings: [Tuning] { instance.fittingTunings }
 }
 
 /// One cell, observing its own string's model.

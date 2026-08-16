@@ -316,3 +316,20 @@ struct PresetImportView: View {
         #endif
     }
 }
+
+extension PresetPayloadSummary {
+    static func text(for preset: Preset) -> String {
+        text(
+            strings: preset.strings, referenceHz: preset.referenceHz,
+            temperament: preset.temperament)
+    }
+}
+
+extension PresetLink {
+    /// The link that shares exactly this preset.
+    init(_ preset: Preset) {
+        self.init(
+            name: preset.name, templateID: preset.templateID, strings: preset.strings,
+            referenceHz: preset.referenceHz, temperament: preset.temperament)
+    }
+}

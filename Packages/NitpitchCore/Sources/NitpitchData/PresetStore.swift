@@ -47,6 +47,15 @@ public struct Preset: Equatable, Hashable, Codable, Identifiable, Sendable, Sync
     public func fits(_ instance: InstrumentInstance) -> Bool {
         templateID == instance.templateID && strings.count == instance.strings.count
     }
+
+    /// Whether loading this preset onto `instance` would change nothing —
+    /// every sheet's equals mark, scope-aware like loading itself: fields
+    /// the payload doesn't carry can't disagree.
+    public func matchesValues(of instance: InstrumentInstance) -> Bool {
+        strings == instance.strings
+            && (referenceHz == nil || referenceHz == instance.referenceHz)
+            && (temperament == nil || temperament == instance.appliedTemperament)
+    }
 }
 
 /// Owns the saved presets, persisted like everything else through

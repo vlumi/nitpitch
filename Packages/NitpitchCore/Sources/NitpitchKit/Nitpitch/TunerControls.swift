@@ -371,3 +371,68 @@ struct NoteNameLabel: View {
         return "\(readout.name)\(readout.octave)"
     }
 }
+
+/// One row-trailing icon button — star, pin, share, trash — shared by the
+/// preset sheets so the same verb wears the same face everywhere. (The
+/// browser's favorite star had drifted orange while the manager's and the
+/// chooser's stayed yellow; a shared control makes that impossible.) Each
+/// call site keeps its own accessibility identifier — the UI tests' names
+/// for these buttons predate the sharing.
+struct RowIconButton: View {
+    let systemName: String
+    var tint: Color = .accentColor
+    var isOn = true
+    let identifier: String
+    let label: Text
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .foregroundStyle(
+                    isOn ? AnyShapeStyle(tint) : AnyShapeStyle(Color.secondary.opacity(0.5))
+                )
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(label)
+    }
+}
+
+extension InstrumentStore {
+    /// Delete an instance AND its launch-screen satellites — the star, the
+    /// pins — in one place, so a third satellite added later cannot be
+    /// forgotten by one of the delete sites.
+    @MainActor
+    func delete(_ id: String, settings: Settings) {
+        settings.favorites.removeAll { $0 == id }
+        settings.presetPins.removeAll { $0.instrumentID == id }
+        remove(id: id)
+    }
+}
+
+/// The ambient padlock, identical wherever the instrument is (the grid's
+/// toolbar, the string view's): one glance says whether the setup is
+/// frozen, one tap flips it. Each site keeps its own identifier — the UI
+/// tests' names predate the sharing.
+struct LockButton: View {
+    @ObservedObject var store: InstrumentStore
+    let instance: InstrumentInstance
+    let identifier: String
+
+    var body: some View {
+        Button {
+            store.setLocked(id: instance.id, !instance.isLocked)
+        } label: {
+            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
+                .foregroundStyle(
+                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(
+            instance.isLocked
+                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
+    }
+}

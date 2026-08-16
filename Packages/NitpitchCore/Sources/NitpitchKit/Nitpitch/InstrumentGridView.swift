@@ -77,7 +77,9 @@ struct InstrumentGridView: View {
                 reference: instance.reference,
                 temperament: instance.appliedTemperament,
                 tuning: detection.tuning))
-        _columns = State(initialValue: Self.defaultColumns(strings: instance.strings.count))
+        // Zero means Auto: the fill algorithm chooses (see `dialLayout`);
+        // the picker offers fixed counts for denser or looser.
+        _columns = State(initialValue: 0)
     }
 
     /// The live instance — the store's copy, since tuning and reference can
@@ -381,9 +383,4 @@ struct InstrumentGridView: View {
         .background(.thinMaterial)
     }
 
-    /// Zero means Auto: the fill algorithm chooses (see `dialLayout`). The
-    /// picker offers fixed counts for anyone who wants denser or looser.
-    private static func defaultColumns(strings: Int) -> Int {
-        0
-    }
 }

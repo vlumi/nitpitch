@@ -129,17 +129,7 @@ extension InstrumentGridView {
     /// when locked, open and quiet when not — the same glyph pair every
     /// platform uses for exactly this.
     var lockButton: some View {
-        Button {
-            store.setLocked(id: instance.id, !instance.isLocked)
-        } label: {
-            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
-                .foregroundStyle(
-                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
-        }
-        .accessibilityIdentifier("grid.lock")
-        .accessibilityLabel(
-            instance.isLocked
-                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
+        LockButton(store: store, instance: instance, identifier: "grid.lock")
     }
 
     var layoutMenu: some View {
@@ -256,9 +246,7 @@ extension InstrumentGridView {
     /// Deleting from inside the instrument: satellites go with it, and the
     /// screen closes — there is nothing left to stand on.
     func deleteInstrument() {
-        settings.favorites.removeAll { $0 == instance.id }
-        settings.presetPins.removeAll { $0.instrumentID == instance.id }
-        store.remove(id: instance.id)
+        store.delete(instance.id, settings: settings)
         dismissGrid()
     }
 

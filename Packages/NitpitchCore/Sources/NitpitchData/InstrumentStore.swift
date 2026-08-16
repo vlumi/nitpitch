@@ -64,6 +64,14 @@ public struct InstrumentInstance: Equatable, Hashable, Codable, Identifiable, Se
 
     public var template: Instrument? { Instrument.named(templateID) }
 
+    /// The catalog tunings this instrument can wear — Standard, offered
+    /// beside the presets on every platform, never deletable: it's what
+    /// the instrument's name means.
+    public var fittingTunings: [Tuning] {
+        guard let template else { return [] }
+        return template.knownTunings.filter { $0.strings.count == strings.count }
+    }
+
     /// The instrument as the detection stack sees it: the template's family
     /// and this instance's name and strings.
     public var instrument: Instrument {

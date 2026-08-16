@@ -116,13 +116,8 @@ struct PresetBrowser: View {
             }
             .sheet(item: $sharing) { preset in
                 PresetShareView(
-                    link: PresetLink(
-                        name: preset.name, templateID: preset.templateID,
-                        strings: preset.strings, referenceHz: preset.referenceHz,
-                        temperament: preset.temperament),
-                    summary: PresetPayloadSummary.text(
-                        strings: preset.strings, referenceHz: preset.referenceHz,
-                        temperament: preset.temperament))
+                    link: PresetLink(preset),
+                    summary: PresetPayloadSummary.text(for: preset))
             }
         }
         #if os(macOS)

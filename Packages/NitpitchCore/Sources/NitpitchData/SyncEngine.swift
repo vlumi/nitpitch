@@ -2,6 +2,15 @@ import Combine
 import Foundation
 import NitpitchCore
 
+/// Moves records between the local stores and a key-value store, applying
+/// `SyncMerge`'s rules in both directions.
+///
+/// **One key per record, not one blob per store.** A blob makes every edit
+/// a whole-collection write, so two devices editing different instruments
+/// at the same time is a conflict rather than two independent facts — and
+/// KVS resolves whole-key conflicts by discarding one side entirely. Per
+/// record, that same pair of edits merges cleanly because they never touch
+/// the same key.
 @MainActor
 public final class SyncEngine: ObservableObject {
     /// Where a record lives, and what it is. The prefix keeps instruments
@@ -11,6 +20,13 @@ public final class SyncEngine: ObservableObject {
         case preset = "p."
 
         var tombstonesKey: String { "\(rawValue)tombstones" }
+
+        /// Whether a store key holds one record's payload (not a
+        /// tombstones list, not a settings key).
+        static func isRecordKey(_ key: String) -> Bool {
+            allCases.contains { key.hasPrefix($0.rawValue) }
+                && !allCases.map(\.tombstonesKey).contains(key)
+        }
     }
 
     /// Whether syncing is on. Off by default — "nothing leaves the device"
@@ -180,58 +196,62 @@ public final class SyncEngine: ObservableObject {
         duplicateFirstJoinConflicts()
 
         let now = Date()
-
-        // Order matters, and it is not the obvious one. The stones must be
-        // applied to the records BEFORE being pruned against them:
-        // pruning first asks "does this record still exist?" of a list
-        // that hasn't heard about the deletion yet, so the device holding
-        // the doomed record drops the very stone that was meant to kill it
-        // — and re-uploads the record forever.
-        let instrumentStones = instruments.tombstones.union(tombstones(for: .instrument))
-        let mergedInstruments = SyncMerge.mergedRecords(
-            local: instruments.instances,
-            remote: records(of: .instrument, as: InstrumentInstance.self),
-            tombstones: instrumentStones)
-        instruments.adopt(
-            mergedInstruments,
-            tombstones: SyncMerge.mergedTombstones(
-                local: instrumentStones, remote: [],
-                survivors: mergedInstruments, now: now))
-
-        let presetStones = presets.tombstones.union(tombstones(for: .preset))
-        let mergedPresets = SyncMerge.mergedRecords(
-            local: presets.presets,
-            remote: records(of: .preset, as: Preset.self),
-            tombstones: presetStones)
-        presets.adopt(
-            mergedPresets,
-            tombstones: SyncMerge.mergedTombstones(
-                local: presetStones, remote: [],
-                survivors: mergedPresets, now: now))
+        applyRecords(
+            of: .instrument, local: instruments.instances,
+            localStones: instruments.tombstones, now: now
+        ) { instruments.adopt($0, tombstones: $1) }
+        applyRecords(
+            of: .preset, local: presets.presets,
+            localStones: presets.tombstones, now: now
+        ) { presets.adopt($0, tombstones: $1) }
 
         applySettings()
+    }
+
+    /// One kind's inbound merge. Order matters, and it is not the obvious
+    /// one: the stones must be applied to the records BEFORE being pruned
+    /// against them — pruning first asks "does this record still exist?"
+    /// of a list that hasn't heard about the deletion yet, so the device
+    /// holding the doomed record drops the very stone that was meant to
+    /// kill it, and re-uploads the record forever.
+    private func applyRecords<Record: SyncRecord & Decodable>(
+        of kind: Kind, local: [Record], localStones: Set<Tombstone>, now: Date,
+        adopt: ([Record], Set<Tombstone>) -> Void
+    ) {
+        let stones = localStones.union(tombstones(for: kind))
+        let merged = SyncMerge.mergedRecords(
+            local: local,
+            remote: records(of: kind, as: Record.self),
+            tombstones: stones)
+        adopt(
+            merged,
+            SyncMerge.mergedTombstones(
+                local: stones, remote: [], survivors: merged, now: now))
     }
 
     func records<Record: Decodable>(of kind: Kind, as: Record.Type) -> [Record] {
         store.allKeys
             .filter { $0.hasPrefix(kind.rawValue) && $0 != kind.tombstonesKey }
-            .compactMap { store.data(forKey: $0) }
-            .compactMap { try? JSONDecoder().decode(Record.self, from: $0) }
+            .compactMap { read(Record.self, key: $0) }
     }
 
     private func tombstones(for kind: Kind) -> Set<Tombstone> {
-        guard let data = store.data(forKey: kind.tombstonesKey),
-            let stored = try? JSONDecoder().decode(Set<Tombstone>.self, from: data)
-        else { return [] }
-        return stored
+        read(Set<Tombstone>.self, key: kind.tombstonesKey) ?? []
     }
 
     // MARK: - Outbound
 
     /// Publish the local state: one key per record, plus the tombstones
-    /// and the synced settings.
+    /// and the synced settings (whose half lives in SyncEngine+Settings,
+    /// beside its inbound twin).
     private func push() {
         guard isEnabled, store.isAvailable else { return }
+        pushRecords()
+        pruneDeletedRecordKeys()
+        pushSettings()
+    }
+
+    private func pushRecords() {
         for instance in instruments.instances {
             write(instance, key: Kind.instrument.rawValue + instance.id)
         }
@@ -240,46 +260,17 @@ public final class SyncEngine: ObservableObject {
         }
         write(instruments.tombstones, key: Kind.instrument.tombstonesKey)
         write(presets.tombstones, key: Kind.preset.tombstonesKey)
+    }
 
-        // A deleted record's key goes too — the tombstone is what carries
-        // the deletion, and leaving the payload behind would have every
-        // future device download a record it must immediately discard.
+    /// A deleted record's key goes too — the tombstone is what carries
+    /// the deletion, and leaving the payload behind would have every
+    /// future device download a record it must immediately discard.
+    private func pruneDeletedRecordKeys() {
         let live =
             Set(instruments.instances.map { Kind.instrument.rawValue + $0.id })
             .union(presets.presets.map { Kind.preset.rawValue + $0.id })
-        for key in store.allKeys
-        where Kind.allCases.contains(where: { key.hasPrefix($0.rawValue) })
-            && !Kind.allCases.map(\.tombstonesKey).contains(key)
-            && !live.contains(key)
-        {
+        for key in store.allKeys where Kind.isRecordKey(key) && !live.contains(key) {
             store.set(nil, forKey: key)
-        }
-
-        // Per-setting flags: ONLY stamped ones travel — an unstamped flag
-        // is an install seed, and every device grows its own.
-        pushFlags(
-            kind: .instrumentFavorite,
-            on: Set(settings.favorites), stamps: settings.favoriteStamps)
-        pushFlags(
-            kind: .presetPin,
-            on: Set(settings.presetPins.map(\.id)), stamps: settings.pinStamps)
-        pushFlags(
-            kind: .presetFavorite,
-            on: presets.favoriteIDs, stamps: presets.favoriteStamps)
-        if let stamp = settings.favoritesOrderStamp {
-            write(
-                SettingsOrder(order: settings.favorites, modifiedAt: stamp),
-                key: Key.favoritesOrder)
-        }
-        if let stamp = settings.pinsOrderStamp {
-            write(
-                SettingsOrder(order: settings.presetPins.map(\.id), modifiedAt: stamp),
-                key: Key.pinsOrder)
-        }
-        if let stamp = settings.namingStamp {
-            write(
-                SettingScalar(value: settings.naming.rawValue, modifiedAt: stamp),
-                key: Key.naming)
         }
     }
 
@@ -291,10 +282,12 @@ public final class SyncEngine: ObservableObject {
         store.set(data, forKey: key)
     }
 
-    /// Settings carry one stamp for the whole synced slice — they're a
-    /// value, not a collection of records, so one date is the currency.
-    private var settingsStamp: Date? {
-        defaults.object(forKey: Key.settingsStamp) as? Date
+    /// `write`'s inbound twin: one decoded value per key, or nil for
+    /// absent-or-undecodable — the same answer, because a payload this
+    /// device can't read must never beat what it has.
+    func read<Value: Decodable>(_ type: Value.Type, key: String) -> Value? {
+        guard let data = store.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
     }
 
 }

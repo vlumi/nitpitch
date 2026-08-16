@@ -29,27 +29,19 @@ extension SyncEngine {
 
     private func duplicateInstrumentConflicts() {
         let remote = records(of: .instrument, as: InstrumentInstance.self)
-        let remoteByID = Dictionary(remote.map { ($0.id, $0) }) { first, _ in first }
-        var copies: [InstrumentInstance] = []
-        for local in instruments.instances {
-            guard let other = remoteByID[local.id],
-                isRealEdit(local.modifiedAt), isRealEdit(other.modifiedAt),
-                instrumentContentDiffers(local, other)
-            else { continue }
-            // The OLDER edit becomes the copy; the newer keeps the id
-            // through the ordinary merge that follows.
-            let localIsNewer = stamp(local.modifiedAt) > stamp(other.modifiedAt)
-            let loser = localIsNewer ? other : local
-            let winner = localIsNewer ? local : other
+        let copies = firstJoinCopies(
+            local: instruments.instances, remote: remote,
+            contentDiffers: instrumentContentDiffers
+        ) { loser, winner, priorCopies in
             // Names taken in the POST-merge world: everything except the
             // conflicting pair (the id will carry the winner's name), so a
             // loser whose name differs keeps it, and one whose name matches
             // the winner's steps aside as "… 2".
             let taken =
                 (instruments.instances + remote)
-                .filter { $0.id != local.id }
-                .map(\.name) + [winner.name] + copies.map(\.name)
-            copies.append(instrumentCopy(of: loser, takenNames: taken))
+                .filter { $0.id != winner.id }
+                .map(\.name) + [winner.name] + priorCopies.map(\.name)
+            return instrumentCopy(of: loser, takenNames: taken)
         }
         guard !copies.isEmpty else { return }
         instruments.adopt(
@@ -58,36 +50,57 @@ extension SyncEngine {
 
     private func duplicatePresetConflicts() {
         let remote = records(of: .preset, as: Preset.self)
-        let remoteByID = Dictionary(remote.map { ($0.id, $0) }) { first, _ in first }
-        var copies: [Preset] = []
-        for local in presets.presets {
-            guard let other = remoteByID[local.id],
-                isRealEdit(local.modifiedAt), isRealEdit(other.modifiedAt),
-                presetContentDiffers(local, other)
-            else { continue }
-            let localIsNewer = stamp(local.modifiedAt) > stamp(other.modifiedAt)
-            let loser = localIsNewer ? other : local
-            let winner = localIsNewer ? local : other
+        let copies = firstJoinCopies(
+            local: presets.presets, remote: remote,
+            contentDiffers: presetContentDiffers
+        ) { loser, winner, priorCopies in
             // Preset names are unique per template BY RULE — but the taken
             // set describes the POST-merge world: the conflicting pair's id
             // carries the winner's name, so the loser's own name is free
             // unless it matches the winner's (the common conflict).
             let taken =
-                (presets.presets + remote + copies)
-                .filter { $0.templateID == loser.templateID && $0.id != local.id }
+                (presets.presets + remote + priorCopies)
+                .filter { $0.templateID == loser.templateID && $0.id != winner.id }
                 .map(\.name) + [winner.name]
-            copies.append(
-                Preset(
-                    id: UUID().uuidString,
-                    name: copyName(loser.name, takenNames: taken),
-                    templateID: loser.templateID,
-                    strings: loser.strings,
-                    referenceHz: loser.referenceHz,
-                    temperament: loser.temperament,
-                    modifiedAt: loser.modifiedAt))
+            return Preset(
+                id: UUID().uuidString,
+                name: copyName(loser.name, takenNames: taken),
+                templateID: loser.templateID,
+                strings: loser.strings,
+                referenceHz: loser.referenceHz,
+                temperament: loser.temperament,
+                modifiedAt: loser.modifiedAt)
         }
         guard !copies.isEmpty else { return }
         presets.adopt(presets.presets + copies, tombstones: presets.tombstones)
+    }
+
+    /// The shared conflict walk: for every same-id pair that BOTH sides
+    /// really edited into different content, the OLDER edit becomes a copy
+    /// (built by `copy`, which also sees the copies made so far, for its
+    /// name pool); the newer keeps the id through the ordinary merge that
+    /// follows.
+    private func firstJoinCopies<Record: SyncRecord>(
+        local: [Record], remote: [Record],
+        contentDiffers: (Record, Record) -> Bool,
+        copy: (_ loser: Record, _ winner: Record, _ priorCopies: [Record]) -> Record
+    ) -> [Record] {
+        let remoteByID = Dictionary(remote.map { ($0.syncID, $0) }) { first, _ in first }
+        var copies: [Record] = []
+        for candidate in local {
+            guard let other = remoteByID[candidate.syncID],
+                isRealEdit(candidate.syncModifiedAt), isRealEdit(other.syncModifiedAt),
+                contentDiffers(candidate, other)
+            else { continue }
+            let candidateIsNewer =
+                stamp(candidate.syncModifiedAt) > stamp(other.syncModifiedAt)
+            copies.append(
+                copy(
+                    candidateIsNewer ? other : candidate,
+                    candidateIsNewer ? candidate : other,
+                    copies))
+        }
+        return copies
     }
 
     /// A stamp that means a USER did something: seeds carry `.distantPast`

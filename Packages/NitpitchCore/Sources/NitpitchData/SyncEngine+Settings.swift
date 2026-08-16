@@ -15,31 +15,21 @@ extension SyncEngine {
     func applySettings() {
         migrateSettingsBlobIfNeeded()
 
-        let favorites = mergedFlags(
-            kind: .instrumentFavorite,
-            localOn: Set(settings.favorites),
-            localStamps: settings.favoriteStamps)
-        let favoritesOrder = mergedOrder(
-            key: Key.favoritesOrder,
-            local: settings.favorites,
-            localStamp: settings.favoritesOrderStamp)
+        let favorites = mergedOrderedFlags(
+            kind: .instrumentFavorite, orderKey: Key.favoritesOrder,
+            localOrder: settings.favorites, localStamps: settings.favoriteStamps,
+            localOrderStamp: settings.favoritesOrderStamp)
         settings.adoptFavorites(
-            ordered(members: favorites.on, by: favoritesOrder.order),
-            stamps: favorites.stamps,
-            orderStamp: favoritesOrder.modifiedAt)
+            favorites.members, stamps: favorites.stamps, orderStamp: favorites.orderStamp)
 
-        let pins = mergedFlags(
-            kind: .presetPin,
-            localOn: Set(settings.presetPins.map(\.id)),
-            localStamps: settings.pinStamps)
-        let pinsOrder = mergedOrder(
-            key: Key.pinsOrder,
-            local: settings.presetPins.map(\.id),
-            localStamp: settings.pinsOrderStamp)
+        let pins = mergedOrderedFlags(
+            kind: .presetPin, orderKey: Key.pinsOrder,
+            localOrder: settings.presetPins.map(\.id), localStamps: settings.pinStamps,
+            localOrderStamp: settings.pinsOrderStamp)
         settings.adoptPins(
-            ordered(members: pins.on, by: pinsOrder.order).compactMap(PresetPin.init(flagID:)),
+            pins.members.compactMap(PresetPin.init(flagID:)),
             stamps: pins.stamps,
-            orderStamp: pinsOrder.modifiedAt)
+            orderStamp: pins.orderStamp)
 
         let presetFavorites = mergedFlags(
             kind: .presetFavorite,
@@ -50,29 +40,41 @@ extension SyncEngine {
         applyNaming()
     }
 
+    /// One ordered flag set, fully merged: the membership in its order,
+    /// the per-flag stamps, and the order's own stamp.
+    private struct MergedOrderedFlags {
+        let members: [String]
+        let stamps: [String: Date]
+        let orderStamp: Date?
+    }
+
+    /// One ordered flag set's whole inbound pipeline: merge the flags BY
+    /// SETTING, merge the one whole-value order, apply the order's word to
+    /// the merged membership. The local list serves as both membership and
+    /// order — it is both.
+    private func mergedOrderedFlags(
+        kind: FlagKind, orderKey: String,
+        localOrder: [String], localStamps: [String: Date], localOrderStamp: Date?
+    ) -> MergedOrderedFlags {
+        let flags = mergedFlags(
+            kind: kind, localOn: Set(localOrder), localStamps: localStamps)
+        let order = mergedOrder(key: orderKey, local: localOrder, localStamp: localOrderStamp)
+        return MergedOrderedFlags(
+            members: ordered(members: flags.on, by: order.order),
+            stamps: flags.stamps,
+            orderStamp: order.modifiedAt)
+    }
+
     /// Notation is a USER preference (how note names are spelled), not
-    /// device-shaped state, so it travels — one stamped scalar, same rules
-    /// as every flag: never-set yields, newer wins, and a stamp tie with
-    /// differing values breaks on the greater raw value, identically on
-    /// both sides (local-wins ties never converge).
+    /// device-shaped state, so it travels — one stamped scalar, merged by
+    /// `SyncMerge.mergedScalar`'s rules.
     private func applyNaming() {
-        var remote: SettingScalar?
-        if let data = store.data(forKey: Key.naming) {
-            remote = try? JSONDecoder().decode(SettingScalar.self, from: data)
-        }
-        guard let remote else { return }
-        let local = SettingScalar(
-            value: settings.naming.rawValue, modifiedAt: settings.namingStamp)
-        let winner: SettingScalar
-        if local.modifiedAt == remote.modifiedAt, local.value != remote.value {
-            winner = local.value > remote.value ? local : remote
-        } else {
-            winner = SyncMerge.mergedValue(
-                local: local, localModifiedAt: local.modifiedAt,
-                remote: remote, remoteModifiedAt: remote.modifiedAt)
-        }
-        guard let naming = NoteNaming(rawValue: winner.value) else { return }
-        settings.adoptNaming(naming, stamp: winner.modifiedAt)
+        guard let remote = read(SettingScalar.self, key: Key.naming) else { return }
+        let merged = SyncMerge.mergedScalar(
+            local: settings.naming.rawValue, localModifiedAt: settings.namingStamp,
+            remote: remote.value, remoteModifiedAt: remote.modifiedAt)
+        guard let naming = NoteNaming(rawValue: merged.value) else { return }
+        settings.adoptNaming(naming, stamp: merged.modifiedAt)
     }
 
     /// Merge every flag either side knows about. Absent everywhere = never
@@ -83,9 +85,7 @@ extension SyncEngine {
     ) -> (on: Set<String>, stamps: [String: Date]) {
         var remote: [String: SettingFlag] = [:]
         for key in store.allKeys where key.hasPrefix(kind.rawValue) {
-            guard let data = store.data(forKey: key),
-                let flag = try? JSONDecoder().decode(SettingFlag.self, from: data)
-            else { continue }
+            guard let flag = read(SettingFlag.self, key: key) else { continue }
             remote[String(key.dropFirst(kind.rawValue.count))] = flag
         }
         var on = Set<String>()
@@ -103,10 +103,7 @@ extension SyncEngine {
     func mergedOrder(
         key: String, local: [String], localStamp: Date?
     ) -> (order: [String], modifiedAt: Date?) {
-        var remote: SettingsOrder?
-        if let data = store.data(forKey: key) {
-            remote = try? JSONDecoder().decode(SettingsOrder.self, from: data)
-        }
+        let remote = read(SettingsOrder.self, key: key)
         let winner = SyncMerge.mergedValue(
             local: SettingsOrder(order: local, modifiedAt: localStamp),
             localModifiedAt: localStamp,
@@ -205,6 +202,36 @@ extension SyncEngine {
 
     func uniformStamps(_ ids: [String], _ stamp: Date) -> [String: Date] {
         Dictionary(uniqueKeysWithValues: ids.map { ($0, stamp) })
+    }
+
+    /// The outbound half, `applySettings`' twin. Per-setting flags: ONLY
+    /// stamped ones travel — an unstamped flag is an install seed, and
+    /// every device grows its own.
+    func pushSettings() {
+        pushFlags(
+            kind: .instrumentFavorite,
+            on: Set(settings.favorites), stamps: settings.favoriteStamps)
+        pushFlags(
+            kind: .presetPin,
+            on: Set(settings.presetPins.map(\.id)), stamps: settings.pinStamps)
+        pushFlags(
+            kind: .presetFavorite,
+            on: presets.favoriteIDs, stamps: presets.favoriteStamps)
+        if let stamp = settings.favoritesOrderStamp {
+            write(
+                SettingsOrder(order: settings.favorites, modifiedAt: stamp),
+                key: Key.favoritesOrder)
+        }
+        if let stamp = settings.pinsOrderStamp {
+            write(
+                SettingsOrder(order: settings.presetPins.map(\.id), modifiedAt: stamp),
+                key: Key.pinsOrder)
+        }
+        if let stamp = settings.namingStamp {
+            write(
+                SettingScalar(value: settings.naming.rawValue, modifiedAt: stamp),
+                key: Key.naming)
+        }
     }
 
     func pushFlags(kind: FlagKind, on: Set<String>, stamps: [String: Date]) {

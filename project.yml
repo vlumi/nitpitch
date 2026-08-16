@@ -109,9 +109,10 @@ targets:
     dependencies:
       - target: Nitpitch-iOS
 
-  # The wrist scaffold: a standalone chromatic tuner on NitpitchCore only —
-  # mic and DSP run on the watch, per the settled architecture (AGENTS.md
-  # "The watch"). EMBEDDED in the iOS app since the watch earned TestFlight:
+  # The watch app: a full tuner on NitpitchCore + NitpitchData — instruments,
+  # presets, haptic beats and sync; mic and DSP run on the watch, per the
+  # settled architecture (AGENTS.md "The watch").
+  # EMBEDDED in the iOS app since the watch earned TestFlight:
   # the iOS target's dependency below carries it into every phone build, so
   # `make release PLATFORM=ios` ships both. Still fully standalone at
   # runtime — companion-shaped only in data, riding iCloud sync.

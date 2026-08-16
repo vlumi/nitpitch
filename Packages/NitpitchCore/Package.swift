@@ -10,10 +10,11 @@ let package = Package(
     platforms: [
         .iOS(.v16),
         .macOS(.v14),
-        // The watch app uses NitpitchCore ONLY (pure Swift + Accelerate —
-        // it ports as-is, which is what makes the watch standalone). The
-        // NitpitchKit product is iOS/macOS: its capture and views assume
-        // AVCaptureDevice and screens with room for editors.
+        // The watch app uses NitpitchCore + NitpitchData (pure Swift +
+        // Accelerate + Foundation/Combine — they port as-is, which is what
+        // makes the watch standalone). The NitpitchKit product is iOS/macOS:
+        // its capture and views assume AVCaptureDevice and screens with room
+        // for editors.
         .watchOS(.v10),
     ],
     products: [

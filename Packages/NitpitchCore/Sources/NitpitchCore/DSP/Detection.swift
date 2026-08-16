@@ -81,6 +81,15 @@ public struct DetectionResult: Equatable, Sendable {
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)
 
+    /// A frame the detector REJECTED: no frequency, no authority — only the
+    /// clarity and level it was judged on, which the diagnostics screen
+    /// still shows.
+    public static func rejected(
+        clarity: Double, rms: Double, level: Double = 0
+    ) -> DetectionResult {
+        DetectionResult(frequency: nil, clarity: clarity, rms: rms, level: level)
+    }
+
     /// The frame's RMS as a 0...1 meter value — `Detection.displayLevel`.
     public var displayLevel: Double {
         Detection.displayLevel(rms: rms)

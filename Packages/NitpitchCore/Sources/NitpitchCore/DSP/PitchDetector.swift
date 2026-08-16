@@ -76,7 +76,7 @@ public final class PitchDetector {
         // Reject silence before doing any real work — most frames between notes
         // are this, and the NSDF of near-zero input is numerically meaningless.
         guard rms > tuning.silenceRMS else {
-            return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
+            return .rejected(clarity: 0, rms: Double(rms))
         }
 
         vDSP_vspdp(samples, 1, &windowed, 1, vDSP_Length(windowSize))
@@ -90,10 +90,10 @@ public final class PitchDetector {
         computeNSDF()
 
         guard let (lag, value) = pickPeak() else {
-            return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
+            return .rejected(clarity: 0, rms: Double(rms))
         }
         guard value >= tuning.clarityThreshold else {
-            return DetectionResult(frequency: nil, clarity: value, rms: Double(rms))
+            return .rejected(clarity: value, rms: Double(rms))
         }
         let frequency = sampleRate / lag
         // Report nothing rather than something outside the band we searched.
@@ -102,7 +102,7 @@ public final class PitchDetector {
         // but with a dial per string it means one played note lights a
         // neighbour's dial with a pitch that neighbour never owned.
         guard band.contains(frequency) else {
-            return DetectionResult(frequency: nil, clarity: value, rms: Double(rms))
+            return .rejected(clarity: value, rms: Double(rms))
         }
         return DetectionResult(frequency: frequency, clarity: value, rms: Double(rms))
     }

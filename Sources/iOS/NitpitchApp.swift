@@ -17,27 +17,13 @@ struct NitpitchApp: App {
     @StateObject private var audio = AudioSessionController(input: LaunchStores.audioInput())
 
     init() {
-        // The stores and the engine are owned HERE (the watch taught the
-        // pattern): the Settings screen carries the sync switch on every
-        // platform, and on the Mac that screen is a sibling SCENE the tuner
-        // hierarchy can't reach into.
-        let settings = Settings(defaults: LaunchStores.defaults)
-        // A new instrument's reference seeds from the chromatic screen's —
-        // "from wherever you came from".
-        let store = InstrumentStore(defaults: LaunchStores.defaults) {
-            settings.reference
-        }
-        let presets = PresetStore(defaults: LaunchStores.defaults)
-        _settings = StateObject(wrappedValue: settings)
-        _store = StateObject(wrappedValue: store)
-        _presets = StateObject(wrappedValue: presets)
-        // Constructed cheaply — the engine touches iCloud only from
-        // `begin()`, which RootView schedules in a task.
-        _sync = StateObject(
-            wrappedValue: SyncEngine(
-                store: LaunchStores.syncStore(),
-                instruments: store, presets: presets, settings: settings,
-                defaults: LaunchStores.defaults))
+        // The stores and the engine are owned HERE, one shared wiring for
+        // all three shells — see AppStores.
+        let stores = AppStores.make()
+        _settings = StateObject(wrappedValue: stores.settings)
+        _store = StateObject(wrappedValue: stores.instruments)
+        _presets = StateObject(wrappedValue: stores.presets)
+        _sync = StateObject(wrappedValue: stores.sync)
     }
 
     var body: some Scene {

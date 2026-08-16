@@ -28,7 +28,8 @@ extension SyncEngine {
             localOrderStamp: settings.pinsOrderStamp)
         settings.adoptPins(
             pins.members.compactMap(PresetPin.init(flagID:)),
-            stamps: pins.stamps, orderStamp: pins.orderStamp)
+            stamps: pins.stamps,
+            orderStamp: pins.orderStamp)
 
         let presetFavorites = mergedFlags(
             kind: .presetFavorite,
@@ -39,6 +40,14 @@ extension SyncEngine {
         applyNaming()
     }
 
+    /// One ordered flag set, fully merged: the membership in its order,
+    /// the per-flag stamps, and the order's own stamp.
+    private struct MergedOrderedFlags {
+        let members: [String]
+        let stamps: [String: Date]
+        let orderStamp: Date?
+    }
+
     /// One ordered flag set's whole inbound pipeline: merge the flags BY
     /// SETTING, merge the one whole-value order, apply the order's word to
     /// the merged membership. The local list serves as both membership and
@@ -46,11 +55,14 @@ extension SyncEngine {
     private func mergedOrderedFlags(
         kind: FlagKind, orderKey: String,
         localOrder: [String], localStamps: [String: Date], localOrderStamp: Date?
-    ) -> (members: [String], stamps: [String: Date], orderStamp: Date?) {
+    ) -> MergedOrderedFlags {
         let flags = mergedFlags(
             kind: kind, localOn: Set(localOrder), localStamps: localStamps)
         let order = mergedOrder(key: orderKey, local: localOrder, localStamp: localOrderStamp)
-        return (ordered(members: flags.on, by: order.order), flags.stamps, order.modifiedAt)
+        return MergedOrderedFlags(
+            members: ordered(members: flags.on, by: order.order),
+            stamps: flags.stamps,
+            orderStamp: order.modifiedAt)
     }
 
     /// Notation is a USER preference (how note names are spelled), not

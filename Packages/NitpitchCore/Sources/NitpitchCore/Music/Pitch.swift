@@ -35,6 +35,11 @@ public struct ReferencePitch: Equatable, Hashable, Codable, Sendable {
 }
 
 /// A pitch class plus octave, in scientific pitch notation (A4 = 440 Hz).
+///
+/// Sharps rather than flats throughout: a tuner shows one spelling, and
+/// sharps are the convention on the instruments this targets. (Flat spelling
+/// would need key context the app doesn't have.) Per-convention spellings
+/// live in `NoteNaming`.
 public struct Note: Equatable, Hashable, Sendable {
     /// Semitone within the octave, 0 = C.
     public let pitchClass: Int
@@ -122,11 +127,6 @@ public struct Note: Equatable, Hashable, Sendable {
     public func frequency(reference: ReferencePitch = .standard) -> Double {
         PitchMath.frequency(midi: Double(midi), reference: reference)
     }
-
-    /// Sharps rather than flats throughout: a tuner shows one spelling, and
-    /// sharps are the convention on the instruments this targets. (Flat
-    /// spelling would need key context the app doesn't have.) Per-convention
-    /// spellings live in `NoteNaming`.
 }
 
 /// A measured frequency resolved against the chromatic scale: which note it is,

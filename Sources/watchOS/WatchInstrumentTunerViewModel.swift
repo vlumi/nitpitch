@@ -88,9 +88,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         self.reference = reference
         self.temperament = temperament
         self.naming = naming
-        targets = Self.temperedTargets(
-            instrument: instrument, reference: reference, temperament: temperament)
-        stringNames = instrument.notes.map { $0.fullName(in: naming) }
+        retarget()
         if countChanged {
             focus = StringFocus(stringCount: targets.count)
             focusIndex = focus.focusIndex
@@ -99,6 +97,14 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             targets: targets, bands: instrument.stringBands(reference: reference),
             tuning: .default)
         smoother.reset()
+    }
+
+    /// Targets and labels from the current knobs — the half of retuning
+    /// that init and configure share.
+    private func retarget() {
+        targets = Self.temperedTargets(
+            instrument: instrument, reference: reference, temperament: temperament)
+        stringNames = instrument.notes.map { $0.fullName(in: naming) }
     }
 
     private static func temperedTargets(

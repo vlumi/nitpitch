@@ -400,3 +400,39 @@ struct RowIconButton: View {
         .accessibilityLabel(label)
     }
 }
+
+extension InstrumentStore {
+    /// Delete an instance AND its launch-screen satellites — the star, the
+    /// pins — in one place, so a third satellite added later cannot be
+    /// forgotten by one of the delete sites.
+    @MainActor
+    func delete(_ id: String, settings: Settings) {
+        settings.favorites.removeAll { $0 == id }
+        settings.presetPins.removeAll { $0.instrumentID == id }
+        remove(id: id)
+    }
+}
+
+/// The ambient padlock, identical wherever the instrument is (the grid's
+/// toolbar, the string view's): one glance says whether the setup is
+/// frozen, one tap flips it. Each site keeps its own identifier — the UI
+/// tests' names predate the sharing.
+struct LockButton: View {
+    @ObservedObject var store: InstrumentStore
+    let instance: InstrumentInstance
+    let identifier: String
+
+    var body: some View {
+        Button {
+            store.setLocked(id: instance.id, !instance.isLocked)
+        } label: {
+            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
+                .foregroundStyle(
+                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(
+            instance.isLocked
+                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
+    }
+}

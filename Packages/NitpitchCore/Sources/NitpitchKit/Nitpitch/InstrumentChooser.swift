@@ -364,9 +364,7 @@ struct InstrumentChooser: View {
     /// pins. Any instrument may go, the seeded ones included; the + menu
     /// is always the way back.
     private func removeInstrument(_ entry: InstrumentInstance) {
-        settings.favorites.removeAll { $0 == entry.id }
-        settings.presetPins.removeAll { $0.instrumentID == entry.id }
-        store.remove(id: entry.id)
+        store.delete(entry.id, settings: settings)
     }
 
     /// Pin/unpin. `.borderless` so the star and the row stay separately

@@ -218,7 +218,7 @@ public final class PitchDetector {
         // that means the samples aren't peak-shaped — a near-flat denominator
         // sends it arbitrarily far, and the reported frequency then lands
         // outside the band that was searched.
-        let shift = min(0.5, max(-0.5, 0.5 * (y0 - y2) / denom))
+        let shift = (0.5 * (y0 - y2) / denom).clamped(to: -0.5...0.5)
         // The NSDF is normalized to at most 1; interpolation can overshoot,
         // and a "clarity" above 1 would sail past the confidence gate.
         let value = min(1, y1 - 0.25 * (y0 - y2) * shift)

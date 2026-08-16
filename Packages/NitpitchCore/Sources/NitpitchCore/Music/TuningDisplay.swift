@@ -62,7 +62,7 @@ public enum TuningDisplay {
     /// right, then grows as the note goes clearly wrong.
     public static func arc(forCents cents: Double) -> Arc {
         guard cents.isFinite else { return Arc(sweepDegrees: 0, thickness: 0) }
-        let clamped = min(max(cents, -fullScaleCents), fullScaleCents)
+        let clamped = cents.clamped(to: -fullScaleCents...fullScaleCents)
         let magnitude = abs(clamped)
         let degrees: Double
         if magnitude <= sweepKneeCents {

@@ -223,7 +223,7 @@ public final class HarmonicEstimator {
         // the gate while a real note was sounding. Two decades (40 dB) of
         // headroom is full.
         let gate = floor * Self.presenceFloor
-        let strength = min(1, max(0, log10(total / gate) / 2))
+        let strength = (log10(total / gate) / 2).clamped(to: 0...1)
 
         return Reading(
             frequency: mean,

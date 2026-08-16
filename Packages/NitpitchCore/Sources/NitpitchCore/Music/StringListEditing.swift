@@ -36,9 +36,7 @@ public enum StringListEditing {
         else { return strings }
         let interval = continuationInterval(of: strings, lowEnd: lowEnd)
         let proposed = lowEnd ? outer - interval : outer + interval
-        let clamped = min(
-            max(proposed, Detection.targetMIDIRange.lowerBound),
-            Detection.targetMIDIRange.upperBound)
+        let clamped = proposed.clamped(to: Detection.targetMIDIRange)
         return lowEnd ? [clamped] + strings : strings + [clamped]
     }
 

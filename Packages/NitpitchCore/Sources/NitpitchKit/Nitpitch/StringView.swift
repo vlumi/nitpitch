@@ -305,17 +305,7 @@ struct StringView: View {
     /// The same ambient padlock as the grid's — the lock follows the
     /// instrument, so it should look the same wherever the instrument is.
     private var lockButton: some View {
-        Button {
-            store.setLocked(id: instance.id, !instance.isLocked)
-        } label: {
-            Image(systemName: instance.isLocked ? "lock.fill" : "lock.open")
-                .foregroundStyle(
-                    instance.isLocked ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
-        }
-        .accessibilityIdentifier("string.lock")
-        .accessibilityLabel(
-            instance.isLocked
-                ? Text("Unlock", bundle: .module) : Text("Lock", bundle: .module))
+        LockButton(store: store, instance: instance, identifier: "string.lock")
     }
 
     /// ◀ dots ▶ — where you are among the strings, and the way sideways.

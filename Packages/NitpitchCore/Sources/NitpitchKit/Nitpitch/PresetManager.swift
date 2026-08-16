@@ -24,7 +24,7 @@ struct PresetManager: View {
         NavigationStack {
             List {
                 Section {
-                    ForEach(fittingTunings, id: \.self) { tuning in
+                    ForEach(instance.fittingTunings, id: \.self) { tuning in
                         tuningRow(for: tuning)
                     }
                 } header: {
@@ -62,11 +62,8 @@ struct PresetManager: View {
         }
         .sheet(item: $sharing) { preset in
             PresetShareView(
-                link: PresetLink(
-                    name: preset.name, templateID: preset.templateID,
-                    strings: preset.strings, referenceHz: preset.referenceHz,
-                    temperament: preset.temperament),
-                summary: payloadSummary(preset))
+                link: PresetLink(preset),
+                summary: PresetPayloadSummary.text(for: preset))
         }
         // Mac sheet sizing only: on an iPhone this minimum EXCEEDS a 375pt
         // screen, and the missing width came out of the list's horizontal
@@ -74,15 +71,6 @@ struct PresetManager: View {
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 300)
         #endif
-    }
-
-    /// The catalog tunings this instrument can wear — pinnable like any
-    /// preset ("a catalog tuning is exactly a built-in preset"), never
-    /// deletable: the catalog is few enough not to need pruning, and
-    /// Standard stays standard by simply being catalog.
-    private var fittingTunings: [Tuning] {
-        guard let template = instance.template else { return [] }
-        return template.knownTunings.filter { $0.strings.count == instance.strings.count }
     }
 
     private func tuningRow(for tuning: Tuning) -> some View {
@@ -93,21 +81,12 @@ struct PresetManager: View {
             Text(LocalizedStringKey(name), bundle: .module)
             Spacer()
             loadIndicator(matches: instance.strings == tuning.strings)
-            Button {
-                settings.togglePin(instrumentID: instance.id, presetID: pinID)
-            } label: {
-                Image(systemName: pinned ? "pin.fill" : "pin")
-                    .foregroundStyle(
-                        pinned
-                            ? AnyShapeStyle(Color.orange)
-                            : AnyShapeStyle(Color.secondary.opacity(0.5))
-                    )
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.borderless)
-            .accessibilityIdentifier("presets.pin.\(name)")
-            .accessibilityLabel(Text("Pin to launch screen", bundle: .module))
+            RowIconButton(
+                systemName: pinned ? "pin.fill" : "pin",
+                tint: .orange, isOn: pinned,
+                identifier: "presets.pin.\(name)",
+                label: Text("Pin to launch screen", bundle: .module)
+            ) { settings.togglePin(instrumentID: instance.id, presetID: pinID) }
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -154,12 +133,12 @@ struct PresetManager: View {
             favoriteButton(for: preset)
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: preset.name)
-                Text(verbatim: payloadSummary(preset))
+                Text(verbatim: PresetPayloadSummary.text(for: preset))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            loadIndicator(matches: valuesMatch(preset))
+            loadIndicator(matches: preset.matchesValues(of: instance))
             shareButton(for: preset)
             pinButton(for: preset)
             deleteButton(for: preset)
@@ -179,100 +158,45 @@ struct PresetManager: View {
         .accessibilityIdentifier("presets.row.\(preset.name)")
     }
 
-    /// Whether loading would change anything — the payload against the
-    /// instrument's current values, scope-aware like loading itself.
-    private func valuesMatch(_ preset: Preset) -> Bool {
-        guard preset.strings == instance.strings else { return false }
-        if let hz = preset.referenceHz, hz != instance.referenceHz { return false }
-        if let temperament = preset.temperament, temperament != instance.appliedTemperament {
-            return false
-        }
-        return true
-    }
-
     /// Hand this setup to someone else. Offered on saved presets only:
     /// catalog tunings are already everywhere the app is, so a link to one
     /// would carry nothing the receiver doesn't have.
     private func shareButton(for preset: Preset) -> some View {
-        Button {
-            sharing = preset
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("presets.share.\(preset.id)")
-        .accessibilityLabel(Text("Share", bundle: .module))
+        RowIconButton(
+            systemName: "square.and.arrow.up",
+            identifier: "presets.share.\(preset.id)",
+            label: Text("Share", bundle: .module)
+        ) { sharing = preset }
     }
 
     private func favoriteButton(for preset: Preset) -> some View {
-        Button {
-            presets.toggleFavorite(preset.id)
-        } label: {
-            Image(systemName: presets.isFavorite(preset.id) ? "star.fill" : "star")
-                .foregroundStyle(
-                    presets.isFavorite(preset.id)
-                        ? AnyShapeStyle(Color.yellow)
-                        : AnyShapeStyle(Color.secondary.opacity(0.5))
-                )
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("presets.fav.\(preset.name)")
-        .accessibilityLabel(Text("Favorite", bundle: .module))
+        RowIconButton(
+            systemName: presets.isFavorite(preset.id) ? "star.fill" : "star",
+            tint: .yellow, isOn: presets.isFavorite(preset.id),
+            identifier: "presets.fav.\(preset.name)",
+            label: Text("Favorite", bundle: .module)
+        ) { presets.toggleFavorite(preset.id) }
     }
 
     private func pinButton(for preset: Preset) -> some View {
         let pinned = settings.isPinned(instrumentID: instance.id, presetID: preset.id)
-        return Button {
-            settings.togglePin(instrumentID: instance.id, presetID: preset.id)
-        } label: {
-            Image(systemName: pinned ? "pin.fill" : "pin")
-                .foregroundStyle(
-                    pinned
-                        ? AnyShapeStyle(Color.orange)
-                        : AnyShapeStyle(Color.secondary.opacity(0.5))
-                )
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
+        return RowIconButton(
+            systemName: pinned ? "pin.fill" : "pin",
+            tint: .orange, isOn: pinned,
+            identifier: "presets.pin.\(preset.name)",
+            label: Text("Pin to launch screen", bundle: .module)
+        ) { settings.togglePin(instrumentID: instance.id, presetID: preset.id) }
         // A preset that doesn't fit this instrument can't be its
         // shortcut — the pin is only offered where loading is.
         .disabled(!preset.fits(instance))
-        .accessibilityIdentifier("presets.pin.\(preset.name)")
-        .accessibilityLabel(Text("Pin to launch screen", bundle: .module))
     }
 
     private func deleteButton(for preset: Preset) -> some View {
-        Button {
-            presets.remove(id: preset.id)
-        } label: {
-            Image(systemName: "trash")
-                .foregroundStyle(.red)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .accessibilityIdentifier("presets.delete.\(preset.id)")
-        .accessibilityLabel(Text("Delete", bundle: .module))
+        RowIconButton(
+            systemName: "trash", tint: .red,
+            identifier: "presets.delete.\(preset.id)",
+            label: Text("Delete", bundle: .module)
+        ) { presets.remove(id: preset.id) }
     }
 
-    /// What loading would do, spelled out: the pitches, the reference if it
-    /// carries one, and a pure temperament — the same vocabulary as the
-    /// tuning menu's rows. (An explicitly-equal payload stays unspelled,
-    /// like there: "· equal" on every fretted preset would be noise.)
-    private func payloadSummary(_ preset: Preset) -> String {
-        var summary = preset.strings.map { Note(midi: $0).fullName }.joined(separator: " ")
-        if let reference = preset.reference {
-            summary += " · A=\(Int(reference.hz))"
-        }
-        if preset.temperament == .pure {
-            summary += " · pure"
-        }
-        return summary
-    }
 }

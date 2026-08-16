@@ -259,39 +259,30 @@ struct LaunchRack: View {
     }
 
     private var allInstrumentsRow: some View {
-        Button(action: onOpenChooser) {
-            HStack(spacing: 10) {
-                Image(systemName: "guitars")
-                    .font(.footnote)
-                Text("All instruments…", bundle: .module)
-                    .font(.callout.weight(.medium))
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 14)
-            .frame(height: Self.rowHeight)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.secondary.opacity(0.12))
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("tuner.instrument")
+        doorRow(
+            icon: "guitars", title: Text("All instruments…", bundle: .module),
+            identifier: "tuner.instrument", action: onOpenChooser)
     }
 
-    /// The collection, all of it. Deliberately the same shape as the row
-    /// above — same height, same chevron, same ellipsis — so the two read
-    /// as a pair of doors rather than a row and an oddity.
+    /// The collection, all of it — the same door shape, so the two read as
+    /// a pair rather than a row and an oddity.
     private func allPresetsRow(action: @escaping () -> Void) -> some View {
+        doorRow(
+            icon: "slider.horizontal.3", title: Text("All presets…", bundle: .module),
+            identifier: "tuner.presets", action: action)
+    }
+
+    /// One "door" out of the launch screen: icon, title, chevron, the same
+    /// height and fill — the pairing is structural, not a convention two
+    /// hand-rolled rows keep by discipline.
+    private func doorRow(
+        icon: String, title: Text, identifier: String, action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: "slider.horizontal.3")
+                Image(systemName: icon)
                     .font(.footnote)
-                Text("All presets…", bundle: .module)
+                title
                     .font(.callout.weight(.medium))
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
@@ -308,6 +299,6 @@ struct LaunchRack: View {
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("tuner.presets")
+        .accessibilityIdentifier(identifier)
     }
 }

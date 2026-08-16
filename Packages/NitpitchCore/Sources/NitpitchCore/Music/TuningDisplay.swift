@@ -89,8 +89,9 @@ public enum TuningDisplay {
         public let cents: Double
         /// Where it sits on the dial, in signed degrees from vertical.
         public let degrees: Double
-        /// Marks at the in-tune boundary and at full scale are drawn longer —
-        /// they're the two values worth finding without counting.
+        /// Marks at or beyond the in-tune band (and at full scale) are drawn
+        /// longer; the two inside it stay small — within the band the only
+        /// value that matters is the needle's own zero.
         public let isMajor: Bool
 
         public init(cents: Double, degrees: Double, isMajor: Bool) {

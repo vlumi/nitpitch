@@ -36,7 +36,7 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(naming.rawValue, forKey: Key.noteNaming) }
     }
 
-    public private(set) var namingStamp: Date? {
+    private(set) var namingStamp: Date? {
         didSet { defaults.set(namingStamp, forKey: Key.namingStamp) }
     }
 
@@ -46,7 +46,7 @@ public final class Settings: ObservableObject {
         namingStamp = Date()
     }
 
-    public func adoptNaming(_ naming: NoteNaming, stamp: Date?) {
+    func adoptNaming(_ naming: NoteNaming, stamp: Date?) {
         if naming != self.naming { self.naming = naming }
         if stamp != namingStamp { namingStamp = stamp }
     }
@@ -87,10 +87,7 @@ public final class Settings: ObservableObject {
     /// bare preset favorite would surface on every same-shaped instrument;
     /// the pin is what binds it to one (AGENTS.md, "The tuning flow").
     @Published public var presetPins: [PresetPin] {
-        didSet {
-            guard let data = try? JSONEncoder().encode(presetPins) else { return }
-            defaults.set(data, forKey: Key.presetPins)
-        }
+        didSet { defaults.encode(presetPins, forKey: Key.presetPins) }
     }
 
     public func togglePin(instrumentID: String, presetID: String) {
@@ -129,53 +126,37 @@ public final class Settings: ObservableObject {
     /// actually set — install seeds carry none, which is what keeps a fresh
     /// device humble in its first merge. The membership truth stays in
     /// `favorites`/`presetPins`; these answer "when was it chosen".
-    public private(set) var favoriteStamps: [String: Date] {
-        didSet { Self.store(favoriteStamps, in: defaults, forKey: Key.favoriteStamps) }
+    private(set) var favoriteStamps: [String: Date] {
+        didSet { defaults.encode(favoriteStamps, forKey: Key.favoriteStamps) }
     }
 
-    public private(set) var pinStamps: [String: Date] {
-        didSet { Self.store(pinStamps, in: defaults, forKey: Key.pinStamps) }
+    private(set) var pinStamps: [String: Date] {
+        didSet { defaults.encode(pinStamps, forKey: Key.pinStamps) }
     }
 
     /// The ORDERS are one whole value with one stamp each: a lost order
     /// race costs cosmetics, never data.
-    public private(set) var favoritesOrderStamp: Date? {
+    private(set) var favoritesOrderStamp: Date? {
         didSet { defaults.set(favoritesOrderStamp, forKey: Key.favoritesOrderStamp) }
     }
 
-    public private(set) var pinsOrderStamp: Date? {
+    private(set) var pinsOrderStamp: Date? {
         didSet { defaults.set(pinsOrderStamp, forKey: Key.pinsOrderStamp) }
     }
 
     /// Install merged state from `SyncEngine`. Deliberately NOT an edit:
     /// adopting the cloud's answer must not stamp it as this device's own
     /// newer choice, or it would be pushed back forever.
-    public func adoptFavorites(_ ids: [String], stamps: [String: Date], orderStamp: Date?) {
+    func adoptFavorites(_ ids: [String], stamps: [String: Date], orderStamp: Date?) {
         if favorites != ids { favorites = ids }
         if favoriteStamps != stamps { favoriteStamps = stamps }
         if favoritesOrderStamp != orderStamp { favoritesOrderStamp = orderStamp }
     }
 
-    public func adoptPins(_ pins: [PresetPin], stamps: [String: Date], orderStamp: Date?) {
+    func adoptPins(_ pins: [PresetPin], stamps: [String: Date], orderStamp: Date?) {
         if presetPins != pins { presetPins = pins }
         if pinStamps != stamps { pinStamps = stamps }
         if pinsOrderStamp != orderStamp { pinsOrderStamp = orderStamp }
-    }
-
-    private static func store(
-        _ stamps: [String: Date], in defaults: UserDefaults, forKey key: String
-    ) {
-        guard let data = try? JSONEncoder().encode(stamps) else { return }
-        defaults.set(data, forKey: key)
-    }
-
-    private static func loadStamps(
-        from defaults: UserDefaults, forKey key: String
-    ) -> [String: Date] {
-        guard let data = defaults.data(forKey: key),
-            let stamps = try? JSONDecoder().decode([String: Date].self, from: data)
-        else { return [:] }
-        return stamps
     }
 
     /// Which launch-rack rows show their pin chips — the accordion's
@@ -195,7 +176,7 @@ public final class Settings: ObservableObject {
 
     /// What a fresh install stars, named so sync's v1-blob migration can
     /// tell "absent because unstarred" from "absent because never seeded".
-    public static let seededFavorites = [Instrument.violin.id]
+    static let seededFavorites = [Instrument.violin.id]
 
     public init(defaults: UserDefaults) {
         self.defaults = defaults
@@ -217,15 +198,10 @@ public final class Settings: ObservableObject {
         self.stripsOnMac = defaults.bool(forKey: Key.stripsOnMac)
         self.stripsLowOnTop = defaults.bool(forKey: Key.stripsLowOnTop)
         self.rackExpanded = defaults.stringArray(forKey: Key.rackExpanded) ?? []
-        if let data = defaults.data(forKey: Key.presetPins),
-            let stored = try? JSONDecoder().decode([PresetPin].self, from: data)
-        {
-            self.presetPins = stored
-        } else {
-            self.presetPins = []
-        }
-        self.favoriteStamps = Self.loadStamps(from: defaults, forKey: Key.favoriteStamps)
-        self.pinStamps = Self.loadStamps(from: defaults, forKey: Key.pinStamps)
+        self.presetPins = defaults.decoded([PresetPin].self, forKey: Key.presetPins) ?? []
+        self.favoriteStamps =
+            defaults.decoded([String: Date].self, forKey: Key.favoriteStamps) ?? [:]
+        self.pinStamps = defaults.decoded([String: Date].self, forKey: Key.pinStamps) ?? [:]
         self.favoritesOrderStamp = defaults.object(forKey: Key.favoritesOrderStamp) as? Date
         self.pinsOrderStamp = defaults.object(forKey: Key.pinsOrderStamp) as? Date
         migrateCatalogPins()

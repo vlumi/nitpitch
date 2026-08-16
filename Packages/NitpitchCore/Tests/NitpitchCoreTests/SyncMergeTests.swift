@@ -280,6 +280,36 @@ final class SyncMergeTests: XCTestCase {
             Set(onPhone.map(\.payload)), ["phone violin", "mac cello", "mac banjo"])
     }
 
+    /// A stamped scalar (notation) keeps the flag's promises: never-set
+    /// yields in both directions, newer wins, and a stamp tie with
+    /// differing values breaks to the GREATER value on both sides.
+    func testMergedScalarKeepsTheFlagRules() {
+        let adopts = SyncMerge.mergedScalar(
+            local: "english", localModifiedAt: nil,
+            remote: "german", remoteModifiedAt: at(1))
+        XCTAssertEqual(adopts.value, "german", "never-set yields")
+
+        let keeps = SyncMerge.mergedScalar(
+            local: "german", localModifiedAt: at(1),
+            remote: "english", remoteModifiedAt: nil)
+        XCTAssertEqual(keeps.value, "german", "an unstamped remote never wins")
+
+        let newer = SyncMerge.mergedScalar(
+            local: "english", localModifiedAt: at(1),
+            remote: "italian", remoteModifiedAt: at(2))
+        XCTAssertEqual(newer.value, "italian")
+        XCTAssertEqual(newer.modifiedAt, at(2))
+
+        let hereView = SyncMerge.mergedScalar(
+            local: "english", localModifiedAt: at(5),
+            remote: "german", remoteModifiedAt: at(5))
+        let thereView = SyncMerge.mergedScalar(
+            local: "german", localModifiedAt: at(5),
+            remote: "english", remoteModifiedAt: at(5))
+        XCTAssertEqual(hereView.value, "german")
+        XCTAssertEqual(thereView.value, "german", "both devices compute the same answer")
+    }
+
     /// Merging an already-merged state changes nothing — the round trip
     /// between two devices has to settle, not oscillate.
     func testMergeIsIdempotent() {

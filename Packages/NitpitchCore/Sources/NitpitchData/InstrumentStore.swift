@@ -107,13 +107,8 @@ public final class InstrumentStore: ObservableObject {
     public init(defaults: UserDefaults, seedReference: @escaping () -> ReferencePitch) {
         self.defaults = defaults
         self.seedReference = seedReference
-        if let data = defaults.data(forKey: Self.key),
-            let stored = try? JSONDecoder().decode([InstrumentInstance].self, from: data)
-        {
-            instances = stored
-        } else {
-            instances = []
-        }
+        instances = defaults.decoded([InstrumentInstance].self, forKey: Self.key) ?? []
+        tombstones = defaults.decoded(Set<Tombstone>.self, forKey: Self.tombstonesKey) ?? []
         seedFactoryInstruments()
     }
 
@@ -269,16 +264,7 @@ public final class InstrumentStore: ObservableObject {
     /// everything else, pruned by age (`Tombstone.lifetime`) whenever one
     /// is added.
     public private(set) var tombstones: Set<Tombstone> {
-        get {
-            guard let data = defaults.data(forKey: Self.tombstonesKey),
-                let stored = try? JSONDecoder().decode(Set<Tombstone>.self, from: data)
-            else { return [] }
-            return stored
-        }
-        set {
-            guard let data = try? JSONEncoder().encode(newValue) else { return }
-            defaults.set(data, forKey: Self.tombstonesKey)
-        }
+        didSet { defaults.encode(tombstones, forKey: Self.tombstonesKey) }
     }
 
     private static let tombstonesKey = "instruments.tombstones.v1"

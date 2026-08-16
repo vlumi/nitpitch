@@ -141,13 +141,3 @@ public final class EphemeralSyncStore: KeyValueSyncStore {
         Empty().eraseToAnyPublisher()
     }
 }
-
-/// Moves records between the local stores and a key-value store, applying
-/// `SyncMerge`'s rules in both directions.
-///
-/// **One key per record, not one blob per store.** A blob makes every edit
-/// a whole-collection write, so two devices editing different instruments
-/// at the same time is a conflict rather than two independent facts — and
-/// KVS resolves whole-key conflicts by discarding one side entirely. Per
-/// record, that same pair of edits merges cleanly because they never touch
-/// the same key.

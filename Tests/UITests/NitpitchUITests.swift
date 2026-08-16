@@ -878,14 +878,22 @@ final class NitpitchUITests: XCTestCase {
         let row = app.staticTexts["Gigg"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.press(forDuration: 1.2)
-        app.buttons["Rename"].firstMatch.tap()
+        // WAIT at both Rename taps: the context menu and the alert each
+        // animate in, and tapping before they exist is this test's twice-
+        // field-found flake (a worn simulator animates slowly; the tap
+        // landed on nothing and the suite went red for an unrelated diff).
+        let menuRename = app.buttons["Rename"].firstMatch
+        XCTAssertTrue(menuRename.waitForExistence(timeout: 5))
+        menuRename.tap()
 
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
         field.typeKey("a", modifierFlags: .command)
         field.typeText("Gig")
-        app.buttons["Rename"].firstMatch.tap()
+        let alertRename = app.buttons["Rename"].firstMatch
+        XCTAssertTrue(alertRename.waitForExistence(timeout: 5))
+        alertRename.tap()
 
         XCTAssertTrue(app.staticTexts["Gig"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Gigg"].exists, "the old name is gone")

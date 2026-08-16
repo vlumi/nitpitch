@@ -245,13 +245,8 @@ public final class DetectorBank: @unchecked Sendable {
             return targets.map { _ in .rejected(clarity: 0, rms: Double(rms)) }
         }
 
-        let estimator =
-            self.estimator
-            ?? {
-                let created = HarmonicEstimator(sampleRate: sampleRate)
-                self.estimator = created
-                return created
-            }()
+        let estimator = self.estimator ?? HarmonicEstimator(sampleRate: sampleRate)
+        self.estimator = estimator
         estimator.ingest(window)
 
         return targets.indices.map { index in

@@ -111,13 +111,8 @@ public final class IntonationAnalyzer: @unchecked Sendable {
             return Frame(sounding: .nothing, level: level)
         }
 
-        let estimator =
-            self.estimator
-            ?? {
-                let created = HarmonicEstimator(sampleRate: sampleRate)
-                self.estimator = created
-                return created
-            }()
+        let estimator = self.estimator ?? HarmonicEstimator(sampleRate: sampleRate)
+        self.estimator = estimator
         estimator.ingest(window)
 
         guard let reading = estimator.measure(target: target, others: []),

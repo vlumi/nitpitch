@@ -185,40 +185,34 @@ public final class HarmonicEstimator {
     public func measure(target: Double, others: [Double]) -> Reading? {
         guard windowsIngested >= 2, floor > 0, target > 0 else { return nil }
 
-        var orders: [Int] = []
-        var estimates: [Double] = []
-        var weights: [Double] = []
+        var partials: [Partial] = []
         for k in 1...Self.harmonics {
             let expected = target * Double(k)
             guard expected < sampleRate / 2 * 0.9 else { break }
             if collides(expected, with: others) { continue }
             guard let (hz, mag) = partial(near: expected) else { continue }
-            orders.append(k)
-            estimates.append(hz / Double(k))
-            weights.append(mag)
+            partials.append(Partial(order: k, estimate: hz / Double(k), weight: mag))
         }
         // Partials far weaker than the string's strongest aren't corroboration
         // — they're noise peaks that happened to land right.
-        if let maxWeight = weights.max() {
+        if let maxWeight = partials.map(\.weight).max() {
             let cutoff = maxWeight * Self.minPartialShare
-            let kept = weights.indices.filter { weights[$0] >= cutoff }
-            orders = kept.map { orders[$0] }
-            estimates = kept.map { estimates[$0] }
-            weights = kept.map { weights[$0] }
+            partials = partials.filter { $0.weight >= cutoff }
         }
         // One partial can't corroborate itself; anything real has at least
         // two. And a reading must be anchored low: a real string sounds its
         // own bottom, while a neighbour's high harmonic masquerading in an
         // upper slot brings no fundamental with it.
-        guard estimates.count >= 2, let lowest = orders.min(),
+        guard partials.count >= 2, let lowest = partials.map(\.order).min(),
             lowest <= Self.maxAnchorHarmonic
         else { return nil }
 
-        let total = weights.reduce(0, +)
-        let mean = zip(estimates, weights).map(*).reduce(0, +) / total
+        let total = partials.map(\.weight).reduce(0, +)
+        let mean = partials.map { $0.estimate * $0.weight }.reduce(0, +) / total
         // Agreement: how tightly the partials cluster around their mean, in
         // cents. Real partials of one string agree to a couple of cents.
-        let spread = estimates.map { abs(1200 * log2($0 / mean)) }.max() ?? 0
+        let spread =
+            partials.map { abs(PitchMath.cents(from: mean, to: $0.estimate)) }.max() ?? 0
         guard spread <= Self.agreementCents else { return nil }
 
         // Strength: decades above the presence gate, so a reading that barely
@@ -229,21 +223,30 @@ public final class HarmonicEstimator {
         // the gate while a real note was sounding. Two decades (40 dB) of
         // headroom is full.
         let gate = floor * Self.presenceFloor
-        let strength = min(1, max(0, log10(total / gate) / 2))
+        let strength = (log10(total / gate) / 2).clamped(to: 0...1)
 
         return Reading(
             frequency: mean,
             agreement: max(0, 1 - spread / Self.agreementCents),
-            partials: estimates.count,
+            partials: partials.count,
             strength: strength,
-            evenPartialsOnly: orders.allSatisfy { $0.isMultiple(of: 2) })
+            evenPartialsOnly: partials.allSatisfy { $0.order.isMultiple(of: 2) })
+    }
+
+    /// One usable partial: which harmonic it is, the fundamental it implies,
+    /// and how much signal stands behind it — one value, so the cull and the
+    /// weighted mean can never desynchronize the three.
+    private struct Partial {
+        let order: Int
+        let estimate: Double
+        let weight: Double
     }
 
     /// Whether a partial at `hz` sits on any harmonic of any other target.
     private func collides(_ hz: Double, with others: [Double]) -> Bool {
         for other in others where other > 0 {
             for m in 1...Self.harmonics
-            where abs(1200 * log2(hz / (other * Double(m)))) < Self.collisionCents {
+            where abs(PitchMath.cents(from: other * Double(m), to: hz)) < Self.collisionCents {
                 return true
             }
         }

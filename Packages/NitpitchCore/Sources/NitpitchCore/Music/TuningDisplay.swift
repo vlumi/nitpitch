@@ -62,7 +62,7 @@ public enum TuningDisplay {
     /// right, then grows as the note goes clearly wrong.
     public static func arc(forCents cents: Double) -> Arc {
         guard cents.isFinite else { return Arc(sweepDegrees: 0, thickness: 0) }
-        let clamped = min(max(cents, -fullScaleCents), fullScaleCents)
+        let clamped = cents.clamped(to: -fullScaleCents...fullScaleCents)
         let magnitude = abs(clamped)
         let degrees: Double
         if magnitude <= sweepKneeCents {
@@ -89,8 +89,9 @@ public enum TuningDisplay {
         public let cents: Double
         /// Where it sits on the dial, in signed degrees from vertical.
         public let degrees: Double
-        /// Marks at the in-tune boundary and at full scale are drawn longer —
-        /// they're the two values worth finding without counting.
+        /// Marks at or beyond the in-tune band (and at full scale) are drawn
+        /// longer; the two inside it stay small — within the band the only
+        /// value that matters is the needle's own zero.
         public let isMajor: Bool
 
         public init(cents: Double, degrees: Double, isMajor: Bool) {

@@ -34,6 +34,8 @@ public final class DetectorBank: @unchecked Sendable {
     /// tune for strings that aren't sounding. The sentinel hands the filter
     /// the true fundamental, which divides both shadows and kills them.
     private var sentinel: PitchDetector?
+    /// The sentinel's id in the subharmonic comparison — maps to no string.
+    private static let sentinelCandidateID = -1
     /// Created on first spectral use, then kept — the FFT setup and buffers
     /// are worth reusing, and an idle estimator costs nothing.
     private var estimator: HarmonicEstimator?
@@ -200,21 +202,22 @@ public final class DetectorBank: @unchecked Sendable {
             result.frequency.map { SubharmonicFilter.Candidate(id: index, frequency: $0) }
         }
         // The sentinel joins the comparison — so a note above every band still
-        // kills the shadows it casts into them — but never lights a dial; its
-        // id maps to no string. Its reading rides out separately for the one
-        // consumer allowed to care (`analyzeWithAbove`).
+        // kills the shadows it casts into them — but never lights a dial.
+        // Its reading rides out separately for the one consumer allowed to
+        // care (`analyzeWithAbove`).
         let sentinelResult = sentinel?.analyze(window)
         if let above = sentinelResult?.frequency {
-            candidates.append(SubharmonicFilter.Candidate(id: -1, frequency: above))
+            candidates.append(
+                SubharmonicFilter.Candidate(id: Self.sentinelCandidateID, frequency: above))
         }
         let real = Set(SubharmonicFilter.real(among: candidates).map(\.id))
-        let above = real.contains(-1) ? sentinelResult : nil
+        let above = real.contains(Self.sentinelCandidateID) ? sentinelResult : nil
         let strings = raw.enumerated().map { index, result in
             guard result.frequency != nil else { return result }
             guard real.contains(index) else {
                 // Suppressed: keep the clarity so the diagnostics screen can
                 // still show *why* the dial is dark.
-                return DetectionResult(frequency: nil, clarity: result.clarity, rms: result.rms)
+                return .rejected(clarity: result.clarity, rms: result.rms)
             }
             // MPM analyses the whole frame, so the frame's level is the best
             // per-string strength on offer.
@@ -239,17 +242,11 @@ public final class DetectorBank: @unchecked Sendable {
             // window must not be compared against a window from before the
             // quiet spell.
             estimator?.reset()
-            return targets.map { _ in DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
-            }
+            return targets.map { _ in .rejected(clarity: 0, rms: Double(rms)) }
         }
 
-        let estimator =
-            self.estimator
-            ?? {
-                let created = HarmonicEstimator(sampleRate: sampleRate)
-                self.estimator = created
-                return created
-            }()
+        let estimator = self.estimator ?? HarmonicEstimator(sampleRate: sampleRate)
+        self.estimator = estimator
         estimator.ingest(window)
 
         return targets.indices.map { index in
@@ -257,7 +254,7 @@ public final class DetectorBank: @unchecked Sendable {
             guard
                 let reading = estimator.measure(target: targets[index], others: others)
             else {
-                return DetectionResult(frequency: nil, clarity: 0, rms: Double(rms))
+                return .rejected(clarity: 0, rms: Double(rms))
             }
             // The strength gate: a bowed string reads at or near full on the
             // signal bar; what the estimator scrapes off a loud frame's noise
@@ -266,9 +263,8 @@ public final class DetectorBank: @unchecked Sendable {
             // The dropped reading keeps its level so the diagnostics screen
             // shows the near miss.
             guard reading.strength >= tuning.spectralStrengthGate else {
-                return DetectionResult(
-                    frequency: nil, clarity: reading.agreement, rms: Double(rms),
-                    level: reading.strength)
+                return .rejected(
+                    clarity: reading.agreement, rms: Double(rms), level: reading.strength)
             }
             return DetectionResult(
                 frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms),

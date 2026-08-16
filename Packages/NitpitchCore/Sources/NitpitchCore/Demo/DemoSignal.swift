@@ -15,7 +15,7 @@ public struct DemoScore: Equatable, Sendable {
         public let cents: Double
 
         public var frequency: Double {
-            440 * pow(2, (Double(midi) - 69) / 12 + cents / 1200)
+            PitchMath.frequency(midi: Double(midi) + cents / 100)
         }
     }
 

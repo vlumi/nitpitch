@@ -52,7 +52,7 @@ public struct StringFocus: Sendable {
 
     public init(stringCount: Int, initialIndex: Int = 0) {
         self.stringCount = max(1, stringCount)
-        self.focusIndex = min(max(0, initialIndex), self.stringCount - 1)
+        self.focusIndex = initialIndex.clamped(to: 0...(self.stringCount - 1))
         self.rivalStreaks = Array(repeating: 0, count: self.stringCount)
     }
 

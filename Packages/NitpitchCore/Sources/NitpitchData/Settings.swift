@@ -36,7 +36,7 @@ public final class Settings: ObservableObject {
         didSet { defaults.set(naming.rawValue, forKey: Key.noteNaming) }
     }
 
-    public private(set) var namingStamp: Date? {
+    private(set) var namingStamp: Date? {
         didSet { defaults.set(namingStamp, forKey: Key.namingStamp) }
     }
 
@@ -46,7 +46,7 @@ public final class Settings: ObservableObject {
         namingStamp = Date()
     }
 
-    public func adoptNaming(_ naming: NoteNaming, stamp: Date?) {
+    func adoptNaming(_ naming: NoteNaming, stamp: Date?) {
         if naming != self.naming { self.naming = naming }
         if stamp != namingStamp { namingStamp = stamp }
     }
@@ -126,34 +126,34 @@ public final class Settings: ObservableObject {
     /// actually set — install seeds carry none, which is what keeps a fresh
     /// device humble in its first merge. The membership truth stays in
     /// `favorites`/`presetPins`; these answer "when was it chosen".
-    public private(set) var favoriteStamps: [String: Date] {
+    private(set) var favoriteStamps: [String: Date] {
         didSet { defaults.encode(favoriteStamps, forKey: Key.favoriteStamps) }
     }
 
-    public private(set) var pinStamps: [String: Date] {
+    private(set) var pinStamps: [String: Date] {
         didSet { defaults.encode(pinStamps, forKey: Key.pinStamps) }
     }
 
     /// The ORDERS are one whole value with one stamp each: a lost order
     /// race costs cosmetics, never data.
-    public private(set) var favoritesOrderStamp: Date? {
+    private(set) var favoritesOrderStamp: Date? {
         didSet { defaults.set(favoritesOrderStamp, forKey: Key.favoritesOrderStamp) }
     }
 
-    public private(set) var pinsOrderStamp: Date? {
+    private(set) var pinsOrderStamp: Date? {
         didSet { defaults.set(pinsOrderStamp, forKey: Key.pinsOrderStamp) }
     }
 
     /// Install merged state from `SyncEngine`. Deliberately NOT an edit:
     /// adopting the cloud's answer must not stamp it as this device's own
     /// newer choice, or it would be pushed back forever.
-    public func adoptFavorites(_ ids: [String], stamps: [String: Date], orderStamp: Date?) {
+    func adoptFavorites(_ ids: [String], stamps: [String: Date], orderStamp: Date?) {
         if favorites != ids { favorites = ids }
         if favoriteStamps != stamps { favoriteStamps = stamps }
         if favoritesOrderStamp != orderStamp { favoritesOrderStamp = orderStamp }
     }
 
-    public func adoptPins(_ pins: [PresetPin], stamps: [String: Date], orderStamp: Date?) {
+    func adoptPins(_ pins: [PresetPin], stamps: [String: Date], orderStamp: Date?) {
         if presetPins != pins { presetPins = pins }
         if pinStamps != stamps { pinStamps = stamps }
         if pinsOrderStamp != orderStamp { pinsOrderStamp = orderStamp }
@@ -176,7 +176,7 @@ public final class Settings: ObservableObject {
 
     /// What a fresh install stars, named so sync's v1-blob migration can
     /// tell "absent because unstarred" from "absent because never seeded".
-    public static let seededFavorites = [Instrument.violin.id]
+    static let seededFavorites = [Instrument.violin.id]
 
     public init(defaults: UserDefaults) {
         self.defaults = defaults

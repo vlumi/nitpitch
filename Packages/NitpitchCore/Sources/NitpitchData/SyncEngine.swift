@@ -224,15 +224,11 @@ public final class SyncEngine: ObservableObject {
     func records<Record: Decodable>(of kind: Kind, as: Record.Type) -> [Record] {
         store.allKeys
             .filter { $0.hasPrefix(kind.rawValue) && $0 != kind.tombstonesKey }
-            .compactMap { store.data(forKey: $0) }
-            .compactMap { try? JSONDecoder().decode(Record.self, from: $0) }
+            .compactMap { read(Record.self, key: $0) }
     }
 
     private func tombstones(for kind: Kind) -> Set<Tombstone> {
-        guard let data = store.data(forKey: kind.tombstonesKey),
-            let stored = try? JSONDecoder().decode(Set<Tombstone>.self, from: data)
-        else { return [] }
-        return stored
+        read(Set<Tombstone>.self, key: kind.tombstonesKey) ?? []
     }
 
     // MARK: - Outbound
@@ -298,6 +294,14 @@ public final class SyncEngine: ObservableObject {
         // the change notification from ping-ponging between devices.
         guard store.data(forKey: key) != data else { return }
         store.set(data, forKey: key)
+    }
+
+    /// `write`'s inbound twin: one decoded value per key, or nil for
+    /// absent-or-undecodable — the same answer, because a payload this
+    /// device can't read must never beat what it has.
+    func read<Value: Decodable>(_ type: Value.Type, key: String) -> Value? {
+        guard let data = store.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
     }
 
 }

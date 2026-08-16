@@ -149,6 +149,21 @@ public enum SyncMerge {
         return remoteDate > localDate ? (remoteOn, remoteDate) : (localOn, localDate)
     }
 
+    /// One stamped scalar preference — a value from a small ordered set
+    /// (notation today). The same promises as `mergedFlag`: never-set can
+    /// never wipe set, a newer stamp wins, and a stamp TIE with differing
+    /// values breaks on the GREATER value — identically on both sides,
+    /// because local-wins ties never converge.
+    public static func mergedScalar<Value: Comparable>(
+        local: Value, localModifiedAt: Date?,
+        remote: Value, remoteModifiedAt: Date?
+    ) -> (value: Value, modifiedAt: Date?) {
+        guard let remoteDate = remoteModifiedAt else { return (local, localModifiedAt) }
+        guard let localDate = localModifiedAt else { return (remote, remoteDate) }
+        guard localDate != remoteDate else { return (max(local, remote), localDate) }
+        return remoteDate > localDate ? (remote, remoteDate) : (local, localDate)
+    }
+
     private static func newer<Record: SyncRecord>(_ lhs: Record, _ rhs: Record) -> Record {
         let left = stamp(lhs)
         let right = stamp(rhs)

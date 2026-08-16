@@ -51,28 +51,15 @@ extension SyncEngine {
     }
 
     /// Notation is a USER preference (how note names are spelled), not
-    /// device-shaped state, so it travels — one stamped scalar, same rules
-    /// as every flag: never-set yields, newer wins, and a stamp tie with
-    /// differing values breaks on the greater raw value, identically on
-    /// both sides (local-wins ties never converge).
+    /// device-shaped state, so it travels — one stamped scalar, merged by
+    /// `SyncMerge.mergedScalar`'s rules.
     private func applyNaming() {
-        var remote: SettingScalar?
-        if let data = store.data(forKey: Key.naming) {
-            remote = try? JSONDecoder().decode(SettingScalar.self, from: data)
-        }
-        guard let remote else { return }
-        let local = SettingScalar(
-            value: settings.naming.rawValue, modifiedAt: settings.namingStamp)
-        let winner: SettingScalar
-        if local.modifiedAt == remote.modifiedAt, local.value != remote.value {
-            winner = local.value > remote.value ? local : remote
-        } else {
-            winner = SyncMerge.mergedValue(
-                local: local, localModifiedAt: local.modifiedAt,
-                remote: remote, remoteModifiedAt: remote.modifiedAt)
-        }
-        guard let naming = NoteNaming(rawValue: winner.value) else { return }
-        settings.adoptNaming(naming, stamp: winner.modifiedAt)
+        guard let remote = read(SettingScalar.self, key: Key.naming) else { return }
+        let merged = SyncMerge.mergedScalar(
+            local: settings.naming.rawValue, localModifiedAt: settings.namingStamp,
+            remote: remote.value, remoteModifiedAt: remote.modifiedAt)
+        guard let naming = NoteNaming(rawValue: merged.value) else { return }
+        settings.adoptNaming(naming, stamp: merged.modifiedAt)
     }
 
     /// Merge every flag either side knows about. Absent everywhere = never
@@ -83,9 +70,7 @@ extension SyncEngine {
     ) -> (on: Set<String>, stamps: [String: Date]) {
         var remote: [String: SettingFlag] = [:]
         for key in store.allKeys where key.hasPrefix(kind.rawValue) {
-            guard let data = store.data(forKey: key),
-                let flag = try? JSONDecoder().decode(SettingFlag.self, from: data)
-            else { continue }
+            guard let flag = read(SettingFlag.self, key: key) else { continue }
             remote[String(key.dropFirst(kind.rawValue.count))] = flag
         }
         var on = Set<String>()
@@ -103,10 +88,7 @@ extension SyncEngine {
     func mergedOrder(
         key: String, local: [String], localStamp: Date?
     ) -> (order: [String], modifiedAt: Date?) {
-        var remote: SettingsOrder?
-        if let data = store.data(forKey: key) {
-            remote = try? JSONDecoder().decode(SettingsOrder.self, from: data)
-        }
+        let remote = read(SettingsOrder.self, key: key)
         let winner = SyncMerge.mergedValue(
             local: SettingsOrder(order: local, modifiedAt: localStamp),
             localModifiedAt: localStamp,

@@ -94,39 +94,16 @@ struct CompactDial: View {
         return TuningDisplay.isInTune(cents: cents)
     }
 
-    private var centsLabel: String {
-        guard let cents else { return "—" }
-        let rounded = Int(cents.rounded())
-        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
-    }
+    private var centsLabel: String { TuningReadout.centsLabel(cents) }
 
     private var accessibleValue: String {
-        var value: String
-        if let cents {
-            if isInTune {
-                value = "in tune"
-            } else {
-                let rounded = abs(Int(cents.rounded()))
-                value = cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
-            }
-        } else {
-            value = "not heard"
-        }
-        if let delta = octave?.delta {
-            value += String(format: ", octave delta %+.1f cents", delta)
-        }
-        return value
+        TuningReadout.accessibleValue(cents: cents, octaveDelta: octave?.delta)
     }
 
-    private func deltaLabel(_ delta: Double?) -> String {
-        guard let delta else { return "Δ —" }
-        return String(format: "Δ %+.1f", delta)
-    }
+    private func deltaLabel(_ delta: Double?) -> String { TuningReadout.deltaLabel(delta) }
 
     private func deltaStyle(_ delta: Double?) -> AnyShapeStyle {
-        guard let delta else { return AnyShapeStyle(.secondary) }
-        return TuningDisplay.isInTune(cents: delta)
-            ? AnyShapeStyle(Color.green) : AnyShapeStyle(Color.orange)
+        TuningReadout.deltaStyle(delta)
     }
 }
 
@@ -152,13 +129,8 @@ private struct CompactArc: View {
         .accessibilityHidden(true)
     }
 
-    /// The full dial's ramp, unchanged: brightness moves with hue so the two
-    /// ends stay distinguishable in greyscale and to a colour-blind viewer.
     private func tint(for cents: Double) -> Color {
-        let magnitude = min(abs(cents) / TuningDisplay.fullScaleCents, 1)
-        let hue = 0.33 * pow(1 - magnitude, 1.6)
-        let brightness = 1.0 - 0.55 * pow(magnitude, 0.7)
-        return Color(hue: hue, saturation: 0.9, brightness: brightness)
+        Dial.tint(forCents: cents)
     }
 
     private var needleColour: Color {

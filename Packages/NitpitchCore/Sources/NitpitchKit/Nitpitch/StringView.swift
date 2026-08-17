@@ -100,7 +100,7 @@ struct StringView: View {
         .navigationTitle(instance.nameText)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                ToneSpeaker(tone: single.tone, tag: "tone", identifier: "string.tone") {
+                ToneSpeaker(tone: single.tone, tag: .single, identifier: "string.tone") {
                     Task { await single.toggleTone() }
                 }
             }

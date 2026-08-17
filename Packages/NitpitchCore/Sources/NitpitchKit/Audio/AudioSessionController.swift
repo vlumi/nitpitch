@@ -227,7 +227,7 @@ public final class AudioSessionController: ObservableObject {
     /// Sound `hz` under `tag`, take over from whatever else sounds (a
     /// glide), or stop if `tag` is already the one sounding. Screens wrap
     /// this to stand their own dials down.
-    public func toggleTone(hz: Double, tag: String) async {
+    public func toggleTone(hz: Double, tag: ToneTag) async {
         if tone.playingTag == tag {
             await silenceTone()
             return

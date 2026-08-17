@@ -178,14 +178,13 @@ final class StringTuners: ObservableObject {
         // A sounding tone follows whatever moved it: stepping the reference
         // while its A plays retunes the pitch live, and a retuned string
         // glides its speaker along.
-        if let tag = tone.playingTag {
-            if tag == "reference" {
-                tone.retune(hz: reference.hz)
-            } else if let index = Int(tag.dropFirst("string.".count)),
-                targets.indices.contains(index)
-            {
-                tone.retune(hz: targets[index])
-            }
+        switch tone.playingTag {
+        case .reference:
+            tone.retune(hz: reference.hz)
+        case .string(let index) where targets.indices.contains(index):
+            tone.retune(hz: targets[index])
+        default:
+            break
         }
     }
 
@@ -217,16 +216,16 @@ final class StringTuners: ObservableObject {
     /// Sound one string's tempered target.
     func toggleTone(string index: Int) async {
         guard targets.indices.contains(index) else { return }
-        await toggle(hz: targets[index], tag: "string.\(index)")
+        await toggle(hz: targets[index], tag: .string(index))
     }
 
     /// Sound the reference itself — the A the footer stepper shows. While
     /// it plays, stepping the reference retunes it live (`configure`).
     func toggleTone(reference: ReferencePitch) async {
-        await toggle(hz: reference.hz, tag: "reference")
+        await toggle(hz: reference.hz, tag: .reference)
     }
 
-    private func toggle(hz: Double, tag: String) async {
+    private func toggle(hz: Double, tag: ToneTag) async {
         let stopping = tone.playingTag == tag
         let wasSilent = tone.playingTag == nil
         await audio.toggleTone(hz: hz, tag: tag)

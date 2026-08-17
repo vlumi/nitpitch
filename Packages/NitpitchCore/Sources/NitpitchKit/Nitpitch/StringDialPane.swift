@@ -13,16 +13,20 @@ struct GhostDialPane: View {
         TunerDial(cents: 0, inTune: false, isReading: false) {
             VStack(spacing: 6) {
                 HStack(spacing: 8) {
-                    Color.clear.frame(width: 40, height: 40)
-                    NoteNameLabel(note: note, naming: naming, fontSize: 46)
-                        .frame(width: 190)
-                    Color.clear.frame(width: 40, height: 40)
+                    Color.clear.frame(
+                        width: StringDialPane.stepperSlot, height: StringDialPane.stepperSlot)
+                    NoteNameLabel(
+                        note: note, naming: naming, fontSize: StringDialPane.noteFontSize
+                    )
+                    .frame(width: StringDialPane.nameSlotWidth)
+                    Color.clear.frame(
+                        width: StringDialPane.stepperSlot, height: StringDialPane.stepperSlot)
                 }
                 Text(verbatim: "—")
                     .font(.title3.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            .frame(height: 46 * 1.15 + 4 + 20)
+            .frame(height: StringDialPane.readoutHeight)
         }
         .accessibilityHidden(true)
     }
@@ -35,6 +39,16 @@ struct StringDialPane: View {
     let isLocked: Bool
     let canStepTarget: (Int) -> Bool
     let stepTarget: (Int) -> Void
+
+    /// The readout's fixed geometry, shared with `GhostDialPane` so the
+    /// mirror is structure rather than a promise: the note's font size,
+    /// its fixed name slot (so the − and + don't wobble with the name's
+    /// width), the 40pt stepper slots, and the readout's total height
+    /// (name line + spacing + cents line).
+    static let noteFontSize: CGFloat = 46
+    static let nameSlotWidth: CGFloat = 190
+    static let stepperSlot: CGFloat = 40
+    static let readoutHeight: CGFloat = noteFontSize * 1.15 + 4 + 20
 
     var body: some View {
         TunerDial(cents: displayCents, inTune: isInTune, isReading: isReading) {
@@ -51,13 +65,13 @@ struct StringDialPane: View {
         VStack(spacing: 6) {
             HStack(spacing: 8) {
                 targetStep(systemName: "minus", id: "string.down", by: -1)
-                NoteNameLabel(note: tuner.target, naming: naming, fontSize: 46)
-                    // A fixed slot, so the − and + don't wobble with the
-                    // width of whatever note name sits between them.
-                    .frame(width: 190)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityIdentifier("string.target")
-                    .accessibilityLabel(tuner.target.accessibleName(in: naming))
+                NoteNameLabel(
+                    note: tuner.target, naming: naming, fontSize: Self.noteFontSize
+                )
+                .frame(width: Self.nameSlotWidth)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("string.target")
+                .accessibilityLabel(tuner.target.accessibleName(in: naming))
                 targetStep(systemName: "plus", id: "string.up", by: 1)
             }
             Text(verbatim: centsLabel)
@@ -69,7 +83,7 @@ struct StringDialPane: View {
                 )
                 .accessibilityIdentifier("string.cents")
         }
-        .frame(height: 46 * 1.15 + 4 + 20)
+        .frame(height: Self.readoutHeight)
     }
 
     /// A tap target, not a `Button` — same reasoning as the string arrows:
@@ -79,7 +93,7 @@ struct StringDialPane: View {
         let enabled = canStepTarget(delta) && !isLocked
         return Image(systemName: systemName)
             .font(.body.weight(.medium))
-            .frame(width: 40, height: 40)
+            .frame(width: Self.stepperSlot, height: Self.stepperSlot)
             // The glyph slot stays 40pt so the row's geometry holds, but
             // the hit area reaches out into the empty stretch between
             // the stepper and the note name — a tap in the visual
@@ -100,8 +114,7 @@ struct StringDialPane: View {
 
     private var centsLabel: String {
         guard case .reading(let cents, _) = tuner.state else { return "—" }
-        let rounded = Int(cents.rounded())
-        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
+        return TuningReadout.centsLabel(cents)
     }
 
     private var displayCents: Double {

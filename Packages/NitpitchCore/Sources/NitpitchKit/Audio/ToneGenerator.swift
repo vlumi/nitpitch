@@ -12,13 +12,24 @@ import NitpitchCore
 /// voice — and on iOS the session drops to `.ambient` for the duration,
 /// which both MIXES with whatever the user left playing and RESPECTS the
 /// silent switch. A reference tone is a courtesy, not an alarm.
+/// WHO a tone belongs to, typed — so "which string is playing" never
+/// round-trips through string parsing.
+public enum ToneTag: Equatable, Sendable {
+    /// A screen's one nameless speaker (the string view's own target).
+    case single
+    /// The reference A.
+    case reference
+    /// One string's target, by index.
+    case string(Int)
+}
+
 @MainActor
 public final class ToneGenerator: ObservableObject {
     /// What's sounding, in hertz — nil while silent. The button's state.
     @Published public private(set) var playingHz: Double?
-    /// WHO is sounding, for screens with several speakers — "string.2",
-    /// "reference" — so each button knows whether the tone is its own.
-    @Published public private(set) var playingTag: String?
+    /// WHO is sounding, for screens with several speakers, so each button
+    /// knows whether the tone is its own.
+    @Published public private(set) var playingTag: ToneTag?
 
     private let engine = AVAudioEngine()
     private var source: AVAudioSourceNode?
@@ -49,7 +60,7 @@ public final class ToneGenerator: ObservableObject {
         #endif
     }
 
-    public func start(hz: Double, tag: String = "tone") {
+    public func start(hz: Double, tag: ToneTag = .single) {
         // Already sounding: glide to the new pitch and hand over the tag —
         // tapping another string's speaker mid-tone slides, it never
         // restarts.

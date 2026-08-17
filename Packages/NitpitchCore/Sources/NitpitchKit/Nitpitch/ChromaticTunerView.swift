@@ -232,12 +232,12 @@ public struct ChromaticTunerView: View {
             onToneToggle: {
                 Task {
                     await audio.toggleTone(
-                        hz: settings.reference.hz, tag: "reference")
+                        hz: settings.reference.hz, tag: .reference)
                 }
             }
         )
         .onChangeCompat(of: settings.reference) { reference in
-            if audio.tone.playingTag == "reference" {
+            if audio.tone.playingTag == .reference {
                 audio.tone.retune(hz: reference.hz)
             }
         }
@@ -402,10 +402,7 @@ public struct ChromaticTunerView: View {
     }
 
     private func centsLabel(_ cents: Double) -> String {
-        // A leading sign on both directions, so "flat or sharp" reads at a
-        // glance without parsing the number.
-        let rounded = Int(cents.rounded())
-        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
+        TuningReadout.centsLabel(cents)
     }
 
     private var displayCents: Double {

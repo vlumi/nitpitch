@@ -35,6 +35,10 @@ final class WatchAudioInput: @unchecked Sendable {
     private var pending: [Float] = []
     private let bufferLock = NSLock()
     private var isRunning = false
+    /// Whether watchOS granted `.measurement` (input processing off — what
+    /// detection wants) or fell back to `.default`; reported on screen
+    /// rather than assumed.
+    private var measurementGranted = true
 
     private let isDemo = LaunchStores.isDemo
     private var demoTimer: DispatchSourceTimer?
@@ -65,20 +69,8 @@ final class WatchAudioInput: @unchecked Sendable {
     private func start() -> Status {
         guard !isRunning else { return .running(measurement: measurementGranted) }
         let session = AVAudioSession.sharedInstance()
-        // `.measurement` turns the input processing off (AGC, EQ), which is
-        // what the detector wants — whether watchOS honours it on the wrist
-        // is one of the unknowns this scaffold ships to answer.
-        measurementGranted = true
-        do {
-            try session.setCategory(.record, mode: .measurement)
-        } catch {
-            measurementGranted = false
-            do {
-                try session.setCategory(.record, mode: .default)
-            } catch {
-                return .unavailable
-            }
-        }
+        guard let measurement = configureSessionMode(session) else { return .unavailable }
+        measurementGranted = measurement
         do {
             try session.setActive(true)
             let input = engine.inputNode
@@ -96,7 +88,15 @@ final class WatchAudioInput: @unchecked Sendable {
         }
     }
 
-    private var measurementGranted = true
+    /// Try `.measurement` first — it turns the input processing off (AGC,
+    /// EQ), which is what the detector wants; whether watchOS honours it on
+    /// the wrist was one of the unknowns the scaffold shipped to answer.
+    /// Returns whether it was granted, or nil when no mode works at all.
+    private func configureSessionMode(_ session: AVAudioSession) -> Bool? {
+        if (try? session.setCategory(.record, mode: .measurement)) != nil { return true }
+        if (try? session.setCategory(.record, mode: .default)) != nil { return false }
+        return nil
+    }
 
     func stop() {
         demoTimer?.cancel()

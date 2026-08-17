@@ -25,6 +25,10 @@ and remembered exactly as you left them.
 
 ### Unreleased (next build)
 
+- A full tidy of the code and docs under the hood. One visible fix rode
+  along: the All-presets browser's favorite star is yellow again,
+  matching everywhere else. Nothing else should look or behave
+  differently.
 - Watch: Settings now ends with the app version — the one fact an About
   screen exists for, without the screen.
 

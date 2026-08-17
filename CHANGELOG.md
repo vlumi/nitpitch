@@ -12,6 +12,8 @@ The per-string version: choosing an instrument now means something — every str
 
 ### Unreleased (next build)
 
+### build 11 — 2026-08-17
+
 - A full tidy of the code and docs under the hood. One visible fix rode along: the All-presets browser's favorite star is yellow again, matching everywhere else. Nothing else should look or behave differently.
 - Watch: Settings now ends with the app version — the one fact an About screen exists for, without the screen.
 

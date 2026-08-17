@@ -101,16 +101,16 @@ final class SingleStringTuner: ObservableObject {
     /// voice — and the dial honestly goes idle: frozen readings pretending
     /// to be live is a lesson this app has already paid for.
     func toggleTone() async {
-        await toggle(hz: analyzerTarget, tag: "tone")
+        await toggle(hz: analyzerTarget, tag: .single)
     }
 
     /// Sound the reference A itself — the readout beside the stepper is
     /// the button.
     func toggleTone(reference: ReferencePitch) async {
-        await toggle(hz: reference.hz, tag: "reference")
+        await toggle(hz: reference.hz, tag: .reference)
     }
 
-    private func toggle(hz: Double, tag: String) async {
+    private func toggle(hz: Double, tag: ToneTag) async {
         let stopping = tone.playingTag == tag
         let wasSilent = tone.playingTag == nil
         await audio.toggleTone(hz: hz, tag: tag)
@@ -168,9 +168,9 @@ final class SingleStringTuner: ObservableObject {
         // A sounding tone follows whatever moved it, BY TAG: the string's
         // tone glides with a swipe (the tune-by-fifths flow), the reference
         // A follows its stepper, and neither ever grabs the other's pitch.
-        if tone.playingTag == "tone" {
+        if tone.playingTag == .single {
             tone.retune(hz: hz)
-        } else if tone.playingTag == "reference" {
+        } else if tone.playingTag == .reference {
             tone.retune(hz: reference.hz)
         }
     }

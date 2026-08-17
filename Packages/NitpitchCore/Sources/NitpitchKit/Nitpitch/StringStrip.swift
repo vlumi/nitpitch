@@ -29,7 +29,7 @@ struct StringStrip: View {
     /// The string's speaker, INSIDE the card — out on the string line it
     /// was invisible (the field couldn't spot it).
     var tone: ToneGenerator?
-    var toneTag = ""
+    var toneTag = ToneTag.single
     var toneIdentifier = ""
     var onToneToggle: (() -> Void)?
     /// When set, the card publishes its bounds under this string index —

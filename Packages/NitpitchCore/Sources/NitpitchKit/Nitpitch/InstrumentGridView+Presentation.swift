@@ -96,7 +96,7 @@ extension InstrumentGridView {
                 // there. Tapping another speaker mid-tone glides to it.
                 .overlay(alignment: .bottomTrailing) {
                     ToneSpeaker(
-                        tone: strings.tone, tag: "string.\(entry.index)",
+                        tone: strings.tone, tag: .string(entry.index),
                         identifier: "grid.tone.\(entry.index)", font: .caption
                     ) {
                         Task { await strings.toggleTone(string: entry.index) }
@@ -199,7 +199,7 @@ extension InstrumentGridView {
                         gauge: 1.5 + CGFloat(total - entry.index) / CGFloat(total) * 3.5,
                         isIntonating: isIntonating,
                         tone: strings.tone,
-                        toneTag: "string.\(entry.index)",
+                        toneTag: .string(entry.index),
                         toneIdentifier: "strips.tone.\(entry.index)",
                         onToneToggle: {
                             Task { await strings.toggleTone(string: entry.index) }

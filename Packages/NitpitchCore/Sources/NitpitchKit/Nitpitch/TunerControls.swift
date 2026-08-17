@@ -131,7 +131,7 @@ struct LightStrip: View {
 /// locked instruments: sounding a target changes no state.
 struct ToneSpeaker: View {
     @ObservedObject var tone: ToneGenerator
-    let tag: String
+    let tag: ToneTag
     let identifier: String
     var font: Font = .body
     /// When set, the text IS the button — the reference readout tappable
@@ -238,7 +238,7 @@ struct ReferencePitchStepper: View {
             }
             if let tone, let onToneToggle {
                 ToneSpeaker(
-                    tone: tone, tag: "reference", identifier: toneIdentifier,
+                    tone: tone, tag: .reference, identifier: toneIdentifier,
                     text: readout, action: onToneToggle
                 )
                 .frame(minWidth: 96)

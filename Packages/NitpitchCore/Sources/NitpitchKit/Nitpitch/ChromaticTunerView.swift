@@ -232,12 +232,12 @@ public struct ChromaticTunerView: View {
             onToneToggle: {
                 Task {
                     await audio.toggleTone(
-                        hz: settings.reference.hz, tag: "reference")
+                        hz: settings.reference.hz, tag: .reference)
                 }
             }
         )
         .onChangeCompat(of: settings.reference) { reference in
-            if audio.tone.playingTag == "reference" {
+            if audio.tone.playingTag == .reference {
                 audio.tone.retune(hz: reference.hz)
             }
         }

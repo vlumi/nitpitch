@@ -9,14 +9,16 @@ import SwiftUI
 /// honest — leaving a hollow the string names nest into. A sweep growing
 /// rightward is sharp, leftward is flat; ticks mark the in-tune boundary.
 struct WatchArc: View {
-    let cents: Double
+    /// Nil = no reading: the arc dims rather than disappears, keeping the
+    /// pane's one fixed geometry.
+    let cents: Double?
 
     /// Visual degrees per mapped degree: <1 flattens the bow without
     /// touching the mapping's proportions.
     private static let flattening = 0.55
 
     var body: some View {
-        Canvas { context, size in
+        Canvas { [cents = cents ?? .infinity] context, size in
             // A large circle whose centre sits far below the frame: the
             // visible part is the shallow top bow.
             let maxVisual = TuningDisplay.fullScaleDegrees * Self.flattening
@@ -85,5 +87,6 @@ struct WatchArc: View {
         }
         .frame(height: 44)
         .padding(.horizontal, 2)
+        .opacity(cents == nil ? 0.4 : 1)
     }
 }

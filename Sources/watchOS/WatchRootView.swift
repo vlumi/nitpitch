@@ -49,13 +49,9 @@ struct WatchRootView: View {
             // (or `chromatic`) lands straight on the screen being judged —
             // simulator screenshots without scripting taps.
             .task {
-                let arguments = ProcessInfo.processInfo.arguments
-                guard arguments.contains("-demo"), path.isEmpty,
-                    let index = arguments.firstIndex(of: "-demo-open"),
-                    arguments.indices.contains(index + 1)
-                else { return }
+                guard path.isEmpty, let route = LaunchStores.demoRoute else { return }
                 try? await Task.sleep(nanoseconds: 300_000_000)
-                path = [arguments[index + 1]]
+                path = [route]
             }
         }
     }

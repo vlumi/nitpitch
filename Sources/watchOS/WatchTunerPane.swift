@@ -29,13 +29,11 @@ struct WatchTunerPane<Footer: View>: View {
             // The cents live INSIDE the arc's hollow — the bow frames the
             // number instead of floating above it.
             ZStack {
-                WatchArc(cents: liveCents ?? .infinity)
-                    .opacity(liveCents == nil ? 0.4 : 1)
+                WatchArc(cents: liveCents)
                 centerLine
                     .padding(.top, 18)
             }
-            lightStrip(cents: liveCents ?? .infinity)
-                .opacity(liveCents == nil ? 0.4 : 1)
+            WatchLightStrip(cents: liveCents)
             footer()
         }
         .contentShape(Rectangle())
@@ -43,17 +41,7 @@ struct WatchTunerPane<Footer: View>: View {
         // left-to-right on screen, so a horizontal swipe is the gesture
         // that needs no thought — the crown's rotation direction does.
         // Swipe left = the next string up, the phone's paging direction.
-        .gesture(
-            DragGesture(minimumDistance: 20)
-                .onEnded { value in
-                    let dx = value.translation.width
-                    guard abs(dx) > abs(value.translation.height) else { return }
-                    let target = tuner.focusIndex + (dx < 0 ? 1 : -1)
-                    guard tuner.stringNames.indices.contains(target) else { return }
-                    WKInterfaceDevice.current().play(.click)
-                    tuner.select(target)
-                }
-        )
+        .gesture(stringSwipe)
         .focusable()
         .digitalCrownRotation(
             $crown, from: 0, through: Double(tuner.stringNames.count - 1), by: 1,
@@ -74,6 +62,20 @@ struct WatchTunerPane<Footer: View>: View {
         }
         .task { await tuner.begin() }
         .onDisappear { tuner.end() }
+    }
+
+    /// Swipe left = the next string up, the phone's paging direction; a
+    /// vertical drag stays the list's.
+    private var stringSwipe: some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onEnded { value in
+                let dx = value.translation.width
+                guard abs(dx) > abs(value.translation.height) else { return }
+                let target = tuner.focusIndex + (dx < 0 ? 1 : -1)
+                guard tuner.stringNames.indices.contains(target) else { return }
+                WKInterfaceDevice.current().play(.click)
+                tuner.select(target)
+            }
     }
 
     /// The one line that changes between states — everything around it
@@ -156,18 +158,4 @@ struct WatchTunerPane<Footer: View>: View {
             .foregroundStyle(.tertiary)
     }
 
-    private func lightStrip(cents: Double) -> some View {
-        HStack(spacing: 3) {
-            ForEach(0..<TuningDisplay.lightCount, id: \.self) { index in
-                Circle()
-                    .fill(
-                        index == TuningDisplay.centerLightIndex ? Color.green : Color.orange
-                    )
-                    .opacity(
-                        0.15 + 0.85 * TuningDisplay.lightIntensity(index: index, cents: cents)
-                    )
-                    .frame(width: 7, height: 7)
-            }
-        }
-    }
 }

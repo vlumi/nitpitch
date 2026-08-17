@@ -131,17 +131,13 @@ struct StringStrip: View {
     /// The intonation verdict, in a reserved slot like the cents': the
     /// number arriving must not shift the row.
     private var deltaSlot: some View {
-        Text(verbatim: tuner.delta.map { String(format: "Δ %+.1f", $0) } ?? "Δ —")
+        Text(verbatim: TuningReadout.deltaLabel(tuner.delta))
             .font(.system(size: 14 * scale, weight: .medium).monospacedDigit())
             .foregroundStyle(deltaStyle)
             .frame(width: 64 * scale, alignment: .leading)
     }
 
-    private var deltaStyle: AnyShapeStyle {
-        guard let delta = tuner.delta else { return AnyShapeStyle(.secondary) }
-        return TuningDisplay.isInTune(cents: delta)
-            ? AnyShapeStyle(Color.green) : AnyShapeStyle(Color.orange)
-    }
+    private var deltaStyle: AnyShapeStyle { TuningReadout.deltaStyle(tuner.delta) }
 
     private var cents: Double? {
         if case .reading(let cents, _) = tuner.state { return cents }
@@ -154,20 +150,7 @@ struct StringStrip: View {
     }
 
     private var accessibleValue: String {
-        var value: String
-        if let cents {
-            if isInTune {
-                value = "in tune"
-            } else {
-                let rounded = abs(Int(cents.rounded()))
-                value = cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
-            }
-        } else {
-            value = "not heard"
-        }
-        if isIntonating, let delta = tuner.delta {
-            value += String(format: ", octave delta %+.1f cents", delta)
-        }
-        return value
+        TuningReadout.accessibleValue(
+            cents: cents, octaveDelta: isIntonating ? tuner.delta : nil)
     }
 }

@@ -102,20 +102,7 @@ struct ArcView: View {
     /// Green when in tune, warming through amber to red as the error grows —
     /// with brightness falling as the hue shifts.
     ///
-    /// Hue alone would be invisible to a red-green colour-blind viewer, for
-    /// whom green and red desaturate to nearly the same grey. Moving
-    /// brightness together with hue keeps the two ends distinguishable in
-    /// greyscale, and makes in tune the brightest thing on the dial.
-    private var tint: Color {
-        let magnitude = min(abs(cents) / TuningDisplay.fullScaleCents, 1)
-        // 0.33 (green) → 0.0 (red). The brightness ramp is steep enough to
-        // overcome yellow's high intrinsic luminance in the middle of the
-        // range: without it, greyscale luminance *rises* before it falls and
-        // slightly-flat looks brighter than in tune.
-        let hue = 0.33 * pow(1 - magnitude, 1.6)
-        let brightness = 1.0 - 0.55 * pow(magnitude, 0.7)
-        return Color(hue: hue, saturation: 0.9, brightness: brightness)
-    }
+    private var tint: Color { Dial.tint(forCents: cents) }
 }
 
 /// The fixed needle at top dead centre: the target, always in the same place.
@@ -211,6 +198,22 @@ struct DialTicks: Shape {
 /// Shared by both dial sizes, so the compact variant in `CompactDial.swift`
 /// draws on exactly the same geometry as the full one.
 enum Dial {
+    /// The dial's ramp, shared with the compact cells so the two can never
+    /// drift. Hue alone would be invisible to a red-green colour-blind
+    /// viewer, for whom green and red desaturate to nearly the same grey.
+    /// Moving brightness together with hue keeps the two ends
+    /// distinguishable in greyscale, and makes in tune the brightest thing
+    /// on the dial. 0.33 (green) → 0.0 (red); the brightness ramp is steep
+    /// enough to overcome yellow's high intrinsic luminance in the middle
+    /// of the range — without it, greyscale luminance *rises* before it
+    /// falls and slightly-flat looks brighter than in tune.
+    static func tint(forCents cents: Double) -> Color {
+        let magnitude = min(abs(cents) / TuningDisplay.fullScaleCents, 1)
+        let hue = 0.33 * pow(1 - magnitude, 1.6)
+        let brightness = 1.0 - 0.55 * pow(magnitude, 0.7)
+        return Color(hue: hue, saturation: 0.9, brightness: brightness)
+    }
+
     /// The dial's centre sits well below the box, so the drawn arc is a broad
     /// shallow cap of a large circle rather than a small hump.
     ///

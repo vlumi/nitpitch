@@ -402,10 +402,7 @@ public struct ChromaticTunerView: View {
     }
 
     private func centsLabel(_ cents: Double) -> String {
-        // A leading sign on both directions, so "flat or sharp" reads at a
-        // glance without parsing the number.
-        let rounded = Int(cents.rounded())
-        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
+        TuningReadout.centsLabel(cents)
     }
 
     private var displayCents: Double {

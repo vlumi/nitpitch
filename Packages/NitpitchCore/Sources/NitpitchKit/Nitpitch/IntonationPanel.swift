@@ -88,11 +88,7 @@ struct IntonationPanel: View {
         .accessibilityValue(Text(verbatim: value.map(Self.cents) ?? "—"))
     }
 
-    private var deltaStyle: AnyShapeStyle {
-        guard let delta = monitor.delta else { return AnyShapeStyle(.secondary) }
-        return TuningDisplay.isInTune(cents: delta)
-            ? AnyShapeStyle(Color.green) : AnyShapeStyle(Color.orange)
-    }
+    private var deltaStyle: AnyShapeStyle { TuningReadout.deltaStyle(monitor.delta) }
 
     /// One decimal: saddle work happens in single cents, and the captures
     /// are stable enough to deserve the digit.

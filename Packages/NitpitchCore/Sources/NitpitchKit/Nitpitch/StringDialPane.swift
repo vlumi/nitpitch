@@ -100,8 +100,7 @@ struct StringDialPane: View {
 
     private var centsLabel: String {
         guard case .reading(let cents, _) = tuner.state else { return "—" }
-        let rounded = Int(cents.rounded())
-        return rounded > 0 ? "+\(rounded)¢" : "\(rounded)¢"
+        return TuningReadout.centsLabel(cents)
     }
 
     private var displayCents: Double {

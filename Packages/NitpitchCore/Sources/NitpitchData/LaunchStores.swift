@@ -27,14 +27,17 @@ public enum LaunchStores {
     /// (see `DemoScore.parse` for the syntax) — for screenshots, where a
     /// staged screen needs exact readings. Without it, the default score
     /// loops through everything the screens can show.
-    public static let demoPose: String? = {
-        guard isDemo else { return nil }
+    public static let demoPose: String? = isDemo ? launchArgument("-demo-pose") : nil
+
+    /// The value following a launch flag — the one firstIndex-and-bounds
+    /// dance, written once for every flag that carries one.
+    private static func launchArgument(_ name: String) -> String? {
         let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: "-demo-pose"),
+        guard let index = arguments.firstIndex(of: name),
             arguments.indices.contains(index + 1)
         else { return nil }
         return arguments[index + 1]
-    }()
+    }
 
     // The audio-side fork (`audioInput()`, choosing microphone vs the
     // demo's synthesized instrument) lives in NitpitchKit — the audio layer
@@ -44,14 +47,7 @@ public enum LaunchStores {
     /// root: `-demo -demo-open violin`. Demo mode exists for judging layout
     /// without an instrument in hand; this puts the screen being judged on
     /// screen at launch, without scripting clicks to get there.
-    public static let demoRoute: String? = {
-        guard isDemo else { return nil }
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: "-demo-open"),
-            arguments.indices.contains(index + 1)
-        else { return nil }
-        return arguments[index + 1]
-    }()
+    public static let demoRoute: String? = isDemo ? launchArgument("-demo-open") : nil
 
     /// Show the detector diagnostics screen.
     ///

@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import NitpitchCore
+import NitpitchData
 
 /// The watch's one microphone — `AudioInput` slimmed to what watchOS has:
 /// no `AVCaptureDevice` discovery, no CoreAudio listeners, one built-in mic
@@ -35,7 +36,7 @@ final class WatchAudioInput: @unchecked Sendable {
     private let bufferLock = NSLock()
     private var isRunning = false
 
-    private let isDemo = ProcessInfo.processInfo.arguments.contains("-demo")
+    private let isDemo = LaunchStores.isDemo
     private var demoTimer: DispatchSourceTimer?
     private var demoSignal: DemoSignal
     private var demoWindow: [Float] = []
@@ -44,16 +45,8 @@ final class WatchAudioInput: @unchecked Sendable {
         targetFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1,
             interleaved: false)!
-        let pose = Self.launchArgument("-demo-pose").flatMap(DemoScore.parse)
+        let pose = LaunchStores.demoPose.flatMap(DemoScore.parse)
         demoSignal = DemoSignal(score: pose ?? .drift, sampleRate: sampleRate)
-    }
-
-    private static func launchArgument(_ name: String) -> String? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: name),
-            arguments.indices.contains(index + 1)
-        else { return nil }
-        return arguments[index + 1]
     }
 
     /// Ask, start, and report — one call, because the watch screen has no

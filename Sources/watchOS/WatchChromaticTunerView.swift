@@ -60,25 +60,7 @@ struct WatchChromaticTunerView: View {
             Text(verbatim: String(format: "%+.0f¢", cents))
                 .font(.system(size: 16, design: .rounded))
                 .foregroundStyle(TuningDisplay.isInTune(cents: cents) ? .green : .orange)
-            lightStrip(cents: cents)
-        }
-    }
-
-    /// The same strip as every other screen: eleven dots on ratio-spaced
-    /// thresholds, centre means in tune.
-    private func lightStrip(cents: Double) -> some View {
-        HStack(spacing: 3) {
-            ForEach(0..<TuningDisplay.lightCount, id: \.self) { index in
-                Circle()
-                    .fill(
-                        index == TuningDisplay.centerLightIndex
-                            ? Color.green : Color.orange
-                    )
-                    .opacity(
-                        0.15 + 0.85 * TuningDisplay.lightIntensity(index: index, cents: cents)
-                    )
-                    .frame(width: 7, height: 7)
-            }
+            WatchLightStrip(cents: cents)
         }
     }
 
@@ -89,8 +71,7 @@ struct WatchChromaticTunerView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             if case .listening = tuner.state {
-                lightStrip(cents: .infinity)
-                    .opacity(0.4)
+                WatchLightStrip(cents: nil)
                 if !tuner.measurementMode {
                     // The roadmap unknown, answered on the wrist: watchOS
                     // refused `.measurement`, so input processing is on.

@@ -29,13 +29,11 @@ struct WatchTunerPane<Footer: View>: View {
             // The cents live INSIDE the arc's hollow — the bow frames the
             // number instead of floating above it.
             ZStack {
-                WatchArc(cents: liveCents ?? .infinity)
-                    .opacity(liveCents == nil ? 0.4 : 1)
+                WatchArc(cents: liveCents)
                 centerLine
                     .padding(.top, 18)
             }
-            lightStrip(cents: liveCents ?? .infinity)
-                .opacity(liveCents == nil ? 0.4 : 1)
+            WatchLightStrip(cents: liveCents)
             footer()
         }
         .contentShape(Rectangle())
@@ -156,18 +154,4 @@ struct WatchTunerPane<Footer: View>: View {
             .foregroundStyle(.tertiary)
     }
 
-    private func lightStrip(cents: Double) -> some View {
-        HStack(spacing: 3) {
-            ForEach(0..<TuningDisplay.lightCount, id: \.self) { index in
-                Circle()
-                    .fill(
-                        index == TuningDisplay.centerLightIndex ? Color.green : Color.orange
-                    )
-                    .opacity(
-                        0.15 + 0.85 * TuningDisplay.lightIntensity(index: index, cents: cents)
-                    )
-                    .frame(width: 7, height: 7)
-            }
-        }
-    }
 }

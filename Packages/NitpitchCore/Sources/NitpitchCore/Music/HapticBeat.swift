@@ -3,29 +3,22 @@ import Foundation
 /// The wrist's tuning vocabulary: tuning error rendered as TIMED taps — the
 /// same physics the ear hears. A string off its target beats against it at
 /// |f − f_target| Hz (A4 ten cents flat pulses ~2.5 times a second), so the
-/// taps come at exactly that cadence: `.up` ("come up") while flat, `.down`
-/// while sharp, SILENCE inside the in-tune band. A sounding double stop
-/// swaps to the PAIR's beat (`IntervalBeat`), clicks slowing and stopping
-/// exactly as the audible beats do. Pure policy, no WatchKit — the platform
-/// driver owns the timer and the actuator.
+/// taps come at exactly that cadence, SILENCE inside the in-tune band. A
+/// sounding double stop swaps to the PAIR's beat (`IntervalBeat`), slowing
+/// and stopping exactly as the audible beats do. Pure policy, no WatchKit —
+/// the platform driver owns the timer and the actuator.
+///
+/// The taps carry DISTANCE only, deliberately: the first design spoke
+/// direction too (`.directionUp` while flat, `.directionDown` while sharp),
+/// and the wrist test could not tell them apart instinctively — while the
+/// glance at the arc gives direction anyway. One honest signal beats two
+/// ambiguous ones.
 public enum HapticBeat {
-    /// Which preset haptic the driver plays per pulse.
-    public enum Pattern: Equatable, Sendable {
-        /// Flat — come up.
-        case up
-        /// Sharp — come down.
-        case down
-        /// A double stop's audible beat, rendered on the skin.
-        case beat
-    }
-
-    /// One cadence: what to play, and how often.
+    /// One cadence: how often to tap.
     public struct Cue: Equatable, Sendable {
-        public let pattern: Pattern
         public let ratePerSecond: Double
 
-        public init(pattern: Pattern, ratePerSecond: Double) {
-            self.pattern = pattern
+        public init(ratePerSecond: Double) {
             self.ratePerSecond = ratePerSecond
         }
     }
@@ -45,15 +38,13 @@ public enum HapticBeat {
         else { return nil }
         let rate = abs(PitchMath.hzError(cents: cents, targetHz: targetHz))
         guard rate >= stoppedHz else { return nil }
-        return Cue(
-            pattern: cents < 0 ? .up : .down,
-            ratePerSecond: min(rate, maxRatePerSecond))
+        return Cue(ratePerSecond: min(rate, maxRatePerSecond))
     }
 
     /// A sounding pair: the PAIR's true beat rate, straight from the same
     /// resolution the interval chip displays.
     public static func cue(pair: IntervalBeat.Reading) -> Cue? {
         guard pair.beatHz >= stoppedHz else { return nil }
-        return Cue(pattern: .beat, ratePerSecond: min(pair.beatHz, maxRatePerSecond))
+        return Cue(ratePerSecond: min(pair.beatHz, maxRatePerSecond))
     }
 }

@@ -2,9 +2,11 @@ import XCTest
 
 @testable import NitpitchCore
 
-/// The haptic vocabulary's promises: in tune is silence, flat taps up,
-/// sharp taps down, and the cadence is the string's PHYSICAL beat rate
-/// against its target — the wrist renders what the ear hears.
+/// The haptic vocabulary's promises: in tune is silence, and the cadence
+/// is the string's PHYSICAL beat rate against its target — the wrist
+/// renders what the ear hears. Distance only, deliberately: the wrist test
+/// could not tell directional patterns apart, and the glance gives
+/// direction anyway.
 final class HapticBeatTests: XCTestCase {
     func testInTuneIsSilence() {
         XCTAssertNil(HapticBeat.cue(cents: 0, targetHz: 440))
@@ -13,10 +15,8 @@ final class HapticBeatTests: XCTestCase {
     }
 
     func testTheBandEdgeIsWhereTheTapsStart() {
-        let flat = HapticBeat.cue(cents: -(TuningDisplay.inTuneCents + 0.1), targetHz: 440)
-        let sharp = HapticBeat.cue(cents: TuningDisplay.inTuneCents + 0.1, targetHz: 440)
-        XCTAssertEqual(flat?.pattern, .up, "flat says come UP")
-        XCTAssertEqual(sharp?.pattern, .down, "sharp says come DOWN")
+        XCTAssertNotNil(HapticBeat.cue(cents: -(TuningDisplay.inTuneCents + 0.1), targetHz: 440))
+        XCTAssertNotNil(HapticBeat.cue(cents: TuningDisplay.inTuneCents + 0.1, targetHz: 440))
     }
 
     /// The design's own vector: A4 ten cents flat beats ~2.5 times a second.
@@ -53,7 +53,6 @@ final class HapticBeatTests: XCTestCase {
         let high = 440.0
         let pair = IntervalBeat.resolve(frequencies: [low, high], midis: [62, 69])!
         let cue = HapticBeat.cue(pair: pair)
-        XCTAssertEqual(cue?.pattern, .beat)
         XCTAssertEqual(cue?.ratePerSecond ?? 0, abs(3 * low - 2 * high), accuracy: 1e-9)
     }
 

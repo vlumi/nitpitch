@@ -83,9 +83,19 @@ struct WatchTunerPane<Footer: View>: View {
     @ViewBuilder private var centerLine: some View {
         switch tuner.state {
         case .reading(let cents):
-            Text(verbatim: String(format: "%+.0f¢", cents))
-                .font(.system(size: 22, weight: .medium, design: .rounded))
-                .foregroundStyle(TuningDisplay.isInTune(cents: cents) ? .green : .orange)
+            // While the focused string's OCTAVE sounds and both intonation
+            // samples are captured, the slot shows the verdict instead of
+            // the cents: play open, play the 12th, read the delta — both
+            // hands never leave the tools.
+            if tuner.isOctaveSounding, let delta = tuner.intonationDelta {
+                Text(verbatim: String(format: "Δ %+.1f", delta))
+                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                    .foregroundStyle(TuningDisplay.isInTune(cents: delta) ? .green : .orange)
+            } else {
+                Text(verbatim: String(format: "%+.0f¢", cents))
+                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                    .foregroundStyle(TuningDisplay.isInTune(cents: cents) ? .green : .orange)
+            }
         case .listening:
             Text(verbatim: "Play a note")
                 .font(.footnote)

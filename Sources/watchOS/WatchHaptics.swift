@@ -45,3 +45,15 @@ final class WatchHaptics {
     }
 
 }
+
+extension WatchHaptics {
+    /// One-shot, outside the beat's clock: an intonation sample locked —
+    /// two quick clicks, so the lock is felt without looking. The beat
+    /// cadence resumes on its own next tap.
+    func confirmCapture() {
+        WKInterfaceDevice.current().play(.click)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            WKInterfaceDevice.current().play(.click)
+        }
+    }
+}

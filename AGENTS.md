@@ -597,7 +597,11 @@ one of the drafts that lost.
   couldn't tell them apart instinctively — the glance at the arc gives
   direction, so one honest signal beat two ambiguous ones. On by
   default in the instrument tuner, no setting — because on the wrist
-  you tune without looking.
+  you tune without looking. Intonation rides the same pane, ambient
+  like the phone's: the analyzer follows the focused string, open then
+  octave captures (a double click confirms each lock), and the delta
+  takes the cents slot while the octave sounds — the one tuning task
+  where both hands hold tools, done without reaching for a phone.
 - **The App Store copy constraints.** Two promises the listing text
   must keep, baked into `Scripts/asc/listing.json`'s header comment:
   privacy wording says exactly what PRIVACY.md says (nothing leaves

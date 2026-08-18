@@ -24,6 +24,13 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     @Published private(set) var focusIndex: Int
     @Published private(set) var isSettled = false
 
+    /// The intonation verdict for the focused string (octave minus open,
+    /// in cents, tenth-quantized), once both samples are captured.
+    @Published private(set) var intonationDelta: Double?
+    /// Whether the sounding note is the focused string's OCTAVE — the
+    /// centerline shows the delta instead of the cents while it is.
+    @Published private(set) var isOctaveSounding = false
+
     /// Per-string labels for the screen and the crown ("G3", "D4"…) —
     /// published, because a synced retune renames them under a live screen.
     @Published private(set) var stringNames: [String]
@@ -31,6 +38,12 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private let audio = WatchAudioInput()
     private let haptics = WatchHaptics()
     private let bank: DetectorBank
+    /// The intonation ear, aimed at the FOCUSED string — no mode, the
+    /// phone's ambient rule kept: play the open, then the octave (12th
+    /// fret or the harmonic), and the delta appears. Both hands stay on
+    /// the tools, which is the whole point of doing this on a watch.
+    private let analyzer: IntonationAnalyzer
+    private var capture = IntonationCapture()
     private var instrument: Instrument
     private var targets: [Double]
     private var focus: StringFocus
@@ -61,11 +74,14 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             sampleRate: audio.sampleRate,
             targets: targets,
             bands: instrument.stringBands(reference: reference))
+        analyzer = IntonationAnalyzer(
+            sampleRate: audio.sampleRate, target: targets[focus.focusIndex])
 
-        audio.onWindow = { [weak self, bank] window in
+        audio.onWindow = { [weak self, bank, analyzer] window in
             // Analysis queue; only the results hop to main.
             let results = bank.analyze(window)
-            Task { @MainActor [weak self] in self?.consume(results) }
+            let frame = analyzer.analyze(window)
+            Task { @MainActor [weak self] in self?.consume(results, intonation: frame) }
         }
     }
 
@@ -96,6 +112,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         bank.configure(
             targets: targets, bands: instrument.stringBands(reference: reference),
             tuning: .default)
+        retuneIntonation()
         smoother.reset()
     }
 
@@ -118,6 +135,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
 
     func begin() async {
         state = .listening
+        analyzer.setActive(true)
         switch await audio.activate() {
         case .permissionDenied: state = .denied
         case .unavailable: state = .unavailable
@@ -127,6 +145,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
 
     func end() {
         audio.stop()
+        analyzer.setActive(false)
         haptics.stop()
         smoother.reset()
         state = .idle
@@ -137,6 +156,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         guard index != focus.focusIndex else { return }
         focus.select(index)
         apply(event: .none)
+        retuneIntonation()
         haptics.stop()
         smoother.reset()
         state = .listening
@@ -147,8 +167,11 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     /// on the wrist — the phone's 8 frames serve continuous bowing.
     private static let quietFramesBeforeIdle = 24
 
-    private func consume(_ results: [DetectionResult]) {
+    private func consume(
+        _ results: [DetectionResult], intonation frame: IntonationAnalyzer.Frame?
+    ) {
         let levels = results.map { $0.frequency != nil ? $0.level : nil }
+        consumeIntonation(frame)
 
         var cents: Double?
         if let hz = results[focus.focusIndex].frequency {
@@ -193,10 +216,43 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         return HapticBeat.cue(cents: cents, targetHz: targets[focus.focusIndex])
     }
 
+    /// One intonation frame: run the capture, announce a fresh lock with
+    /// a double click, and publish what the centerline needs. The captures
+    /// answer for one specific string — refocusing or retargeting resets
+    /// them (`retuneIntonation`).
+    private func consumeIntonation(_ frame: IntonationAnalyzer.Frame?) {
+        guard let frame else { return }
+        let hadOpen = capture.open != nil
+        let hadOctave = capture.octave != nil
+        capture.ingest(frame)
+        if (capture.open != nil && !hadOpen) || (capture.octave != nil && !hadOctave) {
+            haptics.confirmCapture()
+        }
+        let delta = capture.delta.map { ($0 * 10).rounded() / 10 }
+        if delta != intonationDelta { intonationDelta = delta }
+        let octaveNow: Bool
+        if case .note(let slot, _, _) = frame.sounding {
+            octaveNow = slot == .octave
+        } else {
+            octaveNow = false
+        }
+        if octaveNow != isOctaveSounding { isOctaveSounding = octaveNow }
+    }
+
+    /// The intonation ear follows the focused string: new target, fresh
+    /// captures — a delta measured on one string means nothing on another.
+    private func retuneIntonation() {
+        analyzer.configure(target: targets[focus.focusIndex], tuning: .default)
+        capture.reset()
+        if intonationDelta != nil { intonationDelta = nil }
+        if isOctaveSounding { isOctaveSounding = false }
+    }
+
     private func apply(event: StringFocus.Event) {
         switch event {
         case .focused:
             WKInterfaceDevice.current().play(.click)
+            retuneIntonation()
             smoother.reset()
             quietFrames = 0
             state = .listening

@@ -72,14 +72,14 @@ final class FollowFocus: ObservableObject {
 
     private func consume(_ results: [DetectionResult]) {
         guard results.count == targets.count else { return }
-        let sounding = results.map { $0.frequency != nil }
+        let levels = results.map { $0.frequency != nil ? $0.level : nil }
         var inTune: Bool?
         if let hz = results[focus.focusIndex].frequency {
             inTune = TuningDisplay.isInTune(
-                cents: 1200 * log2(hz / targets[focus.focusIndex]))
+                cents: PitchMath.cents(from: targets[focus.focusIndex], to: hz))
         }
         if case .focused(let index) = focus.ingest(
-            sounding: sounding, focusedInTune: inTune)
+            levels: levels, focusedInTune: inTune)
         {
             focusIndex = index
         }

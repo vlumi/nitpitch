@@ -33,7 +33,9 @@ final class WatchHaptics {
             timer = nil
             return
         }
-        WKInterfaceDevice.current().play(haptic(for: cue.pattern))
+        // One pattern, always: the taps carry distance (the cadence);
+        // direction is the glance's job — see `HapticBeat`.
+        WKInterfaceDevice.current().play(.click)
         timer?.invalidate()
         let next = Timer(timeInterval: 1 / cue.ratePerSecond, repeats: false) { _ in
             Task { @MainActor [weak self] in self?.tap() }
@@ -42,11 +44,4 @@ final class WatchHaptics {
         timer = next
     }
 
-    private func haptic(for pattern: HapticBeat.Pattern) -> WKHapticType {
-        switch pattern {
-        case .up: return .directionUp
-        case .down: return .directionDown
-        case .beat: return .click
-        }
-    }
 }

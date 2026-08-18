@@ -36,6 +36,23 @@ for a release that earns it.
     never silently. The near-unison two-harmonics-together technique
     stays out: two tones ~1 Hz apart defeat a 93 ms window, and with
     beat-rate haptics, one harmonic at a time is equally eyes-free.
+    On the WATCH both refinements are inherited Core work; the label
+    is deliberately skipped there — it exists to explain a display
+    discrepancy, and the wrist's pane is pinned to a target you chose,
+    with the haptics indifferent to how the note was produced.
+  - **Intonation on the wrist** — the one tuning task where BOTH hands
+    hold tools (a screwdriver at the saddle, the other hand plucking)
+    is exactly the situation the watch exists for. The machinery is
+    already portable: `IntonationAnalyzer` and `IntonationCapture` are
+    pure Core (odd/even parity separates open from octave; capture is
+    consensus-gated), so the watch needs no mode, mirroring the phone:
+    in the instrument tuner, once the focused string's open is
+    captured, playing its octave (12th fret or the harmonic) swaps the
+    cents slot to the delta — "Δ +3.1" in the fixed centerline slot,
+    green when the saddle adjustment lands. One haptic addition: a
+    distinct capture confirmation (a double click), then silence until
+    the next capture. The VM feeds the focused target to an analyzer
+    beside the bank; the pane's fixed geometry already has the slot.
 - **Sync discoverability, designed rather than patched** — a user on a
   second device (most sharply: a watch installed alone from its own
   App Store) probably wants iCloud sync on, and today nothing says so

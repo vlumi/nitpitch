@@ -42,13 +42,30 @@ public struct StringFocus: Sendable {
     /// moving on, the screen should already be there).
     public static let switchFramesSettled = 5
 
+    /// The share of the focused string's recent peak strength a rival's
+    /// reading must carry to count toward a switch. Duration alone is not
+    /// enough: on a bass with the other strings unmuted, plucking E rings D
+    /// sympathetically — a genuine, sustained reading that outlives the
+    /// pluck and was stealing the screen (field-found). A deliberately
+    /// played string arrives at comparable strength; a sympathetic ring is
+    /// well below it.
+    public static let rivalLevelShare = 0.6
+    /// How the remembered peak fades per frame once the focused string goes
+    /// quiet (half in ~6 s): long enough that a ring dies before the bar
+    /// drops to its level, short enough that a quiet-but-deliberate player
+    /// is never locked out.
+    public static let peakDecayPerFrame = 0.995
+
     public private(set) var focusIndex: Int
     public private(set) var isSettled = false
 
     private let stringCount: Int
     private var inTuneStreak = 0
-    /// Consecutive sounding frames per rival string.
+    /// Consecutive qualifying frames per rival string.
     private var rivalStreaks: [Int]
+    /// The focused string's recent peak strength — the bar rivals are
+    /// measured against, fading while the focused string is silent.
+    private var focusPeak = 0.0
 
     public init(stringCount: Int, initialIndex: Int = 0) {
         self.stringCount = max(1, stringCount)
@@ -63,17 +80,18 @@ public struct StringFocus: Sendable {
         focus(on: index)
     }
 
-    /// One analysis frame: which strings sound (the per-string bank's
-    /// confirmed readings), and whether the focused string's reading is in
-    /// tune — nil when it isn't sounding. Returns what the screen should
-    /// announce.
-    public mutating func ingest(sounding: [Bool], focusedInTune: Bool?) -> Event {
-        guard sounding.count == stringCount else { return .none }
+    /// One analysis frame: each string's reading strength (nil when it
+    /// isn't sounding — the per-string bank's confirmed readings), and
+    /// whether the focused string's reading is in tune — nil when it isn't
+    /// sounding. Returns what the screen should announce.
+    public mutating func ingest(levels: [Double?], focusedInTune: Bool?) -> Event {
+        guard levels.count == stringCount else { return .none }
 
         // The focused string speaking is the user working: rivals reset —
         // a brush ALONGSIDE the note being tuned is the most common brush
         // of all, and it must never accumulate toward a switch.
-        if sounding[focusIndex] {
+        if let focusedLevel = levels[focusIndex] {
+            focusPeak = max(focusPeak, focusedLevel)
             for index in rivalStreaks.indices where index != focusIndex {
                 rivalStreaks[index] = 0
             }
@@ -91,12 +109,17 @@ public struct StringFocus: Sendable {
             return .none
         }
 
-        // Silence on the focused string: streaks of rivals grow, the
-        // in-tune streak survives briefly (isSettled already latched).
+        // Silence on the focused string: streaks of QUALIFYING rivals grow
+        // (strong enough against the fading peak to be deliberate play, not
+        // a sympathetic ring), and the in-tune streak survives briefly
+        // (isSettled already latched).
         inTuneStreak = 0
+        focusPeak *= Self.peakDecayPerFrame
+        let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
         for index in rivalStreaks.indices where index != focusIndex {
-            rivalStreaks[index] = sounding[index] ? rivalStreaks[index] + 1 : 0
+            let qualifies = levels[index].map { $0 >= bar } ?? false
+            rivalStreaks[index] = qualifies ? rivalStreaks[index] + 1 : 0
             if rivalStreaks[index] >= threshold {
                 focus(on: index)
                 return .focused(index)
@@ -110,5 +133,8 @@ public struct StringFocus: Sendable {
         isSettled = false
         inTuneStreak = 0
         rivalStreaks = Array(repeating: 0, count: stringCount)
+        // The new string starts with its own story: the old peak belongs
+        // to the string that made it.
+        focusPeak = 0
     }
 }

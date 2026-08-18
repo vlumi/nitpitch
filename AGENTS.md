@@ -589,12 +589,15 @@ one of the drafts that lost.
   the data across.
   The killer interaction is haptic and shipped: the beat vocabulary
   (`HapticBeat` in Core, policy pinned by tests; `WatchHaptics` drives
-  the actuator) — flat taps `.directionUp`, sharp `.directionDown`, at
-  the string's physical beat rate against its target capped ~8/s; a
-  sounding pair swaps to `.click` at the PAIR's true beat rate
-  (`IntervalBeat`); in tune is silence, the settle keeps `.success`.
-  On by default in the instrument tuner, no setting — because on the
-  wrist you tune without looking.
+  the actuator) — taps at the string's physical beat rate against its
+  target capped ~8/s; a sounding pair swaps to the PAIR's true beat
+  rate (`IntervalBeat`); in tune is silence, the settle keeps
+  `.success`. The taps carry DISTANCE only: the first design spoke
+  direction too (`.directionUp`/`.directionDown`), and the wrist test
+  couldn't tell them apart instinctively — the glance at the arc gives
+  direction, so one honest signal beat two ambiguous ones. On by
+  default in the instrument tuner, no setting — because on the wrist
+  you tune without looking.
 - **The App Store copy constraints.** Two promises the listing text
   must keep, baked into `Scripts/asc/listing.json`'s header comment:
   privacy wording says exactly what PRIVACY.md says (nothing leaves

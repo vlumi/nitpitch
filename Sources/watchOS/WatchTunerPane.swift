@@ -29,11 +29,18 @@ struct WatchTunerPane<Footer: View>: View {
             // The cents live INSIDE the arc's hollow — the bow frames the
             // number instead of floating above it.
             ZStack {
-                WatchArc(cents: liveCents)
+                // A sounding double stop hands the arc the INTERVAL's error
+                // — zero when both strings sit on their targets — while the
+                // strip below splits to keep each member's own.
+                WatchArc(cents: tuner.pair?.intervalErrorCents ?? liveCents)
                 centerLine
                     .padding(.top, 18)
             }
-            WatchLightStrip(cents: liveCents)
+            if let pair = tuner.pair {
+                WatchLightStrip(rows: [pair.lowerCents, pair.upperCents])
+            } else {
+                WatchLightStrip(cents: liveCents)
+            }
             footer()
         }
         .contentShape(Rectangle())
@@ -81,6 +88,19 @@ struct WatchTunerPane<Footer: View>: View {
     /// The one line that changes between states — everything around it
     /// holds its ground.
     @ViewBuilder private var centerLine: some View {
+        // A double stop owns the slot outright: the beat rate the taps are
+        // tapping, green once the interval sits at its tempered width.
+        if let pair = tuner.pair {
+            Text(verbatim: String(format: "%.1f/s", pair.beatHz))
+                .font(.system(size: 22, weight: .medium, design: .rounded))
+                .foregroundStyle(
+                    TuningDisplay.isInTune(cents: pair.intervalErrorCents) ? .green : .orange)
+        } else {
+            stateLine
+        }
+    }
+
+    @ViewBuilder private var stateLine: some View {
         switch tuner.state {
         case .reading(let cents):
             // While the focused string's OCTAVE sounds and both intonation
@@ -151,15 +171,22 @@ struct WatchTunerPane<Footer: View>: View {
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
                         .foregroundStyle(tuner.isSettled ? .green : .primary)
                 } else {
+                    // A double stop lights its OTHER member too — the
+                    // header says "I'm hearing D+A" without a label.
                     Text(verbatim: tuner.stringNames[index])
                         .font(.system(size: 16, design: .rounded))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isPairMember(index) ? .primary : .secondary)
                 }
             }
             if window.upperBound < tuner.stringNames.count { ellipsis }
         }
         .lineLimit(1)
         .fixedSize()
+    }
+
+    private func isPairMember(_ index: Int) -> Bool {
+        guard let pair = tuner.pair else { return false }
+        return index == pair.lowerIndex || index == pair.upperIndex
     }
 
     private var ellipsis: some View {

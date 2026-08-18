@@ -24,6 +24,29 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     @Published private(set) var focusIndex: Int
     @Published private(set) var isSettled = false
 
+    /// The sounding double stop, resolved for the screen: the pane goes
+    /// pair-shaped while one sounds (both names lit, the arc on the
+    /// INTERVAL's error, the strip split per string, the beat rate in the
+    /// cents slot).
+    struct PairReading: Equatable {
+        let lowerIndex: Int
+        let upperIndex: Int
+        /// The audible pulse, lightly smoothed and tenth-quantized (the
+        /// interval chip's rule — half a hertz of flutter reads as
+        /// indecision).
+        let beatHz: Double
+        /// The interval's error against the pair's TEMPERED width — zero
+        /// exactly when both strings sit on their targets, whatever the
+        /// temperament. Equals centsUpper − centsLower, which is why one
+        /// number can stand in for two that wouldn't fit.
+        let intervalErrorCents: Double
+        /// Each member's own error, for the split light strip.
+        let lowerCents: Double
+        let upperCents: Double
+    }
+
+    @Published private(set) var pair: PairReading?
+
     /// The intonation verdict for the focused string (octave minus open,
     /// in cents, tenth-quantized), once both samples are captured.
     @Published private(set) var intonationDelta: Double?
@@ -167,11 +190,25 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     /// on the wrist — the phone's 8 frames serve continuous bowing.
     private static let quietFramesBeforeIdle = 24
 
+    private var lowerSmoother = ReadingSmoother()
+    private var upperSmoother = ReadingSmoother()
+    private var beatEma: Double?
+    private var pairQuietFrames = 0
+    /// The interval chip's clear-out: a bow lifting mid-stop shouldn't
+    /// flicker the pane back to single-string shape for one quiet frame.
+    private static let pairQuietFramesBeforeClear = 4
+
     private func consume(
         _ results: [DetectionResult], intonation frame: IntonationAnalyzer.Frame?
     ) {
         let levels = results.map { $0.frequency != nil ? $0.level : nil }
         consumeIntonation(frame)
+        // Octave claims are parity-flagged and never masquerade as a pair
+        // member (the interval readout's rule).
+        let pairFrequencies = results.map { $0.evenPartialsOnly ? nil : $0.frequency }
+        let resolved = IntervalBeat.resolve(
+            frequencies: pairFrequencies, midis: instrument.strings)
+        updatePair(resolved, frequencies: pairFrequencies)
 
         var cents: Double?
         if let hz = results[focus.focusIndex].frequency {
@@ -183,7 +220,7 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             levels: levels,
             focusedInTune: cents.map(TuningDisplay.isInTune(cents:)))
         apply(event: event)
-        haptics.update(hapticCue(results: results, cents: cents))
+        haptics.update(hapticCue(pair: resolved, cents: cents))
 
         if let cents {
             quietFrames = 0
@@ -203,17 +240,58 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     /// The wrist's word for this frame — the haptic beat vocabulary
     /// (`HapticBeat`): a sounding pair's beat wins, else the focused
     /// string's own beat against its target, from the same smoothed cents
-    /// the screen shows. Octave claims are parity-flagged and never
-    /// masquerade as a pair member (the interval readout's rule).
-    private func hapticCue(results: [DetectionResult], cents: Double?) -> HapticBeat.Cue? {
-        if let pair = IntervalBeat.resolve(
-            frequencies: results.map { $0.evenPartialsOnly ? nil : $0.frequency },
-            midis: instrument.strings)
-        {
-            return HapticBeat.cue(pair: pair)
-        }
+    /// the screen shows.
+    private func hapticCue(
+        pair: IntervalBeat.Reading?, cents: Double?
+    ) -> HapticBeat.Cue? {
+        if let pair { return HapticBeat.cue(pair: pair) }
         guard let cents else { return nil }
         return HapticBeat.cue(cents: cents, targetHz: targets[focus.focusIndex])
+    }
+
+    /// The pair the SCREEN shows, smoothed and cleared like the phone's
+    /// interval chip: per-member cents through their own smoothers, the
+    /// beat through a light EMA, and a few quiet frames of grace before
+    /// the pane snaps back to single-string shape.
+    private func updatePair(_ reading: IntervalBeat.Reading?, frequencies: [Double?]) {
+        guard let reading else {
+            pairQuietFrames += 1
+            if pairQuietFrames >= Self.pairQuietFramesBeforeClear, pair != nil {
+                clearPair()
+            }
+            return
+        }
+        pairQuietFrames = 0
+        let lower = reading.lowerIndex
+        let upper = lower + 1
+        if pair?.lowerIndex != lower {
+            lowerSmoother.reset()
+            upperSmoother.reset()
+            beatEma = nil
+        }
+        guard let lowerHz = frequencies[lower], let upperHz = frequencies[upper] else {
+            return
+        }
+        let lowerCents = lowerSmoother.update(
+            cents: PitchMath.cents(from: targets[lower], to: lowerHz))
+        let upperCents = upperSmoother.update(
+            cents: PitchMath.cents(from: targets[upper], to: upperHz))
+        let smoothedBeat = (beatEma ?? reading.beatHz) * 0.7 + reading.beatHz * 0.3
+        beatEma = smoothedBeat
+        let next = PairReading(
+            lowerIndex: lower, upperIndex: upper,
+            beatHz: (smoothedBeat * 10).rounded() / 10,
+            intervalErrorCents: upperCents - lowerCents,
+            lowerCents: lowerCents, upperCents: upperCents)
+        if next != pair { pair = next }
+    }
+
+    private func clearPair() {
+        if pair != nil { pair = nil }
+        lowerSmoother.reset()
+        upperSmoother.reset()
+        beatEma = nil
+        pairQuietFrames = 0
     }
 
     /// One intonation frame: run the capture, announce a fresh lock with
@@ -246,6 +324,8 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         capture.reset()
         if intonationDelta != nil { intonationDelta = nil }
         if isOctaveSounding { isOctaveSounding = false }
+        // Retargeting moves the pair's reference points too.
+        clearPair()
     }
 
     private func apply(event: StringFocus.Event) {

@@ -148,16 +148,16 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private static let quietFramesBeforeIdle = 24
 
     private func consume(_ results: [DetectionResult]) {
-        let sounding = results.map { $0.frequency != nil }
+        let levels = results.map { $0.frequency != nil ? $0.level : nil }
 
         var cents: Double?
         if let hz = results[focus.focusIndex].frequency {
-            let raw = 1200 * log2(hz / targets[focus.focusIndex])
+            let raw = PitchMath.cents(from: targets[focus.focusIndex], to: hz)
             cents = smoother.update(cents: raw)
         }
 
         let event = focus.ingest(
-            sounding: sounding,
+            levels: levels,
             focusedInTune: cents.map(TuningDisplay.isInTune(cents:)))
         apply(event: event)
         haptics.update(hapticCue(results: results, cents: cents))

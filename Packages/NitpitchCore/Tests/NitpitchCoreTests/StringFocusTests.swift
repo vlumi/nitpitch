@@ -6,14 +6,14 @@ import XCTest
 /// hands-free one-string-at-a-time tuning, pinned before any screen renders
 /// it. A violin's four strings throughout: focus starts on G (index 0).
 final class StringFocusTests: XCTestCase {
-    /// Frames where only `index` sounds; nil = silence.
+    /// Frames where only `index` sounds (at full strength); nil = silence.
     private func frame(_ focus: inout StringFocus, sounding index: Int?, inTune: Bool = false)
         -> StringFocus.Event
     {
-        var sounding = [false, false, false, false]
-        if let index { sounding[index] = true }
+        var levels: [Double?] = [nil, nil, nil, nil]
+        if let index { levels[index] = 1.0 }
         let focused = index == focus.focusIndex ? inTune : nil
-        return focus.ingest(sounding: sounding, focusedInTune: focused)
+        return focus.ingest(levels: levels, focusedInTune: focused)
     }
 
     /// A hand crossing the strings brushes a neighbour for a few frames —
@@ -117,10 +117,8 @@ final class StringFocusTests: XCTestCase {
         var focus = StringFocus(stringCount: 4)
 
         for _ in 0..<(StringFocus.switchFrames * 2) {
-            var sounding = [false, false, false, false]
-            sounding[0] = true
-            sounding[1] = true
-            XCTAssertEqual(focus.ingest(sounding: sounding, focusedInTune: false), .none)
+            let levels: [Double?] = [1.0, 1.0, nil, nil]
+            XCTAssertEqual(focus.ingest(levels: levels, focusedInTune: false), .none)
         }
         XCTAssertEqual(focus.focusIndex, 0)
     }
@@ -140,5 +138,60 @@ final class StringFocusTests: XCTestCase {
 
         for _ in 0..<StringFocus.switchFramesSettled { _ = frame(&focus, sounding: 2) }
         XCTAssertEqual(focus.focusIndex, 2, "the fast advance survived the pause")
+    }
+
+    /// A sympathetic ring cannot steal the screen: plucking E on a bass
+    /// with the other strings unmuted rings D — a genuine, sustained
+    /// reading that OUTLIVES the pluck, but at a fraction of its strength
+    /// (field-found on an old-strung bass). Duration alone would switch;
+    /// the level bar says no.
+    func testASympatheticRingCannotStealFocus() {
+        var focus = StringFocus(stringCount: 4)
+
+        // The pluck: E (focused) loud, briefly.
+        for _ in 0..<5 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: false)
+        }
+        // E decays below the gates; D rings on, weak, for ~3 seconds.
+        for _ in 0..<64 {
+            XCTAssertEqual(
+                focus.ingest(levels: [nil, nil, 0.4, nil], focusedInTune: nil), .none)
+        }
+        XCTAssertEqual(focus.focusIndex, 0, "the ring never qualified")
+    }
+
+    /// A deliberately played rival at comparable strength still switches at
+    /// the same pace as ever — the level bar is invisible to real play.
+    func testAComparablyLoudRivalSwitchesAtFullPace() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<5 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: false)
+        }
+        var switched: StringFocus.Event = .none
+        var frames = 0
+        while switched == .none, frames < StringFocus.switchFrames + 1 {
+            switched = focus.ingest(levels: [nil, nil, 0.9, nil], focusedInTune: nil)
+            frames += 1
+        }
+        XCTAssertEqual(switched, .focused(2))
+        XCTAssertEqual(frames, StringFocus.switchFrames)
+    }
+
+    /// A quiet but PERSISTENT player is never locked out: the remembered
+    /// peak fades, so a string played softly for a few seconds eventually
+    /// clears the bar and takes the screen.
+    func testAQuietPersistentPlayerEventuallySwitches() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<5 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: false)
+        }
+        var switched = false
+        for _ in 0..<200 where !switched {
+            if case .focused = focus.ingest(levels: [nil, nil, 0.5, nil], focusedInTune: nil) {
+                switched = true
+            }
+        }
+        XCTAssertTrue(switched, "persistence at honest strength wins in the end")
+        XCTAssertEqual(focus.focusIndex, 2)
     }
 }

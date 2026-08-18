@@ -12,6 +12,8 @@ The per-string version: choosing an instrument now means something — every str
 
 ### Unreleased (next build)
 
+- Hands-free string switching now weighs how STRONGLY a string speaks, not just how long: on a bass with the other strings unmuted, plucking one could ring a neighbour sympathetically hard enough to steal the screen once the plucked note faded (field-found on an old-strung bass). A deliberately played string still takes over exactly as fast as before; a ring never qualifies. Applies to the watch's tuner and the phone/Mac Follow toggle alike.
+
 ### build 11 — 2026-08-17
 
 - A full tidy of the code and docs under the hood. One visible fix rode along: the All-presets browser's favorite star is yellow again, matching everywhere else. Nothing else should look or behave differently.

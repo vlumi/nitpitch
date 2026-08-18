@@ -13,9 +13,7 @@ The per-string version: choosing an instrument now means something — every str
 ### Unreleased (next build)
 
 - Watch: double stops got their screen. Bow two adjacent strings and the pane goes pair-shaped: both string names light up, the arc shows the INTERVAL's error (upright and green when the fifth sits at its targets), the readout shows the beat rate the taps are tapping, and the light strip splits into two half-height rows — one per string — in the same space. Lift the bow and it's a one-string pane again; nothing moves.
-
 - Watch: intonation, hands-free — play the focused string open, then its octave (12th fret or the harmonic), and the readout swaps to the verdict: "Δ +3.1", green when the saddle lands. Each captured sample confirms with a quick double tap, so both hands can stay on the tools; switching strings starts a fresh measurement. Same ambient rule as the phone: no mode, nothing to turn on.
-
 - Watch: the tuning taps now speak only distance — faster means further off, silence means in tune — with one tap pattern instead of directional ones. The wrist test showed the up/down patterns couldn't be told apart instinctively, and the arc gives direction at a glance anyway; one honest signal beats two ambiguous ones.
 - Hands-free string switching now weighs how STRONGLY a string speaks, not just how long: on a bass with the other strings unmuted, plucking one could ring a neighbour sympathetically hard enough to steal the screen once the plucked note faded (field-found on an old-strung bass). A deliberately played string still takes over exactly as fast as before; a ring never qualifies. Applies to the watch's tuner and the phone/Mac Follow toggle alike.
 

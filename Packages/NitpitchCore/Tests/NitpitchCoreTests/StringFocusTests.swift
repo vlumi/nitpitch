@@ -177,6 +177,29 @@ final class StringFocusTests: XCTestCase {
         XCTAssertEqual(frames, StringFocus.switchFrames)
     }
 
+    /// A marginal string reads INTERMITTENTLY — a bass A through a wrist
+    /// microphone drops every few frames — and a single miss must not zero
+    /// an almost-complete streak: the misses drain, the reads accumulate,
+    /// and deliberate play still takes the screen (field-found: A could
+    /// never be switched to).
+    func testAnIntermittentDeliberateRivalStillSwitches() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<5 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: false)
+        }
+        var switched = false
+        for i in 0..<80 where !switched {
+            let level: Double? = (i % 3 == 2) ? nil : 0.9
+            if case .focused = focus.ingest(
+                levels: [nil, level, nil, nil], focusedInTune: nil)
+            {
+                switched = true
+            }
+        }
+        XCTAssertTrue(switched, "two reads in three frames is deliberate play")
+        XCTAssertEqual(focus.focusIndex, 1)
+    }
+
     /// A quiet but PERSISTENT player is never locked out: the remembered
     /// peak fades, so a string played softly for a few seconds eventually
     /// clears the bar and takes the screen.

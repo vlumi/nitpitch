@@ -42,6 +42,16 @@ public struct StringFocus: Sendable {
     /// moving on, the screen should already be there).
     public static let switchFramesSettled = 5
 
+    /// A non-qualifying frame DECAYS a rival's streak instead of resetting
+    /// it: a marginal low string (a bass A through a wrist microphone)
+    /// reads intermittently, and a single missed frame was zeroing an
+    /// almost-complete streak — the string could never take the screen
+    /// (field-found). Gentle by design: even a 2-frames-in-3 reader must
+    /// still NET forward. A ring never accumulates anyway (it fails the
+    /// level bar every frame), and a stopped rival drains back to zero in
+    /// under a second.
+    public static let rivalStreakDecay = 1
+
     /// The share of the focused string's recent peak strength a rival's
     /// reading must carry to count toward a switch. Duration alone is not
     /// enough: on a bass with the other strings unmuted, plucking E rings D
@@ -119,7 +129,10 @@ public struct StringFocus: Sendable {
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
         for index in rivalStreaks.indices where index != focusIndex {
             let qualifies = levels[index].map { $0 >= bar } ?? false
-            rivalStreaks[index] = qualifies ? rivalStreaks[index] + 1 : 0
+            rivalStreaks[index] =
+                qualifies
+                ? rivalStreaks[index] + 1
+                : max(0, rivalStreaks[index] - Self.rivalStreakDecay)
             if rivalStreaks[index] >= threshold {
                 focus(on: index)
                 return .focused(index)

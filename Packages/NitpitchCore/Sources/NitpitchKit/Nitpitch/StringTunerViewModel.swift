@@ -94,6 +94,13 @@ public final class StringTunerViewModel: ObservableObject {
     /// Frames with nothing in this string's band; after enough of them the
     /// dial clears rather than freezing on a stale reading.
     private var quietFrames = 0
+    /// Whether the last confident reading was the OPEN string — what
+    /// separates a fresh octave from the open's decaying tail (a decaying
+    /// low string sheds its odd partials first and reads even-only; the
+    /// analyzer applies the same rule, this covers the grid's per-string
+    /// path). Mirrors `IntonationAnalyzer.freshAttackQuietFrames`.
+    private var lastReadingWasOpen = false
+    private static let freshAttackQuietFrames = 3
     private static let quietFramesBeforeIdle = 8
 
     public init(
@@ -216,14 +223,20 @@ public final class StringTunerViewModel: ObservableObject {
         // equal's.
         let epsilon = absolute - Double(target.midi) * 100 - targetOffsetCents
 
-        if isIntonating, result.evenPartialsOnly {
+        if isIntonating, result.evenPartialsOnly,
+            !(lastReadingWasOpen && quietFrames < Self.freshAttackQuietFrames)
+        {
             // The octave is not the open string: the strobe holds its
             // silence rather than crawling at a pitch nobody is tuning.
+            // (An even-only reading that directly CONTINUES an open one is
+            // the open's decaying tail, not an octave — it falls through.)
             strobe.clear()
+            lastReadingWasOpen = false
             ingestOctave(epsilon: epsilon, result: result)
             return
         }
         quietFrames = 0
+        lastReadingWasOpen = true
 
         feedIntonation(
             .note(slot: .open, cents: epsilon, clarity: result.clarity),

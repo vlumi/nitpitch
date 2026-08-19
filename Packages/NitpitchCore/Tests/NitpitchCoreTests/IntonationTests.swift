@@ -107,6 +107,64 @@ final class IntonationTests: XCTestCase {
         XCTAssertNil(analyzer.analyze(window))
     }
 
+    /// The decay-tail rule, on a bass D2's full story: a plucked open
+    /// string sheds its odd partials first, so its tail reads even-only —
+    /// the octave's fingerprint on a note that isn't one (field-found: the
+    /// delta flashed at the end of every open pluck). A direct open→even
+    /// transition with NO silence between is the same note dying and stays
+    /// .open; the SAME spectrum arriving after a real gap is a fresh attack
+    /// and is the octave. The capture then registers the D2 delta end to
+    /// end — the scenario the wrist couldn't complete.
+    func testADecayingOpenIsNotAnOctaveButAFreshAttackIs() {
+        let d2 = Instrument.bassGuitar.notes[2].frequency()
+        let analyzer = IntonationAnalyzer(
+            sampleRate: sampleRate, target: d2, tuning: .default)
+        analyzer.setActive(true)
+
+        let evenOnly: [Double] = [0, 1.0, 0, 0.5, 0, 0.25]
+        let phase = 20480  // ten hops per phase
+        var signal: [Float] = []
+        signal += tone(d2, count: phase)
+        signal += tone(d2, count: phase, harmonics: evenOnly)  // the tail
+        signal += [Float](repeating: 0, count: 8192)  // damp: a real gap
+        signal += tone(detuned(2 * d2, cents: 4), count: phase)  // the 12th
+        signal += [Float](repeating: 0, count: Detection.windowSize)
+
+        var capture = IntonationCapture()
+        var slots: [Int: IntonationSlot] = [:]
+        var hop = 0
+        while (hop * Detection.hopSize + Detection.windowSize) <= signal.count {
+            let start = hop * Detection.hopSize
+            let window = Array(signal[start..<(start + Detection.windowSize)])
+            if let frame = analyzer.analyze(window) {
+                capture.ingest(frame)
+                if case .note(let slot, _, _) = frame.sounding {
+                    slots[hop] = slot
+                }
+            }
+            hop += 1
+        }
+
+        // Interior hops of each phase (boundaries hold mixed windows).
+        for hop in 2...7 {
+            XCTAssertEqual(slots[hop], .open, "open phase, hop \(hop)")
+        }
+        for hop in 12...17 {
+            XCTAssertEqual(
+                slots[hop], .open,
+                "the decaying tail must stay the open string, hop \(hop)")
+        }
+        let octaveHops = (25...32).compactMap { slots[$0] }
+        XCTAssertTrue(
+            octaveHops.contains(.octave),
+            "after a real gap the same spectrum IS the octave")
+        XCTAssertFalse(
+            slots.filter { $0.key < 22 }.values.contains(.octave),
+            "no octave claims before the gap")
+
+        XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1, "the D2 verdict registers")
+    }
+
     // MARK: - Capture: the gating rules, as arithmetic
 
     private func note(

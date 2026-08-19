@@ -67,16 +67,23 @@ public struct DetectionResult: Equatable, Sendable {
     /// evidence). Spectral frames only — MPM measures a period, not
     /// partials, and always reports false.
     public let evenPartialsOnly: Bool
+    /// Which harmonic of the string best explains the sound: 1 for the open
+    /// string, 2 for the octave (the parity fingerprint), 3/4 when a
+    /// harmonic lens made the read (`DetectorBank`). The error is the
+    /// string's either way — this exists so the display can say WHY it
+    /// shows D2 while the ear hears D4.
+    public let harmonic: Int
 
     public init(
         frequency: Double?, clarity: Double, rms: Double, level: Double = 0,
-        evenPartialsOnly: Bool = false
+        evenPartialsOnly: Bool = false, harmonic: Int = 1
     ) {
         self.frequency = frequency
         self.clarity = clarity
         self.rms = rms
         self.level = level
         self.evenPartialsOnly = evenPartialsOnly
+        self.harmonic = harmonic
     }
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)

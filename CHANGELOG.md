@@ -12,6 +12,8 @@ The per-string version: choosing an instrument now means something — every str
 
 ### Unreleased (next build)
 
+- Harmonic tuning, without a mode: touch a string's 7th-fret-style harmonic (the note three times the open pitch) and the dial reads it as the string itself — the error shown is the string's own, and the readout says "· 3rd harmonic" so the screen and your ear agree about what's sounding. The octave harmonic already worked; it now says "· 2nd harmonic" too. Where a harmonic is genuinely ambiguous between two strings (a violin D's 3rd IS the A's octave), the tuner stays silent rather than guessing — and a real note that merely impersonates a harmonic (playing the fifth above) is never mistaken for one.
+
 ### build 12 — 2026-08-18
 
 - Watch: double stops got their screen. Bow two adjacent strings and the pane goes pair-shaped: both string names light up, the arc shows the INTERVAL's error (upright and green when the fifth sits at its targets), the readout shows the beat rate the taps are tapping, and the light strip splits into two half-height rows — one per string — in the same space. Lift the bow and it's a one-string pane again; nothing moves.

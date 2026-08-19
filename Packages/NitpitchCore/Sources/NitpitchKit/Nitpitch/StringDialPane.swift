@@ -74,14 +74,28 @@ struct StringDialPane: View {
                 .accessibilityLabel(tuner.target.accessibleName(in: naming))
                 targetStep(systemName: "plus", id: "string.up", by: 1)
             }
-            Text(verbatim: centsLabel)
-                .font(.title3.monospacedDigit())
-                .foregroundStyle(
-                    isInTune
-                        ? AnyShapeStyle(Color.green)
-                        : AnyShapeStyle(.secondary)
-                )
-                .accessibilityIdentifier("string.cents")
+            HStack(spacing: 6) {
+                Text(verbatim: centsLabel)
+                    .font(.title3.monospacedDigit())
+                    .foregroundStyle(
+                        isInTune
+                            ? AnyShapeStyle(Color.green)
+                            : AnyShapeStyle(.secondary)
+                    )
+                    .accessibilityIdentifier("string.cents")
+                // The sound is a HARMONIC of this string — the error shown
+                // is still the string's own, this only says why the screen
+                // reads D2 while the ear hears a higher note.
+                if tuner.harmonic == 2 {
+                    Text("· 2nd harmonic", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else if tuner.harmonic == 3 {
+                    Text("· 3rd harmonic", bundle: .module)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .frame(height: Self.readoutHeight)
     }

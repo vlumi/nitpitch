@@ -254,7 +254,8 @@ public final class DetectorBank: @unchecked Sendable {
             guard
                 let reading = estimator.measure(target: targets[index], others: others)
             else {
-                return .rejected(clarity: 0, rms: Double(rms))
+                return harmonicLensResult(
+                    estimator: estimator, index: index, others: others, rms: rms)
             }
             // The strength gate: a bowed string reads at or near full on the
             // signal bar; what the estimator scrapes off a loud frame's noise
@@ -268,7 +269,60 @@ public final class DetectorBank: @unchecked Sendable {
             }
             return DetectionResult(
                 frequency: reading.frequency, clarity: reading.agreement, rms: Double(rms),
-                level: reading.strength, evenPartialsOnly: reading.evenPartialsOnly)
+                level: reading.strength, evenPartialsOnly: reading.evenPartialsOnly,
+                harmonic: reading.evenPartialsOnly ? 2 : 1)
         }
+    }
+
+    /// The harmonic lens, tried only when the plain measure refused: a
+    /// 7th-fret-style harmonic sounds at 3·f and brings NO low partial of
+    /// f, so the anchor rule — load-bearing, see HarmonicEstimator —
+    /// rightly rejects it. Rather than relax that rule, ask the explicit
+    /// question: is this sound the string's 3rd harmonic, a note at 3·f
+    /// anchored at its OWN fundamental? Measured at 3·f under the same
+    /// collision set the anchor applies at the lens pitch, and a reading
+    /// folds back by 3 with the identical cents error.
+    ///
+    /// Three guards keep the lens honest, each a real impostor:
+    /// - the COLLISION set: a guitar's open B sits at low E's 3·f, and the
+    ///   slot the lens would anchor through is shared with the B string's
+    ///   own — skipped, so the lens refuses instead of lighting E for a B.
+    /// - the ANCHOR: without the 3·f partial itself in evidence, a
+    ///   constellation of upper leftovers can read consistently through
+    ///   the wrong lens — right error, wrong story.
+    /// - the HALF-LENS check: a NOTE at 1.5·f — the fifth above, a pitch
+    ///   real playing produces constantly — has even partials at 3f, 6f,
+    ///   9f: the lens's own slots, anchored. What separates it from a true
+    ///   3rd harmonic is the energy BETWEEN the slots (its odd partials,
+    ///   its own fundamental at 1.5·f). Measured at 1.5·f, an impostor
+    ///   reads with odd evidence; a true harmonic reads even-only or not
+    ///   at all.
+    ///
+    /// The 4th harmonic deliberately stays OUT: its unshared cases are
+    /// spoofable by a real note at 4f/3 (on a D string, a G — nothing
+    /// exotic), and its on-instrument tuning use — the bass 5th-fret
+    /// harmonic against the neighbour's 7th — is the fourths' own 4:3
+    /// coincidence, shared slots the collision set refuses anyway. The
+    /// octave (k = 2) needs no lens: it anchors at order 2 natively.
+    private func harmonicLensResult(
+        estimator: HarmonicEstimator, index: Int, others: [Double], rms: Float
+    ) -> DetectionResult {
+        let target = targets[index]
+        guard
+            let lens = estimator.measure(target: target * 3, others: others),
+            lens.strength >= tuning.spectralStrengthGate,
+            lens.anchor == 1,
+            // A note at 2·(3·f) is not the 3rd harmonic — it is a higher
+            // fold answering through the lens's even slots.
+            !lens.evenPartialsOnly
+        else { return .rejected(clarity: 0, rms: Double(rms)) }
+        if let half = estimator.measure(target: target * 1.5, others: others),
+            !half.evenPartialsOnly
+        {
+            return .rejected(clarity: 0, rms: Double(rms))
+        }
+        return DetectionResult(
+            frequency: lens.frequency / 3, clarity: lens.agreement,
+            rms: Double(rms), level: lens.strength, harmonic: 3)
     }
 }

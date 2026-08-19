@@ -67,6 +67,15 @@ public final class StringTunerViewModel: ObservableObject {
     /// strip's live reading. Nil while it isn't. Only moves while
     /// `isIntonating`.
     @Published public private(set) var octaveCents: Double?
+
+    /// Which harmonic best explains what's sounding — 1 for the open
+    /// string, 2 for the octave, 3 for the 7th-fret-style harmonic — so
+    /// the display can say WHY it reads D2 while the ear hears a higher
+    /// note. Stable for a few frames before it changes: a label must
+    /// never flicker.
+    @Published public private(set) var harmonic = 1
+    private var harmonicCandidate = 1
+    private var harmonicStreak = 0
     /// The captured samples and the verdict, tenth-quantized — the same
     /// consensus rules as the string view's panel (`IntonationCapture`).
     @Published public private(set) var openSample: Double?
@@ -160,6 +169,20 @@ public final class StringTunerViewModel: ObservableObject {
         strobe.clear()
     }
 
+    /// Three agreeing frames (~0.14 s) before the label changes — enough
+    /// to kill single-frame flicker, fast enough to feel live.
+    private func updateHarmonic(_ k: Int) {
+        if k == harmonicCandidate {
+            harmonicStreak += 1
+        } else {
+            harmonicCandidate = k
+            harmonicStreak = 1
+        }
+        if harmonicStreak >= 3, harmonic != harmonicCandidate {
+            harmonic = harmonicCandidate
+        }
+    }
+
     /// This string's slice of a frame's analysis, from `StringTuners`.
     func ingest(_ result: DetectionResult) {
         guard state != .idle else { return }
@@ -174,9 +197,13 @@ public final class StringTunerViewModel: ObservableObject {
                 state = .waiting
                 strobe.clear()
                 if octaveCents != nil { octaveCents = nil }
+                if harmonic != 1 { harmonic = 1 }
+                harmonicCandidate = 1
+                harmonicStreak = 0
             }
             return
         }
+        updateHarmonic(result.harmonic)
 
         // A confident reading is tuning activity: the screen stays awake.
         audio.pokeScreenAwake()

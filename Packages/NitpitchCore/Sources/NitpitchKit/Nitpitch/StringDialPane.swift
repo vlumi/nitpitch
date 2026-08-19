@@ -37,6 +37,10 @@ struct StringDialPane: View {
     @ObservedObject var tuner: StringTunerViewModel
     let naming: NoteNaming
     let isLocked: Bool
+    /// The follow policy's "done" verdict: the string has held in tune long
+    /// enough to call tuned, so the target wears green — the watch's
+    /// vocabulary, where the string's name does the same.
+    let isSettled: Bool
     let canStepTarget: (Int) -> Bool
     let stepTarget: (Int) -> Void
 
@@ -68,10 +72,15 @@ struct StringDialPane: View {
                 NoteNameLabel(
                     note: tuner.target, naming: naming, fontSize: Self.noteFontSize
                 )
+                // Settled reads as COLOUR, not a mark — the watch's rule,
+                // for the watch's reason: a mark would shift the row.
+                .foregroundStyle(isSettled ? AnyShapeStyle(Color.green) : AnyShapeStyle(.primary))
                 .frame(width: Self.nameSlotWidth)
                 .accessibilityElement(children: .ignore)
                 .accessibilityIdentifier("string.target")
                 .accessibilityLabel(tuner.target.accessibleName(in: naming))
+                .accessibilityValue(
+                    isSettled ? Text("Tuned", bundle: .module) : Text(verbatim: ""))
                 targetStep(systemName: "plus", id: "string.up", by: 1)
             }
             HStack(spacing: 6) {

@@ -22,6 +22,13 @@ final class IntonationMonitor: ObservableObject {
     }
 
     @Published private(set) var live: Live?
+    /// This frame's verdict for the follow policy: the level behind a note
+    /// the analyzer attributes to this string, nil the instant it hears
+    /// none. Deliberately NOT the lingering `live` — display grace read as
+    /// focused-string credit starves genuine rivals of the frames they need
+    /// (the wrist boosts from the raw frame for the same reason). Not
+    /// published: the policy polls it, no view renders it.
+    private(set) var voiceLevel: Double?
     /// The captured samples, quantized to tenths — sub-cent flutter in a
     /// refreshing run isn't worth a re-render, let alone reading.
     @Published private(set) var open: Double?
@@ -42,6 +49,7 @@ final class IntonationMonitor: ObservableObject {
 
         switch frame.sounding {
         case .nothing:
+            voiceLevel = nil
             quietFrames += 1
             if quietFrames >= Self.quietFramesBeforeClear, live != nil {
                 smoother.reset()
@@ -49,6 +57,7 @@ final class IntonationMonitor: ObservableObject {
                 live = nil
             }
         case .note(let slot, let cents, let clarity):
+            voiceLevel = frame.level
             quietFrames = 0
             // The smoother must not glide across the slot boundary — open
             // and octave are different notes, not one note moving.
@@ -71,6 +80,7 @@ final class IntonationMonitor: ObservableObject {
         lastSlot = nil
         quietFrames = 0
         live = nil
+        voiceLevel = nil
         open = nil
         octave = nil
         delta = nil

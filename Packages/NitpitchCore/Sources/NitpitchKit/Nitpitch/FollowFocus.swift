@@ -2,22 +2,38 @@ import Foundation
 import NitpitchCore
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// The string view's hands-free ear: a whole-instrument bank listening
 /// beside the screen's own single-string tuner, feeding `StringFocus` — the
-/// policy whose rules are pinned by tests in Core — so the screen can follow
+/// policy whose rules are pinned by tests in Core — so the screen follows
 /// the string being PLAYED instead of waiting for a swipe.
 ///
-/// Runs only while the Follow toggle is on: the string view's founding rule
-/// ("the screen can't yank away mid-turn on a peg") stays the default, and
-/// the policy itself is the anti-yank mechanism when following — work on the
-/// focused string resets every rival, so only sustained play elsewhere, or a
-/// settled string, moves the screen.
+/// Always on, exactly as on the watch: the policy IS the string view's
+/// founding rule ("the screen can't yank away mid-turn on a peg") — work on
+/// the focused string resets every rival, so only sustained play elsewhere,
+/// or a settled string, moves the screen. It shipped behind an opt-in
+/// toggle first, a belt worn with suspenders that field use retired.
 @MainActor
 final class FollowFocus: ObservableObject {
     /// Where the policy says the screen should be. The view observes this
     /// and steps its own index — SwiftUI state flows through observation,
     /// not stored view-struct captures.
     @Published private(set) var focusIndex = 0
+    /// The focused string has held in tune long enough to call done — the
+    /// readout wears it as green, the same vocabulary as the watch's name.
+    @Published private(set) var isSettled = false
+
+    /// The level of a note the intonation analyzer attributes to the focused
+    /// string — nil when it hears none. The string's own octave (the
+    /// intonation check's second note) lands in a NEIGHBOUR's band by pitch
+    /// (violin G's octave sits in A's), and was walking the screen away
+    /// mid-measurement; a frame the analyzer claims is this string's open or
+    /// octave IS the focused string sounding, whatever band the bank filed
+    /// it under. The watch learned this rule on a bass 12th fret.
+    var focusedVoice: (() -> Double?)?
 
     private let audio: AudioSessionController
     private var subscription: AudioSessionController.Subscription?
@@ -68,49 +84,32 @@ final class FollowFocus: ObservableObject {
     func select(_ index: Int) {
         focus.select(index)
         if focusIndex != index { focusIndex = index }
+        if isSettled { isSettled = false }
     }
 
     private func consume(_ results: [DetectionResult]) {
         guard results.count == targets.count else { return }
-        let levels = results.map { $0.frequency != nil ? $0.level : nil }
+        var levels = results.map { $0.frequency != nil ? $0.level : nil }
+        if let voice = focusedVoice?() {
+            levels[focus.focusIndex] = max(levels[focus.focusIndex] ?? 0, voice)
+        }
         var inTune: Bool?
         if let hz = results[focus.focusIndex].frequency {
             inTune = TuningDisplay.isInTune(
                 cents: PitchMath.cents(from: targets[focus.focusIndex], to: hz))
         }
-        if case .focused(let index) = focus.ingest(
-            levels: levels, focusedInTune: inTune)
-        {
+        switch focus.ingest(levels: levels, focusedInTune: inTune) {
+        case .focused(let index):
             focusIndex = index
+        case .settled:
+            // The same success tap the wrist gives; the Mac has nothing to
+            // buzz and wears the green alone.
+            #if canImport(UIKit)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            #endif
+        case .none:
+            break
         }
-    }
-}
-
-/// The switcher row's hands-free toggle (the map apps' follow-me arrow,
-/// borrowed for the same meaning). Off by default — the string view's
-/// founding rule that the screen never yanks away mid-turn stays until
-/// asked; on, `StringFocus` IS that rule's keeper. A tap gesture, not a
-/// Button, for the same swipe-starvation reason as the arrows beside it.
-struct FollowToggle: View {
-    @Binding var isFollowing: Bool
-    let onChange: (Bool) -> Void
-
-    var body: some View {
-        Image(systemName: isFollowing ? "location.fill" : "location")
-            .font(.title3.weight(.semibold))
-            .frame(width: 40, height: 40)
-            .contentShape(Rectangle())
-            .foregroundStyle(
-                isFollowing ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary)
-            )
-            .onTapGesture {
-                isFollowing.toggle()
-                onChange(isFollowing)
-            }
-            .accessibilityIdentifier("string.follow")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel(Text("Follow the playing", bundle: .module))
-            .accessibilityValue(
-                isFollowing ? Text("On", bundle: .module) : Text("Off", bundle: .module))
+        if isSettled != focus.isSettled { isSettled = focus.isSettled }
     }
 }

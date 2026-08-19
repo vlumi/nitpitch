@@ -141,9 +141,6 @@
     "Filter by instrument" : {
       "comment" : "Accessibility label for the preset browser's filter menu"
     },
-    "Follow the playing" : {
-      "comment" : "Toggle in the single-string view: the screen follows the string being played"
-    },
     "Fretted" : {
       "comment" : "Instrument picker section: fretted string instruments",
       "extractionState" : "manual"
@@ -380,6 +377,9 @@
     },
     "This preset is for an instrument you don't have yet. Add one, then open the link again." : {
       "comment" : "Shown when a received preset fits no instrument the user owns"
+    },
+    "Tuned" : {
+      "comment" : "Accessibility value on the string target once it has settled in tune"
     },
     "Tunings" : {
       "comment" : "Presets sheet: the catalog tunings section"

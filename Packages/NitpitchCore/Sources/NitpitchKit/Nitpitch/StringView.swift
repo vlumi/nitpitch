@@ -10,23 +10,19 @@ import SwiftUI
 /// "−300¢, keep going" instead of nothing. The flip side is intentional too:
 /// everything it hears *is* this string, by definition — play a neighbour and
 /// the dial pins, because the view answers "how far is this from D" and
-/// nothing else. By DEFAULT it never follows the sound to another string;
-/// swiping or the arrows are the way to move, so the screen can't yank away
-/// mid-turn on a peg. The Follow toggle opts into hands-free movement, where
-/// `StringFocus` keeps that same promise by policy: a brush never steals the
-/// screen, only sustained play elsewhere (or a settled string) moves it.
+/// nothing else — for the ~0.85 s it takes `FollowFocus` to walk the screen
+/// over, hands-free, the same way the watch moves. The policy is what keeps
+/// the founding promise that the screen can't yank away mid-turn on a peg:
+/// a brush never steals the screen, only sustained play elsewhere (or a
+/// settled string, faster) moves it — and a swipe or arrow always wins.
 struct StringView: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
     @ObservedObject var detection: DetectionSettings
 
     @StateObject private var single: SingleStringTuner
-    /// The hands-free ear (see `FollowFocus`) — running only while the
-    /// Follow toggle is on. The toggle is remembered locally, not synced:
-    /// it's an interaction mode of THIS device's screen, like window size.
+    /// The hands-free ear (see `FollowFocus`), always listening.
     @StateObject private var follow: FollowFocus
-    @AppStorage("stringView.follow", store: LaunchStores.defaults)
-    private var isFollowing = false
     @State private var index: Int
     /// Finger-following displacement of the dial pane while a swipe is in
     /// flight — zero whenever the pane is at rest.
@@ -110,9 +106,13 @@ struct StringView: View {
         // element and clobbers their own ids (string.target went missing).
         .task {
             single.attach()
-            if isFollowing {
-                follow.begin(instance: instance, index: index, tuning: detection.tuning)
+            // The intonation analyzer's verdicts count as focused-string
+            // activity (see `FollowFocus.focusedVoice`) — playing this
+            // string's octave must not read as a rival taking over.
+            follow.focusedVoice = { [weak monitor = single.intonation] in
+                monitor?.voiceLevel
             }
+            follow.begin(instance: instance, index: index, tuning: detection.tuning)
         }
         .onDisappear {
             single.detach()
@@ -121,20 +121,16 @@ struct StringView: View {
         .onChangeCompat(of: instance) { _ in
             single.apply(instance: instance, index: index, tuning: detection.tuning)
             // The follow ear's targets move with the reference/temperament.
-            if follow.isRunning {
-                follow.begin(instance: instance, index: index, tuning: detection.tuning)
-            }
+            follow.begin(instance: instance, index: index, tuning: detection.tuning)
         }
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
-            if follow.isRunning {
-                follow.begin(instance: instance, index: index, tuning: tuning)
-            }
+            follow.begin(instance: instance, index: index, tuning: tuning)
         }
         // The policy said "the player moved on": step the pane the same way
         // a swipe would, animation included.
         .onChangeCompat(of: follow.focusIndex) { focused in
-            guard isFollowing, focused != index else { return }
+            guard focused != index else { return }
             animatedStep(focused - index)
         }
         #if os(macOS)
@@ -245,6 +241,7 @@ struct StringView: View {
                 tuner: single.tuner,
                 naming: settings.naming,
                 isLocked: instance.isLocked,
+                isSettled: follow.isSettled,
                 canStepTarget: { delta in canStepTarget(delta) },
                 stepTarget: { delta in stepTarget(delta) })
         } else {
@@ -316,13 +313,6 @@ struct StringView: View {
             arrow(systemName: "chevron.left", id: "string.prev", by: -1)
             dots
             arrow(systemName: "chevron.right", id: "string.next", by: 1)
-            FollowToggle(isFollowing: $isFollowing) { on in
-                if on {
-                    follow.begin(instance: instance, index: index, tuning: detection.tuning)
-                } else {
-                    follow.end()
-                }
-            }
         }
     }
 

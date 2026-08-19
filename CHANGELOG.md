@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- Bass round two, everywhere: a decaying plucked string no longer fakes the octave (the tail sheds its odd harmonics first, which used to flash the intonation verdict at the end of every open pluck and after damping), and a string that reads intermittently through a small microphone — a bass A on the wrist — can now take the screen: a missed frame no longer erases its whole claim, on watch and in the Mac/iOS follow mode alike.
+
 ### build 14 — 2026-08-19
 
 - Watch: three bass field fixes. The intonation verdict now stays on screen after the plucked note fades (it used to flash for only as long as the octave rang), and taking the measurement can no longer be interrupted by the 12th-fret note masquerading as a neighbouring string — the tuner now recognizes it as the focused string's own octave and holds focus. And the double-stop pair display is now bowed-instruments-only: on a bass, a plucked low string's harmonics could read as two other strings sounding, putting an interval readout in the way of plain tuning.

@@ -27,9 +27,9 @@ public struct DemoScore: Equatable, Sendable {
 
     public let steps: [Step]
 
-    /// What plays with no `-demo-pose`: a 3.2-second loop that keeps every
+    /// What plays with no `-demo-pose`: a 3.65-second loop that keeps every
     /// live element of every screen fed — an open G a touch flat (a string
-    /// dial, the strobe, an intonation OPEN sample), its octave (the
+    /// dial, the strobe, an intonation OPEN sample), a damp, its octave (the
     /// intonation delta, the grid's octave layer, arriving through the real
     /// routing), then a D+A fifth with the upper voice 1.8¢ low (the
     /// interval chip beating at ~2/s). The UI tests that wait for those
@@ -37,10 +37,17 @@ public struct DemoScore: Equatable, Sendable {
     /// as the element it needs stops sounding — must land a full capture
     /// (six stable frames, ~0.3 s) inside that; a longer loop flakes.
     ///
+    /// The rest between the G and its octave is load-bearing: an even-only
+    /// reading directly continuing an open one is a decaying open string to
+    /// the analyzer, not an octave — a real player damps or refingers, and
+    /// the demo must play like one. 0.35 s covers the ~0.1 s amplitude ease
+    /// below the silence gate plus the three RMS-silent windows a fresh
+    /// attack needs.
+    ///
     /// The G phase is 0.9 s — one frame OVER `StringFocus.switchFrames`
     /// (~0.85 s), so the watch's hands-free focus visibly walks back to the
     /// G string each loop instead of sticking wherever the pair left it.
-    public static let drift = parse("0.9:55@-1.6;0.8:67@5.8;1.6:62,69@-1.8")!
+    public static let drift = parse("0.9:55@-1.6;0.35:rest;0.8:67@5.8;1.6:62,69@-1.8")!
 
     /// `-demo-pose` syntax: steps separated by `;`, each `[seconds:]voices`,
     /// voices comma-separated as `midi[@cents]`.

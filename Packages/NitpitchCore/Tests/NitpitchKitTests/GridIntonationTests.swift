@@ -43,6 +43,10 @@ final class GridIntonationTests: XCTestCase {
         } else {
             XCTFail("an open reading must reach the dial")
         }
+        // The damp between the two notes: without it, an even-only reading
+        // directly continuing an open one is the open string's decaying
+        // tail, not an octave (the parity rule the analyzer shares).
+        for _ in 0..<3 { tuner.ingest(.silent) }
         for _ in 0..<8 { tuner.ingest(result(cents: 6, even: true)) }
         XCTAssertEqual(tuner.delta ?? .nan, 8, accuracy: 0.3)
     }

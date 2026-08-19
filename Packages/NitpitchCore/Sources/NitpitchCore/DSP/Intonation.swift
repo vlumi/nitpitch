@@ -66,6 +66,13 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// Whether the mode is on. `analyze` answers nil while it isn't, so the
     /// subscription can call unconditionally and pay nothing when off.
     private var active = false
+    /// The last note's slot, and whether real silence has passed since —
+    /// what separates a fresh octave from a decaying open (see `analyze`).
+    private var lastNoteSlot: IntonationSlot?
+    private var quietFrames = 0
+    /// Consecutive RMS-silent frames before a following note counts as a
+    /// fresh attack rather than the same note continuing.
+    private static let freshAttackQuietFrames = 3
 
     public init(sampleRate: Double, target: Double = 0, tuning: DetectionTuning = .default) {
         self.sampleRate = sampleRate
@@ -81,6 +88,8 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         self.target = target
         self.tuning = tuning
         estimator?.reset()
+        lastNoteSlot = nil
+        quietFrames = 0
     }
 
     public func setActive(_ isActive: Bool) {
@@ -108,6 +117,7 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         let level = Detection.displayLevel(rms: Double(rms))
         guard rms > tuning.silenceRMS else {
             estimator?.reset()
+            quietFrames += 1
             return Frame(sounding: .nothing, level: level)
         }
 
@@ -121,7 +131,22 @@ public final class IntonationAnalyzer: @unchecked Sendable {
             return Frame(sounding: .nothing, level: level)
         }
         let cents = PitchMath.cents(from: target, to: reading.frequency)
-        let slot: IntonationSlot = reading.evenPartialsOnly ? .octave : .open
+        var slot: IntonationSlot = reading.evenPartialsOnly ? .octave : .open
+        // A decaying open string sheds its ODD partials first — the weak
+        // fundamental and the 3rd fade into the floor while the 2nd lingers —
+        // so its tail reads even-only: the octave's fingerprint on a note
+        // that isn't one (field-found on a bass, flashing the delta at the
+        // end of every open pluck). A real octave arrives after a GAP (damp,
+        // refinger); a direct open→octave transition with no silence between
+        // is the same note dying, and is measured as what it is — the folded
+        // cents are identical by construction.
+        if slot == .octave, lastNoteSlot == .open,
+            quietFrames < Self.freshAttackQuietFrames
+        {
+            slot = .open
+        }
+        lastNoteSlot = slot
+        quietFrames = 0
         return Frame(
             sounding: .note(slot: slot, cents: cents, clarity: reading.agreement),
             level: level)

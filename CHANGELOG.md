@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+### build 15 — 2026-08-20
+
 - The string screen now follows your playing by default on iPhone, iPad, and Mac — the watch's behavior, no toggle to find first (the Follow arrow is gone): play another string with intent and the screen walks over, while a brush never steals it and a swipe always wins. And a string held in tune long enough is visibly done: the target turns green, with a success tap on iPhone — once green, the screen moves on to the next string you play almost immediately.
 - Bass round two, everywhere: a decaying plucked string no longer fakes the octave (the tail sheds its odd harmonics first, which used to flash the intonation verdict at the end of every open pluck and after damping), and a string that reads intermittently through a small microphone — a bass A on the wrist — can now take the screen: a missed frame no longer erases its whole claim, on watch and in the Mac/iOS follow mode alike.
 

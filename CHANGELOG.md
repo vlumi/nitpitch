@@ -6,15 +6,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Apple builds are identified as `version (build)`; the build number is shared across iOS, macOS and watchOS and bumped on every release so the apps never diverge.
 
-## [0.2.0] — unreleased
-
-The per-string version: choosing an instrument now means something — every string gets its own dial, the detection genuinely reads them (two at once included), and the instruments themselves become yours: named, tuned, locked, and remembered exactly as you left them.
+## [1.0.0] — unreleased
 
 ### Unreleased (next build)
 
 - Watch: three bass field fixes. The intonation verdict now stays on screen after the plucked note fades (it used to flash for only as long as the octave rang), and taking the measurement can no longer be interrupted by the 12th-fret note masquerading as a neighbouring string — the tuner now recognizes it as the focused string's own octave and holds focus. And the double-stop pair display is now bowed-instruments-only: on a bass, a plucked low string's harmonics could read as two other strings sounding, putting an interval readout in the way of plain tuning.
 
+### build 13 — 2026-08-19
+
 - Harmonic tuning, without a mode: touch a string's 7th-fret-style harmonic (the note three times the open pitch) and the dial reads it as the string itself — the error shown is the string's own, and the readout says "· 3rd harmonic" so the screen and your ear agree about what's sounding. The octave harmonic already worked; it now says "· 2nd harmonic" too. Where a harmonic is genuinely ambiguous between two strings (a violin D's 3rd IS the A's octave), the tuner stays silent rather than guessing — and a real note that merely impersonates a harmonic (playing the fifth above) is never mistaken for one.
+
+## [0.2.0] — unreleased
+
+The per-string version: choosing an instrument now means something — every string gets its own dial, the detection genuinely reads them (two at once included), and the instruments themselves become yours: named, tuned, locked, and remembered exactly as you left them.
 
 ### build 12 — 2026-08-18
 

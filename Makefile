@@ -164,6 +164,14 @@ release-upload:  ## Upload the already-built dist/ package (no rebuild)
 shots: Nitpitch.xcodeproj  ## Guided screenshot capture: PLATFORM=iphone|ipad|mac [OUT=shots]
 	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(OUT)" Scripts/shoot.sh
 
+.PHONY: guide-shots
+guide-shots: Nitpitch.xcodeproj  ## Capture the site guide's shots: PLATFORM=iphone|mac [OUT=guide-shots]
+	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(or $(OUT),guide-shots)" SET=guide Scripts/shoot.sh
+
+.PHONY: watch-shots
+watch-shots: Nitpitch.xcodeproj  ## Capture the site guide's watch shots into guide-shots/watch
+	@Scripts/watch-shots.sh
+
 .PHONY: shots-organize
 shots-organize:  ## Rename freehand captures: PLATFORM=iphone|ipad|mac DIR=<folder>
 	@Scripts/asc/run.sh organize "$(filter-out all,$(PLATFORM))" $(if $(DIR),"$(DIR)",--list)

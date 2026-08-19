@@ -78,6 +78,39 @@ SHOTS = [
      "to a bandmate' in one image."),
 ]
 
+# The site guide's shots (nitpitch.app/guide) — the states the ASC set
+# doesn't cover, captured with the same machinery so they're reproducible
+# when the UI changes. Select with --set=guide (Scripts/shoot.sh: SET=guide,
+# or `make guide-shots`). The guide reuses the ASC set's images for the
+# screens both need (grid, string-view, launch, presets, share).
+GUIDE_SHOTS = [
+    ("listening",
+     "-demo-pose rest",
+     "The launch screen with nothing sounding: 'Play a note' — the state "
+     "the guide explains first. No staging; frame and shoot."),
+    ("harmonic",
+     "-demo-open violin -demo-pose 74@-2",
+     "Tap the G string's dial: the sound is G's 3rd harmonic (D5-ish), and "
+     "the readout says so — '· 3rd harmonic' beside the cents, reading the "
+     "G string on target."),
+    ("follow",
+     "-demo-open violin",
+     "Tap the G string's dial, then the location arrow (Follow) so it "
+     "lights: the default score walks the strings and the screen follows. "
+     "Shoot with the arrow lit."),
+    ("intonation",
+     "-demo-open violin",
+     "On the grid, toggle the intonation layer from the toolbar and wait "
+     "one loop: the open G and its octave both capture and the panel shows "
+     "the delta. Frame and shoot."),
+    ("settings-sync",
+     "-demo-pose rest",
+     "Open Settings (the gear): the iCloud Sync switch with its footer "
+     "text visible. Frame and shoot."),
+]
+
+SETS = {"asc": SHOTS, "guide": GUIDE_SHOTS}
+
 
 def rename_set(d, raw_files, names, platform, subdir=None):
     """Rename `raw_files` (already in capture order) to canonical names, into
@@ -96,21 +129,26 @@ def main():
     flagset = {f.split("=", 1)[0] for f in flags}
     langs = next(
         (f.split("=", 1)[1].split(",") for f in flags if f.startswith("--langs=")), None)
+    shot_set = next(
+        (f.split("=", 1)[1] for f in flags if f.startswith("--set=")), "asc")
+    if shot_set not in SETS:
+        sys.exit(f"unknown shot set '{shot_set}' (asc|guide)")
+    shots = SETS[shot_set]
     if not args or args[0] not in ("iphone", "ipad", "mac"):
         sys.exit(
             "usage: organize-shots.py <iphone|ipad|mac> "
-            "[<dir> | --list] [--by-mtime] [--langs=en]")
+            "[<dir> | --list] [--by-mtime] [--langs=en] [--set=asc|guide]")
     platform = args[0]
-    names = [name for name, _, _ in SHOTS]
+    names = [name for name, _, _ in shots]
 
     if "--plain" in flagset:  # machine-readable, for Scripts/shoot.sh
-        for name, launch_args, desc in SHOTS:
+        for name, launch_args, desc in shots:
             print(f"{name}\t{launch_args}\t{desc}")
         return
 
     if "--list" in flagset or len(args) < 2:
-        print(f"Capture these {len(SHOTS)} shots for {platform}, in this order:\n")
-        for i, (name, launch_args, desc) in enumerate(SHOTS, 1):
+        print(f"Capture these {len(shots)} shots for {platform}, in this order:\n")
+        for i, (name, launch_args, desc) in enumerate(shots, 1):
             print(f"  {i}. {name}-{platform}.png   (launch: {launch_args})")
             print(f"     {desc}")
         print("\nShots 1 (grid, Light) and 2 (grid-dark) are the same staged "

@@ -4,6 +4,12 @@
     "" : {
 
     },
+    "· 2nd harmonic" : {
+      "comment" : "Beside the cents when the sound is the string's octave harmonic"
+    },
+    "· 3rd harmonic" : {
+      "comment" : "Beside the cents when the sound is the string's 3rd harmonic"
+    },
     "“%@” already exists." : {
       "comment" : "Body of the replace confirmation; the placeholder is the preset's name"
     },

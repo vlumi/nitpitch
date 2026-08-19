@@ -53,6 +53,11 @@ public final class HarmonicEstimator {
         /// rolls the fundamental off). Intonation checking is built on this
         /// parity: one target, and the octave recognized by what's missing.
         public let evenPartialsOnly: Bool
+        /// The lowest partial order behind the estimate — 1 when the note's
+        /// own fundamental was evidence. The harmonic lenses require
+        /// exactly that (`DetectorBank`): a k-th-harmonic claim without the
+        /// k·f partial itself is a constellation of leftovers, not a note.
+        public let anchor: Int
     }
 
     /// How many harmonics of each target to measure. Beyond the 6th there's
@@ -230,7 +235,8 @@ public final class HarmonicEstimator {
             agreement: max(0, 1 - spread / Self.agreementCents),
             partials: partials.count,
             strength: strength,
-            evenPartialsOnly: partials.allSatisfy { $0.order.isMultiple(of: 2) })
+            evenPartialsOnly: partials.allSatisfy { $0.order.isMultiple(of: 2) },
+            anchor: lowest)
     }
 
     /// One usable partial: which harmonic it is, the fundamental it implies,

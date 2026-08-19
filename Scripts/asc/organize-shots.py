@@ -95,9 +95,9 @@ GUIDE_SHOTS = [
      "G string on target."),
     ("follow",
      "-demo-open violin",
-     "Tap the G string's dial, then the location arrow (Follow) so it "
-     "lights: the default score walks the strings and the screen follows. "
-     "Shoot with the arrow lit."),
+     "Tap the G string's dial and wait a loop: the default score walks "
+     "the strings and the screen follows by itself. Shoot mid-walk, on "
+     "whichever string the score just pulled it to."),
     ("intonation",
      "-demo-open violin",
      "On the grid, toggle the intonation layer from the toolbar and wait "

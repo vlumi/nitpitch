@@ -102,11 +102,10 @@ final class NitpitchUITests: XCTestCase {
 
     // MARK: - The string view
 
-    /// The Follow toggle: hands-free, the screen walks to the string being
-    /// played. Under the demo's drift score the D+A pair sounds for 1.6 s
-    /// each loop — past the policy's sustained-rival threshold — so the
-    /// view must leave G3 by itself once Follow is on. Off by default:
-    /// the founding no-yank rule stays until asked.
+    /// Hands-free following is the default, as on the watch — no toggle to
+    /// find first. Under the demo's drift score the D+A pair sounds for
+    /// 1.6 s each loop — past the policy's sustained-rival threshold — so
+    /// the view must leave G3 by itself.
     func testFollowWalksToThePlayedString() {
         let app = launch(extraArguments: ["-demo"])
         openViolinGrid(app)
@@ -114,25 +113,39 @@ final class NitpitchUITests: XCTestCase {
 
         let target = app.descendants(matching: .any)["string.target"]
         XCTAssertTrue(target.waitForExistence(timeout: 5))
-        XCTAssertTrue(target.label.hasPrefix("G"), "first violin string is G3")
+        XCTAssertFalse(
+            app.descendants(matching: .any)["string.follow"].exists,
+            "the opt-in toggle is gone — following IS the string view")
 
-        let follow = app.descendants(matching: .any)["string.follow"].firstMatch
-        XCTAssertTrue(follow.waitForExistence(timeout: 5))
-        XCTAssertEqual(follow.value as? String, "Off", "follow is opt-in")
-        follow.tap()
-        XCTAssertEqual(follow.value as? String, "On")
-
-        // One full drift loop is 3.3 s; the pair phase's sustained D and A
-        // must pull the screen off G within a couple of loops.
+        // Wherever the walk stands at the moment of arrival, the score keeps
+        // it moving — one full drift loop (~3.7 s) always changes the target.
+        let initial = target.label
         let moved = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "NOT (label BEGINSWITH %@)", "G"),
+            predicate: NSPredicate(format: "label != %@", initial),
             object: target)
         XCTAssertEqual(
             XCTWaiter().wait(for: [moved], timeout: 10), .completed,
-            "the screen should follow the sustained pair")
+            "the screen should walk to the played string by itself")
+    }
 
-        follow.tap()
-        XCTAssertEqual(follow.value as? String, "Off", "and it turns back off")
+    /// The settled verdict, surfaced: a string held in tune long enough is
+    /// DONE, and the target says so (green to the eye, "Tuned" to
+    /// accessibility — the same verdict the watch wears on the name).
+    func testASettledStringReportsTuned() {
+        let app = launch(extraArguments: ["-demo", "-demo-pose", "55@-1"])
+        openViolinGrid(app)
+        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+
+        let target = app.descendants(matching: .any)["string.target"]
+        XCTAssertTrue(target.waitForExistence(timeout: 5))
+
+        // Settling takes ~1.5 s of continuous in-tune reading.
+        let settled = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "Tuned"),
+            object: target)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [settled], timeout: 8), .completed,
+            "a held in-tune G3 should settle and say so")
     }
 
     /// A grid cell opens its string full screen; the arrows walk the strings;
@@ -174,10 +187,17 @@ final class NitpitchUITests: XCTestCase {
 
     /// The intonation panel is ambient on the string view: the octave's own
     /// dial and both capture values sit below the switcher, no mode to find.
-    /// Launched under -demo, whose synthetic measurement populates them —
-    /// the simulator's real microphone is silence and captures nothing.
+    /// The pose LOOPS the measurement's own story — open G, damp, octave,
+    /// damp — because it starts at launch, not at view entry: whatever phase
+    /// the view arrives in, a full pass plays within one loop. Both samples
+    /// capture, the delta stays up, and the octave phases also pin that the
+    /// screen stays put (the analyzer claims them as this string's voice;
+    /// they must never read as a rival string pulling focus away).
     func testIntonationPanelIsAmbientAndCaptures() {
-        let app = launch(extraArguments: ["-demo"])
+        let app = launch(
+            extraArguments: [
+                "-demo", "-demo-pose", "1:55@-1.6;0.4:rest;1.5:67@5.8;0.4:rest",
+            ])
         openViolinGrid(app)
         app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
         XCTAssertTrue(
@@ -189,11 +209,13 @@ final class NitpitchUITests: XCTestCase {
         let delta = app.descendants(matching: .any)["intonation.delta"]
         XCTAssertTrue(delta.exists)
 
-        // The demo's measurement lands: the delta stops reading "—".
+        // The measurement lands within two 3.3 s loops of arriving: the
+        // delta stops reading "—", and stays — nothing in the pose can pull
+        // focus off G and reset the capture.
         let populated = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value != %@", "—"), object: delta)
         XCTAssertEqual(
-            XCTWaiter().wait(for: [populated], timeout: 5), .completed,
+            XCTWaiter().wait(for: [populated], timeout: 10), .completed,
             "the demo measurement should populate the delta")
 
         let shot = XCTAttachment(screenshot: app.screenshot())

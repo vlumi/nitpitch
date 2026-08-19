@@ -60,7 +60,7 @@ final class DemoSignalTests: XCTestCase {
     /// The built-in drift score is data, so a typo in it is a launch-time
     /// crash in demo mode only — pin that it parses and covers the three
     /// elements the screens (and their UI tests) wait for.
-    func testTheDriftScoreCarriesEveryElement() {
+    func testTheDriftScoreCarriesEveryElement() throws {
         let steps = DemoScore.drift.steps
 
         XCTAssertEqual(steps.compactMap(\.duration).count, steps.count, "it loops")
@@ -72,6 +72,13 @@ final class DemoSignalTests: XCTestCase {
         XCTAssertTrue(
             midis.contains { midi in midis.contains(midi + 12) },
             "an open string and its octave, for the intonation delta")
+        let octaveIndex = try XCTUnwrap(
+            steps.firstIndex { step in
+                step.voices.contains { voice in midis.contains(voice.midi - 12) }
+            })
+        XCTAssertTrue(
+            steps[octaveIndex - 1].voices.isEmpty,
+            "a damp before the octave — a direct open→octave transition reads as decay")
     }
 
     // MARK: - The signal the detector hears

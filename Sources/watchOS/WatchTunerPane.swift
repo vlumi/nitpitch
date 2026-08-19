@@ -108,18 +108,24 @@ struct WatchTunerPane<Footer: View>: View {
             // the cents: play open, play the 12th, read the delta — both
             // hands never leave the tools.
             if tuner.isOctaveSounding, let delta = tuner.intonationDelta {
-                Text(verbatim: String(format: "Δ %+.1f", delta))
-                    .font(.system(size: 22, weight: .medium, design: .rounded))
-                    .foregroundStyle(TuningDisplay.isInTune(cents: delta) ? .green : .orange)
+                deltaLine(delta)
             } else {
                 Text(verbatim: String(format: "%+.0f¢", cents))
                     .font(.system(size: 22, weight: .medium, design: .rounded))
                     .foregroundStyle(TuningDisplay.isInTune(cents: cents) ? .green : .orange)
             }
         case .listening:
-            Text(verbatim: "Play a note")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            // A measured delta OWNS the quiet: a plucked octave decays in a
+            // second, and the verdict must outlive the note (field-found on
+            // a bass — the delta only flashed). It clears with the captures:
+            // refocus, knobs, or the crown.
+            if let delta = tuner.intonationDelta {
+                deltaLine(delta)
+            } else {
+                Text(verbatim: "Play a note")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         case .denied:
             Text(verbatim: "Microphone access is off")
                 .font(.footnote)
@@ -131,6 +137,12 @@ struct WatchTunerPane<Footer: View>: View {
         case .idle:
             Text(verbatim: " ")
         }
+    }
+
+    private func deltaLine(_ delta: Double) -> some View {
+        Text(verbatim: String(format: "Δ %+.1f", delta))
+            .font(.system(size: 22, weight: .medium, design: .rounded))
+            .foregroundStyle(TuningDisplay.isInTune(cents: delta) ? .green : .orange)
     }
 
     /// The string names, as many as GENUINELY fit at full size — the

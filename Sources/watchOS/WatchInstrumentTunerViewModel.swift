@@ -201,13 +201,32 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private func consume(
         _ results: [DetectionResult], intonation frame: IntonationAnalyzer.Frame?
     ) {
-        let levels = results.map { $0.frequency != nil ? $0.level : nil }
+        var levels = results.map { $0.frequency != nil ? $0.level : nil }
         consumeIntonation(frame)
+        // The intonation analyzer confidently naming the sound — the focused
+        // string's open OR its octave — IS the focused string speaking, even
+        // when the bank's per-band view disagrees (a bass E's 12th-fret note
+        // sits in the D string's BAND, and on frames the spectral engine
+        // missed, D was accumulating rival streak and stealing focus mid-
+        // measurement — resetting the very captures being taken; field-found).
+        if let frame, case .note = frame.sounding {
+            levels[focus.focusIndex] = max(levels[focus.focusIndex] ?? 0, frame.level)
+        }
         // Octave claims are parity-flagged and never masquerade as a pair
-        // member (the interval readout's rule).
+        // member (the interval readout's rule). Pair mode is BOWED only:
+        // beat-tuning fifths is the violin tradition (and the shipped copy
+        // stance); on a fretted instrument the "pair" is usually a plucked
+        // low string's own harmonics landing in its neighbours' bands
+        // (field-found on a bass: E lighting D+G), and the display got in
+        // tuning's way.
+        let resolved: IntervalBeat.Reading?
         let pairFrequencies = results.map { $0.evenPartialsOnly ? nil : $0.frequency }
-        let resolved = IntervalBeat.resolve(
-            frequencies: pairFrequencies, midis: instrument.strings)
+        if instrument.family == .bowed {
+            resolved = IntervalBeat.resolve(
+                frequencies: pairFrequencies, midis: instrument.strings)
+        } else {
+            resolved = nil
+        }
         updatePair(resolved, frequencies: pairFrequencies)
 
         var cents: Double?

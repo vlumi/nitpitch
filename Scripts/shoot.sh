@@ -25,6 +25,8 @@ cd "$(dirname "$0")/.."
 
 PLATFORM="${PLATFORM:-iphone}"
 OUT="${OUT:-shots}"
+# Which shot list to walk: asc (the store set) or guide (nitpitch.app/guide).
+SET="${SET:-asc}"
 LANG_DIR="en"
 BUNDLE="fi.misaki.nitpitch"
 APP_NAME="Nitpitch"
@@ -121,7 +123,7 @@ launch_with() {  # $1 = shot's launch args (word-split on purpose)
     LAUNCHED="$args"
 }
 
-total=$(python3 Scripts/asc/organize-shots.py "$PLATFORM" --plain | wc -l | tr -d ' ')
+total=$(python3 Scripts/asc/organize-shots.py "$PLATFORM" --plain --set="$SET" | wc -l | tr -d ' ')
 i=0
 while IFS=$'\t' read -r name shot_args desc; do
     i=$((i + 1))
@@ -141,7 +143,7 @@ while IFS=$'\t' read -r name shot_args desc; do
         read -r again </dev/tty
         [ "$again" = r ] || break
     done
-done < <(python3 Scripts/asc/organize-shots.py "$PLATFORM" --plain)
+done < <(python3 Scripts/asc/organize-shots.py "$PLATFORM" --plain --set="$SET")
 
 echo ""
 echo "Done. Set under $OUT/$PLATFORM/$LANG_DIR/ — upload with make asc-screenshots(-apply)."

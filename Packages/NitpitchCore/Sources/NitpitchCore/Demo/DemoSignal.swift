@@ -47,6 +47,7 @@ public struct DemoScore: Equatable, Sendable {
     ///
     ///   "69@2"                  one A4, 2¢ sharp, held forever
     ///   "1:55@-1.6;67@5.8"      open G for a second, then its octave held
+    ///   "rest"                  silence, held — the "Play a note" stage
     ///
     /// A step without a duration holds forever and must be last; when every
     /// step has one, the sequence loops. Returns nil for anything it can't
@@ -65,6 +66,12 @@ public struct DemoScore: Equatable, Sendable {
                 body = String(body[body.index(after: colon)...])
             } else {
                 guard index == parts.count - 1 else { return nil }
+            }
+            // A rest: a step with nothing sounding — how a pose stages the
+            // "Play a note" state, and the gap between notes in a sequence.
+            if body == "rest" {
+                steps.append(Step(voices: [], duration: duration))
+                continue
             }
             var voices: [Voice] = []
             for spec in body.split(separator: ",") {

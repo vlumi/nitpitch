@@ -11,6 +11,19 @@ import XCTest
 final class DemoSignalTests: XCTestCase {
     // MARK: - The pose language
 
+    func testARestPosesSilence() throws {
+        let score = try XCTUnwrap(DemoScore.parse("1:rest;69@2"))
+        XCTAssertEqual(score.steps[0].voices, [])
+        XCTAssertEqual(score.steps[0].duration, 1)
+        XCTAssertEqual(score.steps[1].voices.map(\.midi), [69])
+
+        // A lone rest holds silence forever — how a shot stages the
+        // listening state.
+        let lone = try XCTUnwrap(DemoScore.parse("rest"))
+        XCTAssertEqual(lone.steps[0].voices, [])
+        XCTAssertNil(lone.steps[0].duration)
+    }
+
     func testAPoseParses() throws {
         let score = try XCTUnwrap(DemoScore.parse("62,69@-1.8"))
 

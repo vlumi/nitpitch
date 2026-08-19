@@ -36,3 +36,4 @@ Scripts/.asc-config
 # App Store screenshot captures (make shots) — staged locally, uploaded via
 # Scripts/asc/screenshots.py, never committed.
 /shots/
+guide-shots/

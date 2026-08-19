@@ -10,7 +10,9 @@
 # shipped version (see release_base in release-lib.sh).
 #
 # Versioning (project.yml, shared across all app targets):
-#   • MARKETING_VERSION — bumped only on an `all` release, and only if you say so.
+#   • MARKETING_VERSION — you are asked on every release; blank keeps it. Shared
+#     by every app target, so a version cut on a single-platform release is the
+#     project's version — a milestone that ships to one platform still moved it.
 #   • CURRENT_PROJECT_VERSION — the build number, always bumped on every target.
 #
 # Usage: release-publish.sh <ios|macos|all>
@@ -44,25 +46,27 @@ if [ "$cur_build" -gt "$(highest_tagged_build)" ]; then
     exit 0
 fi
 
+# **Asked on every release, not only on `all`** (skid's lesson): the prompt used
+# to be gated behind an all-platform release, so a single-platform one silently
+# kept the version — and a milestone that only ships to one platform still moved
+# the project on. Blank keeps it, so nothing here forces a bump.
 new_version="$cur_version"
-if [ "$platform" = "all" ]; then
-    IFS='.' read -r MA MI PA <<EOF
+IFS='.' read -r MA MI PA <<EOF
 ${cur_version}
 EOF
-    suggested="${MA}.${MI}.$(( ${PA:-0} + 1 ))"
-    printf 'Bump marketing version? current %s — enter new (blank = keep, "p" = %s): ' \
-        "$cur_version" "$suggested"
-    read -r answer || answer=""
-    case "$answer" in
-        "")  new_version="$cur_version" ;;
-        p|P) new_version="$suggested" ;;
-        *)   [[ "$answer" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
-                 || die "version must be X.Y.Z (got '$answer')"
-             new_version="$answer" ;;
-    esac
-else
-    echo "single-platform release ($platform): keeping version ${cur_version} (build still bumps every target)."
-fi
+suggested="${MA}.${MI}.$(( ${PA:-0} + 1 ))"
+minor_suggested="${MA}.$(( ${MI:-0} + 1 )).0"
+printf 'Bump marketing version? current %s — blank = keep, "p" = %s, "m" = %s, or X.Y.Z: ' \
+    "$cur_version" "$suggested" "$minor_suggested"
+read -r answer || answer=""
+case "$answer" in
+    "")  new_version="$cur_version" ;;
+    p|P) new_version="$suggested" ;;
+    m|M) new_version="$minor_suggested" ;;
+    *)   [[ "$answer" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+             || die "version must be X.Y.Z (got '$answer')"
+         new_version="$answer" ;;
+esac
 # Next build = one past BOTH the base's current build and every existing tag:
 # on main those agree, but a patch branch lags behind builds main has cut since
 # (and vice versa), and build numbers stay globally monotonic across branches so
@@ -81,7 +85,36 @@ sed -i '' -E "s/(CURRENT_PROJECT_VERSION: *)\"[0-9]+\"/\1\"${new_build}\"/" "$PR
 
 # ── Stamp the changelog: Unreleased → build N (stages CHANGELOG.md if it had entries)
 say "Stamping the changelog…"
-promote_changelog_build "$new_build"
+# Pass the version ONLY when it changed: a new `## [X.Y.Z]` heading belongs
+# above the first build of that version, and nowhere else.
+if [ "$new_version" != "$cur_version" ]; then
+    promote_changelog_build "$new_build" "$new_version"
+else
+    promote_changelog_build "$new_build"
+fi
+
+# An empty Unreleased is legitimate for a docs/internal-only build, but it also
+# happens when user-facing notes were written into an ALREADY-SHIPPED section by
+# mistake (lattice shipped a build with no notes at all that way). If the tree
+# has user-facing commits since the last build tag, say so and make the author
+# confirm rather than stamping nothing in silence.
+if ! git diff --cached --quiet -- "$CHANGELOG_FILE" 2>/dev/null; then
+    :  # notes were promoted — nothing to warn about
+else
+    last_tag="$(git tag --list 'mac/v*' --sort=-v:refname | head -1)"
+    if [ -n "$last_tag" ]; then
+        n_commits="$(git log --oneline --no-merges "${last_tag}..HEAD" -- \
+            ':(exclude)*.md' ':(exclude)Scripts' | wc -l | tr -d ' ')"
+        if [ "$n_commits" != "0" ]; then
+            printf '  !! %s code commits since %s but no Unreleased notes.\n' \
+                "$n_commits" "$last_tag"
+            printf '     A build with user-facing changes should have notes.\n'
+            printf '     Continue anyway? [y/N] '
+            read -r reply || reply=""
+            case "$reply" in [yY]*) ;; *) die "aborted — write the notes first." ;; esac
+        fi
+    fi
+fi
 
 # ── Branch, commit, push, PR with auto-merge ──────────────────────────────────
 rel_branch="release/v${new_version}-${new_build}"

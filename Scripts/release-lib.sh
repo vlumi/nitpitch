@@ -21,8 +21,16 @@ die() { echo "error: $*" >&2; exit 1; }
 # mechanical promotion — closing the gap where a build could ship without a heading.
 # No-op (exit 0, nothing staged) if Unreleased has no real content yet, so a build
 # with only doc/internal changes doesn't get an empty heading.
+#
+# **Writes the `## [X.Y.Z]` heading too, when the version changed** (skid's lesson:
+# a hand-set line in an otherwise automatic lane is a step that gets forgotten —
+# skid tagged v0.8.0 while its changelog still filed the entries under v0.7.0).
+# The old version's heading keeps covering the builds it shipped; its prose blurb
+# travels with it. The new section opens with "— unreleased" and no blurb — the
+# blurb is the author's word, written when there is something to say.
 promote_changelog_build() {
     local build="$1"
+    local version="${2:-}"
     local heading="### Unreleased (next build)"
     [ -f "$CHANGELOG_FILE" ] || { say "no $CHANGELOG_FILE — skipping changelog stamp."; return 0; }
 
@@ -45,7 +53,45 @@ promote_changelog_build() {
     # date is the release/stamp day (this runs in the publish lane).
     local today; today="$(date +%Y-%m-%d)"
     local tmp; tmp="$(mktemp)"
-    awk -v build="$build" -v today="$today" '
+    # `version` is set only when this release cuts a NEW marketing version.
+    #
+    # Same version: promote in place — the `## [X.Y.Z]` section this build
+    # belongs to is already open above Unreleased.
+    #
+    # New version: the OLD heading must keep covering the builds it shipped, so
+    # nothing is rewritten. The Unreleased heading is replaced by a whole new
+    # section — `## [NEW] — unreleased`, a fresh Unreleased, this build's
+    # heading — and the old version heading (with its prose blurb, buffered on
+    # the way past) is re-opened below, over its own builds.
+    awk -v build="$build" -v today="$today" -v version="$version" '
+        # The old `## [X.Y.Z]` line: remember it, open the new section here,
+        # and start buffering its blurb (the prose before Unreleased).
+        version != "" && !done && /^## \[/ {
+            old = $0
+            print "## [" version "] — unreleased\n"
+            print h "\n"
+            print "### build " build " — " today "\n"
+            done = 1
+            buffering = 1
+            next
+        }
+        # The old Unreleased heading is consumed (a fresh one was printed
+        # above); its entries belong to the build just promoted, so they stay
+        # where they are. Consumed with the blank line under it, or the file
+        # gains a double gap.
+        buffering && $0 == h { buffering = 0; eat_blank = 1; next }
+        buffering { blurb = blurb $0 "\n"; next }
+        eat_blank && /^$/ { eat_blank = 0; next }
+        # …and the old version heading goes back in just before its newest
+        # build, blurb and all, so it still covers every build it shipped.
+        old != "" && /^### build / {
+            print old
+            if (blurb != "") printf "%s", blurb
+            else print ""
+            old = ""
+            print
+            next
+        }
         $0 == h && !done {
             print h "\n\n### build " build " — " today
             done = 1
@@ -55,7 +101,11 @@ promote_changelog_build() {
     ' h="$heading" "$CHANGELOG_FILE" > "$tmp"
     mv "$tmp" "$CHANGELOG_FILE"
     git add "$CHANGELOG_FILE"
-    echo "  promoted Unreleased → build ${build}"
+    if [ -n "$version" ]; then
+        echo "  promoted Unreleased → v${version} build ${build}"
+    else
+        echo "  promoted Unreleased → build ${build}"
+    fi
 }
 
 # The branch this release is cut from: main (the normal lane), or a version-line

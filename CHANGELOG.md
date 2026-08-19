@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**How this file is maintained:** a user-facing PR writes its own bullet under `### Unreleased (next build)` as part of that PR. The release lane (`make release`) only *stamps* that heading with the build number it cuts and opens a fresh empty `Unreleased` above it — it never writes entries itself. The `### Unreleased (next build)` heading is therefore load-bearing: the stamping script (`Scripts/release-lib.sh`) matches it exactly, and expects its list items to follow immediately with nothing in between.
+**How this file is maintained:** a user-facing PR writes its own bullet under `### Unreleased (next build)` as part of that PR. The release lane (`make release`) only *stamps* that heading with the build number it cuts and opens a fresh empty `Unreleased` above it — and when a release cuts a new marketing version, it opens the `## [X.Y.Z]` section too. It never writes entries themselves. The `### Unreleased (next build)` heading is therefore load-bearing: the stamping script (`Scripts/release-lib.sh`) matches it exactly, and expects its list items to follow immediately with nothing in between.
 
 Apple builds are identified as `version (build)`; the build number is shared across iOS, macOS and watchOS and bumped on every release so the apps never diverge.
 

@@ -7,7 +7,9 @@ import XCTest
 /// it. A violin's four strings throughout: focus starts on G (index 0).
 final class StringFocusTests: XCTestCase {
     /// Frames where only `index` sounds (at full strength); nil = silence.
-    private func frame(_ focus: inout StringFocus, sounding index: Int?, inTune: Bool = false)
+    /// `inTune` nil while the focused string sounds = no verdict this frame
+    /// (a gate flutter, an intonation frame vouching for the string).
+    private func frame(_ focus: inout StringFocus, sounding index: Int?, inTune: Bool? = false)
         -> StringFocus.Event
     {
         var levels: [Double?] = [nil, nil, nil, nil]
@@ -83,19 +85,58 @@ final class StringFocusTests: XCTestCase {
         XCTAssertFalse(focus.isSettled, "the new string is fresh work")
     }
 
-    /// Backing the peg off un-settles: "done" tracks the string, not history.
+    /// Backing the peg off un-settles: "done" tracks the string, not
+    /// history. But it takes SUSTAINED out-of-tune reading — a wobble frame
+    /// is not a detune (see testAWobbleAfterSettlingKeepsTheVerdict).
     func testGoingOutOfTuneUnsettles() {
         var focus = StringFocus(stringCount: 4)
         for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
         XCTAssertTrue(focus.isSettled)
 
-        _ = frame(&focus, sounding: 0, inTune: false)
+        for _ in 0..<StringFocus.unsettleFrames { _ = frame(&focus, sounding: 0, inTune: false) }
 
         XCTAssertFalse(focus.isSettled)
         // And rivals face the working threshold again.
         for _ in 0..<(StringFocus.switchFrames - 1) {
             XCTAssertEqual(frame(&focus, sounding: 3), .none)
         }
+    }
+
+    /// The frame after the settle haptic is often a decay wobble — an
+    /// out-of-tune reading, or a frame with no verdict at all. The green
+    /// must outlive its own announcement (field-found on a bass: the wrist
+    /// buzzed success and the name never turned).
+    func testAWobbleAfterSettlingKeepsTheVerdict() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
+        XCTAssertTrue(focus.isSettled)
+
+        _ = frame(&focus, sounding: 0, inTune: false)
+        XCTAssertTrue(focus.isSettled, "one wobble reading is not a detune")
+        for _ in 0..<10 { _ = frame(&focus, sounding: 0, inTune: nil) }
+        XCTAssertTrue(focus.isSettled, "no verdict is no evidence")
+        _ = frame(&focus, sounding: 0, inTune: true)
+        XCTAssertTrue(focus.isSettled)
+    }
+
+    /// A bass on a small microphone reads intermittently: in-tune frames
+    /// arrive with gaps between them. Gaps decay the settle streak instead
+    /// of erasing it — the same mercy the rival streaks needed — so the
+    /// string still earns its green, just a little later.
+    func testAnIntermittentInTuneReadingStillSettles() {
+        var focus = StringFocus(stringCount: 4)
+
+        var events: [StringFocus.Event] = []
+        for count in 0..<(StringFocus.settledFrames * 3) {
+            let dropped = count % 3 == 2
+            events.append(
+                frame(&focus, sounding: dropped ? nil : 0, inTune: !dropped))
+        }
+        XCTAssertTrue(events.contains(.settled))
+        XCTAssertTrue(focus.isSettled)
+        XCTAssertEqual(
+            events.filter { $0 == .settled }.count, 1,
+            "hovering around the threshold must not re-announce")
     }
 
     /// The crown: instant, no argument — and reports nothing, because the

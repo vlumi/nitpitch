@@ -35,6 +35,13 @@ public struct StringFocus: Sendable {
     /// Frames of continuous in-tune reading before the focused string counts
     /// as done (~1.5 s at the ~21.5 Hz frame rate).
     public static let settledFrames = 32
+    /// Consecutive out-of-tune READINGS before a settled string is un-called
+    /// (~0.4 s). Backing the peg off is sustained evidence; the single
+    /// wobble frame a decaying pluck throws right after the settle haptic is
+    /// not — the green must outlive the announcement it just made
+    /// (field-found on a bass: the wrist buzzed success and never showed
+    /// green, the verdict dying the very next frame).
+    public static let unsettleFrames = 8
     /// Frames a rival string must sustain to take focus while the focused
     /// string is still being worked on (~0.85 s — longer than any brush).
     public static let switchFrames = 18
@@ -71,6 +78,7 @@ public struct StringFocus: Sendable {
 
     private let stringCount: Int
     private var inTuneStreak = 0
+    private var outOfTuneStreak = 0
     /// Consecutive qualifying frames per rival string.
     private var rivalStreaks: [Int]
     /// The focused string's recent peak strength — the bar rivals are
@@ -105,25 +113,39 @@ public struct StringFocus: Sendable {
             for index in rivalStreaks.indices where index != focusIndex {
                 rivalStreaks[index] = 0
             }
-            if focusedInTune == true {
+            switch focusedInTune {
+            case true?:
+                outOfTuneStreak = 0
                 inTuneStreak += 1
-                if inTuneStreak == Self.settledFrames {
+                if inTuneStreak >= Self.settledFrames, !isSettled {
                     isSettled = true
                     return .settled
                 }
-            } else {
+            case false?:
+                // A confirmed reading OFF the mark is real evidence both
+                // ways: the settle streak restarts, and enough of it in a
+                // row un-calls "done" — backing off the peg is sustained,
+                // a decay wobble is a frame or two.
                 inTuneStreak = 0
-                // Back off the tuning peg and "done" is no longer true.
-                isSettled = false
+                outOfTuneStreak += 1
+                if outOfTuneStreak >= Self.unsettleFrames { isSettled = false }
+            case nil:
+                // Sounding with no verdict — a gate flutter, the intonation
+                // analyzer vouching for the string's own octave: absence of
+                // evidence. The streak decays instead of restarting, the
+                // same mercy the rival streaks needed on a bass reading
+                // intermittently through a small microphone.
+                inTuneStreak = max(0, inTuneStreak - 1)
             }
             return .none
         }
 
         // Silence on the focused string: streaks of QUALIFYING rivals grow
         // (strong enough against the fading peak to be deliberate play, not
-        // a sympathetic ring), and the in-tune streak survives briefly
-        // (isSettled already latched).
-        inTuneStreak = 0
+        // a sympathetic ring), the in-tune streak decays as above, and
+        // isSettled holds — quiet is not un-tuning.
+        inTuneStreak = max(0, inTuneStreak - 1)
+        outOfTuneStreak = 0
         focusPeak *= Self.peakDecayPerFrame
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
@@ -145,6 +167,7 @@ public struct StringFocus: Sendable {
         focusIndex = index
         isSettled = false
         inTuneStreak = 0
+        outOfTuneStreak = 0
         rivalStreaks = Array(repeating: 0, count: stringCount)
         // The new string starts with its own story: the old peak belongs
         // to the string that made it.

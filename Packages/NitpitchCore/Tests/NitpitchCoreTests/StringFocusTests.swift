@@ -119,6 +119,35 @@ final class StringFocusTests: XCTestCase {
         XCTAssertTrue(focus.isSettled)
     }
 
+    /// Bowing smoothly is HARD: uneven pressure genuinely bends the pitch
+    /// past the band for a frame or two, over and over — real readings, not
+    /// noise the smoother could remove. Each excursion costs the settle
+    /// evidence without erasing it, so a violinist whose reading holds the
+    /// band seven frames of every eight still earns the green, just later.
+    func testAWobblyBowStillSettles() {
+        var focus = StringFocus(stringCount: 4)
+
+        var events: [StringFocus.Event] = []
+        for count in 0..<(StringFocus.settledFrames * 4) {
+            let wobble = count % 8 == 7
+            events.append(frame(&focus, sounding: 0, inTune: !wobble))
+        }
+        XCTAssertTrue(events.contains(.settled))
+        XCTAssertTrue(focus.isSettled, "wobble slows the verdict, never vetoes it")
+    }
+
+    /// A string genuinely straddling the in-tune boundary — readings half
+    /// in, half out — is NOT tuned, and the verdict must never land. This
+    /// is the line between tolerating wobble and lying about it.
+    func testABorderlineStringNeverSettles() {
+        var focus = StringFocus(stringCount: 4)
+
+        for count in 0..<(StringFocus.settledFrames * 4) {
+            XCTAssertEqual(frame(&focus, sounding: 0, inTune: count % 2 == 0), .none)
+        }
+        XCTAssertFalse(focus.isSettled)
+    }
+
     /// A bass on a small microphone reads intermittently: in-tune frames
     /// arrive with gaps between them. Gaps decay the settle streak instead
     /// of erasing it — the same mercy the rival streaks needed — so the

@@ -27,6 +27,11 @@ struct CompactDial: View {
     let cents: Double?
     /// Signal strength behind the reading, 0...1. Zero when nothing reads.
     var level: Double = 0
+    /// The aggregate verdict: this string has HELD in tune (`SettleMeter`).
+    /// The name wears it as green — steady where the needle honestly
+    /// wobbles with the bow, and the readable answer to "was that it?"
+    /// when two strings sound at once.
+    var isSettled = false
     /// One factor drives every dimension, so a big Mac window gets a big
     /// dial rather than a postage stamp centred in a prairie — you stand
     /// further from a big window. Capped by the caller.
@@ -57,7 +62,7 @@ struct CompactDial: View {
             // an SE, where six height-bound rows shrink everything.
             CompactNoteName(
                 note: note, naming: naming, fontSize: 26 * scale,
-                color: cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                color: nameColor)
             Text(verbatim: centsLabel)
                 .font(.system(size: 12 * scale).monospacedDigit())
                 .foregroundStyle(
@@ -94,10 +99,19 @@ struct CompactDial: View {
         return TuningDisplay.isInTune(cents: cents)
     }
 
+    /// Settled beats sounding: the verdict holds through silence, so a
+    /// tuned string's name stays green after the bow lifts.
+    private var nameColor: AnyShapeStyle {
+        if isSettled { return AnyShapeStyle(Color.green) }
+        return cents == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary)
+    }
+
     private var centsLabel: String { TuningReadout.centsLabel(cents) }
 
     private var accessibleValue: String {
-        TuningReadout.accessibleValue(cents: cents, octaveDelta: octave?.delta)
+        let value = TuningReadout.accessibleValue(cents: cents, octaveDelta: octave?.delta)
+        guard isSettled else { return value }
+        return String(localized: "Tuned", bundle: .module) + ", " + value
     }
 
     private func deltaLabel(_ delta: Double?) -> String { TuningReadout.deltaLabel(delta) }

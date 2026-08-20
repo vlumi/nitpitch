@@ -68,6 +68,12 @@ public final class StringTunerViewModel: ObservableObject {
     /// `isIntonating`.
     @Published public private(set) var octaveCents: Double?
 
+    /// The aggregate verdict: this string has HELD in tune (`SettleMeter`)
+    /// — the cell's steady green where the per-frame reading wobbles with
+    /// the bow. Judged on the same smoothed cents the dial shows.
+    @Published public private(set) var isSettled = false
+    private var settle = SettleMeter()
+
     /// Which harmonic best explains what's sounding — 1 for the open
     /// string, 2 for the octave, 3 for the 7th-fret-style harmonic — so
     /// the display can say WHY it reads D2 while the ear hears a higher
@@ -150,6 +156,7 @@ public final class StringTunerViewModel: ObservableObject {
         self.band = band
         self.targetOffsetCents = targetOffsetCents
         smoother.reset()
+        resetSettle()
     }
 
     /// Aim at a different string — the string view swiping to a neighbour.
@@ -158,6 +165,7 @@ public final class StringTunerViewModel: ObservableObject {
     public func retarget(_ note: Note) {
         target = note
         smoother.reset()
+        resetSettle()
         resetIntonation()
         strobe.clear()
         if state != .idle { state = .waiting }
@@ -171,6 +179,7 @@ public final class StringTunerViewModel: ObservableObject {
     /// Stop. Safe to call repeatedly.
     public func end() {
         smoother.reset()
+        resetSettle()
         state = .idle
         level = 0
         strobe.clear()
@@ -198,6 +207,7 @@ public final class StringTunerViewModel: ObservableObject {
         if quantized != level { level = quantized }
         guard let hz = result.frequency else {
             feedIntonation(.nothing, level: result.displayLevel)
+            updateSettle(nil)
             quietFrames += 1
             if quietFrames >= Self.quietFramesBeforeIdle, audio.status == .running {
                 smoother.reset()
@@ -232,6 +242,8 @@ public final class StringTunerViewModel: ObservableObject {
             // the open's decaying tail, not an octave — it falls through.)
             strobe.clear()
             lastReadingWasOpen = false
+            // The string's own voice, but no tuning reading: no evidence.
+            updateSettle(nil)
             ingestOctave(epsilon: epsilon, result: result)
             return
         }
@@ -249,8 +261,19 @@ public final class StringTunerViewModel: ObservableObject {
         // target-agnostic.
         let smoothed = smoother.update(cents: absolute)
         let cents = smoothed - Double(target.midi) * 100 - targetOffsetCents
+        updateSettle(TuningDisplay.isInTune(cents: cents))
         state = .reading(cents: cents, clarity: result.clarity)
         strobe.ingest(cents: cents, targetHz: targetHz, dt: Self.hopSeconds)
+    }
+
+    private func updateSettle(_ inTune: Bool?) {
+        _ = settle.ingest(inTune: inTune)
+        if isSettled != settle.isSettled { isSettled = settle.isSettled }
+    }
+
+    private func resetSettle() {
+        settle.reset()
+        if isSettled { isSettled = false }
     }
 
     /// The octave, recognized by parity through this string's own slots:

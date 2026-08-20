@@ -32,16 +32,11 @@ public struct StringFocus: Sendable {
         case settled
     }
 
-    /// Frames of continuous in-tune reading before the focused string counts
-    /// as done (~1.5 s at the ~21.5 Hz frame rate).
-    public static let settledFrames = 32
-    /// Consecutive out-of-tune READINGS before a settled string is un-called
-    /// (~0.4 s). Backing the peg off is sustained evidence; the single
-    /// wobble frame a decaying pluck throws right after the settle haptic is
-    /// not — the green must outlive the announcement it just made
-    /// (field-found on a bass: the wrist buzzed success and never showed
-    /// green, the verdict dying the very next frame).
-    public static let unsettleFrames = 8
+    /// The settled arithmetic lives in `SettleMeter` — shared with the
+    /// grid's per-cell verdict; these forward so the policy's contract
+    /// reads in one place.
+    public static let settledFrames = SettleMeter.settledFrames
+    public static let unsettleFrames = SettleMeter.unsettleFrames
     /// Frames a rival string must sustain to take focus while the focused
     /// string is still being worked on (~0.85 s — longer than any brush).
     public static let switchFrames = 18
@@ -74,11 +69,10 @@ public struct StringFocus: Sendable {
     public static let peakDecayPerFrame = 0.995
 
     public private(set) var focusIndex: Int
-    public private(set) var isSettled = false
+    public var isSettled: Bool { settle.isSettled }
 
     private let stringCount: Int
-    private var inTuneStreak = 0
-    private var outOfTuneStreak = 0
+    private var settle = SettleMeter()
     /// Consecutive qualifying frames per rival string.
     private var rivalStreaks: [Int]
     /// The focused string's recent peak strength — the bar rivals are
@@ -113,39 +107,17 @@ public struct StringFocus: Sendable {
             for index in rivalStreaks.indices where index != focusIndex {
                 rivalStreaks[index] = 0
             }
-            switch focusedInTune {
-            case true?:
-                outOfTuneStreak = 0
-                inTuneStreak += 1
-                if inTuneStreak >= Self.settledFrames, !isSettled {
-                    isSettled = true
-                    return .settled
-                }
-            case false?:
-                // A confirmed reading OFF the mark is real evidence both
-                // ways: the settle streak restarts, and enough of it in a
-                // row un-calls "done" — backing off the peg is sustained,
-                // a decay wobble is a frame or two.
-                inTuneStreak = 0
-                outOfTuneStreak += 1
-                if outOfTuneStreak >= Self.unsettleFrames { isSettled = false }
-            case nil:
-                // Sounding with no verdict — a gate flutter, the intonation
-                // analyzer vouching for the string's own octave: absence of
-                // evidence. The streak decays instead of restarting, the
-                // same mercy the rival streaks needed on a bass reading
-                // intermittently through a small microphone.
-                inTuneStreak = max(0, inTuneStreak - 1)
+            if settle.ingest(inTune: focusedInTune) {
+                return .settled
             }
             return .none
         }
 
         // Silence on the focused string: streaks of QUALIFYING rivals grow
         // (strong enough against the fading peak to be deliberate play, not
-        // a sympathetic ring), the in-tune streak decays as above, and
+        // a sympathetic ring), the settle evidence decays gently, and
         // isSettled holds — quiet is not un-tuning.
-        inTuneStreak = max(0, inTuneStreak - 1)
-        outOfTuneStreak = 0
+        _ = settle.ingest(inTune: nil)
         focusPeak *= Self.peakDecayPerFrame
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
@@ -165,9 +137,7 @@ public struct StringFocus: Sendable {
 
     private mutating func focus(on index: Int) {
         focusIndex = index
-        isSettled = false
-        inTuneStreak = 0
-        outOfTuneStreak = 0
+        settle.reset()
         rivalStreaks = Array(repeating: 0, count: stringCount)
         // The new string starts with its own story: the old peak belongs
         // to the string that made it.

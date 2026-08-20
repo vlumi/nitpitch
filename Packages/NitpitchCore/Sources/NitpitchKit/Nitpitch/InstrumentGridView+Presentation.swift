@@ -326,6 +326,7 @@ struct StringCell: View {
     var body: some View {
         CompactDial(
             note: tuner.target, naming: naming, cents: cents, level: tuner.level,
+            isSettled: tuner.isSettled,
             scale: scale,
             octave: isIntonating
                 ? CompactDial.OctaveReadout(cents: tuner.octaveCents, delta: tuner.delta)

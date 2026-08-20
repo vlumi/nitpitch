@@ -10,6 +10,7 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- Tuning under a wobbly bow got honest help — without lying about the pitch. The needle stays truthful (bow pressure genuinely bends the note, and the display shows it), but the tuned-green verdict now answers the question actually being asked — did the reading HOLD the band — so a bowing wobble costs the verdict some progress instead of restarting it, while a string genuinely straddling the line still never earns green. The verdict also comes to the grid: each string's name turns green once that string has held in tune and stays green after the bow lifts — the readable "that one's done" when tuning two strings at once, or when someone else is doing the bowing. And the Mac/iOS follow mode now judges in-tune from the same smoothed reading the needle shows, as the watch always has.
 - The tuned-green verdict is steadier: it no longer takes an unbroken run of perfect readings to earn (a bass reads with gaps on a small microphone — gaps now merely slow the verdict instead of restarting it), and once given it survives the wobble a decaying pluck throws right after the success tap — un-tuning takes sustained off-the-mark reading, as backing off a peg actually is.
 
 ### build 15 — 2026-08-20

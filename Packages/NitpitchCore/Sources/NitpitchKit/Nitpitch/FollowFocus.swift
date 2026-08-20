@@ -40,6 +40,13 @@ final class FollowFocus: ObservableObject {
     private var bank: DetectorBank?
     private var focus = StringFocus(stringCount: 1)
     private var targets: [Double] = []
+    /// The in-tune verdict is judged on the same smoothed cents the needle
+    /// shows — the wrist's rule. Raw per-frame readings wobble across the
+    /// band boundary while the display says green; the policy and the eye
+    /// must read the same number.
+    private var smoother = ReadingSmoother()
+    private var quietFrames = 0
+    private static let quietFramesBeforeReset = 8
 
     init(audio: AudioSessionController) {
         self.audio = audio
@@ -59,6 +66,8 @@ final class FollowFocus: ObservableObject {
         }
         focus = StringFocus(stringCount: targets.count, initialIndex: index)
         focusIndex = index
+        smoother.reset()
+        quietFrames = 0
         let bank = DetectorBank(
             sampleRate: audio.sampleRate,
             targets: targets,
@@ -83,6 +92,7 @@ final class FollowFocus: ObservableObject {
     /// into the string they explicitly chose.
     func select(_ index: Int) {
         focus.select(index)
+        smoother.reset()
         if focusIndex != index { focusIndex = index }
         if isSettled { isSettled = false }
     }
@@ -95,12 +105,20 @@ final class FollowFocus: ObservableObject {
         }
         var inTune: Bool?
         if let hz = results[focus.focusIndex].frequency {
-            inTune = TuningDisplay.isInTune(
-                cents: PitchMath.cents(from: targets[focus.focusIndex], to: hz))
+            quietFrames = 0
+            let raw = PitchMath.cents(from: targets[focus.focusIndex], to: hz)
+            inTune = TuningDisplay.isInTune(cents: smoother.update(cents: raw))
+        } else {
+            // The same dropout beat as the displays: a gap in an
+            // intermittent reading keeps the smoothing history, real
+            // silence starts the next note clean.
+            quietFrames += 1
+            if quietFrames >= Self.quietFramesBeforeReset { smoother.reset() }
         }
         switch focus.ingest(levels: levels, focusedInTune: inTune) {
         case .focused(let index):
             focusIndex = index
+            smoother.reset()
         case .settled:
             // The same success tap the wrist gives; the Mac has nothing to
             // buzz and wears the green alone.

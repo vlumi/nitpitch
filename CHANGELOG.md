@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- The tuned-green verdict is steadier: it no longer takes an unbroken run of perfect readings to earn (a bass reads with gaps on a small microphone — gaps now merely slow the verdict instead of restarting it), and once given it survives the wobble a decaying pluck throws right after the success tap — un-tuning takes sustained off-the-mark reading, as backing off a peg actually is.
+
 ### build 15 — 2026-08-20
 
 - The string screen now follows your playing by default on iPhone, iPad, and Mac — the watch's behavior, no toggle to find first (the Follow arrow is gone): play another string with intent and the screen walks over, while a brush never steals it and a swipe always wins. And a string held in tune long enough is visibly done: the target turns green, with a success tap on iPhone — once green, the screen moves on to the next string you play almost immediately.

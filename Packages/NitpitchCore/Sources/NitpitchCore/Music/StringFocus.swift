@@ -70,6 +70,18 @@ public struct StringFocus: Sendable {
     /// is never locked out.
     public static let peakDecayPerFrame = 0.995
 
+    /// How much STRONGER than the focused string's current reading a rival
+    /// must be — while the focused string still sounds — to count toward a
+    /// switch. Strength is logarithmic (~40 dB per unit), so this margin is
+    /// a ratio: 0.15 ≈ 6 dB. The peak-share bar alone could not free the
+    /// screen from a RING in that space: a just-tuned string's tail keeps
+    /// reading tens of dB above the presence gate for many seconds through
+    /// a line input (field-found: guitar + iRig, stuck on G). But a string
+    /// played with intent is clearly louder than a ring is NOW — while a
+    /// double stop's matched partner, bowed at comparable strength, never
+    /// clears this margin, so the pair keeps its protection.
+    public static let rivalProminenceMargin = 0.15
+
     public private(set) var focusIndex: Int
     public var isSettled: Bool { settle.isSettled }
 
@@ -104,43 +116,45 @@ public struct StringFocus: Sendable {
         let focusedLevel = levels[focusIndex]
         if let focusedLevel { focusPeak = max(focusPeak, focusedLevel) }
 
-        // The focused string being WORKED is what resets rivals — a brush
-        // alongside the note being tuned is the most common brush of all,
-        // and it must never accumulate toward a switch. Working means
-        // sounding near the string's own recent peak; the same share that
-        // separates a deliberate rival from a sympathetic ring separates
-        // working from merely RINGING here. A just-tuned string rings on
-        // for many seconds — undamped, honest, and loud through a line
-        // input — and counting that tail as work froze the screen: a
-        // guitar's G, left ringing, reset B's and E's claims every frame
-        // however deliberately they were played (field-found on Mac+iRig).
-        if let focusedLevel, focusedLevel >= focusPeak * Self.rivalLevelShare {
-            for index in rivalStreaks.indices where index != focusIndex {
-                rivalStreaks[index] = 0
-            }
-            if settle.ingest(inTune: focusedInTune) {
-                return .settled
-            }
-            return .none
-        }
+        // Whether the focused string is being WORKED — sounding near its
+        // own recent peak — or merely ringing on (a just-tuned string
+        // rings for many seconds, undamped, honest, and loud through a
+        // line input). The same share that separates a deliberate rival
+        // from a sympathetic ring draws this line.
+        let isWorked =
+            focusedLevel.map { $0 >= focusPeak * Self.rivalLevelShare } ?? false
+        if !isWorked { focusPeak *= Self.peakDecayPerFrame }
 
-        // The tail, or silence: settle evidence continues on whatever the
-        // string still reads (a ring IS the focused string — green can
-        // finish landing while it fades), the remembered peak decays, and
-        // streaks of QUALIFYING rivals grow — strong enough against the
-        // fading peak to be deliberate play, not a sympathetic ring.
+        // Settle evidence continues on whatever the string reads — a ring
+        // IS the focused string, so green can finish landing while it
+        // fades — and silence is no evidence at all.
         if settle.ingest(inTune: focusedLevel != nil ? focusedInTune : nil) {
             return .settled
         }
-        focusPeak *= Self.peakDecayPerFrame
+
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
         for index in rivalStreaks.indices where index != focusIndex {
-            let qualifies = levels[index].map { $0 >= bar } ?? false
+            // A rival's claim clears two bars: strong against the focused
+            // string's recent PEAK (a sympathetic ring never is), and —
+            // while the focused string still sounds — clearly stronger
+            // than that sound is NOW (`rivalProminenceMargin`): a ring
+            // loses that contest to deliberate play at once, while a
+            // double stop's matched partner and a brush alongside real
+            // work never win it. Non-qualifying frames reset a rival
+            // while the focused string is worked (a brush alongside the
+            // note being tuned must never accumulate), and merely decay
+            // it in the tail and in silence (an intermittent reading is
+            // not a retraction).
+            let prominent =
+                focusedLevel.map { level in
+                    (levels[index] ?? 0) >= level + Self.rivalProminenceMargin
+                } ?? true
+            let qualifies = prominent && (levels[index].map { $0 >= bar } ?? false)
             rivalStreaks[index] =
                 qualifies
                 ? rivalStreaks[index] + 1
-                : max(0, rivalStreaks[index] - Self.rivalStreakDecay)
+                : isWorked ? 0 : max(0, rivalStreaks[index] - Self.rivalStreakDecay)
             if rivalStreaks[index] >= threshold {
                 focus(on: index)
                 return .focused(index)

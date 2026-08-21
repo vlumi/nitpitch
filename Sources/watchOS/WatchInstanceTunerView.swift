@@ -41,29 +41,46 @@ struct WatchInstanceTunerView: View {
 
     var body: some View {
         WatchTunerPane(tuner: tuner) {
-            NavigationLink {
-                WatchInstanceDetailView(
-                    store: store, presets: presets, settings: settings,
-                    instanceID: instanceID)
-            } label: {
-                // What you'd ask of the button before pressing it: WHICH
-                // tuning is on (your preset's name, Standard, or Custom —
-                // `tuningDisplayName`, the phone's naming), with the knobs'
-                // facts beneath in smaller type.
-                VStack(spacing: 1) {
-                    HStack(spacing: 4) {
-                        if instance.isLocked {
-                            Image(systemName: "lock.fill").font(.caption2)
+            HStack(spacing: 6) {
+                NavigationLink {
+                    WatchInstanceDetailView(
+                        store: store, presets: presets, settings: settings,
+                        instanceID: instanceID)
+                } label: {
+                    // What you'd ask of the button before pressing it: WHICH
+                    // tuning is on (your preset's name, Standard, or Custom —
+                    // `tuningDisplayName`, the phone's naming), with the
+                    // knobs' facts beneath in smaller type.
+                    VStack(spacing: 1) {
+                        HStack(spacing: 4) {
+                            if instance.isLocked {
+                                Image(systemName: "lock.fill").font(.caption2)
+                            }
+                            Text(verbatim: presets.tuningDisplayName(for: instance))
+                                .font(.footnote.weight(.semibold))
                         }
-                        Text(verbatim: presets.tuningDisplayName(for: instance))
-                            .font(.footnote.weight(.semibold))
+                        Text(verbatim: footerLabel)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
-                    Text(verbatim: footerLabel)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.bordered)
+                // The phone's Intonation chip, in the wrist's vocabulary —
+                // Δ is what the check's verdict already wears. Fretted
+                // only: the check serves saddle work.
+                if instance.instrument.family == .fretted {
+                    Button {
+                        tuner.setChecking(!tuner.isChecking)
+                    } label: {
+                        Text(verbatim: "Δ")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(tuner.isChecking ? .blue : .secondary)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(Text(verbatim: "Check intonation"))
+                    .accessibilityValue(Text(verbatim: tuner.isChecking ? "On" : "Off"))
                 }
             }
-            .buttonStyle(.bordered)
         }
         // A synced edit arriving mid-view — the phone moved this
         // instance's A, retuned a string, flipped its temperament —
@@ -88,6 +105,9 @@ struct WatchInstanceTunerView: View {
 
     private var footerLabel: String {
         let hz = Int(instance.reference.hz)
+        // Temperament is a bowed fact (frets are equal cast in metal) —
+        // announcing "Equal" on a guitar was noise.
+        guard instance.instrument.family == .bowed else { return "A=\(hz)" }
         return "A=\(hz) · \(instance.appliedTemperament == .pure ? "Pure" : "Equal")"
     }
 }

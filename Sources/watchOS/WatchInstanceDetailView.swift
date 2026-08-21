@@ -77,17 +77,23 @@ struct WatchInstanceDetailView: View {
     private func tuningSection(for instance: InstrumentInstance) -> some View {
         Section {
             referenceRow(for: instance)
-            Picker(
-                selection: Binding(
-                    get: { instance.appliedTemperament },
-                    set: { store.setTemperament(id: instance.id, $0) }
-                ),
-                label: Text(verbatim: "Temperament")
-            ) {
-                Text(verbatim: "Equal").tag(Temperament.equal)
-                Text(verbatim: "Pure fifths").tag(Temperament.pure)
+            // Bowed only, as everywhere: beatless fifths by ear ARE pure —
+            // frets are equal temperament cast in metal, and the phone has
+            // never offered the choice there (this row on a guitar was a
+            // gate the wrist missed; field-found).
+            if instance.instrument.family == .bowed {
+                Picker(
+                    selection: Binding(
+                        get: { instance.appliedTemperament },
+                        set: { store.setTemperament(id: instance.id, $0) }
+                    ),
+                    label: Text(verbatim: "Temperament")
+                ) {
+                    Text(verbatim: "Equal").tag(Temperament.equal)
+                    Text(verbatim: "Pure fifths").tag(Temperament.pure)
+                }
+                .disabled(instance.isLocked)
             }
-            .disabled(instance.isLocked)
         } header: {
             Text(verbatim: "Tuning")
         }

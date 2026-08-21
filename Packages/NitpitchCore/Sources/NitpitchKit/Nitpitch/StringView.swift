@@ -63,10 +63,11 @@ struct StringView: View {
 
     /// The measured content: meter 10, dial pane 173 (arc 70 after the
     /// readout's rise + readout 77 + strip 14 + gaps), strobe band 12,
-    /// switcher 40, the intonation panel 104, reference row ~30, five 16pt
-    /// gaps. Measured, not padded — an overstated canvas is empty window
-    /// (the chromatic root and the grid cells both had that disease).
-    private static let design = CGSize(width: 400, height: 455)
+    /// switcher 40, the intonation panel 104, four 16pt gaps. Measured, not
+    /// padded — an overstated canvas is empty window (the chromatic root
+    /// and the grid cells both had that disease). The reference row lives
+    /// OUTSIDE, in the fixed footer the grid also wears.
+    private static let design = CGSize(width: 400, height: 409)
 
     var body: some View {
         GeometryReader { geo in
@@ -98,6 +99,7 @@ struct StringView: View {
                     alignment: DesignCanvas.alignment)
         }
         .padding(24)
+        .safeAreaInset(edge: .bottom) { footer }
         .navigationTitle(instance.nameText)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -197,26 +199,42 @@ struct StringView: View {
                     target: single.tuner.target,
                     naming: settings.naming)
             }
-            HStack(spacing: 20) {
-                ReferencePitchStepper(
-                    reference: Binding(
-                        get: { instance.reference },
-                        set: { store.setReference(id: instance.id, $0) }),
-                    naming: settings.naming,
-                    tone: single.tone,
-                    toneIdentifier: "string.tone.reference",
-                    onToneToggle: {
-                        Task { await single.toggleTone(reference: instance.reference) }
-                    },
-                    isAdjustable: !instance.isLocked)
-                if instrument.family == .bowed {
-                    TemperamentChip(temperament: instance.appliedTemperament) {
-                        store.setTemperament(
-                            id: instance.id,
-                            instance.appliedTemperament == .pure ? .equal : .pure)
-                    }
-                    .disabled(instance.isLocked)
+        }
+    }
+
+    /// The same footer as the grid's — OUTSIDE the canvas, in the shared
+    /// bar that grows gently with the window (`TunerFooter`), so the two
+    /// screens' bottoms read as one. One chip per family: temperament for
+    /// bowed, intonation for fretted — the check serves saddle work, and a
+    /// violin has no saddle to move.
+    private var footer: some View {
+        TunerFooter {
+            footerRow
+        }
+    }
+
+    private var footerRow: some View {
+        HStack(spacing: 20) {
+            ReferencePitchStepper(
+                reference: Binding(
+                    get: { instance.reference },
+                    set: { store.setReference(id: instance.id, $0) }),
+                naming: settings.naming,
+                tone: single.tone,
+                toneIdentifier: "string.tone.reference",
+                onToneToggle: {
+                    Task { await single.toggleTone(reference: instance.reference) }
+                },
+                isAdjustable: !instance.isLocked)
+            if instrument.family == .bowed {
+                TemperamentChip(temperament: instance.appliedTemperament) {
+                    store.setTemperament(
+                        id: instance.id,
+                        instance.appliedTemperament == .pure ? .equal : .pure)
                 }
+                .disabled(instance.isLocked)
+            }
+            if instrument.family == .fretted {
                 IntonationChip(mode: intonationMode, identifier: "string.intonation")
             }
         }

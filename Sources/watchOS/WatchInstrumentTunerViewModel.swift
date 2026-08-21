@@ -156,9 +156,21 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         }
     }
 
+    /// Whether the intonation check is running — the wrist's version of
+    /// the phone's mode chip: fretted setup work, chosen deliberately, and
+    /// in plain tuning the analyzer asks no octave questions at all.
+    @Published private(set) var isChecking = false
+
+    func setChecking(_ on: Bool) {
+        guard isChecking != on else { return }
+        isChecking = on
+        analyzer.setActive(on && state != .idle)
+        retuneIntonation()
+    }
+
     func begin() async {
         state = .listening
-        analyzer.setActive(true)
+        analyzer.setActive(isChecking)
         switch await audio.activate() {
         case .permissionDenied: state = .denied
         case .unavailable: state = .unavailable

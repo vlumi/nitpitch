@@ -73,6 +73,21 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// Consecutive RMS-silent frames before a following note counts as a
     /// fresh attack rather than the same note continuing.
     private static let freshAttackQuietFrames = 3
+    /// The loudest recent window RMS, fading slowly — what "silence" is
+    /// judged AGAINST. An absolute threshold broke at a hot input gain: the
+    /// interface's noise floor alone exceeded it, no damp was ever seen,
+    /// and every octave was reclassified as the open string's decay tail —
+    /// intonation died entirely (field-found: raising the Mac input volume
+    /// for a quiet guitar killed the panel; lowering it starved the plain
+    /// strings instead).
+    private var peakRMS: Float = 0
+    /// A window this far below the recent peak is a damp whatever the
+    /// absolute floor: ~34 dB down — below any tail worth measuring, above
+    /// an interface's noise floor at any practical gain.
+    private static let dampShare: Float = 0.02
+    /// The peak reference fades ~2 dB/s, so one early loud pluck doesn't
+    /// set an unreachable bar for quieter playing after it.
+    private static let peakDecayPerFrame: Float = 0.99
 
     public init(sampleRate: Double, target: Double = 0, tuning: DetectionTuning = .default) {
         self.sampleRate = sampleRate
@@ -90,6 +105,7 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         estimator?.reset()
         lastNoteSlot = nil
         quietFrames = 0
+        peakRMS = 0
     }
 
     public func setActive(_ isActive: Bool) {
@@ -115,7 +131,9 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         var rms: Float = 0
         vDSP_rmsqv(window, 1, &rms, vDSP_Length(window.count))
         let level = Detection.displayLevel(rms: Double(rms))
-        guard rms > tuning.silenceRMS else {
+        let silenceFloor = max(tuning.silenceRMS, peakRMS * Self.dampShare)
+        peakRMS = max(peakRMS * Self.peakDecayPerFrame, rms)
+        guard rms > silenceFloor else {
             estimator?.reset()
             quietFrames += 1
             return Frame(sounding: .nothing, level: level)

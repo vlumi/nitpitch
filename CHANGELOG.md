@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+### build 16 — 2026-08-21
+
 - Touching a string's 7th-fret harmonic reads as the string again, on every string. The fold that turns a harmonic into "your string, this far off" only ever existed on one of the two detection paths, and a real harmonic — quiet and pure, with barely any fundamental left — is exactly the sound that takes the other path, where it arrived as "the open string, 1900 cents sharp". Both paths now fold it, so the dial shows the string's own error with "· 3rd harmonic" beside it, whichever engine heard it.
 
 - The intonation check measures a real pluck again: the 12th fret stopped registering at all on some strings, because two guards added during a long day of field fixes were incompatible with how the check works — both notes are measured through the open string's own target, so "ignore what was already sounding" quietly meant "ignore the octave", and "that's too quiet to be new" dismissed a fretted note for being softer than the open pluck before it. Both are gone, pinned now by a test that plucks the way a player does: struck loud, decaying, the 12th fret quieter than the open string. A neighbouring string left ringing can still pollute a sample on the B string (the low E's harmonics land there — a genuine coincidence of guitar tuning); damping the neighbours is the fix, and re-playing a note replaces its sample.

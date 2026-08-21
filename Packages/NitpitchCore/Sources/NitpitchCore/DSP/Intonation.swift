@@ -96,6 +96,34 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// The peak reference fades ~2 dB/s, so one early loud pluck doesn't
     /// set an unreachable bar for quieter playing after it.
     private static let peakDecayPerFrame: Float = 0.99
+    /// What the target's slots held while the string was QUIET — the
+    /// neighbours' standing deposit. On a guitar the low E's harmonics sit
+    /// 2 cents from EVERY slot of the B string (E2 × 3 ≈ B3), so a ringing
+    /// E impersonates the open B outright — same anchor, same agreement —
+    /// and no gate on the reading itself can tell them apart. What can:
+    /// a ring is STATIONARY, a played note is new energy. The verdicts in
+    /// `analyze` are made on what the sound ADDED to this snapshot.
+    private var restingSlots: [Double]?
+    /// A note must bring at least this share of its slots' current energy
+    /// as NEW energy — below it, the "note" is the resting ring persisting
+    /// through the reading gates, and the string is quiet.
+    private static let freshEnergyShare = 0.25
+    /// The loudest recent slot total, fading slowly — the drop detector.
+    /// The resting snapshot is frozen while a note sounds, so the moment
+    /// the note ends, what survives (the neighbours' ring) would read as
+    /// "new" against the stale snapshot. It isn't new — it's what's LEFT:
+    /// a frame whose slots hold only a fraction of their recent peak is
+    /// residue, however cleanly it reads, and it teaches the snapshot.
+    private var slotPeak = 0.0
+    private static let residueShare = 0.3
+    private static let slotPeakDecayPerFrame = 0.99
+    /// A no-reading frame teaches the resting snapshot only once the quiet
+    /// has HELD this long: a one-frame gate flutter mid-note must not
+    /// absorb the note itself into the snapshot (everything after would
+    /// read as "nothing new"), while a real refinger gap has frames to
+    /// spare. The high-confidence residue path (a collapsed slot total)
+    /// teaches immediately.
+    private static let restingLearnQuietFrames = 3
 
     public init(sampleRate: Double, target: Double = 0, tuning: DetectionTuning = .default) {
         self.sampleRate = sampleRate
@@ -114,6 +142,8 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         lastNoteSlot = nil
         quietFrames = 0
         peakRMS = 0
+        restingSlots = nil
+        slotPeak = 0
     }
 
     public func setActive(_ isActive: Bool) {
@@ -130,6 +160,37 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         estimator?.reset()
     }
 
+    /// The drop test: slots holding a fraction of their recent peak are
+    /// what SURVIVED the note, not a new one — the ring, teaching the
+    /// resting snapshot — however cleanly they might read. True consumes
+    /// the frame as quiet, bookkeeping done.
+    private func consumedAsResidue(slots: [Double]) -> Bool {
+        let slotTotal = slots.reduce(0, +)
+        defer { slotPeak = max(slotPeak * Self.slotPeakDecayPerFrame, slotTotal) }
+        guard slotTotal < slotPeak * Self.residueShare else { return false }
+        restingSlots = slots
+        quietFrames += 1
+        return true
+    }
+
+    /// What this sound ADDED to the resting slots — or nil, consuming the
+    /// frame as quiet, when it added (nearly) nothing: a ring that
+    /// impersonates the string (the guitar E's harmonics ARE the B's slots,
+    /// two cents off) passes every reading gate and still adds nothing.
+    /// Every verdict is judged on the note's own energy, not the ring's.
+    private func freshEnergy(slots: [Double]) -> [Double]? {
+        let resting = restingSlots ?? []
+        let fresh = slots.enumerated().map { index, weight in
+            max(0, weight - (index < resting.count ? resting[index] : 0))
+        }
+        guard fresh.reduce(0, +) >= slots.reduce(0, +) * Self.freshEnergyShare else {
+            restingSlots = slots
+            quietFrames += 1
+            return nil
+        }
+        return fresh
+    }
+
     /// One window in, one verdict out — or nil while the mode is off.
     public func analyze(_ window: [Float]) -> Frame? {
         lock.lock()
@@ -143,6 +204,9 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         peakRMS = max(peakRMS * Self.peakDecayPerFrame, rms)
         guard rms > silenceFloor else {
             estimator?.reset()
+            // True silence: the slots hold nothing.
+            restingSlots = nil
+            slotPeak = 0
             quietFrames += 1
             return Frame(sounding: .nothing, level: level)
         }
@@ -151,16 +215,32 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         self.estimator = estimator
         estimator.ingest(window)
 
+        let slots = estimator.slotWeights(target: target) ?? []
+        guard !consumedAsResidue(slots: slots) else {
+            return Frame(sounding: .nothing, level: level)
+        }
+
         guard let reading = estimator.measure(target: target, others: []),
             reading.strength >= tuning.spectralStrengthGate
         else {
             // No reading of THIS string is this string going quiet, however
-            // loud the neighbours keep the window (see quietFrames).
+            // loud the neighbours keep the window (see quietFrames) — and
+            // once the quiet holds, what the slots still carry is the
+            // neighbours' deposit.
             quietFrames += 1
+            if quietFrames >= Self.restingLearnQuietFrames { restingSlots = slots }
             return Frame(sounding: .nothing, level: level)
         }
+        guard let fresh = freshEnergy(slots: slots) else {
+            return Frame(sounding: .nothing, level: level)
+        }
+        // Orders 1, 3, 5 live at even indices.
+        let freshOdd = stride(from: 0, to: fresh.count, by: 2)
+            .map { fresh[$0] }.reduce(0, +)
         let cents = PitchMath.cents(from: target, to: reading.frequency)
-        var slot: IntonationSlot = reading.evenPartialsOnly ? .octave : .open
+        var slot: IntonationSlot =
+            freshOdd <= fresh.reduce(0, +) * HarmonicEstimator.oddPollutionShare
+            ? .octave : .open
         // A decaying open string sheds its ODD partials first — the weak
         // fundamental and the 3rd fade into the floor while the 2nd lingers —
         // so its tail reads even-only: the octave's fingerprint on a note

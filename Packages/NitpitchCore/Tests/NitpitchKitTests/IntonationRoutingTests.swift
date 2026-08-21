@@ -35,6 +35,41 @@ final class IntonationRoutingTests: XCTestCase {
         XCTAssertEqual(routed.intonation, octaveFrame(cents: 4.6))
     }
 
+    /// A touched 3rd harmonic, carried by MPM: the dial must read the STRING,
+    /// not "+1902¢". Harmonic folding lives in the spectral lens, and a real
+    /// harmonic is quiet and clean enough that spectral often reads nothing
+    /// at all — so the frames that reach the screen are MPM's, unfolded
+    /// (field-found: every string, most of the time, at the 7th-fret node).
+    func testAThirdHarmonicIsFoldedOntoTheString() {
+        let d3 = 146.832
+        // The harmonic itself, 4 cents sharp of a perfect 3:1 — the string's
+        // own error, since the partial rides the fundamental.
+        let sounding = 3 * d3 * pow(2, 4.0 / 1200)
+        let routed = IntonationRouting.route(
+            result: reading(sounding), frame: nothingFrame, target: d3)
+
+        let hz = try? XCTUnwrap(routed.dial.frequency)
+        XCTAssertEqual(
+            1200 * log2((hz ?? 0) / d3), 4, accuracy: 0.5,
+            "the error shown is the string's own")
+        XCTAssertEqual(routed.dial.harmonic, 3, "and the readout says why")
+    }
+
+    /// The window is tight on purpose: a guitar's 3:1 coincidences mean a
+    /// neighbouring string can sit near a harmonic slot, and a NOTE someone
+    /// played is not this string folded — it pins the dial, by design.
+    func testANoteWellOffTheHarmonicIsNotFolded() {
+        let d3 = 146.832
+        // A semitone below the 3rd harmonic: a played note, not a partial.
+        let routed = IntonationRouting.route(
+            result: reading(3 * d3 * pow(2, -100.0 / 1200)),
+            frame: nothingFrame, target: d3)
+        XCTAssertEqual(routed.dial.harmonic, 1, "not folded")
+        XCTAssertEqual(
+            1200 * log2((routed.dial.frequency ?? 0) / d3), 1802, accuracy: 1,
+            "it reads as what it is")
+    }
+
     /// Parity silent, MPM found 2f: the frame is the octave's business —
     /// rerouted with its cents against 2f, never +1200 on the main dial.
     func testProximityReroutesAnMPMOctaveReading() {

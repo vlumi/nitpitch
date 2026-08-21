@@ -29,6 +29,25 @@ enum IntonationRouting {
     /// except other strings, which pin the dial by design.
     static let octaveWindowCents = 150.0
 
+    /// The 3rd harmonic sits at 3·f = +1902¢. MPM reports it as exactly
+    /// that — a note at 3f IS a note, and the harmonic FOLDING lives only
+    /// in the spectral path (the lens; see `DetectorBank`), so an
+    /// MPM-carried frame reached the dial as "the open string, nineteen
+    /// hundred cents sharp" (field-found: every string, most of the time,
+    /// while touching the 7th-fret node — a real harmonic is quieter and
+    /// less clean than a bowed note, so spectral often reads nothing and
+    /// the hybrid falls through to MPM).
+    ///
+    /// Folded here rather than in the bank, for the same reason the octave
+    /// is: the bank answers "what is sounding", and only this screen knows
+    /// that everything it hears is meant to BE this one string. The window
+    /// is tight — a harmonic is a physical ratio, not a tuning error — and
+    /// deliberately tighter than the octave's: the guitar's own 3:1
+    /// coincidences (E2's 3f IS the open B) mean a wide window would
+    /// swallow a neighbour being played.
+    static let thirdHarmonicCents = 1902.0
+    static let thirdHarmonicWindowCents = 60.0
+
     /// What the main dial ingests, and what the intonation monitor does.
     /// `dial` is the bank's result, silenced when the frame turned out to be
     /// the octave's business; `intonation` is the analyzer's frame, or a
@@ -48,6 +67,12 @@ enum IntonationRouting {
                     level: result.displayLevel)
             )
         }
+        // A 3rd harmonic MPM found: fold it onto the string, the way the
+        // spectral lens would have. The error IS the string's own — the
+        // partial sits at 3·f, so its deviation from 3·f is f's from f.
+        if let folded = thirdHarmonicFolded(result, target: target) {
+            return (folded, frame)
+        }
         return (result, frame)
     }
 
@@ -61,6 +86,23 @@ enum IntonationRouting {
         let cents = 1200 * log2(hz / target)
         guard abs(cents - 1200) <= octaveWindowCents else { return nil }
         return cents - 1200
+    }
+
+    /// The same reading with its frequency divided back onto the string,
+    /// when it sits at the 3rd harmonic — nil when it doesn't. Labelled
+    /// `harmonic: 3` so the readout says WHY it reads D3 while the ear
+    /// hears A4, exactly as the spectral lens's own frames do.
+    private static func thirdHarmonicFolded(
+        _ result: DetectionResult, target: Double
+    ) -> DetectionResult? {
+        guard let hz = result.frequency, target > 0 else { return nil }
+        let cents = 1200 * log2(hz / target)
+        guard abs(cents - thirdHarmonicCents) <= thirdHarmonicWindowCents else {
+            return nil
+        }
+        return DetectionResult(
+            frequency: hz / 3, clarity: result.clarity, rms: result.rms,
+            level: result.level, evenPartialsOnly: false, harmonic: 3)
     }
 
     /// The dial's share of an octave frame: no reading — this screen's

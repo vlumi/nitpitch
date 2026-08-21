@@ -94,7 +94,7 @@
       "comment" : "Button in the instrument editor: make a new instrument with a different number of strings"
     },
     "Check intonation" : {
-      "comment" : "Menu toggle: the octave layer across all string cells/strips"
+      "comment" : "Accessibility label for the intonation mode chip"
     },
     "Columns" : {
       "comment" : "Label for the control setting how many string dials fit across the grid"
@@ -167,6 +167,9 @@
     },
     "Instruments, presets and favorites stay the same on every device." : {
       "comment" : "Footer under the sync switch while it is on"
+    },
+    "Intonation" : {
+      "comment" : "The mode chip on the grid and string view: tuning vs the intonation check"
     },
     "Interval" : {
       "comment" : "Accessibility label for the interval/beat readout"

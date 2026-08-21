@@ -183,18 +183,6 @@ extension InstrumentGridView {
                 Text("Columns", bundle: .module)
             }
 
-            // The octave layer on every cell and strip at once — checking a
-            // whole instrument's intonation without switching strings. A
-            // session choice behind a toggle, unlike the string view's
-            // ambient panel: this screen is a tuning surface first.
-            Toggle(isOn: $isIntonating) {
-                Label {
-                    Text("Check intonation", bundle: .module)
-                } icon: {
-                    Image(systemName: "tuningfork")
-                }
-            }
-
             // The Mac's way into the strips: its window doesn't rotate, so
             // the metaphor is a deliberate choice here, not a shape.
             #if os(macOS)

@@ -45,11 +45,11 @@ struct InstrumentGridView: View {
     @State var instrumentRenameText = ""
     @State var duplicating: Creation?
     @State var isEditingStrings = false
-    /// The intonation check across every string — behind a toggle here,
-    /// unlike the string view's ambient panel: the grid is a tuning surface
-    /// first, and the octave layer is a chosen session. Screen state, not
-    /// a setting: a measuring session belongs to the visit that ran it.
-    @State var isIntonating = false
+    /// The tuning-vs-intonation mode, shared with the string view — the
+    /// two screens are one workflow (see `IntonationMode`). The octave
+    /// layer on every cell follows it.
+    @ObservedObject var intonationMode: IntonationMode
+    var isIntonating: Bool { intonationMode.isChecking }
     @Environment(\.dismiss) var dismissGrid
     /// Replace this screen with another instrument's — the one just made
     /// from it. Nil where the caller owns no navigation.
@@ -62,8 +62,10 @@ struct InstrumentGridView: View {
     init(
         instance: InstrumentInstance, store: InstrumentStore, presets: PresetStore,
         audio: AudioSessionController, settings: Settings, detection: DetectionSettings,
+        intonationMode: IntonationMode,
         onOpenCreated: ((String) -> Void)? = nil
     ) {
+        self.intonationMode = intonationMode
         self.onOpenCreated = onOpenCreated
         self.audio = audio
         self.store = store
@@ -135,6 +137,10 @@ struct InstrumentGridView: View {
             ToolbarItem(placement: .primaryAction) { layoutMenu }
         }
         .task {
+            // A fresh instrument visit starts in tuning; returning from a
+            // string of THIS instrument keeps the running check.
+            intonationMode.adopt(instrumentID: initial.id)
+            strings.setIntonating(intonationMode.isChecking)
             strings.attachAll()
             // Recency feeds "my instruments" ordering — opening counts.
             store.markUsed(id: initial.id)
@@ -155,7 +161,7 @@ struct InstrumentGridView: View {
         .onChangeCompat(of: detection.tuning) { tuning in
             strings.retune(tuning)
         }
-        .onChangeCompat(of: isIntonating) { on in
+        .onChangeCompat(of: intonationMode.isChecking) { on in
             strings.setIntonating(on)
         }
         .sheet(isPresented: $isShowingDebug) {
@@ -377,6 +383,10 @@ struct InstrumentGridView: View {
                 }
                 .disabled(instance.isLocked)
             }
+            // The mode choice, visible where you look while playing — a
+            // buried menu toggle answered "why is the octave row there?"
+            // with a scavenger hunt (field-found).
+            IntonationChip(mode: intonationMode, identifier: "grid.intonation")
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)

@@ -270,6 +270,44 @@ final class StringFocusTests: XCTestCase {
         XCTAssertEqual(focus.focusIndex, 1)
     }
 
+    /// A just-tuned string RINGS for many seconds — undamped, honest, and
+    /// loud through a line input — and its tail is not the user working:
+    /// a string played deliberately must take the screen from a ring at
+    /// full pace (field-found on Mac+iRig: the screen could not be pulled
+    /// off a tuned guitar G by playing B or E, green or not).
+    func testADeliberatePluckTakesTheScreenFromARingingString() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<10 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: true)
+        }
+
+        var events: [StringFocus.Event] = []
+        for _ in 0..<StringFocus.switchFrames {
+            // The tuned string still reads at a third of its peak while
+            // the next one is played at comparable-to-peak strength.
+            events.append(
+                focus.ingest(levels: [0.3, 0.9, nil, nil], focusedInTune: true))
+        }
+        XCTAssertEqual(events.last, .focused(1), "a ring must not hold the screen")
+    }
+
+    /// The ring still reads and still counts: a string plucked in tune and
+    /// left to fade finishes earning its green during the tail.
+    func testGreenLandsWhileTheStringRings() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<10 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: true)
+        }
+
+        var events: [StringFocus.Event] = []
+        for _ in 0..<StringFocus.settledFrames {
+            events.append(
+                focus.ingest(levels: [0.3, nil, nil, nil], focusedInTune: true))
+        }
+        XCTAssertTrue(events.contains(.settled), "the tail's evidence is evidence")
+        XCTAssertTrue(focus.isSettled)
+    }
+
     /// A quiet but PERSISTENT player is never locked out: the remembered
     /// peak fades, so a string played softly for a few seconds eventually
     /// clears the bar and takes the screen.

@@ -60,7 +60,9 @@ public struct StringFocus: Sendable {
     /// sympathetically — a genuine, sustained reading that outlives the
     /// pluck and was stealing the screen (field-found). A deliberately
     /// played string arrives at comparable strength; a sympathetic ring is
-    /// well below it.
+    /// well below it. The same share draws the working/ringing line for
+    /// the FOCUSED string in `ingest` — one physical claim, "a ring sits
+    /// well below the peak of deliberate play", used from both sides.
     public static let rivalLevelShare = 0.6
     /// How the remembered peak fades per frame once the focused string goes
     /// quiet (half in ~6 s): long enough that a ring dies before the bar
@@ -99,11 +101,20 @@ public struct StringFocus: Sendable {
     public mutating func ingest(levels: [Double?], focusedInTune: Bool?) -> Event {
         guard levels.count == stringCount else { return .none }
 
-        // The focused string speaking is the user working: rivals reset —
-        // a brush ALONGSIDE the note being tuned is the most common brush
-        // of all, and it must never accumulate toward a switch.
-        if let focusedLevel = levels[focusIndex] {
-            focusPeak = max(focusPeak, focusedLevel)
+        let focusedLevel = levels[focusIndex]
+        if let focusedLevel { focusPeak = max(focusPeak, focusedLevel) }
+
+        // The focused string being WORKED is what resets rivals — a brush
+        // alongside the note being tuned is the most common brush of all,
+        // and it must never accumulate toward a switch. Working means
+        // sounding near the string's own recent peak; the same share that
+        // separates a deliberate rival from a sympathetic ring separates
+        // working from merely RINGING here. A just-tuned string rings on
+        // for many seconds — undamped, honest, and loud through a line
+        // input — and counting that tail as work froze the screen: a
+        // guitar's G, left ringing, reset B's and E's claims every frame
+        // however deliberately they were played (field-found on Mac+iRig).
+        if let focusedLevel, focusedLevel >= focusPeak * Self.rivalLevelShare {
             for index in rivalStreaks.indices where index != focusIndex {
                 rivalStreaks[index] = 0
             }
@@ -113,11 +124,14 @@ public struct StringFocus: Sendable {
             return .none
         }
 
-        // Silence on the focused string: streaks of QUALIFYING rivals grow
-        // (strong enough against the fading peak to be deliberate play, not
-        // a sympathetic ring), the settle evidence decays gently, and
-        // isSettled holds — quiet is not un-tuning.
-        _ = settle.ingest(inTune: nil)
+        // The tail, or silence: settle evidence continues on whatever the
+        // string still reads (a ring IS the focused string — green can
+        // finish landing while it fades), the remembered peak decays, and
+        // streaks of QUALIFYING rivals grow — strong enough against the
+        // fading peak to be deliberate play, not a sympathetic ring.
+        if settle.ingest(inTune: focusedLevel != nil ? focusedInTune : nil) {
+            return .settled
+        }
         focusPeak *= Self.peakDecayPerFrame
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames

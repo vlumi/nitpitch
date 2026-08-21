@@ -66,13 +66,21 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// Whether the mode is on. `analyze` answers nil while it isn't, so the
     /// subscription can call unconditionally and pay nothing when off.
     private var active = false
-    /// The last note's slot, and whether real silence has passed since —
+    /// The last note's slot, and whether the string has gone quiet since —
     /// what separates a fresh octave from a decaying open (see `analyze`).
     private var lastNoteSlot: IntonationSlot?
     private var quietFrames = 0
-    /// Consecutive RMS-silent frames before a following note counts as a
-    /// fresh attack rather than the same note continuing.
-    private static let freshAttackQuietFrames = 3
+    /// Consecutive frames WITHOUT a reading of this string before a
+    /// following note counts as a fresh attack rather than the same note
+    /// continuing. No reading, not RMS silence: fretting the 12th stops the
+    /// open string instantly while the OTHER strings ring on — the window
+    /// never goes quiet, but this string does (field-found: at a hot input
+    /// gain the RMS test saw no gap, ever, and every 12th fret stayed "the
+    /// open's tail" — unregistered on G/B/D, and on E the unclaimed octave
+    /// never fired the focus boost, so E3 read as the D string whose band
+    /// it sits in). Five frames (~230 ms) — a real refinger takes longer,
+    /// while the raw per-window flicker a decaying tail throws is shorter.
+    private static let freshAttackQuietFrames = 5
     /// The loudest recent window RMS, fading slowly — what "silence" is
     /// judged AGAINST. An absolute threshold broke at a hot input gain: the
     /// interface's noise floor alone exceeded it, no damp was ever seen,
@@ -146,6 +154,9 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         guard let reading = estimator.measure(target: target, others: []),
             reading.strength >= tuning.spectralStrengthGate
         else {
+            // No reading of THIS string is this string going quiet, however
+            // loud the neighbours keep the window (see quietFrames).
+            quietFrames += 1
             return Frame(sounding: .nothing, level: level)
         }
         let cents = PitchMath.cents(from: target, to: reading.frequency)

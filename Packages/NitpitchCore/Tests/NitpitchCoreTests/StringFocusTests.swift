@@ -291,6 +291,22 @@ final class StringFocusTests: XCTestCase {
         XCTAssertEqual(events.last, .focused(1), "a ring must not hold the screen")
     }
 
+    /// The pluck that excites a sympathetic neighbour also leaves its own
+    /// string ringing — both tails fade together, and the sympathetic one
+    /// (below the peak bar, not prominently above the focused ring) must
+    /// not inherit the screen just because the focused string decayed too.
+    func testASympatheticRingCannotStealDuringTheTail() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<5 {
+            _ = focus.ingest(levels: [1.0, nil, nil, nil], focusedInTune: false)
+        }
+        for _ in 0..<40 {
+            XCTAssertEqual(
+                focus.ingest(levels: [0.35, nil, 0.45, nil], focusedInTune: nil), .none)
+        }
+        XCTAssertEqual(focus.focusIndex, 0, "two fading tails move nothing")
+    }
+
     /// The ring still reads and still counts: a string plucked in tune and
     /// left to fade finishes earning its green during the tail.
     func testGreenLandsWhileTheStringRings() {

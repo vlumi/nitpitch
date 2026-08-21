@@ -78,9 +78,13 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// gain the RMS test saw no gap, ever, and every 12th fret stayed "the
     /// open's tail" — unregistered on G/B/D, and on E the unclaimed octave
     /// never fired the focus boost, so E3 read as the D string whose band
-    /// it sits in). Five frames (~230 ms) — a real refinger takes longer,
-    /// while the raw per-window flicker a decaying tail throws is shorter.
-    private static let freshAttackQuietFrames = 5
+    /// it sits in). Three frames (~140 ms): a fret-and-pluck is one quick
+    /// motion, and five frames (~230 ms) was slower than real hands — most
+    /// 12th frets arrived "too soon" and died as the open's tail
+    /// (field-found). Three is also `restingLearnQuietFrames`: any longer
+    /// flicker teaches the resting snapshot, and the fresh-energy guard
+    /// owns the tail from there — the two rules meet exactly.
+    private static let freshAttackQuietFrames = 3
     /// The loudest recent window RMS, fading slowly — what "silence" is
     /// judged AGAINST. An absolute threshold broke at a hot input gain: the
     /// interface's noise floor alone exceeded it, no damp was ever seen,

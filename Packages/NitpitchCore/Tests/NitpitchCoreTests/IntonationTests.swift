@@ -196,6 +196,37 @@ final class IntonationTests: XCTestCase {
         XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1.5)
     }
 
+    /// A fret-and-pluck is ONE quick motion: the string goes quiet for
+    /// barely three frames before the octave sounds. That is a refinger,
+    /// not a tail — the octave must stand (field-found: most 12th frets
+    /// arrived "too soon" for a 230 ms rule and died as the open's tail).
+    func testAQuickRefingerStillReadsTheOctave() {
+        let d3 = 146.83
+        let analyzer = IntonationAnalyzer(
+            sampleRate: sampleRate, target: d3, tuning: .default)
+        analyzer.setActive(true)
+
+        var signal: [Float] = []
+        signal += tone(d3, count: 20480)
+        signal += [Float](repeating: 0, count: 6144)  // ~3 quiet frames
+        signal += tone(detuned(2 * d3, cents: 4), count: 20480)
+        signal += [Float](repeating: 0, count: Detection.windowSize)
+
+        var sawOctave = false
+        var hop = 0
+        while (hop * Detection.hopSize + Detection.windowSize) <= signal.count {
+            let start = hop * Detection.hopSize
+            let window = Array(signal[start..<(start + Detection.windowSize)])
+            if let frame = analyzer.analyze(window),
+                case .note(.octave, _, _) = frame.sounding
+            {
+                sawOctave = true
+            }
+            hop += 1
+        }
+        XCTAssertTrue(sawOctave, "a quick refinger is a fresh attack")
+    }
+
     func testSilenceSoundsNothing() {
         let silence = [Float](repeating: 0, count: signalLength(hops: 2))
         for frame in frames(of: silence, target: 196, hops: 2) {

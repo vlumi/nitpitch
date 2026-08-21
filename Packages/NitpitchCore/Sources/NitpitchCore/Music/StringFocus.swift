@@ -8,9 +8,17 @@ import Foundation
 /// reasons, in order of authority:
 ///
 /// 1. **An explicit pick** (`select`) — the crown, a tap. Instant, always.
-/// 2. **Deliberate play**: a DIFFERENT string sounding *sustained* — a brush
-///    is brief by nature, a string plucked to be tuned rings. Duration is
-///    the honest discriminator, so the rival must hold for `switchFrames`.
+/// 2. **Deliberate play**: a NEIGHBOURING string sounding *sustained* — a
+///    brush is brief by nature, a string plucked to be tuned rings.
+///    Duration is the honest discriminator, so the rival must hold for
+///    `switchFrames`. Neighbours only: tuning proceeds string to string,
+///    and a distant claim is almost always another string's harmonic
+///    wearing the wrong band (a guitar low E's 12th fret is the D band's
+///    pitch; a played B IS the low E's 3rd harmonic) — the 2:1 and 3:1
+///    coincidences never land next door, because neighbours sit only a
+///    fourth or fifth apart (field-found: the screen jumped across the
+///    instrument chasing harmonics). The crown, a swipe, a tap still
+///    reach any string instantly.
 /// 3. **The settled advance** — the hands-free heart: once the focused
 ///    string has held in tune for `settledFrames`, it is marked done, and
 ///    the switching threshold drops to `switchFramesSettled`: moving on is
@@ -134,7 +142,10 @@ public struct StringFocus: Sendable {
 
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
-        for index in rivalStreaks.indices where index != focusIndex {
+        // NEIGHBOURS only — see the type doc's rule 2: distant claims are
+        // harmonics wearing the wrong band, and the crown reaches anything.
+        for index in [focusIndex - 1, focusIndex + 1]
+        where rivalStreaks.indices.contains(index) {
             // A rival's claim clears two bars: strong against the focused
             // string's recent PEAK (a sympathetic ring never is), and —
             // while the focused string still sounds — clearly stronger

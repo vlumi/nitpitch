@@ -34,6 +34,9 @@ public struct RootView: View {
     /// every launch, and nothing outside the tuner hierarchy has any business
     /// reading it.
     @StateObject private var detection = DetectionSettings()
+    /// Tuning vs the intonation check, shared by the grid and the string
+    /// view — one workflow, two screens (see `IntonationMode`).
+    @StateObject private var intonationMode = IntonationMode()
     /// A shared preset that just arrived, driving the import sheet.
     @State private var arrival: PresetArrival?
     /// An instrument shape to create — an orphaned preset's way back.
@@ -79,6 +82,7 @@ public struct RootView: View {
                         InstrumentGridView(
                             instance: instance, store: store, presets: presets,
                             audio: audio, settings: settings, detection: detection,
+                            intonationMode: intonationMode,
                             onOpenCreated: { created in
                                 // REPLACE rather than push: the instrument
                                 // that was just made from this one takes
@@ -101,7 +105,8 @@ public struct RootView: View {
                     if let instance = resolve(id) {
                         StringView(
                             instance: instance, index: index, store: store,
-                            audio: audio, settings: settings, detection: detection)
+                            audio: audio, settings: settings, detection: detection,
+                            intonationMode: intonationMode)
                     }
                 }
             }

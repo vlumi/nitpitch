@@ -185,15 +185,17 @@ final class NitpitchUITests: XCTestCase {
             "back from a string should land on the grid")
     }
 
-    /// The intonation panel is ambient on the string view: the octave's own
-    /// dial and both capture values sit below the switcher, no mode to find.
-    /// The pose LOOPS the measurement's own story — open G, damp, octave,
-    /// damp — because it starts at launch, not at view entry: whatever phase
-    /// the view arrives in, a full pass plays within one loop. Both samples
-    /// capture, the delta stays up, and the octave phases also pin that the
-    /// screen stays put (the analyzer claims them as this string's voice;
-    /// they must never read as a rival string pulling focus away).
-    func testIntonationPanelIsAmbientAndCaptures() {
+    /// The intonation check on the string view starts from its chip — a
+    /// declared mode, not an ambient panel (the ambient version kept
+    /// turning honest ambiguity into wrong answers; checking intonation is
+    /// a different activity from tuning). The pose LOOPS the measurement's
+    /// own story — open G, damp, octave, damp — because it starts at
+    /// launch, not at view entry: whatever phase the check begins in, a
+    /// full pass plays within one loop. Both samples capture, the delta
+    /// stays up, and the octave phases also pin that the screen stays put
+    /// (the analyzer claims them as this string's voice; they must never
+    /// read as a rival string pulling focus away).
+    func testIntonationCheckStartsFromTheChipAndCaptures() {
         let app = launch(
             extraArguments: [
                 "-demo", "-demo-pose", "1:55@-1.6;0.4:rest;1.5:67@5.8;0.4:rest",
@@ -204,6 +206,11 @@ final class NitpitchUITests: XCTestCase {
             app.descendants(matching: .any)["string.target"].waitForExistence(timeout: 5))
 
         let open = app.descendants(matching: .any)["intonation.open"]
+        XCTAssertFalse(open.exists, "tuning mode asks no octave questions")
+        let chip = app.descendants(matching: .any)["string.intonation"].firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        chip.tap()
+
         XCTAssertTrue(open.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["intonation.dial"].exists)
         let delta = app.descendants(matching: .any)["intonation.delta"]
@@ -786,18 +793,20 @@ final class NitpitchUITests: XCTestCase {
             "the detector screen must not be reachable in a normal launch")
     }
 
-    /// The grid's intonation layer: the … menu toggle lights the octave row
-    /// on every cell — proven through the accessibility value, which gains
-    /// the delta once the demo's synthetic measurement lands.
+    /// The grid's intonation layer: the footer's mode chip lights the
+    /// octave row on every cell — proven through the accessibility value,
+    /// which gains the delta once the demo's synthetic measurement lands.
+    /// A visible chip, not a menu item: checking intonation is a different
+    /// activity from tuning, and the user starts one or the other.
     func testIntonationLayerTogglesAcrossTheGrid() {
         let app = launch(extraArguments: ["-demo"])
         openViolinGrid(app)
         let cell = app.descendants(matching: .any)["grid.cell.0"].firstMatch
         XCTAssertTrue(cell.waitForExistence(timeout: 5))
 
-        openLayoutMenu(app)
-        let toggle = app.descendants(matching: .any)["Check intonation"].firstMatch
+        let toggle = app.descendants(matching: .any)["grid.intonation"].firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "Off", "tuning is the default mode")
         toggle.tap()
 
         let measured = XCTNSPredicateExpectation(

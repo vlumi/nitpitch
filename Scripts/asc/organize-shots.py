@@ -100,7 +100,7 @@ GUIDE_SHOTS = [
      "whichever string the score just pulled it to."),
     ("intonation",
      "-demo-open violin",
-     "On the grid, toggle the intonation layer from the toolbar and wait "
+     "On the grid, tap the Intonation chip in the footer and wait "
      "one loop: the open G and its octave both capture and the panel shows "
      "the delta. Frame and shoot."),
     ("settings-sync",

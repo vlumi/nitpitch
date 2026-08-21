@@ -19,6 +19,9 @@ struct StringView: View {
     @ObservedObject var store: InstrumentStore
     @ObservedObject var settings: Settings
     @ObservedObject var detection: DetectionSettings
+    /// The tuning-vs-intonation mode, shared with the grid — one workflow,
+    /// two screens (see `IntonationMode`).
+    @ObservedObject var intonationMode: IntonationMode
 
     @StateObject private var single: SingleStringTuner
     /// The hands-free ear (see `FollowFocus`), always listening.
@@ -34,8 +37,10 @@ struct StringView: View {
 
     init(
         instance: InstrumentInstance, index: Int, store: InstrumentStore,
-        audio: AudioSessionController, settings: Settings, detection: DetectionSettings
+        audio: AudioSessionController, settings: Settings, detection: DetectionSettings,
+        intonationMode: IntonationMode
     ) {
+        self.intonationMode = intonationMode
         self.store = store
         self.settings = settings
         self.detection = detection
@@ -105,6 +110,8 @@ struct StringView: View {
         // No identifier on the container: applied here it stamps every child
         // element and clobbers their own ids (string.target went missing).
         .task {
+            intonationMode.adopt(instrumentID: initial.id)
+            single.setChecking(intonationMode.isChecking)
             single.attach()
             // The intonation analyzer's verdicts count as focused-string
             // activity (see `FollowFocus.focusedVoice`) — playing this
@@ -126,6 +133,9 @@ struct StringView: View {
         .onChangeCompat(of: detection.tuning) { tuning in
             single.retune(tuning)
             follow.begin(instance: instance, index: index, tuning: tuning)
+        }
+        .onChangeCompat(of: intonationMode.isChecking) { on in
+            single.setChecking(on)
         }
         // The policy said "the player moved on": step the pane the same way
         // a swipe would, animation included.
@@ -175,13 +185,18 @@ struct StringView: View {
             // resolution. Rightward crawl = sharp; stationary = there.
             StrobeBand(strobe: single.tuner.strobe)
             stringSwitcher
-            // The octave's tuner and the intonation verdict, ambient — no
-            // mode. This screen has the room, and the measurement is only
-            // ever what the microphone already established.
-            IntonationPanel(
-                monitor: single.intonation,
-                target: single.tuner.target,
-                naming: settings.naming)
+            // The octave's tuner and the intonation verdict — shown while
+            // the CHECK is running (the chip below starts it): checking
+            // intonation is a different activity from tuning, and in tuning
+            // mode a 12th-fret note is simply the string, no question asked
+            // (field-found: the ambient panel kept turning honest ambiguity
+            // into wrong answers).
+            if intonationMode.isChecking {
+                IntonationPanel(
+                    monitor: single.intonation,
+                    target: single.tuner.target,
+                    naming: settings.naming)
+            }
             HStack(spacing: 20) {
                 ReferencePitchStepper(
                     reference: Binding(
@@ -202,6 +217,7 @@ struct StringView: View {
                     }
                     .disabled(instance.isLocked)
                 }
+                IntonationChip(mode: intonationMode, identifier: "string.intonation")
             }
         }
     }

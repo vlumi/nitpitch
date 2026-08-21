@@ -22,6 +22,11 @@ final class SingleStringTuner: ObservableObject {
     /// The intonation mode's state, its own island for the same reason.
     let intonation = IntonationMonitor()
 
+    /// Whether the intonation check is running (`IntonationMode`) — the
+    /// analyzer works only then: in tuning mode a 12th-fret note is simply
+    /// the string, folded by the dial, with no octave question to answer.
+    private var isChecking = false
+
     /// The app's ONE reference tone, through the controller — a single
     /// engine so two screens can never sound at once (the field found the
     /// double when each screen owned its own).
@@ -70,7 +75,7 @@ final class SingleStringTuner: ObservableObject {
 
     func attach() {
         tuner.begin()
-        analyzer.setActive(true)
+        analyzer.setActive(isChecking)
         // Navigation begins in silence: whatever tone the previous screen
         // left ringing stops here, and capture takes the session back.
         if tone.playingTag != nil {
@@ -120,6 +125,16 @@ final class SingleStringTuner: ObservableObject {
             tuner.end()
             inputLevel.set(0)
         }
+    }
+
+    /// Enter or leave the intonation check. Fresh either way: a stale
+    /// capture reappearing later would look authoritative and be anything
+    /// but — the grid's layer follows the same rule.
+    func setChecking(_ on: Bool) {
+        guard isChecking != on else { return }
+        isChecking = on
+        analyzer.setActive(on)
+        intonation.reset()
     }
 
     func detach() {

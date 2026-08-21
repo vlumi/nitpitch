@@ -45,13 +45,21 @@ public final class HarmonicEstimator {
         /// This is per *string*, not per frame: with two strings sounding, each
         /// reading reports its own string's strength.
         public let strength: Double
-        /// Whether every partial behind the estimate sat at an even multiple
-        /// of the target. That's the fingerprint of the note an octave UP:
-        /// a string sounding at 2f has partials at 2f, 4f, 6f — exclusively
-        /// the target's even slots — while the open string itself always
-        /// brings odd evidence (3f and 5f survive even where a microphone
-        /// rolls the fundamental off). Intonation checking is built on this
-        /// parity: one target, and the octave recognized by what's missing.
+        /// Whether the estimate's evidence is (essentially) all at even
+        /// multiples of the target. That's the fingerprint of the note an
+        /// octave UP: a string sounding at 2f has partials at 2f, 4f, 6f —
+        /// exclusively the target's even slots — while the open string
+        /// itself always brings REAL odd evidence (3f and 5f survive even
+        /// where a microphone rolls the fundamental off; the fundamental
+        /// and 3rd are never a sliver of a true open's energy). Dominance,
+        /// not purity: at a hot input gain the OTHER strings' leftover
+        /// rings rise out of the floor and land in the odd slots (a guitar
+        /// A's 4th harmonic is the D string's 3rd slot, a low E's 3rd is
+        /// the B string's 1st), and a strict all-even test let one faint
+        /// ring partial flip the whole octave claim (field-found: raising
+        /// the input volume broke intonation on every string). Intonation
+        /// checking is built on this parity: one target, and the octave
+        /// recognized by what's missing.
         public let evenPartialsOnly: Bool
         /// The lowest partial order behind the estimate — 1 when the note's
         /// own fundamental was evidence. The harmonic lenses require
@@ -95,6 +103,14 @@ public final class HarmonicEstimator {
     /// are treated as absent. A partial that "corroborates" at a thousandth of
     /// the energy is a noise peak that happened to land right, not evidence.
     public static let minPartialShare = 0.05
+
+    /// Odd slots may carry up to this share of a reading's total weight and
+    /// the reading still claims even-only (see `Reading.evenPartialsOnly`):
+    /// a neighbour's ring polluting one odd slot is a sliver of the played
+    /// octave's energy, while a true open string's fundamental and 3rd are
+    /// never one — the rolled-off worst case still puts well over a third
+    /// of its weight on odd slots.
+    public static let oddPollutionShare = 0.15
 
     private let sampleRate: Double
     private let windowSize: Int
@@ -229,13 +245,15 @@ public final class HarmonicEstimator {
         // headroom is full.
         let gate = floor * Self.presenceFloor
         let strength = (log10(total / gate) / 2).clamped(to: 0...1)
+        let oddWeight =
+            partials.filter { !$0.order.isMultiple(of: 2) }.map(\.weight).reduce(0, +)
 
         return Reading(
             frequency: mean,
             agreement: max(0, 1 - spread / Self.agreementCents),
             partials: partials.count,
             strength: strength,
-            evenPartialsOnly: partials.allSatisfy { $0.order.isMultiple(of: 2) },
+            evenPartialsOnly: oddWeight <= total * Self.oddPollutionShare,
             anchor: lowest)
     }
 

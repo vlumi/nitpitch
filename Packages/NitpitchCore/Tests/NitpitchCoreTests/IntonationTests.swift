@@ -116,6 +116,46 @@ final class IntonationTests: XCTestCase {
         }
     }
 
+    /// Fretting the 12th stops the OPEN string instantly — but the other
+    /// strings ring on, so the window never goes RMS-quiet. The string
+    /// itself going unreadable for a few frames is the gap that marks a
+    /// fresh attack (field-found at a hot input gain: G/B/D's 12th frets
+    /// never registered, and E's unclaimed octave walked the screen to the
+    /// D string whose band it sits in).
+    func testAFreshAttackIsSeenThroughARingingNeighbour() {
+        let d3 = 146.83
+        let analyzer = IntonationAnalyzer(
+            sampleRate: sampleRate, target: d3, tuning: .default)
+        analyzer.setActive(true)
+
+        let phase = 20480
+        var signal: [Float] = []
+        signal += tone(d3, count: phase)
+        signal += [Float](repeating: 0, count: 16384)
+        signal += tone(detuned(2 * d3, cents: 4), count: phase)
+        signal += [Float](repeating: 0, count: Detection.windowSize)
+        // A neighbour rings through EVERYTHING — gap included: the guitar A,
+        // whose 4th harmonic also sits in D's odd slot 3.
+        let ring = tone(110, count: signal.count)
+        signal = zip(signal, ring).map { $0 + 0.25 * $1 }
+
+        var capture = IntonationCapture()
+        var sawOctave = false
+        var hop = 0
+        while (hop * Detection.hopSize + Detection.windowSize) <= signal.count {
+            let start = hop * Detection.hopSize
+            let window = Array(signal[start..<(start + Detection.windowSize)])
+            if let frame = analyzer.analyze(window) {
+                capture.ingest(frame)
+                if case .note(.octave, _, _) = frame.sounding { sawOctave = true }
+            }
+            hop += 1
+        }
+
+        XCTAssertTrue(sawOctave, "the string went quiet even though the room didn't")
+        XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1.5, "the verdict registers")
+    }
+
     func testSilenceSoundsNothing() {
         let silence = [Float](repeating: 0, count: signalLength(hops: 2))
         for frame in frames(of: silence, target: 196, hops: 2) {
@@ -148,7 +188,7 @@ final class IntonationTests: XCTestCase {
         var signal: [Float] = []
         signal += tone(d2, count: phase)
         signal += tone(d2, count: phase, harmonics: evenOnly)  // the tail
-        signal += [Float](repeating: 0, count: 8192)  // damp: a real gap
+        signal += [Float](repeating: 0, count: 16384)  // damp: a real gap
         signal += tone(detuned(2 * d2, cents: 4), count: phase)  // the 12th
         signal += [Float](repeating: 0, count: Detection.windowSize)
 
@@ -176,12 +216,12 @@ final class IntonationTests: XCTestCase {
                 slots[hop], .open,
                 "the decaying tail must stay the open string, hop \(hop)")
         }
-        let octaveHops = (25...32).compactMap { slots[$0] }
+        let octaveHops = (29...36).compactMap { slots[$0] }
         XCTAssertTrue(
             octaveHops.contains(.octave),
             "after a real gap the same spectrum IS the octave")
         XCTAssertFalse(
-            slots.filter { $0.key < 22 }.values.contains(.octave),
+            slots.filter { $0.key < 26 }.values.contains(.octave),
             "no octave claims before the gap")
 
         XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1, "the D2 verdict registers")
@@ -205,7 +245,7 @@ final class IntonationTests: XCTestCase {
         signal += tone(d2, count: phase)
         // The damp: only mains hum remains — rms ~0.004, four times the
         // absolute silence gate, yet ~39 dB below the played tone.
-        let hum = (0..<8192).map { i in
+        let hum = (0..<16384).map { i in
             Float(0.0057 * sin(2 * .pi * 60 * Double(i) / sampleRate))
         }
         signal += hum

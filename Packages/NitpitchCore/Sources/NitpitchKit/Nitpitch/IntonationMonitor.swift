@@ -23,11 +23,17 @@ final class IntonationMonitor: ObservableObject {
 
     @Published private(set) var live: Live?
     /// This frame's verdict for the follow policy: the level behind a note
-    /// the analyzer attributes to this string, nil the instant it hears
-    /// none. Deliberately NOT the lingering `live` — display grace read as
-    /// focused-string credit starves genuine rivals of the frames they need
-    /// (the wrist boosts from the raw frame for the same reason). Not
-    /// published: the policy polls it, no view renders it.
+    /// the analyzer attributes to this string's OCTAVE, nil the instant it
+    /// hears none. Octave claims only: the open string reads in its own
+    /// band, so the bank already vouches for it — and the frame's level is
+    /// the whole window's, honest only while the claimed note dominates it.
+    /// An `.open` claim can be a faint ring under a loud neighbour, and
+    /// boosting it stamped the NEIGHBOUR's loudness on the focused string,
+    /// freezing the screen (field-found: guitar + iRig). Deliberately NOT
+    /// the lingering `live` either — display grace read as focused-string
+    /// credit starves genuine rivals of the frames they need (the wrist
+    /// boosts from the raw frame for the same reasons). Not published: the
+    /// policy polls it, no view renders it.
     private(set) var voiceLevel: Double?
     /// The captured samples, quantized to tenths — sub-cent flutter in a
     /// refreshing run isn't worth a re-render, let alone reading.
@@ -57,7 +63,7 @@ final class IntonationMonitor: ObservableObject {
                 live = nil
             }
         case .note(let slot, let cents, let clarity):
-            voiceLevel = frame.level
+            voiceLevel = slot == .octave ? frame.level : nil
             quietFrames = 0
             // The smoother must not glide across the slot boundary — open
             // and octave are different notes, not one note moving.

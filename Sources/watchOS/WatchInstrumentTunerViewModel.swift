@@ -203,13 +203,19 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     ) {
         var levels = results.map { $0.frequency != nil ? $0.level : nil }
         consumeIntonation(frame)
-        // The intonation analyzer confidently naming the sound — the focused
-        // string's open OR its octave — IS the focused string speaking, even
-        // when the bank's per-band view disagrees (a bass E's 12th-fret note
-        // sits in the D string's BAND, and on frames the spectral engine
-        // missed, D was accumulating rival streak and stealing focus mid-
-        // measurement — resetting the very captures being taken; field-found).
-        if let frame, case .note = frame.sounding {
+        // The intonation analyzer confidently naming the focused string's
+        // OCTAVE is the focused string speaking, even when the bank's
+        // per-band view disagrees (a bass E's 12th-fret note sits in the D
+        // string's BAND, and on frames the spectral engine missed, D was
+        // accumulating rival streak and stealing focus mid-measurement —
+        // resetting the very captures being taken; field-found). Octave
+        // claims ONLY: the open string reads in its own band, so the bank
+        // already vouches for it — and the frame's level is the whole
+        // window's, honest only while the claimed note dominates it. An
+        // .open claim can be a faint ring under a loud neighbour, and
+        // boosting it stamps the neighbour's loudness on the focused string
+        // (the ring-freeze found on Mac+iRig).
+        if let frame, case .note(slot: .octave, _, _) = frame.sounding {
             levels[focus.focusIndex] = max(levels[focus.focusIndex] ?? 0, frame.level)
         }
         // Octave claims are parity-flagged and never masquerade as a pair

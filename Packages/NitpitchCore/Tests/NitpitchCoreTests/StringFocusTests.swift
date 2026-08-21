@@ -37,10 +37,10 @@ final class StringFocusTests: XCTestCase {
 
         var events: [StringFocus.Event] = []
         for _ in 0..<StringFocus.switchFrames {
-            events.append(frame(&focus, sounding: 2))
+            events.append(frame(&focus, sounding: 1))
         }
-        XCTAssertEqual(events.last, .focused(2))
-        XCTAssertEqual(focus.focusIndex, 2)
+        XCTAssertEqual(events.last, .focused(1))
+        XCTAssertEqual(focus.focusIndex, 1)
     }
 
     /// The focused string sounding resets every rival: a brush ALONGSIDE
@@ -98,7 +98,7 @@ final class StringFocusTests: XCTestCase {
         XCTAssertFalse(focus.isSettled)
         // And rivals face the working threshold again.
         for _ in 0..<(StringFocus.switchFrames - 1) {
-            XCTAssertEqual(frame(&focus, sounding: 3), .none)
+            XCTAssertEqual(frame(&focus, sounding: 1), .none)
         }
     }
 
@@ -168,6 +168,23 @@ final class StringFocusTests: XCTestCase {
             "hovering around the threshold must not re-announce")
     }
 
+    /// Hands-free focus walks to a NEIGHBOUR only: tuning proceeds string
+    /// to string, and a distant claim is almost always another string's
+    /// harmonic wearing the wrong band — a guitar low E's 12th fret is the
+    /// D band's pitch, and a played B IS the low E's 3rd harmonic
+    /// (field-found: the screen jumped across the instrument chasing
+    /// harmonics). However loud and long a distant string sounds, the
+    /// screen stays; the crown and a swipe still reach everything.
+    func testADistantStringNeverTakesFocusAutomatically() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<10 { _ = frame(&focus, sounding: 0, inTune: true) }
+
+        for _ in 0..<100 {
+            XCTAssertEqual(frame(&focus, sounding: 2), .none)
+        }
+        XCTAssertEqual(focus.focusIndex, 0, "two strings away is a swipe, not a walk")
+    }
+
     /// The crown: instant, no argument — and reports nothing, because the
     /// user's own act needs no echo.
     func testExplicitSelectIsInstant() {
@@ -206,8 +223,8 @@ final class StringFocusTests: XCTestCase {
         XCTAssertEqual(focus.focusIndex, 0)
         XCTAssertTrue(focus.isSettled, "quiet is not un-tuning")
 
-        for _ in 0..<StringFocus.switchFramesSettled { _ = frame(&focus, sounding: 2) }
-        XCTAssertEqual(focus.focusIndex, 2, "the fast advance survived the pause")
+        for _ in 0..<StringFocus.switchFramesSettled { _ = frame(&focus, sounding: 1) }
+        XCTAssertEqual(focus.focusIndex, 1, "the fast advance survived the pause")
     }
 
     /// A sympathetic ring cannot steal the screen: plucking E on a bass
@@ -225,7 +242,7 @@ final class StringFocusTests: XCTestCase {
         // E decays below the gates; D rings on, weak, for ~3 seconds.
         for _ in 0..<64 {
             XCTAssertEqual(
-                focus.ingest(levels: [nil, nil, 0.4, nil], focusedInTune: nil), .none)
+                focus.ingest(levels: [nil, 0.4, nil, nil], focusedInTune: nil), .none)
         }
         XCTAssertEqual(focus.focusIndex, 0, "the ring never qualified")
     }
@@ -240,10 +257,10 @@ final class StringFocusTests: XCTestCase {
         var switched: StringFocus.Event = .none
         var frames = 0
         while switched == .none, frames < StringFocus.switchFrames + 1 {
-            switched = focus.ingest(levels: [nil, nil, 0.9, nil], focusedInTune: nil)
+            switched = focus.ingest(levels: [nil, 0.9, nil, nil], focusedInTune: nil)
             frames += 1
         }
-        XCTAssertEqual(switched, .focused(2))
+        XCTAssertEqual(switched, .focused(1))
         XCTAssertEqual(frames, StringFocus.switchFrames)
     }
 
@@ -302,7 +319,7 @@ final class StringFocusTests: XCTestCase {
         }
         for _ in 0..<40 {
             XCTAssertEqual(
-                focus.ingest(levels: [0.35, nil, 0.45, nil], focusedInTune: nil), .none)
+                focus.ingest(levels: [0.35, 0.45, nil, nil], focusedInTune: nil), .none)
         }
         XCTAssertEqual(focus.focusIndex, 0, "two fading tails move nothing")
     }
@@ -334,11 +351,11 @@ final class StringFocusTests: XCTestCase {
         }
         var switched = false
         for _ in 0..<200 where !switched {
-            if case .focused = focus.ingest(levels: [nil, nil, 0.5, nil], focusedInTune: nil) {
+            if case .focused = focus.ingest(levels: [nil, 0.5, nil, nil], focusedInTune: nil) {
                 switched = true
             }
         }
         XCTAssertTrue(switched, "persistence at honest strength wins in the end")
-        XCTAssertEqual(focus.focusIndex, 2)
+        XCTAssertEqual(focus.focusIndex, 1)
     }
 }

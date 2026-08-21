@@ -6,47 +6,48 @@ import XCTest
 /// always brings odd partials, a note an octave up sounds even slots only.
 /// Verified the way the estimator itself is: synthesized waveforms, no audio
 /// hardware. The capture's gating rules are pure state and tested as such.
+private let sampleRate = 44100.0
+
+/// A harmonically rich tone the way a plucked string is.
+private func tone(
+    _ hz: Double, count: Int,
+    harmonics: [Double] = [0.3, 1.0, 0.8, 0.5, 0.3, 0.2]
+) -> [Float] {
+    let raw = (0..<count).map { i in
+        let t = Double(i) / sampleRate
+        var s = 0.0
+        for (k, a) in harmonics.enumerated() {
+            s += a * sin(2 * .pi * hz * Double(k + 1) * t)
+        }
+        return s
+    }
+    let peak = raw.map(abs).max() ?? 1
+    return raw.map { Float($0 / max(peak, 1e-12) * 0.8) }
+}
+
+private func detuned(_ hz: Double, cents: Double) -> Double {
+    hz * pow(2, cents / 1200)
+}
+
+/// Run a signal through an analyzer as `AudioInput` would deliver it:
+/// hop-consecutive windows, all frames collected.
+private func frames(
+    of signal: [Float], target: Double, hops: Int
+) -> [IntonationAnalyzer.Frame] {
+    let analyzer = IntonationAnalyzer(
+        sampleRate: sampleRate, target: target, tuning: .default)
+    analyzer.setActive(true)
+    return (0..<hops).compactMap { hop in
+        let start = hop * Detection.hopSize
+        return analyzer.analyze(Array(signal[start..<(start + Detection.windowSize)]))
+    }
+}
+
+private func signalLength(hops: Int) -> Int {
+    Detection.windowSize + hops * Detection.hopSize
+}
+
 final class IntonationTests: XCTestCase {
-    private let sampleRate = 44100.0
-
-    /// A harmonically rich tone the way a plucked string is.
-    private func tone(
-        _ hz: Double, count: Int,
-        harmonics: [Double] = [0.3, 1.0, 0.8, 0.5, 0.3, 0.2]
-    ) -> [Float] {
-        let raw = (0..<count).map { i in
-            let t = Double(i) / sampleRate
-            var s = 0.0
-            for (k, a) in harmonics.enumerated() {
-                s += a * sin(2 * .pi * hz * Double(k + 1) * t)
-            }
-            return s
-        }
-        let peak = raw.map(abs).max() ?? 1
-        return raw.map { Float($0 / max(peak, 1e-12) * 0.8) }
-    }
-
-    private func detuned(_ hz: Double, cents: Double) -> Double {
-        hz * pow(2, cents / 1200)
-    }
-
-    /// Run a signal through an analyzer as `AudioInput` would deliver it:
-    /// hop-consecutive windows, all frames collected.
-    private func frames(
-        of signal: [Float], target: Double, hops: Int
-    ) -> [IntonationAnalyzer.Frame] {
-        let analyzer = IntonationAnalyzer(
-            sampleRate: sampleRate, target: target, tuning: .default)
-        analyzer.setActive(true)
-        return (0..<hops).compactMap { hop in
-            let start = hop * Detection.hopSize
-            return analyzer.analyze(Array(signal[start..<(start + Detection.windowSize)]))
-        }
-    }
-
-    private func signalLength(hops: Int) -> Int {
-        Detection.windowSize + hops * Detection.hopSize
-    }
 
     // MARK: - Classification: the parity claim
 
@@ -154,6 +155,50 @@ final class IntonationTests: XCTestCase {
 
         XCTAssertTrue(sawOctave, "the string went quiet even though the room didn't")
         XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1.5, "the verdict registers")
+    }
+
+    /// The guitar's cruelest coincidence: the low E's harmonics sit two
+    /// cents from EVERY slot of the B string (E2 x 3 = B3 + 2 cents), so a
+    /// ringing E doesn't just pollute B's parity — it IMPERSONATES the
+    /// open B outright: same anchor, same agreement, gates all passed.
+    /// What tells them apart is that a ring is stationary while a played
+    /// note is new energy: the open reads open, the refinger gap reads
+    /// quiet even though the ring sails through every gate, and the 12th
+    /// fret reads octave on the energy IT brought (field-found: B3's 12th
+    /// fret registered only half the time, E ringing).
+    func testARingingLowEDoesNotImpersonateTheBString() {
+        let b3 = 246.94
+        let analyzer = IntonationAnalyzer(
+            sampleRate: sampleRate, target: b3, tuning: .default)
+        analyzer.setActive(true)
+
+        let phase = 20480
+        var signal: [Float] = []
+        signal += tone(detuned(b3, cents: -3), count: phase)
+        signal += [Float](repeating: 0, count: 16384)  // fretting the 12th
+        signal += tone(detuned(2 * b3, cents: 4), count: phase)
+        signal += [Float](repeating: 0, count: Detection.windowSize)
+        // The low E rings through EVERYTHING, gap included.
+        let ring = tone(82.407, count: signal.count)
+        signal = zip(signal, ring).map { $0 + 0.4 * $1 }
+
+        var capture = IntonationCapture()
+        var sawOctave = false
+        var hop = 0
+        while (hop * Detection.hopSize + Detection.windowSize) <= signal.count {
+            let start = hop * Detection.hopSize
+            let window = Array(signal[start..<(start + Detection.windowSize)])
+            if let frame = analyzer.analyze(window) {
+                capture.ingest(frame)
+                if case .note(.octave, _, _) = frame.sounding { sawOctave = true }
+            }
+            hop += 1
+        }
+
+        XCTAssertTrue(sawOctave, "the 12th fret's own energy is the octave")
+        XCTAssertEqual(
+            capture.delta ?? .nan, 7, accuracy: 2.5,
+            "the verdict registers despite the impersonator")
     }
 
     func testSilenceSoundsNothing() {
@@ -269,6 +314,11 @@ final class IntonationTests: XCTestCase {
         XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1, "the verdict registers")
     }
 
+}
+
+/// The bank's side of the parity contract, and the sentinel above the
+/// bands — the grid's plumbing, same synthesized diet.
+final class IntonationBankTests: XCTestCase {
     /// The grid's plumbing: the bank's spectral results carry the parity
     /// fingerprint up from the estimator, so every string's consumer can
     /// recognize its own octave without a second detector.

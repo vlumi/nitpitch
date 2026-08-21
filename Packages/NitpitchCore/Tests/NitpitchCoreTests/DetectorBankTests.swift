@@ -245,14 +245,30 @@ final class DetectorBankTests: XCTestCase {
     /// filter. The sentinel detector exists because of this test.
     func testAnySinglePitchLightsAtMostOneDial() {
         var hz = 130.0
+        var everLit = 0
+        var steps = 0
         while hz < 2000 {
             let bank = violinBank(engine: .hybrid)
             let results = analyze(bank, signal: mix([tone(hz, count: signalLength)]))
             let dials = lit(results)
             XCTAssertLessThanOrEqual(
                 dials.count, 1, "\(hz) Hz lit dials \(dials.sorted())")
+            if dials.count == 1 { everLit += 1 }
+            steps += 1
             hz *= pow(2, 1.0 / 12)  // one semitone per step
         }
+        // AT MOST one dial is only half the guarantee: a tuner that lights
+        // NOTHING satisfies it perfectly. Pitches inside the instrument's
+        // own bands must actually read, or this test greets a dead tuner
+        // with a pass (found by mutating the strength gate to 99: this
+        // assertion was the only one in the file that stayed green).
+        // Not every swept step should light — the sweep deliberately runs
+        // above the top string, where the sentinel absorbs shadows and no
+        // dial is the right answer — so the bar is a healthy majority of
+        // the in-band steps rather than all of them.
+        XCTAssertGreaterThan(
+            everLit, steps / 2,
+            "only \(everLit) of \(steps) swept pitches lit any dial — the bank has gone deaf")
     }
 
     // MARK: - Reconfiguration

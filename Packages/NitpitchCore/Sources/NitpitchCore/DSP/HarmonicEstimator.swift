@@ -277,22 +277,6 @@ public final class HarmonicEstimator {
         return false
     }
 
-    /// The raw magnitude at each of the target's harmonic slots — the
-    /// spectrum as this string's slots see it, no culls and no gates beyond
-    /// the presence floor (an empty slot reads 0). The intonation analyzer
-    /// snapshots this while the string is quiet to learn what the
-    /// neighbours' rings deposit in the slots, and judges what a fresh
-    /// attack ADDED — a ring is stationary across an attack, a played note
-    /// is new energy (see `IntonationAnalyzer`).
-    public func slotWeights(target: Double) -> [Double]? {
-        guard windowsIngested >= 2, floor > 0, target > 0 else { return nil }
-        return (1...Self.harmonics).map { k in
-            let expected = target * Double(k)
-            guard expected < sampleRate / 2 * 0.9 else { return 0 }
-            return partial(near: expected)?.mag ?? 0
-        }
-    }
-
     /// The strongest present partial within `searchCents` of `expected`, its
     /// frequency pinned by phase advance. Nil when nothing there clears the
     /// presence floor.

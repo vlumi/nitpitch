@@ -131,6 +131,55 @@ final class IntonationTests: XCTestCase {
     /// if a future round finds a discriminator that doesn't fight parity,
     /// this is the scenario it has to beat.
 
+    /// The fresh-attack rule's two sides, pinned against the constant that
+    /// has already been wrong in the field once (five frames, ~230 ms —
+    /// slower than a fret-and-pluck, so most 12th frets were dismissed as
+    /// the open note's tail).
+    ///
+    /// NOT expressed as "exactly N quiet frames": the estimator drops its
+    /// phase pair on every silent window, so the first window after any
+    /// silence cannot be measured and counts as quiet too — a caller can
+    /// feed two silences and the rule will have counted three. What IS
+    /// testable, and what the player cares about: a tail that follows the
+    /// note with NO gap stays the open string, and the same spectrum after
+    /// a hand-sized gap is the octave. If the constant creeps up toward the
+    /// old five frames, the short-gap case starts failing.
+    func testATailWithoutAGapIsOpenAndWithOneIsTheOctave() {
+        let d3 = 146.832
+        let evenOnly: [Double] = [0, 1.0, 0, 0.5, 0, 0.25]
+
+        func lastSlot(gapHops: Int) -> IntonationSlot? {
+            let analyzer = IntonationAnalyzer(
+                sampleRate: sampleRate, target: d3, tuning: .default)
+            analyzer.setActive(true)
+            var signal = tone(d3, count: signalLength(hops: 5))
+            if gapHops > 0 {
+                signal += [Float](repeating: 0, count: gapHops * Detection.hopSize)
+            }
+            signal += tone(d3, count: signalLength(hops: 5), harmonics: evenOnly)
+            var last: IntonationSlot?
+            var hop = 0
+            while hop * Detection.hopSize + Detection.windowSize <= signal.count {
+                let start = hop * Detection.hopSize
+                if let frame = analyzer.analyze(
+                    Array(signal[start..<(start + Detection.windowSize)])),
+                    case .note(let slot, _, _) = frame.sounding
+                {
+                    last = slot
+                }
+                hop += 1
+            }
+            return last
+        }
+
+        XCTAssertEqual(
+            lastSlot(gapHops: 0), .open,
+            "an even-only tail continuing the note IS the note, dying")
+        XCTAssertEqual(
+            lastSlot(gapHops: 3), .octave,
+            "the same spectrum after a hand-sized gap is a fresh attack")
+    }
+
     func testSilenceSoundsNothing() {
         let silence = [Float](repeating: 0, count: signalLength(hops: 2))
         for frame in frames(of: silence, target: 196, hops: 2) {
@@ -161,8 +210,11 @@ final class IntonationTests: XCTestCase {
         let evenOnly: [Double] = [0, 1.0, 0, 0.5, 0, 0.25]
         let phase = 20480  // ten hops per phase
         var signal: [Float] = []
-        signal += tone(d2, count: phase)
-        signal += tone(d2, count: phase, harmonics: evenOnly)  // the tail
+        // Both phases decay, as a plucked bass string does: the open pluck
+        // fading, then its even-only tail fading further.
+        signal += tone(d2, count: phase, decaySeconds: 1.5)
+        signal += tone(
+            d2, count: phase, harmonics: evenOnly, decaySeconds: 1.2, peakLevel: 0.35)
         signal += [Float](repeating: 0, count: 16384)  // damp: a real gap
         signal += tone(detuned(2 * d2, cents: 4), count: phase)  // the 12th
         signal += [Float](repeating: 0, count: Detection.windowSize)
@@ -241,6 +293,8 @@ final class IntonationTests: XCTestCase {
         }
 
         XCTAssertTrue(sawOctave, "the gap was a damp, hum or not")
+        XCTAssertEqual(capture.open ?? .nan, 0, accuracy: 1, "the open string recorded")
+        XCTAssertEqual(capture.octave ?? .nan, 4, accuracy: 1, "and so did the octave")
         XCTAssertEqual(capture.delta ?? .nan, 4, accuracy: 1, "the verdict registers")
     }
 

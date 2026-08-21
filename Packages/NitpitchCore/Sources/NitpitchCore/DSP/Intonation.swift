@@ -163,12 +163,22 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// The drop test: slots holding a fraction of their recent peak are
     /// what SURVIVED the note, not a new one — the ring, teaching the
     /// resting snapshot — however cleanly they might read. True consumes
-    /// the frame as quiet, bookkeeping done.
+    /// the frame as quiet, bookkeeping done. Teaching also RE-ARMS the
+    /// peak to the leftovers' scale: the note whose residue was feared is
+    /// over, and the next note must be judged fresh against its own world
+    /// — a fretted 12th is honestly quieter than the open pluck before it
+    /// (half the slots, softer attack), and holding it to the open's peak
+    /// swallowed most octaves whole (field-found: "2nd harmonic" on the
+    /// dial, nothing in the panel, every string). The fresh-energy gate
+    /// below stays the durable guard against the ring itself.
     private func consumedAsResidue(slots: [Double]) -> Bool {
         let slotTotal = slots.reduce(0, +)
-        defer { slotPeak = max(slotPeak * Self.slotPeakDecayPerFrame, slotTotal) }
-        guard slotTotal < slotPeak * Self.residueShare else { return false }
+        guard slotTotal < slotPeak * Self.residueShare else {
+            slotPeak = max(slotPeak * Self.slotPeakDecayPerFrame, slotTotal)
+            return false
+        }
         restingSlots = slots
+        slotPeak = slotTotal
         quietFrames += 1
         return true
     }
@@ -178,6 +188,7 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     /// impersonates the string (the guitar E's harmonics ARE the B's slots,
     /// two cents off) passes every reading gate and still adds nothing.
     /// Every verdict is judged on the note's own energy, not the ring's.
+    /// Consuming re-arms the peak the same way residue does.
     private func freshEnergy(slots: [Double]) -> [Double]? {
         let resting = restingSlots ?? []
         let fresh = slots.enumerated().map { index, weight in
@@ -185,10 +196,23 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         }
         guard fresh.reduce(0, +) >= slots.reduce(0, +) * Self.freshEnergyShare else {
             restingSlots = slots
+            slotPeak = slots.reduce(0, +)
             quietFrames += 1
             return nil
         }
         return fresh
+    }
+
+    /// No reading of THIS string is this string going quiet, however loud
+    /// the neighbours keep the window (see quietFrames) — and once the
+    /// quiet holds, what the slots still carry is the neighbours' deposit,
+    /// and the peak re-arms to its scale.
+    private func consumeUnread(slots: [Double]) {
+        quietFrames += 1
+        if quietFrames >= Self.restingLearnQuietFrames {
+            restingSlots = slots
+            slotPeak = slots.reduce(0, +)
+        }
     }
 
     /// One window in, one verdict out — or nil while the mode is off.
@@ -223,12 +247,7 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         guard let reading = estimator.measure(target: target, others: []),
             reading.strength >= tuning.spectralStrengthGate
         else {
-            // No reading of THIS string is this string going quiet, however
-            // loud the neighbours keep the window (see quietFrames) — and
-            // once the quiet holds, what the slots still carry is the
-            // neighbours' deposit.
-            quietFrames += 1
-            if quietFrames >= Self.restingLearnQuietFrames { restingSlots = slots }
+            consumeUnread(slots: slots)
             return Frame(sounding: .nothing, level: level)
         }
         guard let fresh = freshEnergy(slots: slots) else {

@@ -62,3 +62,26 @@ struct IntonationChip: View {
             mode.isChecking ? Text("On", bundle: .module) : Text("Off", bundle: .module))
     }
 }
+
+/// The instrument screens' shared bottom bar. Fixed chrome that still
+/// GROWS a little with a big window: the string view's canvas-scaled row
+/// dwarfed the grid's fixed one, and a fixed row reads tiny beside a big
+/// dial (field-found, both directions) — so both screens wear this, and
+/// it scales together, capped where chrome starts competing with content.
+struct TunerFooter<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    @State private var scale: CGFloat = 1
+
+    var body: some View {
+        content()
+            .scaleEffect(scale)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44 * scale)
+            .background(.thinMaterial)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
+                scale = min(1.5, max(1, width / 560))
+            }
+    }
+}

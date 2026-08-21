@@ -27,13 +27,17 @@ final class NitpitchUITests: XCTestCase {
 
     /// Root → chooser → violin's grid, which several tests need to reach.
     private func openViolinGrid(_ app: XCUIApplication) {
+        openGrid(app, instrument: "violin")
+    }
+
+    private func openGrid(_ app: XCUIApplication, instrument: String) {
         let button = app.descendants(matching: .any)["tuner.instrument"]
         XCTAssertTrue(button.waitForExistence(timeout: 10))
         button.tap()
 
-        let violin = app.descendants(matching: .any)["chooser.violin"]
-        XCTAssertTrue(violin.waitForExistence(timeout: 5))
-        violin.tap()
+        let row = app.descendants(matching: .any)["chooser.\(instrument)"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
 
         XCTAssertTrue(
             app.descendants(matching: .any)["grid.strings"].waitForExistence(timeout: 5))
@@ -128,6 +132,20 @@ final class NitpitchUITests: XCTestCase {
             "the screen should walk to the played string by itself")
     }
 
+    /// Only fretted instruments offer the check: intonation is saddle
+    /// work, and a violin has no saddle to move — its footer wears the
+    /// temperament chip instead, so each family carries exactly one.
+    func testBowedInstrumentsOfferNoIntonation() {
+        let app = launch()
+        openViolinGrid(app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuner.temperament"].waitForExistence(timeout: 5),
+            "bowed instruments wear the temperament chip")
+        XCTAssertFalse(
+            app.descendants(matching: .any)["grid.intonation"].exists,
+            "and never the intonation chip")
+    }
+
     /// The settled verdict, surfaced: a string held in tune long enough is
     /// DONE, and the target says so (green to the eye, "Tuned" to
     /// accessibility — the same verdict the watch wears on the name).
@@ -200,8 +218,8 @@ final class NitpitchUITests: XCTestCase {
             extraArguments: [
                 "-demo", "-demo-pose", "1:55@-1.6;0.4:rest;1.5:67@5.8;0.4:rest",
             ])
-        openViolinGrid(app)
-        app.descendants(matching: .any)["grid.cell.0"].firstMatch.tap()
+        openGrid(app, instrument: "guitar")
+        app.descendants(matching: .any)["grid.cell.3"].firstMatch.tap()
         XCTAssertTrue(
             app.descendants(matching: .any)["string.target"].waitForExistence(timeout: 5))
 
@@ -795,13 +813,15 @@ final class NitpitchUITests: XCTestCase {
 
     /// The grid's intonation layer: the footer's mode chip lights the
     /// octave row on every cell — proven through the accessibility value,
-    /// which gains the delta once the demo's synthetic measurement lands.
-    /// A visible chip, not a menu item: checking intonation is a different
-    /// activity from tuning, and the user starts one or the other.
+    /// which gains the delta once the demo's synthetic measurement lands
+    /// (the drift score's G3 and its octave; G3 is the guitar's 4th
+    /// string). A visible chip, not a menu item, and a GUITAR, not the
+    /// violin: the check serves saddle work, so only fretted instruments
+    /// offer it.
     func testIntonationLayerTogglesAcrossTheGrid() {
         let app = launch(extraArguments: ["-demo"])
-        openViolinGrid(app)
-        let cell = app.descendants(matching: .any)["grid.cell.0"].firstMatch
+        openGrid(app, instrument: "guitar")
+        let cell = app.descendants(matching: .any)["grid.cell.3"].firstMatch
         XCTAssertTrue(cell.waitForExistence(timeout: 5))
 
         let toggle = app.descendants(matching: .any)["grid.intonation"].firstMatch

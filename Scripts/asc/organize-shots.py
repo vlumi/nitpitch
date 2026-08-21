@@ -99,10 +99,10 @@ GUIDE_SHOTS = [
      "the strings and the screen follows by itself. Shoot mid-walk, on "
      "whichever string the score just pulled it to."),
     ("intonation",
-     "-demo-open violin",
-     "On the grid, tap the Intonation chip in the footer and wait "
-     "one loop: the open G and its octave both capture and the panel shows "
-     "the delta. Frame and shoot."),
+     "-demo-open guitar",
+     "On the guitar grid (the check is fretted-only), tap the Intonation "
+     "chip in the footer and wait one loop: the open G and its octave both "
+     "capture and the G cell shows the delta. Frame and shoot."),
     ("settings-sync",
      "-demo-pose rest",
      "Open Settings (the gear): the iCloud Sync switch with its footer "

@@ -84,8 +84,11 @@ public struct DetectionTuning: Equatable, Sendable {
     /// gaps; this narrows a band when the neighbour is further away than this.
     ///
     /// The default matches `Instrument.outerHeadroomSemitones`, the widest
-    /// reach any shipped band has, so at the default it clips nothing and
-    /// turning it down is a pure experiment. Anything narrower is a diagnostic:
+    /// reach any shipped band has, so on the shipped tunings it clips
+    /// nothing (their widest neighbour midpoint is 3.5 semitones, fifths)
+    /// and turning it down is a pure experiment. A CUSTOM tuning with
+    /// neighbours more than 8 semitones apart is narrowed by the default —
+    /// the bands stop tiling and a pitch between them lights no dial. Anything narrower is a diagnostic:
     /// it opens gaps between the bands, and a pitch in a gap lights no dial.
     public var maxSemitonesFromString: Double
 

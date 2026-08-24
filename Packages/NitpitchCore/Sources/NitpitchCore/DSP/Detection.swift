@@ -68,8 +68,9 @@ public struct DetectionResult: Equatable, Sendable {
     /// partials, and always reports false.
     public let evenPartialsOnly: Bool
     /// Which harmonic of the string best explains the sound: 1 for the open
-    /// string, 2 for the octave (the parity fingerprint), 3/4 when a
-    /// harmonic lens made the read (`DetectorBank`). The error is the
+    /// string, 2 for the octave (the parity fingerprint), 3 when the
+    /// harmonic lens made the read (`DetectorBank`; a 4th-harmonic lens was
+    /// considered and ruled out — 2f's parity already covers it). The error is the
     /// string's either way — this exists so the display can say WHY it
     /// shows D2 while the ear hears D4.
     public let harmonic: Int
@@ -88,9 +89,10 @@ public struct DetectionResult: Equatable, Sendable {
 
     public static let silent = DetectionResult(frequency: nil, clarity: 0, rms: 0)
 
-    /// A frame the detector REJECTED: no frequency, no authority — only the
-    /// clarity and level it was judged on, which the diagnostics screen
-    /// still shows.
+    /// A frame the detector REJECTED: no frequency, no authority — only
+    /// what it was judged on, for the diagnostics screen. The spectral gate
+    /// passes the strength it measured; MPM rejections pass no level (MPM
+    /// has one frame-wide level, no per-string one) and it defaults to 0.
     public static func rejected(
         clarity: Double, rms: Double, level: Double = 0
     ) -> DetectionResult {

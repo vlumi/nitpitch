@@ -26,13 +26,14 @@ final class FollowFocus: ObservableObject {
     /// readout wears it as green, the same vocabulary as the watch's name.
     @Published private(set) var isSettled = false
 
-    /// The level of a note the intonation analyzer attributes to the focused
-    /// string — nil when it hears none. The string's own octave (the
-    /// intonation check's second note) lands in a NEIGHBOUR's band by pitch
-    /// (violin G's octave sits in A's), and was walking the screen away
-    /// mid-measurement; a frame the analyzer claims is this string's open or
-    /// octave IS the focused string sounding, whatever band the bank filed
-    /// it under. The watch learned this rule on a bass 12th fret.
+    /// The level of the focused string's OCTAVE when the intonation
+    /// analyzer hears it sounding — nil otherwise (the open string needs no
+    /// vouching: it reads in its own band). The octave (the check's second
+    /// note) lands in a NEIGHBOUR's band by pitch (violin G's octave sits
+    /// in A's), and was walking the screen away mid-measurement — a frame
+    /// the analyzer claims as this string's octave IS the focused string
+    /// sounding, whatever band the bank filed it under. The watch learned
+    /// this rule on a bass 12th fret.
     var focusedVoice: (() -> Double?)?
 
     private let audio: AudioSessionController

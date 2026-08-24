@@ -63,11 +63,18 @@ struct StringView: View {
 
     /// The measured content: meter 10, dial pane 173 (arc 70 after the
     /// readout's rise + readout 77 + strip 14 + gaps), strobe band 12,
-    /// switcher 40, the intonation panel 104, four 16pt gaps. Measured, not
-    /// padded — an overstated canvas is empty window (the chromatic root
-    /// and the grid cells both had that disease). The reference row lives
-    /// OUTSIDE, in the fixed footer the grid also wears.
-    private static let design = CGSize(width: 400, height: 409)
+    /// switcher 40 — 235 plus three 16pt gaps = 283; the intonation panel
+    /// adds its 104 and a fourth gap = 403 while the check runs. Measured
+    /// per mode, not padded — an overstated canvas is empty window (the
+    /// chromatic root and the grid cells both had that disease, and a
+    /// height fixed at the checking state left ~120pt dead under the
+    /// switcher in plain tuning; the grid's footprint is honest per mode
+    /// the same way). The reference row lives OUTSIDE, in the fixed footer
+    /// the grid also wears.
+    private static let designWidth: CGFloat = 400
+    private var design: CGSize {
+        CGSize(width: Self.designWidth, height: intonationMode.isChecking ? 403 : 283)
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -84,11 +91,11 @@ struct StringView: View {
                 max(
                     0.5,
                     min(
-                        geo.size.width / Self.design.width,
-                        geo.size.height / Self.design.height)))
+                        geo.size.width / design.width,
+                        geo.size.height / design.height)))
             content
                 .frame(
-                    width: Self.design.width, height: Self.design.height,
+                    width: design.width, height: design.height,
                     alignment: DesignCanvas.alignment
                 )
                 .contentShape(Rectangle())

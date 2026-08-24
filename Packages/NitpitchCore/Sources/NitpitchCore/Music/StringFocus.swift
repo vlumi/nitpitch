@@ -41,10 +41,7 @@ public struct StringFocus: Sendable {
     }
 
     /// The settled arithmetic lives in `SettleMeter` — shared with the
-    /// grid's per-cell verdict; these forward so the policy's contract
-    /// reads in one place.
-    public static let settledFrames = SettleMeter.settledFrames
-    public static let unsettleFrames = SettleMeter.unsettleFrames
+    /// grid's per-cell verdict.
     /// Frames a rival string must sustain to take focus while the focused
     /// string is still being worked on (~0.85 s — longer than any brush).
     public static let switchFrames = 18

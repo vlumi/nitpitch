@@ -38,8 +38,6 @@ public final class HarmonicEstimator {
         /// How well the partials agree, 0...1 — the spectral analogue of MPM's
         /// clarity, and gated the same way.
         public let agreement: Double
-        /// How many partials the estimate used.
-        public let partials: Int
         /// How far the strongest partial stands above the presence gate, 0...1
         /// on a log scale (0 = barely admitted, 1 = 40 dB above the gate).
         /// This is per *string*, not per frame: with two strings sounding, each
@@ -251,7 +249,6 @@ public final class HarmonicEstimator {
         return Reading(
             frequency: mean,
             agreement: max(0, 1 - spread / Self.agreementCents),
-            partials: partials.count,
             strength: strength,
             evenPartialsOnly: oddWeight <= total * Self.oddPollutionShare,
             anchor: lowest)

@@ -57,18 +57,20 @@ public final class NitpitchViewModel: ObservableObject {
         self.reference = reference
         self.detector = PitchDetector(sampleRate: audio.sampleRate, band: band)
         smoother.reset()
+        // A live subscription must move to the new detector by RESUBSCRIBING,
+        // never by reading the swapped property from its closure: the closure
+        // runs on the analysis queue and `PitchDetector.analyze` mutates its
+        // buffers in place, so a main-actor swap under a running closure was
+        // a data race. Every sibling captures its DSP object immutably
+        // (`[weak self, bank]`); this was the one consumer that both went
+        // through `self` and replaced the object mid-flight.
+        if subscription != nil { subscribe() }
     }
 
     /// Begin receiving windows. The engine itself is the controller's business
     /// — this only starts listening to it.
     public func attach() async {
-        subscription = audio.subscribe { [weak self] window in
-            // Runs on the analysis queue. Do the DSP here, then hop to main
-            // with only the result.
-            guard let self else { return }
-            let result = self.detector.analyze(window)
-            Task { @MainActor in self.consume(result) }
-        }
+        subscribe()
         // OBSERVE the status, don't sample it: activation runs in its own
         // task and usually finishes after this one, so a one-shot read here
         // sees `.idle` and — on a machine with no microphone, where no
@@ -77,6 +79,19 @@ public final class NitpitchViewModel: ObservableObject {
         // covers the case where activation already finished.
         statusWatch = audio.$status.sink { [weak self] status in
             self?.apply(status)
+        }
+    }
+
+    /// One subscription per detector: the closure owns its instance, so the
+    /// analysis queue never shares a mutable detector with the main actor.
+    /// Assigning `subscription` releases the old one, which unsubscribes.
+    private func subscribe() {
+        let detector = self.detector
+        subscription = audio.subscribe { [weak self, detector] window in
+            // Runs on the analysis queue. Do the DSP here, then hop to main
+            // with only the result.
+            let result = detector.analyze(window)
+            Task { @MainActor in self?.consume(result) }
         }
     }
 

@@ -122,12 +122,19 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             instrument != self.instrument || reference != self.reference
                 || temperament != self.temperament || naming != self.naming
         else { return }
+        let pitchChanged =
+            instrument != self.instrument || reference != self.reference
+            || temperament != self.temperament
         let countChanged = instrument.strings.count != targets.count
         self.instrument = instrument
         self.reference = reference
         self.temperament = temperament
         self.naming = naming
         retarget()
+        // A naming-only change renames the labels and nothing else: no
+        // pitch moved, so the detectors, the smoothing, and above all a
+        // LIVE capture (half an intonation check, taken hands-on) survive.
+        guard pitchChanged else { return }
         if countChanged {
             focus = StringFocus(stringCount: targets.count)
             focusIndex = focus.focusIndex

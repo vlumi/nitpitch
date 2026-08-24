@@ -10,6 +10,7 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **The single-string screen tightened three ways.** The green "tuned" name now judges exactly the reading the needle shows, instead of a parallel listener that could disagree with the dial for frames at a time. The screen no longer reserves empty space below the string switcher in plain tuning — the canvas is sized to what's actually on it, per mode, so the dial draws larger in the window. And swiping to a neighbour starts genuinely clean: the previous string's "· 2nd harmonic" label, its idle countdown, and its decaying-tail memory no longer leak into the new string's first frames (the stale tail flag could eat the new string's first octave reading in an intonation check).
 - **Three correctness fixes from an architecture review, none waiting for a field report.** Switching instruments mid-listen could hand one audio frame to a detector being rebuilt under it (a crash-shaped race, never observed — closed by wiring the new detector into a fresh subscription). In tuning mode, a 12th-fret note that arrived through the fallback engine blanked the single-string dial instead of folding onto it as "· 2nd harmonic" like every other harmonic does. And the note above every string's band now obeys the same two-frame confirmation rule as the strings themselves, so a single-frame coincidence up there can no longer light a grid dial.
 
 ### build 16 — 2026-08-21

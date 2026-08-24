@@ -17,7 +17,15 @@ import Foundation
 ///    pitch; a played B IS the low E's 3rd harmonic) — the 2:1 and 3:1
 ///    coincidences never land next door, because neighbours sit only a
 ///    fourth or fifth apart (field-found: the screen jumped across the
-///    instrument chasing harmonics). The crown, a swipe, a tap still
+///    instrument chasing harmonics). Adjacency WRAPS: the extreme strings
+///    are each other's neighbours, so finishing a pass on the top string
+///    and replaying the bottom one walks straight back — one pass of big
+///    changes moves the other strings, and the verify pass is the same
+///    string-to-string act. (The 2:1/3:1 coincidences stay away from this
+///    edge too: no shipped extreme pair is an octave or twelfth apart —
+///    guitar's E2/E4 double octave is the nearest case, and a 4th-harmonic
+///    reading strong enough to clear the level and prominence bars isn't a
+///    thing a real pluck produces.) The crown, a swipe, a tap still
 ///    reach any string instantly.
 /// 3. **The settled advance** — the hands-free heart: once the focused
 ///    string has held in tune for `settledFrames`, it is marked done, and
@@ -139,10 +147,17 @@ public struct StringFocus: Sendable {
 
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
-        // NEIGHBOURS only — see the type doc's rule 2: distant claims are
-        // harmonics wearing the wrong band, and the crown reaches anything.
-        for index in [focusIndex - 1, focusIndex + 1]
-        where rivalStreaks.indices.contains(index) {
+        // NEIGHBOURS only, and the walk WRAPS — see the type doc's rule 2:
+        // distant claims are harmonics wearing the wrong band, the extreme
+        // strings are each other's neighbours, and the crown reaches
+        // anything. Two strings share one neighbour (counted once, so its
+        // streak grows at the honest pace); one string has none.
+        var rivals = [
+            (focusIndex + stringCount - 1) % stringCount,
+            (focusIndex + 1) % stringCount,
+        ]
+        if rivals[0] == rivals[1] { rivals.removeLast() }
+        for index in rivals where index != focusIndex {
             // A rival's claim clears two bars: strong against the focused
             // string's recent PEAK (a sympathetic ring never is), and —
             // while the focused string still sounds — clearly stronger

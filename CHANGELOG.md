@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+### build 17 — 2026-08-24
+
 - **The hands-free walk wraps around.** Finish a pass on the top string, replay the bottom one, and the screen walks straight back — the extreme strings now count as neighbours, so the verify pass (one round of big changes moves the other strings) is the same string-to-string act as the first, no swipe needed. Middle strings still only step to a real neighbour, and all the guards against rings and brushes stealing the screen apply at the seam too.
 - **Watch: a renamed note no longer discards a measurement.** Changing the note-naming style on the phone mid-check (say C4 to its Helmholtz name) syncs to the wrist as a rename — and used to throw away a half-taken intonation capture and rebuild the detectors, though no pitch had moved. Labels now just rename. The Δ toggle also matches the phone's rule exactly, instead of consulting the audio state it doesn't own.
 - **The single-string screen tightened three ways.** The green "tuned" name now judges exactly the reading the needle shows, instead of a parallel listener that could disagree with the dial for frames at a time. The screen no longer reserves empty space below the string switcher in plain tuning — the canvas is sized to what's actually on it, per mode, so the dial draws larger in the window. And swiping to a neighbour starts genuinely clean: the previous string's "· 2nd harmonic" label, its idle countdown, and its decaying-tail memory no longer leak into the new string's first frames (the stale tail flag could eat the new string's first octave reading in an intonation check).

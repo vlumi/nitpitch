@@ -209,7 +209,7 @@ struct AppIconImage: View {
         if let image = platformIcon {
             image
                 .resizable()
-                .aspectRatio(contentMode: .fit)
+                .scaledToFit()
                 .frame(width: size, height: size)
                 .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
         } else {

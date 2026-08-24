@@ -61,10 +61,11 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private let audio = WatchAudioInput()
     private let haptics = WatchHaptics()
     private let bank: DetectorBank
-    /// The intonation ear, aimed at the FOCUSED string — no mode, the
-    /// phone's ambient rule kept: play the open, then the octave (12th
-    /// fret or the harmonic), and the delta appears. Both hands stay on
-    /// the tools, which is the whole point of doing this on a watch.
+    /// The intonation ear, aimed at the FOCUSED string — live only while
+    /// the Δ check runs (`setChecking`), the same mode the phone's chip
+    /// drives: play the open, then the octave (12th fret or the harmonic),
+    /// and the delta appears. Both hands stay on the tools, which is the
+    /// whole point of doing this on a watch.
     private let analyzer: IntonationAnalyzer
     private var capture = IntonationCapture()
     private var instrument: Instrument
@@ -122,12 +123,19 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             instrument != self.instrument || reference != self.reference
                 || temperament != self.temperament || naming != self.naming
         else { return }
+        let pitchChanged =
+            instrument != self.instrument || reference != self.reference
+            || temperament != self.temperament
         let countChanged = instrument.strings.count != targets.count
         self.instrument = instrument
         self.reference = reference
         self.temperament = temperament
         self.naming = naming
         retarget()
+        // A naming-only change renames the labels and nothing else: no
+        // pitch moved, so the detectors, the smoothing, and above all a
+        // LIVE capture (half an intonation check, taken hands-on) survive.
+        guard pitchChanged else { return }
         if countChanged {
             focus = StringFocus(stringCount: targets.count)
             focusIndex = focus.focusIndex
@@ -164,7 +172,11 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     func setChecking(_ on: Bool) {
         guard isChecking != on else { return }
         isChecking = on
-        analyzer.setActive(on && state != .idle)
+        // Unconditional, the phone's rule: begin()/end() own the audio
+        // lifecycle (the old `state != .idle` gate encoded it wrongly —
+        // .denied and .unavailable passed it — and with audio stopped an
+        // active analyzer hears nothing anyway).
+        analyzer.setActive(on)
         retuneIntonation()
     }
 

@@ -171,7 +171,11 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     func setChecking(_ on: Bool) {
         guard isChecking != on else { return }
         isChecking = on
-        analyzer.setActive(on && state != .idle)
+        // Unconditional, the phone's rule: begin()/end() own the audio
+        // lifecycle (the old `state != .idle` gate encoded it wrongly —
+        // .denied and .unavailable passed it — and with audio stopped an
+        // active analyzer hears nothing anyway).
+        analyzer.setActive(on)
         retuneIntonation()
     }
 

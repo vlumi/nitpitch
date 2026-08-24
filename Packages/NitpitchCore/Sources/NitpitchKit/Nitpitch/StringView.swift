@@ -275,7 +275,12 @@ struct StringView: View {
                 tuner: single.tuner,
                 naming: settings.naming,
                 isLocked: instance.isLocked,
-                isSettled: follow.isSettled,
+                // The tuner's own meter, not the follow ear's: the green
+                // crowns THIS dial, so it must judge the same routed,
+                // folded, smoothed cents the needle shows — the follow
+                // bank's raw per-band reading can disagree for frames at
+                // a time. Follow keeps its verdict for the walk policy.
+                isSettled: single.tuner.isSettled,
                 canStepTarget: { delta in canStepTarget(delta) },
                 stepTarget: { delta in stepTarget(delta) })
         } else {

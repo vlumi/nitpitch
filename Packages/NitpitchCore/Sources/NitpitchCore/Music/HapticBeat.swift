@@ -28,7 +28,7 @@ public enum HapticBeat {
     public static let maxRatePerSecond: Double = 8
 
     /// Below this the beat has effectively stopped (the chip's "0/s" rule).
-    static let stoppedHz = 0.05
+    public static let stoppedHz = 0.05
 
     /// The focused string alone: its physical beat rate against the target,
     /// from the same smoothed cents the screen shows. In tune is silence —

@@ -174,7 +174,7 @@ struct IntervalChip: View {
 
     @ViewBuilder
     private var aimLabel: some View {
-        if display.targetBeatHz > 0.05 {
+        if display.targetBeatHz > HapticBeat.stoppedHz {
             Text(verbatim: "→ \(format(display.targetBeatHz))")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -189,13 +189,14 @@ struct IntervalChip: View {
 
     /// The pulse, computed rather than animated with a keyframe: the rate
     /// changes every frame while tuning, and TimelineView follows it
-    /// continuously. Capped at 8 Hz — past that the ear hears roughness,
-    /// not pulses, and the eye gave up earlier still.
+    /// continuously. Capped at `HapticBeat.maxRatePerSecond` — past that
+    /// the ear hears roughness, not pulses, and the eye gave up earlier
+    /// still.
     private var pulsingDot: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-            let rate = min(display.beatHz, 8)
+            let rate = min(display.beatHz, HapticBeat.maxRatePerSecond)
             let phase =
-                rate < 0.05
+                rate < HapticBeat.stoppedHz
                 ? 1.0
                 : 0.5 + 0.5 * sin(2 * .pi * rate * context.date.timeIntervalSinceReferenceDate)
             Circle()
@@ -206,7 +207,7 @@ struct IntervalChip: View {
     }
 
     private var beatText: String {
-        display.beatHz < 0.05 ? "0/s" : "\(format(display.beatHz))/s"
+        display.beatHz < HapticBeat.stoppedHz ? "0/s" : "\(format(display.beatHz))/s"
     }
 
     private func format(_ hz: Double) -> String {
@@ -215,7 +216,7 @@ struct IntervalChip: View {
 
     private var accessibleValue: String {
         var parts = ["\(format(display.beatHz)) beats per second"]
-        if display.targetBeatHz > 0.05 {
+        if display.targetBeatHz > HapticBeat.stoppedHz {
             parts.append("aim \(format(display.targetBeatHz))")
         }
         if onTarget {

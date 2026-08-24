@@ -185,6 +185,64 @@ final class StringFocusTests: XCTestCase {
         XCTAssertEqual(focus.focusIndex, 0, "two strings away is a swipe, not a walk")
     }
 
+    /// Adjacency wraps: after a full pass ends on the top string, replaying
+    /// the bottom one walks the screen straight back — the verify pass is
+    /// the same string-to-string act as the first (a bass, tuned E→G, then
+    /// E again to check what the pass moved).
+    func testTheWalkWrapsFromTheTopStringBackToTheBottom() {
+        var focus = StringFocus(stringCount: 4)
+        focus.select(3)
+        for _ in 0..<10 { _ = frame(&focus, sounding: 3) }
+
+        var events: [StringFocus.Event] = []
+        for _ in 0..<StringFocus.switchFrames {
+            events.append(frame(&focus, sounding: 0))
+        }
+        XCTAssertEqual(events.last, .focused(0), "the extremes are neighbours")
+        XCTAssertEqual(focus.focusIndex, 0)
+    }
+
+    /// And the other way around — the wrap is symmetric.
+    func testTheWalkWrapsDownwardFromTheBottomString() {
+        var focus = StringFocus(stringCount: 4)
+        for _ in 0..<10 { _ = frame(&focus, sounding: 0) }
+
+        var events: [StringFocus.Event] = []
+        for _ in 0..<StringFocus.switchFrames {
+            events.append(frame(&focus, sounding: 3))
+        }
+        XCTAssertEqual(events.last, .focused(3))
+    }
+
+    /// Two strings: each is the other's ONLY neighbour, reached through
+    /// both directions of the wrap at once — which must count as one rival,
+    /// not accumulate at double pace.
+    func testATwoStringInstrumentSwitchesAtTheHonestPace() {
+        var focus = StringFocus(stringCount: 2)
+        for _ in 0..<5 {
+            _ = focus.ingest(levels: [1.0, nil], focusedInTune: false)
+        }
+        var switched: StringFocus.Event = .none
+        var frames = 0
+        while switched == .none, frames < StringFocus.switchFrames + 1 {
+            switched = focus.ingest(levels: [nil, 0.9], focusedInTune: nil)
+            frames += 1
+        }
+        XCTAssertEqual(switched, .focused(1))
+        XCTAssertEqual(frames, StringFocus.switchFrames, "one rival, one streak")
+    }
+
+    /// One string: the wrap collapses onto the focused string itself, which
+    /// is nobody's rival — the policy just holds.
+    func testASingleStringHasNoRivals() {
+        var focus = StringFocus(stringCount: 1)
+        for _ in 0..<100 {
+            XCTAssertEqual(
+                focus.ingest(levels: [1.0], focusedInTune: false), .none)
+        }
+        XCTAssertEqual(focus.focusIndex, 0)
+    }
+
     /// The crown: instant, no argument — and reports nothing, because the
     /// user's own act needs no echo.
     func testExplicitSelectIsInstant() {

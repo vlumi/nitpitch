@@ -61,10 +61,11 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private let audio = WatchAudioInput()
     private let haptics = WatchHaptics()
     private let bank: DetectorBank
-    /// The intonation ear, aimed at the FOCUSED string — no mode, the
-    /// phone's ambient rule kept: play the open, then the octave (12th
-    /// fret or the harmonic), and the delta appears. Both hands stay on
-    /// the tools, which is the whole point of doing this on a watch.
+    /// The intonation ear, aimed at the FOCUSED string — live only while
+    /// the Δ check runs (`setChecking`), the same mode the phone's chip
+    /// drives: play the open, then the octave (12th fret or the harmonic),
+    /// and the delta appears. Both hands stay on the tools, which is the
+    /// whole point of doing this on a watch.
     private let analyzer: IntonationAnalyzer
     private var capture = IntonationCapture()
     private var instrument: Instrument

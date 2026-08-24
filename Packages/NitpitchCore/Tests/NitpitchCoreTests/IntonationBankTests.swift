@@ -67,6 +67,39 @@ final class IntonationBankTests: XCTestCase {
         XCTAssertTrue(seen, "the sentinel must surface the above-band note")
     }
 
+    /// The sentinel obeys the confirmation rule like every dial: its reading
+    /// becomes a LIT dial downstream (the grid claims an above-band note as
+    /// some string's octave), so one agreeing frame is not enough — a
+    /// single-frame coincidence up there must stay dark, exactly as it would
+    /// in any string's band.
+    func testTheSentinelWaitsForConfirmationLikeTheDials() {
+        let bass = Instrument.bassGuitar
+        let targets = bass.notes.map { $0.frequency() }
+        let bank = DetectorBank(
+            sampleRate: sampleRate, targets: targets, bands: bass.stringBands(),
+            tuning: DetectionTuning(engine: .mpm))
+        let d12th = 2 * targets[2] * pow(2, 5.0 / 1200)
+        let signal = tone(d12th, count: signalLength(hops: 3), harmonics: [1.0, 0.6, 0.4])
+
+        for hop in 0..<3 {
+            let start = hop * Detection.hopSize
+            let frame = bank.analyzeWithAbove(
+                Array(signal[start..<(start + Detection.windowSize)]))
+            if hop == 0 {
+                XCTAssertNil(
+                    frame.above?.frequency,
+                    "the first agreeing frame is a candidate, not a confirmation")
+            } else {
+                XCTAssertNotNil(frame.above?.frequency, "held for two frames — confirmed")
+            }
+        }
+
+        // A gap is a fresh start for the sentinel's streak too.
+        bank.interrupted()
+        let resumed = bank.analyzeWithAbove(Array(signal[0..<Detection.windowSize]))
+        XCTAssertNil(resumed.above?.frequency, "after a gap, confirmation starts over")
+    }
+
     /// The guitar field case: B4 and E5 live above every band, so their
     /// only route is the sentinel — and on a guitar something is always
     /// ringing for spectral to read, so spectral wins nearly every frame.

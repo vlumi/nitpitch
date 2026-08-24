@@ -167,8 +167,23 @@ public final class StringTunerViewModel: ObservableObject {
         smoother.reset()
         resetSettle()
         resetIntonation()
+        resetFrameState()
         strobe.clear()
         if state != .idle { state = .waiting }
+    }
+
+    /// The frame-to-frame memory, back to the init state — everything here
+    /// describes the OLD string's last note, and each carried a stale
+    /// verdict across a swipe: `quietFrames` at the idle threshold cleared
+    /// the new dial's first reading; `lastReadingWasOpen` let the old
+    /// string's decaying tail veto the new string's fresh octave; and the
+    /// harmonic label could open on a neighbour's "· 2nd harmonic".
+    private func resetFrameState() {
+        quietFrames = 0
+        lastReadingWasOpen = false
+        if harmonic != 1 { harmonic = 1 }
+        harmonicCandidate = 1
+        harmonicStreak = 0
     }
 
     /// Start showing readings; results arrive from outside through `ingest`.

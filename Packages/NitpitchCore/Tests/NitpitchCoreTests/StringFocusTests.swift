@@ -61,7 +61,7 @@ final class StringFocusTests: XCTestCase {
         var focus = StringFocus(stringCount: 4)
 
         var events: [StringFocus.Event] = []
-        for _ in 0..<StringFocus.settledFrames {
+        for _ in 0..<SettleMeter.settledFrames {
             events.append(frame(&focus, sounding: 0, inTune: true))
         }
         XCTAssertEqual(events.last, .settled)
@@ -75,7 +75,7 @@ final class StringFocusTests: XCTestCase {
     /// the screen almost immediately — moving on is the expected act.
     func testSettledAdvancesFast() {
         var focus = StringFocus(stringCount: 4)
-        for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
+        for _ in 0..<SettleMeter.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
 
         var events: [StringFocus.Event] = []
         for _ in 0..<StringFocus.switchFramesSettled {
@@ -90,10 +90,10 @@ final class StringFocusTests: XCTestCase {
     /// is not a detune (see testAWobbleAfterSettlingKeepsTheVerdict).
     func testGoingOutOfTuneUnsettles() {
         var focus = StringFocus(stringCount: 4)
-        for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
+        for _ in 0..<SettleMeter.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
         XCTAssertTrue(focus.isSettled)
 
-        for _ in 0..<StringFocus.unsettleFrames { _ = frame(&focus, sounding: 0, inTune: false) }
+        for _ in 0..<SettleMeter.unsettleFrames { _ = frame(&focus, sounding: 0, inTune: false) }
 
         XCTAssertFalse(focus.isSettled)
         // And rivals face the working threshold again.
@@ -108,7 +108,7 @@ final class StringFocusTests: XCTestCase {
     /// buzzed success and the name never turned).
     func testAWobbleAfterSettlingKeepsTheVerdict() {
         var focus = StringFocus(stringCount: 4)
-        for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
+        for _ in 0..<SettleMeter.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
         XCTAssertTrue(focus.isSettled)
 
         _ = frame(&focus, sounding: 0, inTune: false)
@@ -128,7 +128,7 @@ final class StringFocusTests: XCTestCase {
         var focus = StringFocus(stringCount: 4)
 
         var events: [StringFocus.Event] = []
-        for count in 0..<(StringFocus.settledFrames * 4) {
+        for count in 0..<(SettleMeter.settledFrames * 4) {
             let wobble = count % 8 == 7
             events.append(frame(&focus, sounding: 0, inTune: !wobble))
         }
@@ -142,7 +142,7 @@ final class StringFocusTests: XCTestCase {
     func testABorderlineStringNeverSettles() {
         var focus = StringFocus(stringCount: 4)
 
-        for count in 0..<(StringFocus.settledFrames * 4) {
+        for count in 0..<(SettleMeter.settledFrames * 4) {
             XCTAssertEqual(frame(&focus, sounding: 0, inTune: count % 2 == 0), .none)
         }
         XCTAssertFalse(focus.isSettled)
@@ -156,7 +156,7 @@ final class StringFocusTests: XCTestCase {
         var focus = StringFocus(stringCount: 4)
 
         var events: [StringFocus.Event] = []
-        for count in 0..<(StringFocus.settledFrames * 3) {
+        for count in 0..<(SettleMeter.settledFrames * 3) {
             let dropped = count % 3 == 2
             events.append(
                 frame(&focus, sounding: dropped ? nil : 0, inTune: !dropped))
@@ -189,7 +189,7 @@ final class StringFocusTests: XCTestCase {
     /// user's own act needs no echo.
     func testExplicitSelectIsInstant() {
         var focus = StringFocus(stringCount: 4)
-        for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
+        for _ in 0..<SettleMeter.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
 
         focus.select(3)
 
@@ -215,7 +215,7 @@ final class StringFocusTests: XCTestCase {
     /// reaches for the next string.
     func testSilenceHoldsEverything() {
         var focus = StringFocus(stringCount: 4)
-        for _ in 0..<StringFocus.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
+        for _ in 0..<SettleMeter.settledFrames { _ = frame(&focus, sounding: 0, inTune: true) }
 
         for _ in 0..<50 {
             XCTAssertEqual(frame(&focus, sounding: nil), .none)
@@ -333,7 +333,7 @@ final class StringFocusTests: XCTestCase {
         }
 
         var events: [StringFocus.Event] = []
-        for _ in 0..<StringFocus.settledFrames {
+        for _ in 0..<SettleMeter.settledFrames {
             events.append(
                 focus.ingest(levels: [0.3, nil, nil, nil], focusedInTune: true))
         }

@@ -1,15 +1,17 @@
 import NitpitchCore
 import SwiftUI
 
-/// The octave's own tuner and the intonation verdict, ambient below the
-/// string switcher: a second dial for the 12th fret (or the fingered octave,
-/// or the harmonic — they all land here), lit whenever the octave sounds,
-/// beside the captured samples and the delta between them.
+/// The octave's own tuner and the intonation verdict, below the string
+/// switcher while the CHECK runs (`IntonationMode` — the footer chip starts
+/// it): a second dial for the 12th fret (or the fingered octave, or the
+/// harmonic — they all land here), lit whenever the octave sounds, beside
+/// the captured samples and the delta between them.
 ///
-/// No mode. The main dial answers "how far is this from the open target" and
-/// goes quiet when the octave plays; this panel answers for the octave; the
-/// verdict updates whenever both have been held. The screen simply shows
-/// everything it knows.
+/// Within the check, no further sub-modes: the main dial answers "how far
+/// is this from the open target" and goes quiet when the octave plays; this
+/// panel answers for the octave; the verdict updates whenever both have
+/// been held. (The panel WAS ambient once — see AGENTS.md's mode history
+/// for why that lost.)
 struct IntonationPanel: View {
     @ObservedObject var monitor: IntonationMonitor
     /// The open string's target; the octave derives from it.

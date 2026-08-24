@@ -44,6 +44,11 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     /// Where tuning STARTS: bowed instruments tune the A first — it's the
     /// note the orchestra gives — then fifths outward; everyone else goes
     /// low to high. The index the wrist's hands-free mode opens on.
+    /// The LOWEST A, where `Temperament` anchors on the A nearest A4 — the
+    /// same string on every shipped bowed instrument (each carries exactly
+    /// one A); an exotic custom tuning with several As could see the two
+    /// rules pick different strings, which costs nothing: this one only
+    /// chooses where the walk begins.
     public var firstTuningIndex: Int {
         guard family == .bowed,
             let index = strings.firstIndex(where: { $0 % 12 == 9 })

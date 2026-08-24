@@ -55,6 +55,12 @@ public final class DetectorBank: @unchecked Sendable {
         bands: [ClosedRange<Double>],
         tuning: DetectionTuning = .default
     ) {
+        // Stated, not assumed: a mismatch corrupts silently downstream —
+        // `confirmed()` indexes streaks (sized by targets) with detector
+        // positions (sized by bands).
+        precondition(
+            targets.count == bands.count,
+            "one target per band: \(targets.count) targets, \(bands.count) bands")
         self.sampleRate = sampleRate
         self.targets = targets
         self.bands = bands
@@ -159,6 +165,9 @@ public final class DetectorBank: @unchecked Sendable {
     public func configure(
         targets: [Double], bands: [ClosedRange<Double>], tuning: DetectionTuning
     ) {
+        precondition(
+            targets.count == bands.count,
+            "one target per band: \(targets.count) targets, \(bands.count) bands")
         lock.lock()
         defer { lock.unlock() }
         self.targets = targets

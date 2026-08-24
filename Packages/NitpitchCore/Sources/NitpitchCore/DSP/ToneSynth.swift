@@ -19,8 +19,8 @@ public struct ToneSynth {
     /// there — an instantaneous jump is phase-continuous but not
     /// slope-continuous, and that derivative kink is a broadband transient:
     /// the field report was "a cutting noise, pretty painful if the volume
-    /// is up". The glide is cents-linear and fast (~70 ms across a fifth) —
-    /// portamento, not a slide.
+    /// is up". The glide is exponential in cents space and fast (a fifth is
+    /// within a cent in ~0.13 s) — portamento, not a slide.
     public var targetFrequency: Double
     /// The pitch actually sounding right now.
     public private(set) var frequency: Double
@@ -33,8 +33,9 @@ public struct ToneSynth {
 
     /// The playing level: clearly audible, comfortable over music left
     /// playing underneath. The partial weights below are normalized to sum
-    /// to 1, so this is the true waveform peak — no clipping headroom
-    /// games.
+    /// to 1, so this bounds the waveform — the partials' crests never all
+    /// align, so the observed peak sits lower (~0.59 of full scale), and
+    /// nothing can clip.
     public static let playingAmplitude = 0.8
 
     /// The harmonic recipe, fundamental first, normalized at render time.
@@ -49,8 +50,8 @@ public struct ToneSynth {
     /// ±1 Hz reference step is ~4¢, crossed in 0.4 ms, the same audible
     /// kink as no glide at all ("smaller ticks", the second field report).
     /// A one-pole approach in cents space is smooth at both ends for any
-    /// step size: a fifth still lands in ~70 ms, a reference step spreads
-    /// over ~40.
+    /// step size: a fifth is within a cent in ~0.13 s and snaps in ~0.19,
+    /// a ±1 Hz reference step spreads its 4¢ over ~90 ms to the snap.
     public static let glideTimeConstant = 0.02
     /// Close enough to snap: the exponential's asymptote, cut off where no
     /// ear follows.

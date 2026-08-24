@@ -35,6 +35,36 @@ final class IntonationRoutingTests: XCTestCase {
         XCTAssertEqual(routed.intonation, octaveFrame(cents: 4.6))
     }
 
+    /// In TUNING mode there is no octave question to answer — the check is
+    /// off, and a 12th-fret note is simply the string. An MPM-carried frame
+    /// at 2f must FOLD onto the dial (the spectral engine's parity fold does
+    /// this natively; MPM frames used to slip through to the octave slot,
+    /// silencing the dial and feeding a capture no screen was showing).
+    func testTuningModeFoldsTheOctaveOntoTheDial() {
+        let routed = IntonationRouting.route(
+            result: reading(2 * a1 * pow(2, 5.0 / 1200)),
+            frame: nil, target: a1, checking: false)
+        XCTAssertNil(routed.intonation, "no check, no octave slot")
+        let hz = routed.dial.frequency ?? 0
+        XCTAssertEqual(
+            1200 * log2(hz / a1), 5, accuracy: 0.5,
+            "the 12th fret reads as the string, its own error kept")
+        XCTAssertEqual(routed.dial.harmonic, 2, "and the readout says why")
+    }
+
+    /// The 3rd-harmonic fold serves plain tuning — it must survive in both
+    /// modes.
+    func testTuningModeStillFoldsTheThirdHarmonic() {
+        let d3 = 146.832
+        let routed = IntonationRouting.route(
+            result: reading(3 * d3 * pow(2, 4.0 / 1200)),
+            frame: nil, target: d3, checking: false)
+        XCTAssertEqual(routed.dial.harmonic, 3)
+        XCTAssertEqual(
+            1200 * log2((routed.dial.frequency ?? 0) / d3), 4, accuracy: 0.5)
+        XCTAssertNil(routed.intonation)
+    }
+
     /// A touched 3rd harmonic, carried by MPM: the dial must read the STRING,
     /// not "+1902¢". Harmonic folding lives in the spectral lens, and a real
     /// harmonic is quiet and clean enough that spectral often reads nothing

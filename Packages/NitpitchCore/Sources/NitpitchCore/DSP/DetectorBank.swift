@@ -44,6 +44,8 @@ public final class DetectorBank: @unchecked Sendable {
     /// before it lights, so a single-frame coincidence never reaches the
     /// screen.
     private var streaks: [Int]
+    /// The sentinel's own confirmation streak — see `confirmedAbove`.
+    private var aboveStreak = 0
 
     /// `targets` and `bands` are parallel: one frequency and one band per
     /// string, as `Instrument.notes` and `Instrument.stringBands` hand out.
@@ -104,7 +106,23 @@ public final class DetectorBank: @unchecked Sendable {
         case .spectral: outcome = (analyzeSpectral(window), nil)
         case .hybrid: outcome = analyzeHybrid(window)
         }
-        return (confirmed(outcome.results), outcome.above)
+        return (confirmed(outcome.results), confirmedAbove(outcome.above))
+    }
+
+    /// The sentinel obeys the same confirmation rule as the dials: its
+    /// reading becomes a LIT dial downstream (the grid claims an above-band
+    /// note as some string's octave), so a single-frame coincidence up
+    /// there must not reach the screen either — MPM's clarity gate is the
+    /// only other vetting above the bands, and "dials light only after two
+    /// agreeing frames" is the invariant, not a per-path courtesy.
+    private func confirmedAbove(_ above: DetectionResult?) -> DetectionResult? {
+        if above?.frequency != nil {
+            aboveStreak += 1
+        } else {
+            aboveStreak = 0
+        }
+        guard let above, above.frequency != nil else { return nil }
+        return aboveStreak >= tuning.confirmationFrames ? above : nil
     }
 
     /// The confirmation rule. A reading only reaches the screen once it has
@@ -162,6 +180,7 @@ public final class DetectorBank: @unchecked Sendable {
         estimator?.reset()
         // A gap is a fresh start for confirmation too.
         streaks = Array(repeating: 0, count: targets.count)
+        aboveStreak = 0
     }
 
     // MARK: - Hybrid: spectral wins the frame; MPM only when it's silent

@@ -52,13 +52,35 @@ enum IntonationRouting {
     /// `dial` is the bank's result, silenced when the frame turned out to be
     /// the octave's business; `intonation` is the analyzer's frame, or a
     /// synthesized octave frame when proximity spoke and parity couldn't.
+    ///
+    /// `checking` is the intonation mode: the octave SLOT exists only while
+    /// the check runs. In plain tuning a 12th-fret note is simply the
+    /// string, so an MPM-carried reading at 2f FOLDS onto the dial the way
+    /// the spectral engine's parity fold already does natively — it used to
+    /// slip through to the octave slot here, silencing the dial and feeding
+    /// a capture no screen was showing (and re-arming the focus boost the
+    /// mode had retired). The 3rd-harmonic fold below is mode-independent:
+    /// it serves plain tuning.
     static func route(
-        result: DetectionResult, frame: IntonationAnalyzer.Frame?, target: Double
+        result: DetectionResult, frame: IntonationAnalyzer.Frame?, target: Double,
+        checking: Bool = true
     ) -> (dial: DetectionResult, intonation: IntonationAnalyzer.Frame?) {
-        if let frame, frame.soundsOctave {
+        if checking, let frame, frame.soundsOctave {
             return (silenced(result), frame)
         }
         if let cents = octaveCents(in: result, target: target) {
+            guard checking else {
+                // MPM measures the period, so its 12th-fret reading arrives
+                // at 2f unfolded; parity can't fold it (there are no
+                // partials to judge). The error is the string's own.
+                return (
+                    DetectionResult(
+                        frequency: (result.frequency ?? 0) / 2,
+                        clarity: result.clarity, rms: result.rms,
+                        level: result.level, evenPartialsOnly: false, harmonic: 2),
+                    nil
+                )
+            }
             return (
                 silenced(result),
                 IntonationAnalyzer.Frame(

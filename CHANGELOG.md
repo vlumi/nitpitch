@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **Three correctness fixes from an architecture review, none waiting for a field report.** Switching instruments mid-listen could hand one audio frame to a detector being rebuilt under it (a crash-shaped race, never observed — closed by wiring the new detector into a fresh subscription). In tuning mode, a 12th-fret note that arrived through the fallback engine blanked the single-string dial instead of folding onto it as "· 2nd harmonic" like every other harmonic does. And the note above every string's band now obeys the same two-frame confirmation rule as the strings themselves, so a single-frame coincidence up there can no longer light a grid dial.
+
 ### build 16 — 2026-08-21
 
 - **Tuning and checking intonation are now two jobs you choose between.** An "Intonation" chip sits in the footer of both the grid and the single-string screen — on fretted instruments, where bowed ones carry their temperament chip — and one tap switches both screens at once. In tuning mode, a note played at the 12th fret simply reads as the string it belongs to; in intonation mode, the octave gets its own tuner and the Δ verdict. The watch has the same check behind its Δ button. Previously the grid hid this in a menu while the single-string screen ran it permanently, and the two screens could disagree about what the same note meant.

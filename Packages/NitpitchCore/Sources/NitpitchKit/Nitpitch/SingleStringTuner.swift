@@ -93,7 +93,8 @@ final class SingleStringTuner: ObservableObject {
                 // is a real decision with two classifiers behind it; see
                 // `IntonationRouting` for why either alone leaks.
                 let routed = IntonationRouting.route(
-                    result: result, frame: frame, target: self.analyzerTarget)
+                    result: result, frame: frame, target: self.analyzerTarget,
+                    checking: self.isChecking)
                 self.tuner.ingest(routed.dial)
                 self.inputLevel.set((result.displayLevel * 20).rounded() / 20)
                 if let frame = routed.intonation { self.intonation.ingest(frame) }

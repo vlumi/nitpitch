@@ -67,9 +67,12 @@ enum GridIntonationRouting {
         in routed: inout [DetectionResult]
     ) {
         guard routed[owner].frequency == nil else { return }
+        // The full parity shape, harmonic tag included — the spectral path
+        // stamps its even-only readings `harmonic: 2`, and "exactly one
+        // octave path" means the claim must arrive indistinguishable.
         routed[owner] = DetectionResult(
             frequency: hz / 2, clarity: result.clarity, rms: result.rms,
-            level: result.displayLevel, evenPartialsOnly: true)
+            level: result.displayLevel, evenPartialsOnly: true, harmonic: 2)
     }
 
     /// The string whose octave this reading is — the nearest 2f within the

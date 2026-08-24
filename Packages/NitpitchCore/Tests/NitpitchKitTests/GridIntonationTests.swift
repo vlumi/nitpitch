@@ -91,6 +91,7 @@ final class GridIntonationTests: XCTestCase {
             results: [silent, silent, mpmReading(e12th), silent], targets: bass)
         XCTAssertNil(routed[2].frequency, "the D dial must not pin at +200")
         XCTAssertTrue(routed[0].evenPartialsOnly, "E claims its octave in parity shape")
+        XCTAssertEqual(routed[0].harmonic, 2, "the full shape: the spectral path's tag too")
         XCTAssertEqual(
             1200 * log2((routed[0].frequency ?? 1) / bass[0]), 6, accuracy: 0.1,
             "the claim carries the octave's cents on the open scale")

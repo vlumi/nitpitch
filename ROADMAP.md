@@ -28,7 +28,7 @@ Not scheduled for any near milestone — the pile that matters when an App Store
 
 ## 3. Owed upstream to donpa
 
-Found while porting its scaffold; fixed here. Checked against donpa on 2026-08-26 — two debts confirmed real and their fixes in flight there; delete this section once they land:
+Found while porting its scaffold; fixed here. Checked against donpa on 2026-08-26 — two debts confirmed real, their fix is open as [donpa#529](https://github.com/vlumi/donpa/pull/529); delete this section once it merges:
 
 1. `Scripts/embed-commit-sha.sh` fails the build on a repo with no commits yet (fresh `git init`), not just on a non-git checkout. Nitpitch's guard (`if SHA=$(git rev-parse …)`) covers both cases.
 2. SwiftLint's `excluded:` paths resolve relative to the invocation directory — worth a line in donpa's AGENTS.md, as here.

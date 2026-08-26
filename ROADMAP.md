@@ -28,8 +28,9 @@ Not scheduled for any near milestone — the pile that matters when an App Store
 
 ## 3. Owed upstream to donpa
 
-Found while porting its scaffold; fixed here, still broken there:
+Found while porting its scaffold; fixed here. Checked against donpa on 2026-08-26 — two debts confirmed real and their fixes in flight there; delete this section once they land:
 
-1. `Scripts/embed-commit-sha.sh` fails the build on a repo with no commits yet (fresh `git init`), not just on a non-git checkout.
+1. `Scripts/embed-commit-sha.sh` fails the build on a repo with no commits yet (fresh `git init`), not just on a non-git checkout. Nitpitch's guard (`if SHA=$(git rev-parse …)`) covers both cases.
 2. SwiftLint's `excluded:` paths resolve relative to the invocation directory — worth a line in donpa's AGENTS.md, as here.
-3. Opening a shared link (donpa.app/s/…) with the app already running spawns a second window on macOS: the WindowGroup answers external events with a new scene unless the existing window volunteers — `.handlesExternalEvents(preferring: ["*"], allowing: ["*"])` on the window content is the fix, proven here on the same bug.
+
+The third debt on this list — a shared link spawning a second macOS window — turned out already paid: donpa's build 30 replaced the `WindowGroup` with a single `Window` scene, which solves it more fundamentally than nitpitch's `.handlesExternalEvents` fix (no group, nothing to spawn).

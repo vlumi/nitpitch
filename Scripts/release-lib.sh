@@ -14,6 +14,16 @@ CHANGELOG_FILE="CHANGELOG.md"
 say() { printf '\033[36m▶︎ %s\033[0m\n' "$*"; }
 die() { echo "error: $*" >&2; exit 1; }
 
+# Make the local tags an exact mirror of origin's. The lane reads its state
+# from the tags (resume guard, tag_exists, previous_tag), and origin is the
+# copy that counts: a tag deleted there to redo a failed cut must stop
+# counting here too, or publish re-bumps and tag refuses to re-tag. Tags are
+# only ever created by the lane and pushed at once, so a local-only tag is
+# always stale, never unpublished work.
+sync_tags() {
+    git fetch --quiet --prune origin '+refs/tags/*:refs/tags/*'
+}
+
 # Stamp the changelog's "Unreleased (next build)" section with a build number at
 # release time, so the human-written entries accumulated there during the cycle get
 # promoted to a `### build N` heading (and a fresh empty Unreleased takes its place).

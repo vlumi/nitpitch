@@ -101,11 +101,17 @@ extension SyncEngine {
             else { continue }
             let candidateIsNewer =
                 stamp(candidate.syncModifiedAt) > stamp(other.syncModifiedAt)
-            copies.append(
-                copy(
-                    candidateIsNewer ? other : candidate,
-                    candidateIsNewer ? candidate : other,
-                    copies))
+            let loser = candidateIsNewer ? other : candidate
+            // The pass runs until a device has met the cloud's records, so
+            // the LOSER can arrive here after the winner already minted its
+            // copy (it pushed on an empty first round; its download landed
+            // later). Content that already survives under another id needs
+            // no second copy.
+            let survives = (local + remote).contains {
+                $0.syncID != loser.syncID && !contentDiffers($0, loser)
+            }
+            guard !survives else { continue }
+            copies.append(copy(loser, candidateIsNewer ? candidate : other, copies))
         }
         return copies
     }

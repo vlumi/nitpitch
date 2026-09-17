@@ -69,6 +69,9 @@ final class WatchChromaticTunerViewModel: ObservableObject {
     }
 
     private func consume(_ result: DetectionResult) {
+        // A frame in flight past `end()` must not leave a stale reading
+        // frozen on a screen that stopped listening.
+        guard state != .idle else { return }
         level = result.displayLevel
         guard let hz = result.frequency else {
             quietFrames += 1

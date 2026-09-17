@@ -35,6 +35,20 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(second.favorites, ["violin", "guitar"])
     }
 
+    /// The rack's drag-reorder is a synced whole value with one stamp; a
+    /// move that didn't stamp either never left the device or was pushed
+    /// under the old stamp and undone by the next merge.
+    func testMovingFavoritesStampsTheOrder() {
+        let settings = Settings(defaults: defaults)
+        settings.favorites = ["violin", "guitar", "cello"]
+        XCTAssertNil(settings.favoritesOrderStamp, "assigning the array is not a user act")
+
+        settings.moveFavorites(fromOffsets: IndexSet(integer: 2), toOffset: 0)
+
+        XCTAssertEqual(settings.favorites, ["cello", "violin", "guitar"])
+        XCTAssertNotNil(settings.favoritesOrderStamp, "the move is stamped at the act")
+    }
+
     /// A pin is the (instrument, preset) pair — toggling is idempotent and
     /// the pins survive a relaunch like everything else.
     func testPresetPinsToggleAndPersist() {

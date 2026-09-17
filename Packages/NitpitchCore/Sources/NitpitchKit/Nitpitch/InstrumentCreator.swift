@@ -72,8 +72,11 @@ struct InstrumentCreator: View {
         // Creation is deliberate by construction — it earns the star, and
         // the rack cap keeps a growing collection from flooding the
         // launch screen.
+        // Through the API, not by appending: the star must be STAMPED or
+        // sync treats it as an install seed and never moves it (the new
+        // instrument arrived on the other device unstarred, for good).
         if !settings.favorites.contains(added.id) {
-            settings.favorites.append(added.id)
+            settings.toggleFavorite(added.id)
         }
         dismiss()
         onCreated?(added)

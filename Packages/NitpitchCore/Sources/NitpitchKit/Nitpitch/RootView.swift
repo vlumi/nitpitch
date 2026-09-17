@@ -182,8 +182,12 @@ public struct RootView: View {
             arrival = .unreadable
             return
         }
+        // Locked instruments are not targets: the padlock freezes the setup,
+        // and the store would refuse the write anyway — offering one would
+        // be a "Load" that does nothing.
         let candidates =
             store.instances
+            .filter { !$0.isLocked }
             .filter { $0.templateID == link.templateID && $0.strings.count == link.strings.count }
             .sorted { ($0.lastUsedAt ?? .distantPast) > ($1.lastUsedAt ?? .distantPast) }
         guard let target = candidates.first else {

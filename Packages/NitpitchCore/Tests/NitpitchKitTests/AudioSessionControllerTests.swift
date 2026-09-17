@@ -125,4 +125,91 @@ final class AudioSessionControllerTests: XCTestCase {
         controller.pokeScreenAwake()
         XCTAssertTrue(controller.isKeepingScreenAwake, "repeat pokes are harmless")
     }
+
+    /// Backgrounding hands the screen back: an app that isn't showing has
+    /// no business holding the idle timer for up to 90 s (or, with a tone
+    /// left ringing on the Mac, forever — the deadline re-armed on it).
+    func testSuspendReleasesTheScreen() {
+        let controller = AudioSessionController(input: AudioInput())
+        controller.pokeScreenAwake()
+        XCTAssertTrue(controller.isKeepingScreenAwake)
+
+        controller.suspend()
+        XCTAssertFalse(controller.isKeepingScreenAwake, "suspend releases the wake lock")
+    }
+
+    /// A dropped backlog reaches exactly the subscribers that asked, and
+    /// never one that has cancelled — the phase reset must land where the
+    /// phase state lives.
+    func testGapsReachTheirSubscribers() {
+        let input = AudioInput()
+        let controller = AudioSessionController(input: input)
+        var gaps = 0
+        var windows = 0
+        let listening = controller.subscribe(onGap: { gaps += 1 }) { _ in windows += 1 }
+        let indifferent = controller.subscribe { _ in }
+        let gone = controller.subscribe(onGap: { XCTFail("cancelled, must not hear a gap") }) { _ in
+        }
+        gone.cancel()
+
+        input.onGap?()
+        deliver([1], through: input)
+
+        XCTAssertEqual(gaps, 1)
+        XCTAssertEqual(windows, 1)
+        listening.cancel()
+        indifferent.cancel()
+    }
+
+    /// `activate` awaits the permission answer; a `suspend` in that gap
+    /// means the scene that asked is gone, and the continuation must not
+    /// start the engine from the background and publish `.running` over it.
+    func testASuspendDuringThePermissionWaitWins() async {
+        let input = GatedInput()
+        let controller = AudioSessionController(input: input)
+
+        let activation = Task { await controller.activate() }
+        await input.waitUntilAsked()
+        controller.suspend()
+        input.answer(true)
+        await activation.value
+
+        XCTAssertEqual(controller.status, .idle, "the later suspend stands")
+        XCTAssertEqual(input.startCount, 0, "capture never started")
+    }
+}
+
+/// A capture source whose permission answer waits for the test — the one
+/// suspension point in `activate` made controllable.
+private final class GatedInput: AudioCapturing, @unchecked Sendable {
+    var onWindow: (([Float]) -> Void)?
+    var onGap: (() -> Void)?
+    var droppedWindows: Int { 0 }
+    var onDeviceChange: (() -> Void)?
+    let sampleRate: Double = 44100
+    private(set) var startCount = 0
+
+    private var permission: CheckedContinuation<Bool, Never>?
+    private var asked: CheckedContinuation<Void, Never>?
+
+    func requestPermission() async -> Bool {
+        await withCheckedContinuation { continuation in
+            permission = continuation
+            asked?.resume()
+            asked = nil
+        }
+    }
+
+    func waitUntilAsked() async {
+        if permission != nil { return }
+        await withCheckedContinuation { asked = $0 }
+    }
+
+    func answer(_ granted: Bool) {
+        permission?.resume(returning: granted)
+        permission = nil
+    }
+
+    func start() throws { startCount += 1 }
+    func stop() {}
 }

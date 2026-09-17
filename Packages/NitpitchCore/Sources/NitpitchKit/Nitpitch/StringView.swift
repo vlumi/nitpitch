@@ -153,7 +153,12 @@ struct StringView: View {
         // The policy said "the player moved on": step the pane the same way
         // a swipe would, animation included.
         .onChangeCompat(of: follow.focusIndex) { focused in
-            guard focused != index else { return }
+            // "A swipe always wins": while the finger has the pane, the
+            // walk must not move it underneath (the two were fighting over
+            // `dragOffset`, and the release then committed from an index
+            // that had already moved). The swipe's own commit calls
+            // `follow.select`, which realigns the policy to the user's pick.
+            guard focused != index, dragOffset == 0 else { return }
             animatedStep(focused - index)
         }
         #if os(macOS)

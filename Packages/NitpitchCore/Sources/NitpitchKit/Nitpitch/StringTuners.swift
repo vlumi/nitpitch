@@ -87,7 +87,10 @@ final class StringTuners: ObservableObject {
             Task { await audio.silenceTone() }
         }
         guard subscription == nil else { return }
-        subscription = audio.subscribe { [weak self, bank] window in
+        // A dropped backlog is a gap the spectral phase pair must not span.
+        subscription = audio.subscribe(
+            onGap: { [bank] in bank.interrupted() }
+        ) { [weak self, bank] window in
             // Runs on the analysis queue. All the DSP happens here; only the
             // finished results hop to main.
             let frame = bank.analyzeWithAbove(window)

@@ -75,7 +75,9 @@ final class FollowFocus: ObservableObject {
             bands: instrument.stringBands(reference: instance.reference),
             tuning: tuning)
         self.bank = bank
-        subscription = audio.subscribe { [weak self, bank] window in
+        subscription = audio.subscribe(
+            onGap: { [bank] in bank.interrupted() }
+        ) { [weak self, bank] window in
             // Analysis queue; only the results hop to main.
             let results = bank.analyze(window)
             Task { @MainActor [weak self] in self?.consume(results) }

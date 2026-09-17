@@ -83,7 +83,12 @@ final class SingleStringTuner: ObservableObject {
             Task { await audio.silenceTone() }
         }
         guard subscription == nil else { return }
-        subscription = audio.subscribe { [weak self, bank, analyzer] window in
+        subscription = audio.subscribe(onGap: { [bank, analyzer] in
+            // Both estimators read phase across windows; neither may span
+            // a discard.
+            bank.interrupted()
+            analyzer.interrupted()
+        }) { [weak self, bank, analyzer] window in
             // Analysis queue; only the results hop to main.
             let results = bank.analyze(window)
             let frame = analyzer.analyze(window)

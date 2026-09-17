@@ -51,6 +51,7 @@ struct PresetBrowser: View {
                 }
             }
             .navigationTitle(Text("All presets", bundle: .module))
+            .dismissesOnEscape(dismiss)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) { sortMenu }
                 ToolbarItem(placement: .cancellationAction) { filterMenu }

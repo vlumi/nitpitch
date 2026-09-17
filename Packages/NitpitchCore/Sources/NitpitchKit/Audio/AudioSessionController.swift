@@ -101,6 +101,12 @@ public final class AudioSessionController: ObservableObject {
 
     private var pendingReactivation: Task<Void, Never>?
     private var isReactivating = false
+    /// Whether capture is wanted right now — set by `activate`, cleared by
+    /// `suspend` and the tone taking the session. `activate` awaits the
+    /// permission answer, and a `suspend` can land in that gap; without
+    /// this the continuation would start the engine from the background
+    /// and publish `.running` over it.
+    private var wantsCapture = false
 
     /// Device events arrive in storms: a replug fires the default-input
     /// listener and the engine's notification several times while the device
@@ -140,10 +146,14 @@ public final class AudioSessionController: ObservableObject {
     ///
     /// Safe to call repeatedly — `AudioInput.start()` is a no-op while running.
     public func activate() async {
+        wantsCapture = true
         guard await input.requestPermission() else {
             status = .permissionDenied
             return
         }
+        // Suspended (or the tone took the session) while the permission
+        // answer was pending: the scene that asked is gone.
+        guard wantsCapture else { return }
         do {
             try input.start()
             status = .running
@@ -161,6 +171,7 @@ public final class AudioSessionController: ObservableObject {
     /// back to its idle timer: an app that isn't showing has no business
     /// keeping the display lit.
     public func suspend() {
+        wantsCapture = false
         tone.stopNow()
         wakeDeadline?.cancel()
         wakeDeadline = nil
@@ -278,6 +289,7 @@ public final class AudioSessionController: ObservableObject {
     /// switch — a reference tone is a courtesy, not an alarm, and an
     /// accidental ring switch should silence it.
     public func beginTonePlayback() {
+        wantsCapture = false
         input.stop()
         status = .idle
         #if os(iOS)

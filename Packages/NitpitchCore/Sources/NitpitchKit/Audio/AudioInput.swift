@@ -51,6 +51,11 @@ public final class AudioInput: NSObject {
     }
 
     private(set) public var isRunning = false
+    /// The node the tap went on, kept so `stop()` never asks the engine for
+    /// `inputNode` again: on a Mac whose only input just went away that
+    /// getter raises (the same exception `start()` guards against with
+    /// AVCaptureDevice), and an unplug is exactly when `stop()` runs.
+    private var tappedNode: AVAudioInputNode?
 
     /// The rate the detector should be built for (not necessarily the hardware's).
     public let sampleRate: Double
@@ -173,6 +178,7 @@ public final class AudioInput: NSObject {
         // rather than being analysed per-callback.
         let tap: AVAudioNodeTapBlock = { [weak self] buffer, _ in self?.accept(buffer) }
         input.installTap(onBus: 0, bufferSize: 2048, format: hardwareFormat, block: tap)
+        tappedNode = input
 
         engine.prepare()
         do {
@@ -183,6 +189,7 @@ public final class AudioInput: NSObject {
             // retry path (Retry button, foreground pass, device rebuild)
             // would walk straight into it.
             input.removeTap(onBus: 0)
+            tappedNode = nil
             throw error
         }
         isRunning = true
@@ -190,7 +197,8 @@ public final class AudioInput: NSObject {
 
     public func stop() {
         guard isRunning else { return }
-        engine.inputNode.removeTap(onBus: 0)
+        tappedNode?.removeTap(onBus: 0)
+        tappedNode = nil
         engine.stop()
         isRunning = false
         bufferLock.lock()

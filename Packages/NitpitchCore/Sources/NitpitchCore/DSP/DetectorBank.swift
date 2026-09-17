@@ -278,7 +278,12 @@ public final class DetectorBank: @unchecked Sendable {
         estimator.ingest(window)
 
         return targets.indices.map { index in
+            // Another string on THIS pitch (a user-made unison) is not a
+            // neighbour to skip shared partials with — every partial would
+            // be shared and both dials would go dark forever. It is the
+            // same note; both read it.
             let others = targets.indices.filter { $0 != index }.map { targets[$0] }
+                .filter { abs(PitchMath.cents(from: targets[index], to: $0)) > 1 }
             guard
                 let reading = estimator.measure(target: targets[index], others: others)
             else {

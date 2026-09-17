@@ -112,7 +112,12 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
         maxSemitones: Double = DetectionTuning.default.maxSemitonesFromString
     ) -> [ClosedRange<Double>] {
         guard !strings.isEmpty else { return [] }
-        let sorted = strings.sorted()
+        // Distinct pitches: two strings on one pitch (a user-made unison)
+        // are the same string to the band split, and must share one honest
+        // band — with the raw list, `firstIndex` gave the pair the LOWER
+        // duplicate's position and the upper bound landed on the target
+        // itself, so a reading a hair sharp never registered.
+        let sorted = Array(Set(strings)).sorted()
 
         return strings.map { midi in
             // `strings` is documented low-to-high but not enforced, so find
@@ -130,11 +135,18 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
             // bands tile with no gaps. `maxSemitones` only ever narrows, so a
             // band never grows into its neighbour's; at the default it binds on
             // nothing and every instrument keeps its midpoints.
-            let low = PitchMath.frequency(
-                midi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference)
-            let high = PitchMath.frequency(
-                midi: min(upperMidi, Double(midi) + maxSemitones), reference: reference)
-            return low...high
+            // Clamped to the searchable band as well: at a low reference a
+            // 5-string bass's B0 (27 Hz at A=390) sits below the detector's
+            // floor, and a band below the floor is a dial that reads junk.
+            let low = max(
+                Detection.fullBand.lowerBound,
+                PitchMath.frequency(
+                    midi: max(lowerMidi, Double(midi) - maxSemitones), reference: reference))
+            let high = min(
+                Detection.fullBand.upperBound,
+                PitchMath.frequency(
+                    midi: min(upperMidi, Double(midi) + maxSemitones), reference: reference))
+            return low...max(low, high)
         }
     }
 

@@ -73,6 +73,18 @@ public final class AudioInput: NSObject {
         NotificationCenter.default.addObserver(
             self, selector: #selector(hardwareChanged),
             name: .AVAudioEngineConfigurationChange, object: engine)
+        #if os(iOS)
+        // A phone call, Siri, an alarm: the system deactivates the session
+        // and stops the engine WITHOUT a configuration-change notification,
+        // so windows just stop and `isRunning` would lie forever (the app
+        // never left the foreground, so the scene never re-activates it).
+        // Tear down on `.began` and report a device change either way: the
+        // controller's coalesced rebuild restarts capture once the
+        // interruption ends, and shows an honest "no input" meanwhile.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(sessionInterrupted),
+            name: AVAudioSession.interruptionNotification, object: nil)
+        #endif
         #if os(macOS)
         installDefaultInputListener()
         #endif
@@ -81,6 +93,15 @@ public final class AudioInput: NSObject {
     @objc private func hardwareChanged(_ note: Notification) {
         onDeviceChange?()
     }
+
+    #if os(iOS)
+    @objc private func sessionInterrupted(_ note: Notification) {
+        let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+        let type = raw.flatMap(AVAudioSession.InterruptionType.init(rawValue:))
+        if type == .began { stop() }
+        onDeviceChange?()
+    }
+    #endif
 
     #if os(macOS)
     /// The replug detector. The engine's configuration-change notification

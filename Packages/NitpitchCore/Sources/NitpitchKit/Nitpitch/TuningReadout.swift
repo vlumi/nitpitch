@@ -29,19 +29,27 @@ enum TuningReadout {
     /// The VoiceOver phrasing — "in tune" / "4 cents flat" / "not heard" —
     /// with the octave delta appended when one is being measured.
     static func accessibleValue(cents: Double?, octaveDelta: Double? = nil) -> String {
+        // Through the catalog: this is the PRIMARY accessible channel for
+        // tuning (the strobe is deliberately hidden from VoiceOver), and a
+        // hardcoded English value would be the one untranslated thing a
+        // localized build says out loud.
         var value: String
         if let cents {
             if TuningDisplay.isInTune(cents: cents) {
-                value = "in tune"
+                value = String(localized: "in tune", bundle: .module)
             } else {
                 let rounded = abs(Int(cents.rounded()))
-                value = cents < 0 ? "\(rounded) cents flat" : "\(rounded) cents sharp"
+                value =
+                    cents < 0
+                    ? String(localized: "\(rounded) cents flat", bundle: .module)
+                    : String(localized: "\(rounded) cents sharp", bundle: .module)
             }
         } else {
-            value = "not heard"
+            value = String(localized: "not heard", bundle: .module)
         }
         if let delta = octaveDelta {
-            value += String(format: ", octave delta %+.1f cents", delta)
+            let signed = String(format: "%+.1f", delta)
+            value += String(localized: ", octave delta \(signed) cents", bundle: .module)
         }
         return value
     }

@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import NitpitchCore
 import NitpitchData
+import WatchKit
 
 /// The watch's one microphone — `AudioInput` slimmed to what watchOS has:
 /// no `AVCaptureDevice` discovery, no CoreAudio listeners, one built-in mic
@@ -46,6 +47,16 @@ final class WatchAudioInput: @unchecked Sendable {
         return assembler.droppedWindows
     }
     private var isRunning = false
+    /// Whether capture is WANTED — set by `activate`, cleared by `stop`.
+    /// `activate` awaits the permission prompt, and the screen that asked
+    /// can be gone by the time the answer lands (first launch: open a
+    /// tuner, the prompt appears, crown back before answering, tap Allow).
+    /// Without this the continuation started the engine on a screen that
+    /// would never stop it — the mic indicator lit over the root list, for
+    /// good. It also names what the interruption/reactivation observers
+    /// restore: capture the user still wants, not capture they left.
+    private var wantsCapture = false
+    private var observers: [NSObjectProtocol] = []
     /// Whether watchOS granted `.measurement` (input processing off — what
     /// detection wants) or fell back to `.default`; reported on screen
     /// rather than assumed.
@@ -62,11 +73,62 @@ final class WatchAudioInput: @unchecked Sendable {
             interleaved: false)!
         let pose = LaunchStores.demoPose.flatMap(DemoScore.parse)
         demoSignal = DemoSignal(score: pose ?? .drift, sampleRate: sampleRate)
+
+        // The wrist's three ways of losing the engine without being told:
+        // an interruption (a call, Siri, a workout app), the session torn
+        // down while the wrist was down or the app inactive, and a route
+        // change. None posts through `start()`'s `isRunning` guard, so the
+        // tuner sat deaf on "Play a note" until the user navigated out and
+        // back. Each now rebuilds capture if it is still wanted.
+        let center = NotificationCenter.default
+        observers.append(
+            center.addObserver(
+                forName: AVAudioSession.interruptionNotification, object: nil, queue: nil
+            ) { [weak self] note in
+                let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+                let type = raw.flatMap(AVAudioSession.InterruptionType.init(rawValue:))
+                if type == .began { self?.engineLost() } else { self?.restartIfWanted() }
+            })
+        observers.append(
+            center.addObserver(
+                forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil
+            ) { [weak self] _ in
+                self?.engineLost()
+                self?.restartIfWanted()
+            })
+        observers.append(
+            center.addObserver(
+                forName: WKApplication.didBecomeActiveNotification, object: nil, queue: nil
+            ) { [weak self] _ in
+                self?.restartIfWanted()
+            })
+    }
+
+    /// The engine stopped under us: forget that it was running, remove the
+    /// tap so a restart can install its own, and let the session go.
+    private func engineLost() {
+        guard isRunning else { return }
+        engine.inputNode.removeTap(onBus: 0)
+        engine.stop()
+        isRunning = false
+        bufferLock.lock()
+        assembler.reset()
+        bufferLock.unlock()
+    }
+
+    /// Capture the user still wants, brought back after the system took it.
+    /// A running engine is left alone; a dead one is rebuilt.
+    private func restartIfWanted() {
+        guard wantsCapture, !isDemo else { return }
+        if isRunning, engine.isRunning { return }
+        engineLost()
+        _ = start()
     }
 
     /// Ask, start, and report — one call, because the watch screen has no
     /// room for a permission flow of its own.
     func activate() async -> Status {
+        wantsCapture = true
         if isDemo {
             startDemo()
             return .running(measurement: true)
@@ -74,6 +136,8 @@ final class WatchAudioInput: @unchecked Sendable {
         guard await AVAudioApplication.requestRecordPermission() else {
             return .permissionDenied
         }
+        // The screen that asked may have stopped us during the prompt.
+        guard wantsCapture else { return .idle }
         return start()
     }
 
@@ -91,7 +155,18 @@ final class WatchAudioInput: @unchecked Sendable {
             let tap: AVAudioNodeTapBlock = { [weak self] buffer, _ in self?.accept(buffer) }
             input.installTap(onBus: 0, bufferSize: 2048, format: hardwareFormat, block: tap)
             engine.prepare()
-            try engine.start()
+            do {
+                try engine.start()
+            } catch {
+                // Leave nothing behind: a second `installTap` on a bus that
+                // still has one is an uncatchable AVFAudio assertion, and
+                // "No microphone" → back → tap the instrument again is the
+                // natural retry. The session goes too, or it stays active
+                // in `.record` with nothing recording.
+                input.removeTap(onBus: 0)
+                try? session.setActive(false)
+                return .unavailable
+            }
             isRunning = true
             return .running(measurement: measurementGranted)
         } catch {
@@ -110,6 +185,7 @@ final class WatchAudioInput: @unchecked Sendable {
     }
 
     func stop() {
+        wantsCapture = false
         demoTimer?.cancel()
         demoTimer = nil
         guard isRunning else { return }

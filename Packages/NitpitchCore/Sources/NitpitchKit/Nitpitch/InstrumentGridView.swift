@@ -120,6 +120,8 @@ struct InstrumentGridView: View {
         // temperament chip both read "grid.strings" to accessibility, ids
         // clobbered exactly as the string view's comment warns.
         .accessibilityIdentifier("grid.strings")
+        // Why the dials are dark, when it isn't the room (see the notice).
+        .overlay(alignment: .top) { CaptureStatusNotice(audio: audio) }
         .safeAreaInset(edge: .bottom) { footer }
         .navigationTitle(instance.nameText)
         // Pinned large on purpose: with .automatic, rotating to landscape

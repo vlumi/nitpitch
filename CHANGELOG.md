@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **The microphone survives what a day throws at it.** A phone call, Siri, or an alarm used to leave the app deaf while it claimed to listen — the system stops the audio engine without telling the app, and nothing restarted it; now an interruption is handled like an unplugged device, and capture comes back when it ends. A failed start no longer leaves a half-installed tap behind for the Retry button to trip over (that was a crash). On a Mac whose only input just vanished, stopping capture no longer asks the engine for the input it lost (also a crash). And backgrounding now stops the reference tone and hands the screen back to its idle timer, instead of leaving a Mac droning with its display held awake; a tone whose output route changed under it (headphones, an interface) rebuilds instead of lighting its button over silence.
+
 - **A slow device can no longer fall behind the instrument.** Analysis used to queue every audio frame it couldn't keep up with, so on an older device under a heavy screen the readings lagged the string by more every second and never caught up. Now the capture keeps only the newest frames (at most two waiting, ~90 ms) and drops the backlog — and every drop is announced to the detectors, so the spectral engine never measures across a seam it didn't know about, on the phone, the Mac, and the watch alike. The `-debug` Detector screen counts dropped frames, which is the honest "is this device keeping up?" number.
 
 ### build 17 — 2026-08-24

@@ -108,7 +108,12 @@ struct InstrumentChooser: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) { addMenu }
         }
+        #if os(macOS)
+        // Mac sheet sizing only: on an iPhone in landscape this minimum
+        // exceeds the viewport and the list's bottom rows scroll out of
+        // reach (the sibling sheets guard the same line).
         .frame(minWidth: 320, minHeight: 380)
+        #endif
         .sheet(item: $editing) { target in
             InstrumentEditor(
                 store: store, presets: presets, settings: settings, instanceID: target.id,

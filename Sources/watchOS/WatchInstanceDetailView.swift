@@ -104,10 +104,12 @@ struct WatchInstanceDetailView: View {
             // The catalog first: Standard is what the instrument's name
             // means, and the way BACK once any preset has been loaded —
             // the phone's Manage sheet offers it, so the wrist does too.
-            if let template = instance.template {
-                ForEach(template.knownTunings, id: \.strings) { tuning in
-                    tuningRow(tuning, for: instance)
-                }
+            // Only the tunings this instrument can WEAR — a 7-string made
+            // from the guitar template must not be offered the 6-string
+            // Standard the store would silently refuse (the phone's Manage
+            // sheet filters the same way).
+            ForEach(instance.fittingTunings, id: \.strings) { tuning in
+                tuningRow(tuning, for: instance)
             }
             ForEach(fittingPresets(for: instance), id: \.id) { preset in
                 Button {
@@ -140,8 +142,12 @@ struct WatchInstanceDetailView: View {
             // Pitches only, an explicit pick — the phone's semantics. The
             // no-change tap just leaves: `setTuning` would re-stamp the
             // record and ripple through sync for nothing.
-            if tuning.strings != instance.strings {
+            if tuning.strings != instance.strings,
+                tuning.strings.count == instance.strings.count
+            {
                 store.setTuning(id: instance.id, strings: tuning.strings)
+                // The success tap asserts a change happened; it must never
+                // sound for a tuning the store refused.
                 WKInterfaceDevice.current().play(.success)
             }
             dismiss()

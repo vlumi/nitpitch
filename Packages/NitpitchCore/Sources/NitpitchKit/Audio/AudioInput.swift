@@ -175,7 +175,16 @@ public final class AudioInput: NSObject {
         input.installTap(onBus: 0, bufferSize: 2048, format: hardwareFormat, block: tap)
 
         engine.prepare()
-        try engine.start()
+        do {
+            try engine.start()
+        } catch {
+            // Leave nothing behind: a second `installTap` on a bus that
+            // still has one is an uncatchable AVFAudio assertion, and every
+            // retry path (Retry button, foreground pass, device rebuild)
+            // would walk straight into it.
+            input.removeTap(onBus: 0)
+            throw error
+        }
         isRunning = true
     }
 

@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+### build 18 — 2026-09-17
+
 - **The instrument screens now say when the app can't hear.** If microphone access is off or no input device is present, the grid and the single-string screen show a notice with the way out — Open Settings, or Retry once a device is plugged in — instead of every dial sitting on "listening" forever. The chromatic screen's own message gets the Settings link too.
 - **Small things that were wrong.** Renaming a second preset in the browser no longer shows the previous preset's name in the box. On the Mac, Escape closes every sheet, not just the ones with a Cancel button. The instrument list no longer overflows an iPhone in landscape. Hands-free string switching waits while your finger is on the dial. And VoiceOver's tuning readouts ("4 cents flat", "in tune", the beat rate) go through the translation catalog like everything else, along with the instrument and appearance names that were missing from it.
 - **Two strings can no longer be set to the same pitch by accident.** Nudging a string onto its neighbour's note, or adding a string beside an already-doubled one, used to be allowed — and the result was two dials that never lit again, because the detector treats a shared partial as belonging to neither. The editor now refuses the step (the button dims), and if a shared link still brings such a tuning in, both dials read the note instead of going dark.

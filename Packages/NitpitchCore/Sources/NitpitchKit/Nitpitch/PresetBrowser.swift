@@ -210,7 +210,9 @@ struct PresetBrowser: View {
     private func candidates(for preset: Preset) -> [PresetFit.Candidate] {
         PresetFit.candidates(
             templateID: preset.templateID, stringCount: preset.strings.count,
-            among: store.instances.map {
+            // Locked instruments are not load targets (the store refuses
+            // the write; offering one would be a "Load" that does nothing).
+            among: store.instances.filter { !$0.isLocked }.map {
                 PresetFit.Candidate(
                     id: $0.id, name: $0.name, templateID: $0.templateID,
                     stringCount: $0.strings.count, lastUsedAt: $0.lastUsedAt)

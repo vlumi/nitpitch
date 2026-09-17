@@ -279,7 +279,7 @@ public final class InstrumentStore: ObservableObject {
     /// construction (a tuning that doesn't fit is never offered) and this
     /// guards anyway.
     public func setTuning(id: String, strings: [Int]) {
-        guard let current = instance(id: id), current.strings.count == strings.count else {
+        guard let current = unlocked(id), current.strings.count == strings.count else {
             return
         }
         update(id: id) {
@@ -296,7 +296,7 @@ public final class InstrumentStore: ObservableObject {
     /// (`Detection.fullBand`): a target the app can never hear would be a
     /// dial that can never light, presented as if it could.
     public func setString(id: String, index: Int, midi: Int) {
-        guard let current = instance(id: id), current.strings.indices.contains(index) else {
+        guard let current = unlocked(id), current.strings.indices.contains(index) else {
             return
         }
         let clamped = min(
@@ -325,7 +325,7 @@ public final class InstrumentStore: ObservableObject {
     /// same number of strings — and left the live screen holding a dial per
     /// old string.
     public func setEditedStrings(id: String, _ strings: [Int]) {
-        guard let current = instance(id: id), !strings.isEmpty,
+        guard let current = unlocked(id), !strings.isEmpty,
             strings != current.strings,
             strings.count == current.strings.count
         else { return }
@@ -335,6 +335,7 @@ public final class InstrumentStore: ObservableObject {
     }
 
     public func setReference(id: String, _ reference: ReferencePitch) {
+        guard unlocked(id) != nil else { return }
         // Keeps the preset claim: drift shows as "(edited)", scope-aware —
         // a tuning-only preset never claimed the reference at all.
         update(id: id) { $0.referenceHz = reference.hz }
@@ -345,6 +346,7 @@ public final class InstrumentStore: ObservableObject {
     /// while drifted. Stored verbatim: nil is reserved for "never chosen",
     /// which reads as the family default.
     public func setTemperament(id: String, _ temperament: Temperament) {
+        guard unlocked(id) != nil else { return }
         update(id: id) { $0.temperament = temperament }
     }
 
@@ -353,11 +355,24 @@ public final class InstrumentStore: ObservableObject {
     /// change (tuning pick, string edit, reference step) — the id means
     /// "loaded, and untouched since".
     public func presetApplied(id: String, presetID: String) {
+        guard unlocked(id) != nil else { return }
         update(id: id) { $0.loadedPresetID = presetID }
     }
 
     public func setLocked(id: String, _ locked: Bool) {
         update(id: id) { $0.isLocked = locked }
+    }
+
+    /// The padlock, enforced HERE: every pitch write (tuning, string,
+    /// reference, temperament, preset claim) goes through this. The UI
+    /// disables its own controls while locked, but the preset browser,
+    /// an arriving share link and the Manage sheet each reached the store
+    /// around those controls and silently retuned a locked instrument —
+    /// the one thing the lock exists to prevent. Renaming, using and
+    /// unlocking remain allowed: the lock freezes the SETUP, not the record.
+    private func unlocked(_ id: String) -> InstrumentInstance? {
+        guard let current = instance(id: id), !current.isLocked else { return nil }
+        return current
     }
 
     /// Stamp an instrument as just-opened — the grid calls this on entry,

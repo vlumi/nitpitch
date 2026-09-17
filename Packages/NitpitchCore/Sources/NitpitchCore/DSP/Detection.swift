@@ -10,10 +10,12 @@ public enum Detection {
     /// 30 Hz, which MPM still resolves, but not much below that.
     public static let fullBand: ClosedRange<Double> = 30...2100
 
-    /// MIDI notes whose frequency stays inside `fullBand` at any offered
-    /// reference — the range string targets may occupy, shared by the target
-    /// stepper's clamp and the string-count extension rule. The floor is B0
-    /// (23 ≈ 30.9 Hz), a 5-string bass's low string.
+    /// The range string targets may occupy, shared by the target stepper's
+    /// clamp and the string-count extension rule. The floor is B0 (23 ≈
+    /// 30.9 Hz at A=440), a 5-string bass's low string — which at the lowest
+    /// offered reference (A=390) sits at 27 Hz, BELOW `fullBand`'s floor:
+    /// the band split clamps a band to the searchable range, so that string
+    /// reads at the floor's quality rather than not at all.
     public static let targetMIDIRange = 23...95
 
     /// Analysis window, in samples, at 44.1 kHz.

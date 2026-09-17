@@ -46,6 +46,29 @@ final class StringListEditingTests: XCTestCase {
         XCTAssertEqual(StringListEditing.removed([55, 62], at: 9), [55, 62])
     }
 
+    /// Two strings of one pitch is the shape nothing downstream serves
+    /// (the estimator discards every shared partial — all of them — and
+    /// the band split gives the pair one zero-width band), so the step
+    /// refuses to land on another string, and says so before the tap.
+    func testSteppedNeverLandsOnAnotherString() {
+        XCTAssertFalse(StringListEditing.canStep([40, 41], at: 0, by: 1))
+        XCTAssertEqual(StringListEditing.stepped([40, 41], at: 0, by: 1), [40, 41])
+        XCTAssertTrue(StringListEditing.canStep([40, 42], at: 0, by: 1))
+        XCTAssertFalse(StringListEditing.isDistinct([40, 45, 45]))
+    }
+
+    /// Growth never proposes a duplicate either: a duplicated outer pair
+    /// has no interval to continue (a fifth is guessed), an unsorted list
+    /// must not grow the wrong way, and the range clamp landing on the
+    /// outermost string itself is refused rather than duplicated.
+    func testExtendedNeverProposesADuplicate() {
+        XCTAssertEqual(StringListEditing.extended([40, 40, 45], lowEnd: true), [33, 40, 40, 45])
+        XCTAssertEqual(StringListEditing.extended([40, 23], lowEnd: true), [33, 40, 23])
+        let floor = Detection.targetMIDIRange.lowerBound
+        XCTAssertEqual(
+            StringListEditing.extended([floor + 1, floor], lowEnd: true), [floor + 1, floor])
+    }
+
     /// Nudging steps one target by semitones, clamped like every stepper.
     func testSteppedNudgesWithinTheRange() {
         XCTAssertEqual(StringListEditing.stepped([40, 45], at: 0, by: -2), [38, 45])

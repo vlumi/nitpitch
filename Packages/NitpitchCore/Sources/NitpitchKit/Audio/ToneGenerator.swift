@@ -50,12 +50,20 @@ public final class ToneGenerator: ObservableObject {
                 Task { @MainActor in self?.engineDied() }
             })
         #if os(iOS)
+        // `.began` only: the system has silenced the engine but may not
+        // have flipped `isRunning` yet by the time this hops to main, so
+        // stop it ourselves and clear the claim. `.ended` fires for the
+        // same interruption later and must not clear a tone the user
+        // legitimately restarted in between.
         observers.append(
             NotificationCenter.default.addObserver(
                 forName: AVAudioSession.interruptionNotification, object: nil,
                 queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in self?.engineDied() }
+            ) { [weak self] note in
+                let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+                guard raw.flatMap(AVAudioSession.InterruptionType.init(rawValue:)) == .began
+                else { return }
+                Task { @MainActor in self?.stopNow() }
             })
         #endif
     }
@@ -71,6 +79,9 @@ public final class ToneGenerator: ObservableObject {
             return
         }
         buildSourceIfNeeded()
+        // No output device (a Mac mid-unplug): nothing to sound through,
+        // and a lit button over silence would be a lie.
+        guard source != nil else { return }
         box.update { synth in
             let sampleRate = synth.sampleRate
             synth = ToneSynth(sampleRate: sampleRate, frequency: hz)
@@ -102,22 +113,51 @@ public final class ToneGenerator: ObservableObject {
         playingTag = nil
     }
 
+    /// Cut the tone NOW, no ramp — for backgrounding and interruptions,
+    /// where the system is silencing the engine anyway and a 30 ms ramp
+    /// would race it. Safe when silent.
+    public func stopNow() {
+        guard playingHz != nil else { return }
+        engine.stop()
+        playingHz = nil
+        playingTag = nil
+        discardSource()
+    }
+
     private func engineDied() {
         guard playingHz != nil, !engine.isRunning else { return }
         playingHz = nil
         playingTag = nil
+        discardSource()
+    }
+
+    /// A configuration change (headphones, a USB interface, AirPods) tears
+    /// the engine's connections down and may change the output rate; the
+    /// node we built is attached but no longer wired, and its format is
+    /// stale. Drop it so the next start rebuilds against the current route
+    /// — otherwise the engine starts fine with no live chain and the button
+    /// lights over silence.
+    private func discardSource() {
+        guard let source else { return }
+        engine.detach(source)
+        self.source = nil
     }
 
     private func buildSourceIfNeeded() {
         guard source == nil else { return }
         let sampleRate = engine.outputNode.outputFormat(forBus: 0).sampleRate
+        // Zero means no output device — `AVAudioFormat` would be nil and
+        // the synth's arithmetic non-finite. Leave the source unbuilt;
+        // `start` reads that as "nothing to sound through".
+        guard sampleRate > 0,
+            let format = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1,
+                interleaved: false)
+        else { return }
         box.update { synth in
             synth = ToneSynth(sampleRate: sampleRate, frequency: synth.frequency)
         }
         let box = self.box
-        let format = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1,
-            interleaved: false)!
         let node = AVAudioSourceNode(format: format) { _, _, frameCount, bufferList in
             let buffers = UnsafeMutableAudioBufferListPointer(bufferList)
             box.render(frames: Int(frameCount), into: buffers)

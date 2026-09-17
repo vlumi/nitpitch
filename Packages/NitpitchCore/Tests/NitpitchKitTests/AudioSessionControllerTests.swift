@@ -138,6 +138,29 @@ final class AudioSessionControllerTests: XCTestCase {
         XCTAssertFalse(controller.isKeepingScreenAwake, "suspend releases the wake lock")
     }
 
+    /// A dropped backlog reaches exactly the subscribers that asked, and
+    /// never one that has cancelled — the phase reset must land where the
+    /// phase state lives.
+    func testGapsReachTheirSubscribers() {
+        let input = AudioInput()
+        let controller = AudioSessionController(input: input)
+        var gaps = 0
+        var windows = 0
+        let listening = controller.subscribe(onGap: { gaps += 1 }) { _ in windows += 1 }
+        let indifferent = controller.subscribe { _ in }
+        let gone = controller.subscribe(onGap: { XCTFail("cancelled, must not hear a gap") }) { _ in
+        }
+        gone.cancel()
+
+        input.onGap?()
+        deliver([1], through: input)
+
+        XCTAssertEqual(gaps, 1)
+        XCTAssertEqual(windows, 1)
+        listening.cancel()
+        indifferent.cancel()
+    }
+
     /// `activate` awaits the permission answer; a `suspend` in that gap
     /// means the scene that asked is gone, and the continuation must not
     /// start the engine from the background and publish `.running` over it.

@@ -157,13 +157,21 @@ final class NitpitchUITests: XCTestCase {
         let target = app.descendants(matching: .any)["string.target"]
         XCTAssertTrue(target.waitForExistence(timeout: 5))
 
-        // Settling takes ~1.5 s of continuous in-tune reading.
+        // Settling takes ~1.5 s of continuous in-tune reading. The window
+        // is generous: the assertion is WHETHER the string settles, not how
+        // fast — and this test has missed intermittently (independent of
+        // any code change; bisected 2026-09-17), so a miss reports what the
+        // dial was showing, to tell "no frames arrived" from "read but
+        // never in tune".
         let settled = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value == %@", "Tuned"),
             object: target)
+        let result = XCTWaiter().wait(for: [settled], timeout: 12)
+        let cents = app.staticTexts["string.cents"].firstMatch
         XCTAssertEqual(
-            XCTWaiter().wait(for: [settled], timeout: 8), .completed,
-            "a held in-tune G3 should settle and say so")
+            result, .completed,
+            "a held in-tune G3 should settle and say so — dial read "
+                + "\(cents.exists ? cents.label : "(no cents label)") at timeout")
     }
 
     /// A grid cell opens its string full screen; the arrows walk the strings;

@@ -23,6 +23,8 @@ struct StringView: View {
     /// two screens (see `IntonationMode`).
     @ObservedObject var intonationMode: IntonationMode
 
+    /// The shared microphone, for the notice that says when it can't hear.
+    private let audio: AudioSessionController
     @StateObject private var single: SingleStringTuner
     /// The hands-free ear (see `FollowFocus`), always listening.
     @StateObject private var follow: FollowFocus
@@ -42,6 +44,7 @@ struct StringView: View {
         intonationMode: IntonationMode
     ) {
         self.intonationMode = intonationMode
+        self.audio = audio
         self.store = store
         self.settings = settings
         self.detection = detection
@@ -110,6 +113,7 @@ struct StringView: View {
                     alignment: DesignCanvas.alignment)
         }
         .padding(24)
+        .overlay(alignment: .top) { CaptureStatusNotice(audio: audio) }
         .safeAreaInset(edge: .bottom) { footer }
         .navigationTitle(instance.nameText)
         .toolbar {

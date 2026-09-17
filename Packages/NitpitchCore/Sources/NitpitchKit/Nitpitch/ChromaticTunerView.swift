@@ -375,7 +375,13 @@ public struct ChromaticTunerView: View {
         case .listening:
             status("Play a note", id: "tuner.status")
         case .permissionDenied:
-            status("Microphone access is off", id: "tuner.status")
+            VStack(spacing: 8) {
+                status("Microphone access is off", id: "tuner.status")
+                // The route to the switch the user flipped — the model's
+                // doc promised one, and on the Mac a changed permission
+                // does not relaunch the app, so the user has to come back.
+                CaptureStatusNotice.settingsLink
+            }
         case .noInput:
             VStack(spacing: 8) {
                 status("No audio input device", id: "tuner.status")

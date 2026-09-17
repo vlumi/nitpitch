@@ -118,7 +118,7 @@ struct StringListEditor: View {
         }
         .buttonStyle(.borderless)
         .foregroundStyle(.secondary)
-        .disabled(!Detection.targetMIDIRange.contains(strings[index] + delta))
+        .disabled(!StringListEditing.canStep(strings, at: index, by: delta))
         .accessibilityIdentifier(id)
         .accessibilityLabel(
             delta < 0

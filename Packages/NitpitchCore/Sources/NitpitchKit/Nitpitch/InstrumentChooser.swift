@@ -75,7 +75,7 @@ struct InstrumentChooser: View {
                         }
                     }
                     .onMove { source, destination in
-                        settings.favorites.move(fromOffsets: source, toOffset: destination)
+                        settings.moveFavorites(fromOffsets: source, toOffset: destination)
                     }
                 } header: {
                     Text("Favorites", bundle: .module)

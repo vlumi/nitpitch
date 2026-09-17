@@ -79,7 +79,7 @@ public final class AudioSessionController: ObservableObject {
     /// a device that keeps up. The debug screen shows it; a non-zero count
     /// climbing while tuning is the "this device is too slow" signal, and
     /// the reason readings never lag more than a couple of hops.
-    public nonisolated var droppedWindows: Int { input.droppedWindows }
+    public var droppedWindows: Int { input.droppedWindows }
 
     public init(input: any AudioCapturing = AudioInput()) {
         self.input = input

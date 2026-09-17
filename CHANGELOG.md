@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **Sync: turning it on no longer quietly loses one device's edits.** The keep-both rule for a first join — when two devices had edited the same instrument before ever syncing, both versions survive — judged the cloud at the instant the switch was flipped, when iCloud hadn't delivered anything yet, and let the real payload arriving seconds later fall through to last-writer-wins. It now waits for the records to actually arrive.
+
 - **The padlock now holds against everything.** Loading a preset from the browser, tapping a shared link, or the Manage sheet could retune a locked instrument — reference and temperament included — because only the on-screen controls checked the lock. The store itself now refuses every setup change to a locked instrument, and locked instruments are no longer offered as targets for a preset or a link.
 - **Sync: three favorites acts that never reached the other device.** Creating an instrument starred it without a stamp, so the star stayed on the device it was made on; dragging the Favorites into an order never stamped the order, so the next merge undid it; and deleting an instrument left its star and pins stamped as still on, so they ping-ponged between devices forever. All three now stamp like every other act.
 

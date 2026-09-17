@@ -67,7 +67,12 @@ struct PresetBrowser: View {
                 isPresented: Binding(
                     get: { renaming != nil }, set: { if !$0 { renaming = nil } })
             ) {
-                TextField("", text: $renameText)
+                // Fresh identity per presentation — a reused alert TextField
+                // keeps its first life's text and ignores the prefill (the
+                // second preset renamed came up showing the first one's
+                // name; the other two rename alerts learned this already).
+                TextField(text: $renameText) { Text("Name", bundle: .module) }
+                    .id(renaming?.id)
                 Button {
                     renaming = nil
                 } label: {

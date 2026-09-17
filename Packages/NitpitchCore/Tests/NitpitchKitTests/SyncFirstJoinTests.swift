@@ -32,12 +32,79 @@ final class SyncFirstJoinTests: XCTestCase {
         mac.engine.sync()
 
         for device in [phone, mac] {
-            let names = Set(device.instruments.instances.map(\.name))
+            let names = device.instruments.instances.map(\.name)
             XCTAssertTrue(names.contains("Mac fiddle"), "the later edit survives")
             XCTAssertTrue(names.contains("Phone fiddle"), "and so does the earlier one")
             XCTAssertEqual(
                 device.instruments.instance(id: violin)?.name, "Mac fiddle",
                 "the later edit keeps the id")
+            XCTAssertEqual(
+                names.filter { $0.hasPrefix("Phone fiddle") }.count, 1,
+                "exactly ONE copy — the side that pushed first and pulled later must not mint another"
+            )
+        }
+    }
+
+    /// The real device's timing: the cloud holds NOTHING at the moment the
+    /// switch is flipped (KVS only requests the download) and the records
+    /// arrive seconds later as an external change. The keep-both rule must
+    /// judge THAT arrival, not the empty first round — which is where it
+    /// used to stamp the device as joined and let the payload fall through
+    /// to last-writer-wins.
+    func testKeepBothSurvivesTheCloudArrivingLate() {
+        let cloud = FakeSyncStore()
+        let phone = SyncTestDevice(sharing: cloud, enabled: false)
+        let mac = SyncTestDevice(sharing: cloud, enabled: false)
+        defer { phone.destroy(); mac.destroy() }
+        let violin = Instrument.violin.id
+
+        phone.instruments.rename(id: violin, to: "Phone fiddle")
+        mac.instruments.rename(id: violin, to: "Mac fiddle")  // later
+
+        // Both join while their downloads are still in flight: each sees an
+        // empty cloud on its first round, and only THEN do the payloads land.
+        cloud.withholdArrivals()
+        phone.engine.setEnabled(true)
+        phone.engine.sync()
+        mac.engine.setEnabled(true)
+        mac.engine.sync()
+        cloud.releaseArrivals()
+        cloud.deliverExternalChange()
+        mac.engine.sync()
+        phone.engine.sync()
+        mac.engine.sync()
+
+        for device in [phone, mac] {
+            let names = device.instruments.instances.map(\.name)
+            XCTAssertTrue(names.contains("Mac fiddle"), "the later edit survives")
+            XCTAssertTrue(names.contains("Phone fiddle"), "and so does the earlier one")
+            XCTAssertEqual(
+                names.filter { $0.hasPrefix("Phone fiddle") }.count, 1, "exactly one copy")
+        }
+    }
+
+    /// The loser pushes on its first, empty round and pulls only after the
+    /// winner has already minted the copy — the pass must recognize its own
+    /// content surviving under another id and not mint a second copy.
+    func testTheLoserPullingAfterTheCopyDoesNotMintAnother() {
+        let cloud = FakeSyncStore()
+        let phone = SyncTestDevice(sharing: cloud, enabled: false)
+        let mac = SyncTestDevice(sharing: cloud, enabled: false)
+        defer { phone.destroy(); mac.destroy() }
+        let violin = Instrument.violin.id
+        let before = phone.instruments.instances.count
+
+        phone.instruments.rename(id: violin, to: "Phone fiddle")
+        mac.instruments.rename(id: violin, to: "Mac fiddle")  // later
+        phone.engine.setEnabled(true)  // syncs once: an empty cloud, then its push
+        mac.engine.setEnabled(true)  // sees the phone's, mints the copy, pushes
+        phone.engine.sync()  // the phone's download finally lands
+        mac.engine.sync()
+
+        for device in [phone, mac] {
+            let names = device.instruments.instances.map(\.name)
+            XCTAssertEqual(names.filter { $0.hasPrefix("Phone fiddle") }.count, 1, "one copy")
+            XCTAssertEqual(device.instruments.instances.count, before + 1)
         }
     }
 

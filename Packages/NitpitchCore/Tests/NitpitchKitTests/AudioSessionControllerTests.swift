@@ -125,4 +125,16 @@ final class AudioSessionControllerTests: XCTestCase {
         controller.pokeScreenAwake()
         XCTAssertTrue(controller.isKeepingScreenAwake, "repeat pokes are harmless")
     }
+
+    /// Backgrounding hands the screen back: an app that isn't showing has
+    /// no business holding the idle timer for up to 90 s (or, with a tone
+    /// left ringing on the Mac, forever — the deadline re-armed on it).
+    func testSuspendReleasesTheScreen() {
+        let controller = AudioSessionController(input: AudioInput())
+        controller.pokeScreenAwake()
+        XCTAssertTrue(controller.isKeepingScreenAwake)
+
+        controller.suspend()
+        XCTAssertFalse(controller.isKeepingScreenAwake, "suspend releases the wake lock")
+    }
 }

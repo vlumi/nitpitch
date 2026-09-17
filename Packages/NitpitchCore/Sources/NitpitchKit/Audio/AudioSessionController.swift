@@ -156,7 +156,15 @@ public final class AudioSessionController: ObservableObject {
     ///
     /// Subscriptions survive: returning to the foreground calls `activate()`
     /// again and windows resume flowing to whoever is still listening.
+    /// The reference tone stops too — a backgrounded app must not drone on
+    /// (on the Mac nothing else would stop it) — and the screen is handed
+    /// back to its idle timer: an app that isn't showing has no business
+    /// keeping the display lit.
     public func suspend() {
+        tone.stopNow()
+        wakeDeadline?.cancel()
+        wakeDeadline = nil
+        keepScreenAwake(false)
         input.stop()
         status = .idle
     }

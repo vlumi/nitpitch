@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **Two strings can no longer be set to the same pitch by accident.** Nudging a string onto its neighbour's note, or adding a string beside an already-doubled one, used to be allowed — and the result was two dials that never lit again, because the detector treats a shared partial as belonging to neither. The editor now refuses the step (the button dims), and if a shared link still brings such a tuning in, both dials read the note instead of going dark.
+
 - **Sync: turning it on no longer quietly loses one device's edits.** The keep-both rule for a first join — when two devices had edited the same instrument before ever syncing, both versions survive — judged the cloud at the instant the switch was flipped, when iCloud hadn't delivered anything yet, and let the real payload arriving seconds later fall through to last-writer-wins. It now waits for the records to actually arrive.
 
 - **The padlock now holds against everything.** Loading a preset from the browser, tapping a shared link, or the Manage sheet could retune a locked instrument — reference and temperament included — because only the on-screen controls checked the lock. The store itself now refuses every setup change to a locked instrument, and locked instruments are no longer offered as targets for a preset or a link.

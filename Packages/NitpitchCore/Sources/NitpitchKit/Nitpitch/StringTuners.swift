@@ -216,6 +216,10 @@ final class StringTuners: ObservableObject {
     /// once, because there is exactly one engine to sound with.
     var tone: ToneGenerator { audio.tone }
 
+    /// Windows the capture discarded to stay current — the debug screen's
+    /// "is this device keeping up?" number (see `HopAssembler`).
+    var droppedWindows: Int { audio.droppedWindows }
+
     /// Sound one string's tempered target.
     func toggleTone(string index: Int) async {
         guard targets.indices.contains(index) else { return }

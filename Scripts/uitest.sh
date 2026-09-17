@@ -9,13 +9,27 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# A booted simulator if there is one, else the latest available iPhone.
-destination="platform=iOS Simulator,name=iPhone 17 Pro"
-if ! xcrun simctl list devices available | grep -q "iPhone 17 Pro"; then
-    # Fall back to whatever iPhone the host has.
-    name=$(xcrun simctl list devices available | grep -oE "iPhone [0-9][^(]*" | head -1 | xargs)
-    destination="platform=iOS Simulator,name=${name}"
-fi
+# The newest iOS runtime's iPhone 17 Pro, else the newest runtime's first
+# iPhone — addressed by UDID, not name. Once several iOS runtimes are
+# installed the same device name exists under each of them, and a
+# `name=` destination is then AMBIGUOUS: xcodebuild reports it as "unable
+# to find a device matching the provided destination specifier", which
+# reads like the simulator is missing when it is merely plural.
+udid=$(xcrun simctl list devices available -j | python3 -c '
+import json, re, sys
+devices = json.load(sys.stdin)["devices"]
+def version(runtime):
+    m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+    return (int(m.group(1)), int(m.group(2))) if m else (-1, -1)
+ios = sorted((r for r in devices if "iOS" in r), key=version, reverse=True)
+for want in ("iPhone 17 Pro", "iPhone"):
+    for runtime in ios:
+        for d in devices[runtime]:
+            if d["name"].startswith(want) and d.get("isAvailable", True):
+                print(d["udid"]); sys.exit(0)
+sys.exit("no available iPhone simulator")
+')
+destination="platform=iOS Simulator,id=${udid}"
 
 echo "Running UI tests on: ${destination}"
 if command -v xcbeautify >/dev/null; then

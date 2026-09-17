@@ -50,6 +50,7 @@ struct PresetManager: View {
                 }
             }
             .navigationTitle(instance.nameText)
+            .dismissesOnEscape(dismiss)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {

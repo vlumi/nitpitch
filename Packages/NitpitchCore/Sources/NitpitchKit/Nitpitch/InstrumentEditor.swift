@@ -78,6 +78,7 @@ struct InstrumentEditor: View {
         .padding(20)
         .frame(width: 440)
         .fixedSize(horizontal: false, vertical: true)
+        .dismissesOnEscape(dismiss)
     }
     #else
     private var sheetBody: some View {

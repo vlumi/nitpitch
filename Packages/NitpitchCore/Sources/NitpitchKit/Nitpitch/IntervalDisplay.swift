@@ -215,14 +215,19 @@ struct IntervalChip: View {
     }
 
     private var accessibleValue: String {
-        var parts = ["\(format(display.beatHz)) beats per second"]
+        let rate = format(display.beatHz)
+        var parts = [String(localized: "\(rate) beats per second", bundle: .module)]
         if display.targetBeatHz > HapticBeat.stoppedHz {
-            parts.append("aim \(format(display.targetBeatHz))")
+            let aim = format(display.targetBeatHz)
+            parts.append(String(localized: "aim \(aim)", bundle: .module))
         }
         if onTarget {
-            parts.append("in tune")
+            parts.append(String(localized: "in tune", bundle: .module))
         } else {
-            parts.append(display.wideCents < 0 ? "narrow, widen" : "wide, bring closer")
+            parts.append(
+                display.wideCents < 0
+                    ? String(localized: "narrow, widen", bundle: .module)
+                    : String(localized: "wide, bring closer", bundle: .module))
         }
         return parts.joined(separator: ", ")
     }

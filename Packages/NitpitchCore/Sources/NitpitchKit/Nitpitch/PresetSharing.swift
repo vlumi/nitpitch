@@ -120,6 +120,7 @@ struct PresetArrivalProblemView: View {
             }
             .padding()
             .navigationTitle(Text("Preset received", bundle: .module))
+            .dismissesOnEscape(dismiss)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -188,6 +189,7 @@ struct PresetShareView: View {
             }
             .padding()
             .navigationTitle(Text("Share preset", bundle: .module))
+            .dismissesOnEscape(dismiss)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -301,6 +303,7 @@ struct PresetImportView: View {
             }
             .padding()
             .navigationTitle(Text("Preset received", bundle: .module))
+            .dismissesOnEscape(dismiss)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {

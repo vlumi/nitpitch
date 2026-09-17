@@ -116,7 +116,13 @@ extension SyncEngine {
     /// the order's sequence, unlisted ones appended sorted — deterministic
     /// on every device, so a member the order never met can't scramble it.
     func ordered(members: Set<String>, by order: [String]) -> [String] {
-        order.filter(members.contains) + members.subtracting(order).sorted()
+        // De-duplicated: a remote order carrying a repeated id (nothing
+        // upstream promises uniqueness) must not yield a duplicate member,
+        // which the one-shot migration would later feed to a
+        // uniqueKeysWithValues dictionary and trap on.
+        var seen = Set<String>()
+        let listed = order.filter { members.contains($0) && seen.insert($0).inserted }
+        return listed + members.subtracting(order).sorted()
     }
 
     /// The v1 settings blob decomposes into per-setting flags exactly once.
@@ -201,7 +207,10 @@ extension SyncEngine {
     }
 
     func uniformStamps(_ ids: [String], _ stamp: Date) -> [String: Date] {
-        Dictionary(uniqueKeysWithValues: ids.map { ($0, stamp) })
+        // The ids come off UserDefaults and KVS, which promise nothing
+        // about uniqueness; a duplicate must not trap an upgrading user's
+        // first sync.
+        Dictionary(ids.map { ($0, stamp) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// The outbound half, `applySettings`' twin. Per-setting flags: ONLY

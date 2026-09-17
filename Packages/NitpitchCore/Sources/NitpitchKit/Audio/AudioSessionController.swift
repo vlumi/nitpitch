@@ -75,12 +75,24 @@ public final class AudioSessionController: ObservableObject {
     /// hardware's.
     public var sampleRate: Double { input.sampleRate }
 
+    /// Windows discarded because analysis fell behind real time — zero on
+    /// a device that keeps up. The debug screen shows it; a non-zero count
+    /// climbing while tuning is the "this device is too slow" signal, and
+    /// the reason readings never lag more than a couple of hops.
+    public nonisolated var droppedWindows: Int { input.droppedWindows }
+
     public init(input: any AudioCapturing = AudioInput()) {
         self.input = input
         // Assigned exactly once. Every subscriber is reached from here.
         let receivers = self.receivers
         self.input.onWindow = { window in
             for receive in receivers.all() { receive(window) }
+        }
+        // A dropped backlog reaches every listener before the window that
+        // follows it — same queue, same order — so phase pairs never span
+        // the discard (see `HopAssembler`).
+        self.input.onGap = {
+            for gap in receivers.allGaps() { gap() }
         }
         self.input.onDeviceChange = { [weak self] in
             Task { @MainActor in self?.deviceChanged() }
@@ -278,8 +290,15 @@ public final class AudioSessionController: ObservableObject {
     /// consumer hops to main itself so the UI update is one hop, not two.
     /// Nonisolated: the receiver table has its own lock, and a subscription
     /// being released can happen on any thread. Only `status` needs the actor.
-    public nonisolated func subscribe(_ receive: @escaping ([Float]) -> Void) -> Subscription {
-        let id = receivers.add(receive)
+    ///
+    /// `onGap` is called — same queue, right before the next window — when
+    /// the source discarded windows to stay current; a consumer with phase
+    /// state resets it there (`DetectorBank.interrupted`). Consumers whose
+    /// analysis is per-window (MPM alone) can leave it nil.
+    public nonisolated func subscribe(
+        onGap: (() -> Void)? = nil, _ receive: @escaping ([Float]) -> Void
+    ) -> Subscription {
+        let id = receivers.add(receive, onGap: onGap)
         return Subscription(id: id, controller: self)
     }
 
@@ -327,11 +346,13 @@ private struct CapturesWhileActive: ViewModifier {
 private final class ReceiverTable: @unchecked Sendable {
     private let lock = NSLock()
     private var receivers: [UUID: ([Float]) -> Void] = [:]
+    private var gaps: [UUID: () -> Void] = [:]
 
-    func add(_ receive: @escaping ([Float]) -> Void) -> UUID {
+    func add(_ receive: @escaping ([Float]) -> Void, onGap: (() -> Void)?) -> UUID {
         let id = UUID()
         lock.lock()
         receivers[id] = receive
+        if let onGap { gaps[id] = onGap }
         lock.unlock()
         return id
     }
@@ -339,6 +360,7 @@ private final class ReceiverTable: @unchecked Sendable {
     func remove(_ id: UUID) {
         lock.lock()
         receivers.removeValue(forKey: id)
+        gaps.removeValue(forKey: id)
         lock.unlock()
     }
 
@@ -347,5 +369,11 @@ private final class ReceiverTable: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return Array(receivers.values)
+    }
+
+    func allGaps() -> [() -> Void] {
+        lock.lock()
+        defer { lock.unlock() }
+        return Array(gaps.values)
     }
 }

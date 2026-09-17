@@ -37,10 +37,18 @@ public final class AudioInput: NSObject {
     private let targetFormat: AVAudioFormat
     private var converter: AVAudioConverter?
 
-    /// Ring of converted samples awaiting analysis. Written on the audio
-    /// thread, drained on `analysisQueue` — guarded by `bufferLock`.
-    private var pending: [Float] = []
+    /// Converted samples become hop-consecutive windows here, with the
+    /// backlog bound that keeps a slow device from lagging without limit
+    /// (see `HopAssembler`). Touched from the audio thread (`append`) and
+    /// the analysis queue (`finished`) — guarded by `bufferLock`.
+    private var assembler = HopAssembler()
     private let bufferLock = NSLock()
+    public var onGap: (() -> Void)?
+    public var droppedWindows: Int {
+        bufferLock.lock()
+        defer { bufferLock.unlock() }
+        return assembler.droppedWindows
+    }
 
     private(set) public var isRunning = false
 
@@ -177,7 +185,7 @@ public final class AudioInput: NSObject {
         engine.stop()
         isRunning = false
         bufferLock.lock()
-        pending.removeAll(keepingCapacity: true)
+        assembler.reset()
         bufferLock.unlock()
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false)
@@ -215,23 +223,19 @@ public final class AudioInput: NSObject {
         let samples = Array(UnsafeBufferPointer(start: channel, count: Int(converted.frameLength)))
 
         bufferLock.lock()
-        pending.append(contentsOf: samples)
-        // Drain whole hops while enough has accumulated. Cap the backlog so a
-        // stalled consumer can't grow this without bound.
-        var windows: [[Float]] = []
-        while pending.count >= Detection.windowSize {
-            windows.append(Array(pending.prefix(Detection.windowSize)))
-            pending.removeFirst(Detection.hopSize)
-        }
-        if pending.count > Detection.windowSize * 4 {
-            pending.removeFirst(pending.count - Detection.windowSize)
-        }
+        let batch = assembler.append(samples)
         bufferLock.unlock()
 
-        guard !windows.isEmpty else { return }
+        guard !batch.windows.isEmpty else { return }
         analysisQueue.async { [weak self] in
             guard let self else { return }
-            for window in windows { self.onWindow?(window) }
+            // A discard is announced BEFORE the window that follows it, on
+            // this queue, so the consumer's phase reset lands in order.
+            if batch.gapBefore { self.onGap?() }
+            for window in batch.windows { self.onWindow?(window) }
+            self.bufferLock.lock()
+            self.assembler.finished(batch.windows.count)
+            self.bufferLock.unlock()
         }
     }
 }

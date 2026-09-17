@@ -25,6 +25,10 @@ final class WatchAudioInput: @unchecked Sendable {
     }
 
     var onWindow: (([Float]) -> Void)?
+    /// Windows were discarded to stay current (analysis fell behind) —
+    /// fired before the next window, same queue; the consumer resets its
+    /// phase pairs there. Same contract as the phone's `AudioCapturing`.
+    var onGap: (() -> Void)?
     let sampleRate: Double = 44100
 
     private let engine = AVAudioEngine()
@@ -32,8 +36,15 @@ final class WatchAudioInput: @unchecked Sendable {
         label: "fi.misaki.nitpitch.watch-analysis", qos: .userInitiated)
     private let targetFormat: AVAudioFormat
     private var converter: AVAudioConverter?
-    private var pending: [Float] = []
+    /// The phone's assembler, shared through Core: hop-consecutive windows
+    /// and the backlog bound (see `HopAssembler`).
+    private var assembler = HopAssembler()
     private let bufferLock = NSLock()
+    var droppedWindows: Int {
+        bufferLock.lock()
+        defer { bufferLock.unlock() }
+        return assembler.droppedWindows
+    }
     private var isRunning = false
     /// Whether watchOS granted `.measurement` (input processing off — what
     /// detection wants) or fell back to `.default`; reported on screen
@@ -106,7 +117,7 @@ final class WatchAudioInput: @unchecked Sendable {
         engine.stop()
         isRunning = false
         bufferLock.lock()
-        pending.removeAll(keepingCapacity: true)
+        assembler.reset()
         bufferLock.unlock()
         try? AVAudioSession.sharedInstance().setActive(false)
     }
@@ -131,7 +142,7 @@ final class WatchAudioInput: @unchecked Sendable {
         demoTimer = timer
     }
 
-    // MARK: - The microphone path (AudioInput's ring, unchanged in spirit)
+    // MARK: - The microphone path (AudioInput's, through the shared assembler)
 
     private func accept(_ buffer: AVAudioPCMBuffer) {
         guard let converter else { return }
@@ -159,21 +170,17 @@ final class WatchAudioInput: @unchecked Sendable {
             UnsafeBufferPointer(start: channel, count: Int(converted.frameLength)))
 
         bufferLock.lock()
-        pending.append(contentsOf: samples)
-        var windows: [[Float]] = []
-        while pending.count >= Detection.windowSize {
-            windows.append(Array(pending.prefix(Detection.windowSize)))
-            pending.removeFirst(Detection.hopSize)
-        }
-        if pending.count > Detection.windowSize * 4 {
-            pending.removeFirst(pending.count - Detection.windowSize)
-        }
+        let batch = assembler.append(samples)
         bufferLock.unlock()
 
-        guard !windows.isEmpty else { return }
+        guard !batch.windows.isEmpty else { return }
         analysisQueue.async { [weak self] in
             guard let self else { return }
-            for window in windows { self.onWindow?(window) }
+            if batch.gapBefore { self.onGap?() }
+            for window in batch.windows { self.onWindow?(window) }
+            self.bufferLock.lock()
+            self.assembler.finished(batch.windows.count)
+            self.bufferLock.unlock()
         }
     }
 }

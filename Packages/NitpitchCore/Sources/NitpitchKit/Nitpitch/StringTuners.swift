@@ -87,7 +87,10 @@ final class StringTuners: ObservableObject {
             Task { await audio.silenceTone() }
         }
         guard subscription == nil else { return }
-        subscription = audio.subscribe { [weak self, bank] window in
+        // A dropped backlog is a gap the spectral phase pair must not span.
+        subscription = audio.subscribe(
+            onGap: { [bank] in bank.interrupted() }
+        ) { [weak self, bank] window in
             // Runs on the analysis queue. All the DSP happens here; only the
             // finished results hop to main.
             let frame = bank.analyzeWithAbove(window)
@@ -212,6 +215,10 @@ final class StringTuners: ObservableObject {
     /// while one sounds GLIDES to it, and no two screens can ever sound at
     /// once, because there is exactly one engine to sound with.
     var tone: ToneGenerator { audio.tone }
+
+    /// Windows the capture discarded to stay current — the debug screen's
+    /// "is this device keeping up?" number (see `HopAssembler`).
+    var droppedWindows: Int { audio.droppedWindows }
 
     /// Sound one string's tempered target.
     func toggleTone(string index: Int) async {

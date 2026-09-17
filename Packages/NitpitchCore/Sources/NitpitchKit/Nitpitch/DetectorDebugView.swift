@@ -84,7 +84,10 @@ struct DetectorDebugView: View {
                 verbatim: """
                     Each string's own detector, before smoothing. Play one note: \
                     a row lighting up that isn't the note you played is the \
-                    problem worth chasing.
+                    problem worth chasing. Dropped windows: \(strings.droppedWindows) — \
+                    analysis frames discarded because this device fell behind real \
+                    time; a count that climbs while tuning means the device is too \
+                    slow for the screen, not that detection is wrong.
                     """)
         }
     }

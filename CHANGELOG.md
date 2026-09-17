@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **A slow device can no longer fall behind the instrument.** Analysis used to queue every audio frame it couldn't keep up with, so on an older device under a heavy screen the readings lagged the string by more every second and never caught up. Now the capture keeps only the newest frames (at most two waiting, ~90 ms) and drops the backlog — and every drop is announced to the detectors, so the spectral engine never measures across a seam it didn't know about, on the phone, the Mac, and the watch alike. The `-debug` Detector screen counts dropped frames, which is the honest "is this device keeping up?" number.
+
 ### build 17 — 2026-08-24
 
 - **The hands-free walk wraps around.** Finish a pass on the top string, replay the bottom one, and the screen walks straight back — the extreme strings now count as neighbours, so the verify pass (one round of big changes moves the other strings) is the same string-to-string act as the first, no swipe needed. Middle strings still only step to a real neighbour, and all the guards against rings and brushes stealing the screen apply at the seam too.

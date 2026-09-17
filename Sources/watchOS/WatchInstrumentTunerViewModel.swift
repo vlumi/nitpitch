@@ -107,6 +107,12 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
             let frame = analyzer.analyze(window)
             Task { @MainActor [weak self] in self?.consume(results, intonation: frame) }
         }
+        // A dropped backlog (the wrist fell behind) is a gap the phase
+        // pairs must not span.
+        audio.onGap = { [bank, analyzer] in
+            bank.interrupted()
+            analyzer.interrupted()
+        }
     }
 
     /// A knob moved — the settings screen's, or a synced edit arriving from

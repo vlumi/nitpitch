@@ -386,7 +386,12 @@ public final class InstrumentStore: ObservableObject {
     /// re-stamping on adoption would make every device's copy look like
     /// the newest one and last-writer-wins would decide nothing.
     func adopt(_ merged: [InstrumentInstance], tombstones stones: Set<Tombstone>) {
-        if merged != instances { instances = merged }
+        // Shape validation is the one thing adoption DOES do: a record with
+        // no strings (a corrupt or future-version value) would index an
+        // empty array on the first frame of any tuner opened on it. Such a
+        // record is dropped locally; it stays in the cloud for its author.
+        let sound = merged.filter { !$0.strings.isEmpty }
+        if sound != instances { instances = sound }
         if stones != tombstones { tombstones = stones }
     }
 

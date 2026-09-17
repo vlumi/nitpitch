@@ -7,6 +7,9 @@ import NitpitchCore
 /// the difference. No permission to ask, no device to lose.
 public final class DemoSignalInput: AudioCapturing, @unchecked Sendable {
     public var onWindow: (([Float]) -> Void)?
+    /// A timer-paced synthesizer never falls behind itself: no gaps, ever.
+    public var onGap: (() -> Void)?
+    public var droppedWindows: Int { 0 }
     public var onDeviceChange: (() -> Void)?
     public let sampleRate: Double = 44100
 

@@ -13,6 +13,16 @@ public protocol AudioCapturing: AnyObject {
     /// Delivered off the main queue, one analysis window at a time; the
     /// consumer hops to main itself.
     var onWindow: (([Float]) -> Void)? { get set }
+    /// Windows were DISCARDED since the last one delivered — the analysis
+    /// fell behind real time and the source dropped the backlog rather
+    /// than queue it (`HopAssembler`). Fired on the same queue as
+    /// `onWindow`, right before the first window after the gap, so a
+    /// consumer resets its phase pairs in order. A source that never drops
+    /// never fires it.
+    var onGap: (() -> Void)? { get set }
+    /// How many windows the source has discarded so far — the debug
+    /// screen's "is this device keeping up?" number.
+    var droppedWindows: Int { get }
     /// Input hardware changed underneath the source. A source with no
     /// hardware never fires it.
     var onDeviceChange: (() -> Void)? { get set }

@@ -52,10 +52,26 @@ public final class SyncEngine: ObservableObject {
     /// True while `apply` is writing into the stores, so the store's own
     /// change notification doesn't bounce straight back out as a push.
     private var isApplying = false
+    /// Whether the first-join keep-both pass has run against the cloud's
+    /// actual records. NOT "has sync() run once": on a real device the
+    /// key-value store holds nothing at the moment the switch is flipped —
+    /// `synchronize()` only REQUESTS the download, and the records arrive
+    /// seconds later as an external change. Gating on the first `sync()`
+    /// call ran the keep-both pass against an empty cloud, stamped the
+    /// device as joined, and let the real payload's arrival fall through
+    /// to plain last-writer-wins — silently discarding one device's edits,
+    /// exactly what the rule exists to prevent. The fake store in the tests
+    /// is synchronous, which is why they passed.
+    var firstJoinDone: Bool {
+        didSet { defaults.set(firstJoinDone, forKey: Key.firstJoinDone) }
+    }
 
     enum Key {
         static let enabled = "sync.enabled.v1"
         static let lastSyncedAt = "sync.lastSyncedAt.v1"
+        /// Whether this device has met the cloud's RECORDS at least once —
+        /// the first-join rule's gate (see SyncEngine+FirstJoin).
+        static let firstJoinDone = "sync.firstJoinDone.v1"
         /// The v1 blob's stamp and key, read only by the one-shot migration.
         static let settingsStamp = "sync.settingsModifiedAt.v1"
         static let remoteSettings = "s.settings"
@@ -85,7 +101,11 @@ public final class SyncEngine: ObservableObject {
         self.settings = settings
         self.defaults = defaults
         self.isEnabled = defaults.bool(forKey: Key.enabled)
-        self.lastSyncedAt = defaults.object(forKey: Key.lastSyncedAt) as? Date
+        let syncedBefore = defaults.object(forKey: Key.lastSyncedAt) as? Date
+        self.lastSyncedAt = syncedBefore
+        // A device that was syncing before this flag existed has shared
+        // history with the cloud: its first join is long done.
+        self.firstJoinDone = defaults.bool(forKey: Key.firstJoinDone) || syncedBefore != nil
         // Deliberately NOT `store.isAvailable` and NOT `start()`: this
         // initializer runs while the first frame is being built, and both
         // reach the iCloud daemon — `ubiquityIdentityToken` and

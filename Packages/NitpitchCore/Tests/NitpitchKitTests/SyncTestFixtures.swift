@@ -26,7 +26,24 @@ final class FakeSyncStore: KeyValueSyncStore, @unchecked Sendable {
         return availability
     }
 
-    func data(forKey key: String) -> Data? { storage[key] }
+    /// The real store's latency, modelled: while true, everything written
+    /// by other devices stays invisible to reads (as if not yet downloaded);
+    /// `deliverExternalChange()` is how the payload's arrival is announced.
+    var isWithholding = false
+    private var visibleAtWithhold: Set<String> = []
+
+    func withholdArrivals() {
+        isWithholding = true
+        visibleAtWithhold = Set(storage.keys)
+    }
+
+    func releaseArrivals() { isWithholding = false }
+
+    private func visible(_ key: String) -> Bool {
+        !isWithholding || visibleAtWithhold.contains(key)
+    }
+
+    func data(forKey key: String) -> Data? { visible(key) ? storage[key] : nil }
 
     func set(_ data: Data?, forKey key: String) {
         if let data {
@@ -36,7 +53,7 @@ final class FakeSyncStore: KeyValueSyncStore, @unchecked Sendable {
         }
     }
 
-    var allKeys: [String] { Array(storage.keys) }
+    var allKeys: [String] { storage.keys.filter(visible) }
 
     func synchronize() { synchronizeCount += 1 }
 

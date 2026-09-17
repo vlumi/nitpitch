@@ -17,14 +17,21 @@ import NitpitchCore
 /// the copy arrives unpinned. Merging "Guitar" and "Guitar 2" back into one
 /// is the USER'S cleanup, with tools that already exist.
 extension SyncEngine {
-    /// Runs once, on the sync a device has never completed before
-    /// (`lastSyncedAt` is only written after a full round). Devices that
-    /// were already syncing before this feature shipped have a date and
-    /// skip it — their history is shared, so the clean rule doesn't hold.
+    /// Runs on every sync until it has met the cloud's RECORDS once — not
+    /// merely until `sync()` has run once. The key-value store is empty at
+    /// the moment the switch is flipped and fills seconds later, so the
+    /// pass waits for records to judge; an empty cloud has no conflicts to
+    /// keep. Devices that were syncing before this shipped skip it — their
+    /// history is shared, so the clean rule doesn't hold.
     func duplicateFirstJoinConflicts() {
-        guard lastSyncedAt == nil else { return }
+        guard !firstJoinDone else { return }
+        let sawRecords =
+            !records(of: .instrument, as: InstrumentInstance.self).isEmpty
+            || !records(of: .preset, as: Preset.self).isEmpty
+        guard sawRecords else { return }
         duplicateInstrumentConflicts()
         duplicatePresetConflicts()
+        firstJoinDone = true
     }
 
     private func duplicateInstrumentConflicts() {

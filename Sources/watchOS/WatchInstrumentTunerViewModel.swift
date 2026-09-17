@@ -231,6 +231,10 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
     private func consume(
         _ results: [DetectionResult], intonation frame: IntonationAnalyzer.Frame?
     ) {
+        // Frames already in flight when `end()` ran still land here — and
+        // one was enough to restart the haptic taps on the list screen,
+        // from a cue `end()` had just silenced. Ended is ended.
+        guard state != .idle else { return }
         var levels = results.map { $0.frequency != nil ? $0.level : nil }
         consumeIntonation(frame)
         // The intonation analyzer confidently naming the focused string's

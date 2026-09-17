@@ -57,6 +57,10 @@ final class SingleStringTuner: ObservableObject {
         self.reference = reference
         self.tuning = tuning
         let band = instrument.band(reference: reference)
+        // Clamped like every sibling path (`apply`, `canStep`, the scrub):
+        // the route's index was minted against the grid's tuners, and a
+        // synced reshape can shrink the instrument under it.
+        let index = min(max(0, index), instrument.notes.count - 1)
         let note = instrument.notes[index]
         let offset = temperament.offsets(for: instrument.strings)[index]
         tuner = StringTunerViewModel(

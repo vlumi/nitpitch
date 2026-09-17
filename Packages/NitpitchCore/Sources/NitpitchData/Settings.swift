@@ -109,6 +109,15 @@ public final class Settings: ObservableObject {
         presetPins.contains(PresetPin(instrumentID: instrumentID, presetID: presetID))
     }
 
+    /// The rack's drag-reorder — the ORDER is a synced whole value with
+    /// one stamp, and a move that didn't stamp either never left the
+    /// device (no stamp yet) or was pushed under the OLD stamp and undone
+    /// by the next merge. Same stamp-at-the-act rule as the toggles.
+    public func moveFavorites(fromOffsets source: IndexSet, toOffset destination: Int) {
+        favorites.move(fromOffsets: source, toOffset: destination)
+        favoritesOrderStamp = Date()
+    }
+
     public func toggleFavorite(_ id: String) {
         if let index = favorites.firstIndex(of: id) {
             favorites.remove(at: index)

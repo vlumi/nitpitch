@@ -12,6 +12,20 @@ import XCTest
 final class SyncSettingsTests: XCTestCase {
     /// Pins are part of the user's setup and travel; the rack's expansion
     /// state describes one screen and stays home.
+    /// Ids come off UserDefaults and KVS, which promise nothing about
+    /// uniqueness — a repeated id must neither duplicate a member nor trap
+    /// the one-shot migration's dictionary.
+    func testDuplicateIdsNeitherDuplicateNorTrap() {
+        let cloud = FakeSyncStore()
+        let device = SyncTestDevice(sharing: cloud)
+        defer { device.destroy() }
+
+        XCTAssertEqual(
+            device.engine.ordered(members: ["a", "b", "c"], by: ["a", "a", "b"]),
+            ["a", "b", "c"])
+        XCTAssertEqual(device.engine.uniformStamps(["a", "a", "b"], Date()).count, 2)
+    }
+
     func testPinsSyncButDeviceStateDoesNot() {
         let cloud = FakeSyncStore()
         let phone = SyncTestDevice(sharing: cloud)

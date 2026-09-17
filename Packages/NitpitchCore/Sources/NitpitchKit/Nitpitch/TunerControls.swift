@@ -407,8 +407,15 @@ extension InstrumentStore {
     /// forgotten by one of the delete sites.
     @MainActor
     func delete(_ id: String, settings: Settings) {
-        settings.favorites.removeAll { $0 == id }
-        settings.presetPins.removeAll { $0.instrumentID == id }
+        // Through the toggles, so each removal is STAMPED as this moment's
+        // act. Removing the memberships directly left the flags' original
+        // ON stamps in place; sync then pushed OFF under a stale date, the
+        // other device's equal-stamped ON won the tie, and the star and
+        // pins ping-ponged forever.
+        if settings.favorites.contains(id) { settings.toggleFavorite(id) }
+        for pin in settings.presetPins where pin.instrumentID == id {
+            settings.togglePin(instrumentID: pin.instrumentID, presetID: pin.presetID)
+        }
         remove(id: id)
     }
 }

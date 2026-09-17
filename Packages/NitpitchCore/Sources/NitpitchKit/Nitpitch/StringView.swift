@@ -46,7 +46,10 @@ struct StringView: View {
         self.settings = settings
         self.detection = detection
         self.initial = instance
-        _index = State(initialValue: index)
+        // Clamped for the same reason `SingleStringTuner` clamps: an
+        // out-of-range index renders every pane as a ghost.
+        _index = State(
+            initialValue: min(max(0, index), max(0, instance.instrument.notes.count - 1)))
         _single = StateObject(
             wrappedValue: SingleStringTuner(
                 instrument: instance.instrument, index: index, audio: audio,

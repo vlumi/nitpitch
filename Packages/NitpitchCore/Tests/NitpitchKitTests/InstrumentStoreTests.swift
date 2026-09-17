@@ -108,6 +108,55 @@ final class InstrumentStoreTests: XCTestCase {
 
     /// The string count is a physical fact: a tuning with a different count
     /// never applies, however it arrives.
+    /// The padlock is the STORE's rule, not the buttons': the preset
+    /// browser, an arriving share link and the Manage sheet all reached
+    /// the setters around the disabled controls and retuned a locked
+    /// instrument. Every setup write refuses while locked; unlocking,
+    /// renaming and using stay allowed — the lock freezes the setup, not
+    /// the record.
+    func testALockedInstrumentRefusesEverySetupChange() {
+        let store = makeStore()
+        let guitar = store.add(of: .guitar)
+        let before = store.instance(id: guitar.id)!
+        store.setLocked(id: guitar.id, true)
+
+        store.setTuning(id: guitar.id, strings: [38, 45, 50, 55, 59, 64])
+        store.setString(id: guitar.id, index: 0, midi: 38)
+        store.setEditedStrings(id: guitar.id, [38, 45, 50, 55, 59, 64])
+        store.setReference(id: guitar.id, ReferencePitch(hz: 442))
+        store.setTemperament(id: guitar.id, .pure)
+        store.presetApplied(id: guitar.id, presetID: "p")
+
+        let locked = store.instance(id: guitar.id)!
+        XCTAssertEqual(locked.strings, before.strings, "tuning untouched")
+        XCTAssertEqual(locked.referenceHz, before.referenceHz, "reference untouched")
+        XCTAssertEqual(locked.temperament, before.temperament, "temperament untouched")
+        XCTAssertNil(locked.loadedPresetID, "no preset claim")
+
+        store.rename(id: guitar.id, to: "Frozen")
+        XCTAssertEqual(
+            store.instance(id: guitar.id)?.name, "Frozen", "a rename is not a setup change")
+
+        store.setLocked(id: guitar.id, false)
+        store.setTuning(id: guitar.id, strings: [38, 45, 50, 55, 59, 64])
+        XCTAssertEqual(
+            store.instance(id: guitar.id)?.strings, [38, 45, 50, 55, 59, 64], "unlocked again")
+    }
+
+    /// Adoption validates SHAPE and nothing else: a merged record with no
+    /// strings (corrupt, or a future version's) would index an empty
+    /// array on the first frame of any tuner opened on it.
+    func testAdoptionDropsAnInstrumentWithNoStrings() {
+        let store = makeStore()
+        var broken = store.instances[0]
+        broken.strings = []
+        let sound = store.instances[1]
+
+        store.adopt([broken, sound], tombstones: [])
+
+        XCTAssertEqual(store.instances.map(\.id), [sound.id])
+    }
+
     func testTuningWithWrongStringCountIsRefused() {
         let store = makeStore()
         let violin = store.instance(id: Instrument.violin.id)!

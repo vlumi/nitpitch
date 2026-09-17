@@ -99,7 +99,11 @@ public struct RootView: View {
                         // instrument — so a five-string instrument
                         // arrived at a four-string screen. `.id` forces
                         // a fresh view, which builds the right tuners.
-                        .id(instance.id)
+                        // The string COUNT is part of the identity too
+                        // (the watch's lesson): a synced record of the
+                        // same id with a different shape needs fresh
+                        // tuners as much as a different instrument does.
+                        .id("\(instance.id):\(instance.strings.count)")
                     }
                 case .string(let id, let index):
                     if let instance = resolve(id) {
@@ -182,8 +186,12 @@ public struct RootView: View {
             arrival = .unreadable
             return
         }
+        // Locked instruments are not targets: the padlock freezes the setup,
+        // and the store would refuse the write anyway — offering one would
+        // be a "Load" that does nothing.
         let candidates =
             store.instances
+            .filter { !$0.isLocked }
             .filter { $0.templateID == link.templateID && $0.strings.count == link.strings.count }
             .sorted { ($0.lastUsedAt ?? .distantPast) > ($1.lastUsedAt ?? .distantPast) }
         guard let target = candidates.first else {

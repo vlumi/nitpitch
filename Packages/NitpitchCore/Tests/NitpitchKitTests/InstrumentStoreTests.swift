@@ -143,6 +143,20 @@ final class InstrumentStoreTests: XCTestCase {
             store.instance(id: guitar.id)?.strings, [38, 45, 50, 55, 59, 64], "unlocked again")
     }
 
+    /// Adoption validates SHAPE and nothing else: a merged record with no
+    /// strings (corrupt, or a future version's) would index an empty
+    /// array on the first frame of any tuner opened on it.
+    func testAdoptionDropsAnInstrumentWithNoStrings() {
+        let store = makeStore()
+        var broken = store.instances[0]
+        broken.strings = []
+        let sound = store.instances[1]
+
+        store.adopt([broken, sound], tombstones: [])
+
+        XCTAssertEqual(store.instances.map(\.id), [sound.id])
+    }
+
     func testTuningWithWrongStringCountIsRefused() {
         let store = makeStore()
         let violin = store.instance(id: Instrument.violin.id)!

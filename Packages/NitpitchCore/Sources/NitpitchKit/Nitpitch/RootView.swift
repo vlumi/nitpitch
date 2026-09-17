@@ -99,7 +99,11 @@ public struct RootView: View {
                         // instrument — so a five-string instrument
                         // arrived at a four-string screen. `.id` forces
                         // a fresh view, which builds the right tuners.
-                        .id(instance.id)
+                        // The string COUNT is part of the identity too
+                        // (the watch's lesson): a synced record of the
+                        // same id with a different shape needs fresh
+                        // tuners as much as a different instrument does.
+                        .id("\(instance.id):\(instance.strings.count)")
                     }
                 case .string(let id, let index):
                     if let instance = resolve(id) {

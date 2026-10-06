@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
@@ -30,24 +30,29 @@ let package = Package(
     targets: [
         .target(
             name: "NitpitchCore",
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("Resources/Localizable.xcstrings")],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
             name: "NitpitchData",
-            dependencies: ["NitpitchCore"]
+            dependencies: ["NitpitchCore"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
             name: "NitpitchKit",
             dependencies: ["NitpitchCore", "NitpitchData"],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("Resources/Localizable.xcstrings")],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "NitpitchCoreTests",
-            dependencies: ["NitpitchCore"]
+            dependencies: ["NitpitchCore"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "NitpitchKitTests",
-            dependencies: ["NitpitchKit"]
+            dependencies: ["NitpitchKit"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]
 )

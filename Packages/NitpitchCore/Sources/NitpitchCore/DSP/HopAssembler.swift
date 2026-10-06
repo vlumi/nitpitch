@@ -25,7 +25,7 @@ import Foundation
 public struct HopAssembler {
     /// One call's yield: the windows to analyze, in order, and whether
     /// anything was discarded since the previous yield.
-    public struct Batch: Equatable {
+    public struct Batch: Equatable, Sendable {
         public let windows: [[Float]]
         public let gapBefore: Bool
         public static let empty = Batch(windows: [], gapBefore: false)

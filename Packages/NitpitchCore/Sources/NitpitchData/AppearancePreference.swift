@@ -40,6 +40,7 @@ public enum AppearancePreference: String, CaseIterable, Identifiable, Codable, S
     /// report the forced value rather than the system's. Resolving `.system`
     /// therefore reads AppKit directly. On iOS the ambient value is
     /// authoritative once the forced scheme clears.
+    @MainActor
     public func resolvedScheme(systemFallback: ColorScheme) -> ColorScheme {
         switch self {
         case .light: return .light

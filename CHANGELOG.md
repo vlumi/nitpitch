@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+### build 19 — 2026-10-06
+
 - **Sync's iCloud check no longer races itself.** Whether this device is signed in to iCloud is read on a background thread (the check can stall on a cold start) and cleared on the main one when the account changes — two threads touching the same value with nothing between them. Harmless in practice, undefined in principle, and now properly guarded.
 
 ### build 18 — 2026-09-17

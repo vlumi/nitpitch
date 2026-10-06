@@ -67,7 +67,12 @@ public enum LaunchStores {
         isClean ? EphemeralSyncStore() : UbiquitousSyncStore()
     }
 
-    public static let defaults: UserDefaults = {
+    /// `nonisolated(unsafe)`, deliberately: this is a `let` computed once
+    /// at first touch and only read afterwards, and `UserDefaults` is itself
+    /// thread-safe — the compiler flags it only because `UserDefaults` is a
+    /// non-Sendable class. Wrapping it in an actor would make every store's
+    /// synchronous init asynchronous for a reference that never changes.
+    public nonisolated(unsafe) static let defaults: UserDefaults = {
         guard isClean else { return .standard }
         let suite = "fi.misaki.nitpitch.uitest"
         let defaults = UserDefaults(suiteName: suite) ?? .standard

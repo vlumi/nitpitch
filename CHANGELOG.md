@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **Sync's iCloud check no longer races itself.** Whether this device is signed in to iCloud is read on a background thread (the check can stall on a cold start) and cleared on the main one when the account changes — two threads touching the same value with nothing between them. Harmless in practice, undefined in principle, and now properly guarded.
+
 ### build 18 — 2026-09-17
 
 - **The instrument screens now say when the app can't hear.** If microphone access is off or no input device is present, the grid and the single-string screen show a notice with the way out — Open Settings, or Retry once a device is plugged in — instead of every dial sitting on "listening" forever. The chromatic screen's own message gets the Settings link too.

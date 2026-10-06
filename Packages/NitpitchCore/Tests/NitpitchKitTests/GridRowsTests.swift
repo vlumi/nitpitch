@@ -7,6 +7,7 @@ import XCTest
 /// building bottom-up rows and reversing the flat list read fine at 2×2 and
 /// garbled everything whose count didn't divide the columns (a violin in
 /// three columns showed E G D / A — neither convention).
+@MainActor
 final class GridRowsTests: XCTestCase {
     /// The field-reported shapes: violin and bass in three columns garbled;
     /// guitar in three divided evenly and looked fine.

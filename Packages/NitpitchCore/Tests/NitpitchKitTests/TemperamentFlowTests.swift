@@ -11,8 +11,9 @@ import XCTest
 final class TemperamentFlowTests: XCTestCase {
     private var defaults: UserDefaults!
 
-    override func setUp() {
-        super.setUp()
+    @MainActor
+    override func setUp() async throws {
+        try await super.setUp()
         defaults = UserDefaults(suiteName: "TemperamentFlowTests")
         defaults.removePersistentDomain(forName: "TemperamentFlowTests")
     }

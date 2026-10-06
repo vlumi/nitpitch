@@ -9,6 +9,16 @@ options:
   createIntermediateGroups: true
   developmentLanguage: en
 
+# Project-wide build settings — every target inherits these.
+settings:
+  base:
+    # Swift 6 language mode: the audio path crosses isolation domains by
+    # design (audio thread → analysis queue → main actor), and under Swift 5
+    # the compiler took the locks on faith. Under 6 it checks them, which is
+    # how the sync store's availability-cache race was caught. The package
+    # sets the same mode per target in Package.swift.
+    SWIFT_VERSION: "6.0"
+
 packages:
   NitpitchCore:
     path: Packages/NitpitchCore

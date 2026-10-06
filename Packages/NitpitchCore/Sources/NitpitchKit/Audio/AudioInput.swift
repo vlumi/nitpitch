@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 import NitpitchCore
 
@@ -17,7 +17,13 @@ import CoreAudio
 ///   device or interface provides (48 kHz on most Macs, 44.1 or 48 on iPhones),
 ///   so an `AVAudioConverter` normalizes it and the detector is constructed for
 ///   the *converted* rate.
-public final class AudioInput: NSObject {
+/// `@unchecked Sendable`, and here is the check: `onWindow`/`onGap`/
+/// `onDeviceChange` are assigned once by the owner before `start()` and only
+/// READ afterwards (from the tap and the analysis queue); the sample ring is
+/// guarded by `bufferLock`; everything else is immutable or
+/// `AVAudioEngine`'s own thread-safe API. The engine lifecycle itself is
+/// driven from the main actor by `AudioSessionController`.
+public final class AudioInput: NSObject, @unchecked Sendable {
     /// Delivered on `analysisQueue`, not the main queue — the consumer hops to
     /// main itself so the UI update is one hop, not two.
     public var onWindow: (([Float]) -> Void)?
@@ -241,7 +247,11 @@ public final class AudioInput: NSObject {
                 pcmFormat: targetFormat, frameCapacity: capacity)
         else { return }
 
-        var supplied = false
+        // `supplied` is captured by a block AVAudioConverter calls
+        // SYNCHRONOUSLY, inside `convert(to:error:)` below — never after it
+        // returns, and never from another thread — so the mutation is
+        // ordinary local state despite the block's @Sendable signature.
+        nonisolated(unsafe) var supplied = false
         var error: NSError?
         converter.convert(to: converted, error: &error) { _, status in
             // The converter asks repeatedly; hand over the buffer once, then

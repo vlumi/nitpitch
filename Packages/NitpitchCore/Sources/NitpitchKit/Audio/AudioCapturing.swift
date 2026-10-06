@@ -9,7 +9,11 @@ import Foundation
 /// subscriptions, the detectors, every view model — runs identically on both.
 /// That's what makes the demo honest: it isn't a synthetic display state, it's
 /// the real pipeline hearing a synthetic signal.
-public protocol AudioCapturing: AnyObject {
+/// Sendable: a source is constructed on main, started and stopped from the
+/// main actor, and delivers from its own queue — it crosses isolation
+/// domains by design, so each conformer owns its synchronization
+/// (`AudioInput`'s `bufferLock`, the timer-paced demo source's queue).
+public protocol AudioCapturing: AnyObject, Sendable {
     /// Delivered off the main queue, one analysis window at a time; the
     /// consumer hops to main itself.
     var onWindow: (([Float]) -> Void)? { get set }
@@ -35,6 +39,8 @@ public protocol AudioCapturing: AnyObject {
     func stop()
 }
 
+// `Sendable` is declared on `AudioInput` itself (it must be, in the type's
+// own file); this adds only the protocol's permission call.
 extension AudioInput: AudioCapturing {
     public func requestPermission() async -> Bool {
         await Self.requestPermission()

@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 import NitpitchCore
 import NitpitchData
@@ -96,10 +96,11 @@ final class WatchAudioInput: @unchecked Sendable {
                 self?.engineLost()
                 self?.restartIfWanted()
             })
+        // The notification NAME is main-actor isolated (WatchKit's own
+        // annotation); read it on main, then register as usual.
+        let becameActive = MainActor.assumeIsolated { WKApplication.didBecomeActiveNotification }
         observers.append(
-            center.addObserver(
-                forName: WKApplication.didBecomeActiveNotification, object: nil, queue: nil
-            ) { [weak self] _ in
+            center.addObserver(forName: becameActive, object: nil, queue: nil) { [weak self] _ in
                 self?.restartIfWanted()
             })
     }
@@ -228,7 +229,10 @@ final class WatchAudioInput: @unchecked Sendable {
             let converted = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: capacity)
         else { return }
 
-        var supplied = false
+        // Synchronous: AVAudioConverter calls this block inside
+        // `convert(to:error:)` below, never after it returns and never from
+        // another thread (see AudioInput, which does the same).
+        nonisolated(unsafe) var supplied = false
         var error: NSError?
         converter.convert(to: converted, error: &error) { _, status in
             if supplied {

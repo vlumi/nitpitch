@@ -15,7 +15,7 @@ struct WatchArc: View {
 
     /// Visual degrees per mapped degree: <1 flattens the bow without
     /// touching the mapping's proportions.
-    private static let flattening = 0.55
+    nonisolated private static let flattening = 0.55
 
     var body: some View {
         Canvas { [cents = cents ?? .infinity] context, size in

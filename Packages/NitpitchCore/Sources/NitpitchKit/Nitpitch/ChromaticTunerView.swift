@@ -114,6 +114,7 @@ public struct ChromaticTunerView: View {
                                 templateID: preset.templateID, strings: preset.strings))
                     })
             }
+            .presentsStagedSheet(presets: $isShowingPresets, settings: $isShowingSettings)
             .task { await model.attach() }
             .onDisappear { model.detach() }
             // Only the reference matters here — the instrument doesn't change this

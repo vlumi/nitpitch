@@ -29,6 +29,11 @@ public enum LaunchStores {
     /// loops through everything the screens can show.
     public static let demoPose: String? = isDemo ? launchArgument("-demo-pose") : nil
 
+    /// What a staged screenshot needs on screen that a pose can't say —
+    /// stars, a pin, the reference, Dark, which sheet is open. Parsed and
+    /// applied by `DemoStage`; see its doc for the syntax.
+    static let stageArgument: String? = isDemo ? launchArgument("-demo-stage") : nil
+
     /// The value following a launch flag — the one firstIndex-and-bounds
     /// dance, written once for every flag that carries one.
     private static func launchArgument(_ name: String) -> String? {
@@ -47,7 +52,24 @@ public enum LaunchStores {
     /// root: `-demo -demo-open violin`. Demo mode exists for judging layout
     /// without an instrument in hand; this puts the screen being judged on
     /// screen at launch, without scripting clicks to get there.
+    ///
+    /// With a string index — `-demo-open violin:2` — it lands one level
+    /// deeper, on that string's own screen (0-based, low to high), which is
+    /// the difference between a screenshot that needs a tap and one that
+    /// doesn't.
     public static let demoRoute: String? = isDemo ? launchArgument("-demo-open") : nil
+
+    /// The instrument half of `-demo-open`, without any string index.
+    public static var demoRouteInstrument: String? {
+        demoRoute?.split(separator: ":", maxSplits: 1).first.map(String.init)
+    }
+
+    /// The string index of `-demo-open violin:2`, when one was given.
+    public static var demoRouteString: Int? {
+        guard let parts = demoRoute?.split(separator: ":", maxSplits: 1), parts.count == 2
+        else { return nil }
+        return Int(parts[1])
+    }
 
     /// Show the detector diagnostics screen.
     ///
@@ -108,6 +130,11 @@ public struct AppStores {
             store: LaunchStores.syncStore(),
             instruments: instruments, presets: presets, settings: settings,
             defaults: LaunchStores.defaults)
+        // A staged screenshot's state, before the first frame — a no-op
+        // unless `-demo -demo-stage` are both present (see `DemoStage`).
+        DemoStage.apply(
+            to: DemoStage.Stores(
+                settings: settings, instruments: instruments, presets: presets))
         return AppStores(
             settings: settings, instruments: instruments, presets: presets, sync: sync)
     }

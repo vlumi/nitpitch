@@ -36,9 +36,10 @@ import sys
 # order differs; arrange at upload). Each: (name, launch-args, what-to-capture).
 # The launch args stage exact readings via -demo-pose (the demo IS the real
 # pipeline on a synthesized signal, so a pose is simply what "plays");
-# consecutive shots with identical args share one app session, which is also
-# what lets grid-dark reuse grid's staging and `launch` keep its in-app
-# staging alive through `presets` and `share`.
+# Every ASC shot is FULLY expressed in launch arguments — `-demo-pose` for
+# what sounds, `-demo-stage` for the state around it (stars, a pin, the
+# reference, Dark, which sheet is open). Nothing is staged by hand, which is
+# what lets `shoot.sh --auto` capture the set unattended.
 # Poses are in A=440 EQUAL cents, but the violin defaults to PURE fifths —
 # its D target sits 1.955¢ below equal D — so "D dead on its target" is
 # 62@-2, not 62. Chosen by looking at the rendered pixels: D earns the slim
@@ -49,33 +50,35 @@ SHOTS = [
      "-demo-open violin -demo-pose 62@-2,69@-4",
      "The violin grid, D and A genuinely sounding together: D dead on its "
      "pure target (0¢, slim needle), A 4¢ low, the interval lane beating "
-     "at 2.0/s. Frame and shoot."),
+     "at 2.0/s."),
     ("grid-dark",
-     "-demo-open violin -demo-pose 62@-2,69@-4",
-     "The SAME grid in Dark: flip the in-app Appearance to Dark, re-frame, "
-     "capture, flip back to Light. The dark-mode taster."),
+     "-demo-open violin -demo-pose 62@-2,69@-4 -demo-stage appearance=dark",
+     "The SAME grid in Dark — the dark-mode taster."),
     ("reference",
-     "-demo-open violin -demo-pose 62@-2,69@-4",
-     "Still on the grid: open the tuning menu, step the reference to A=442, "
-     "temperament on Pure — the orchestra story in one frame. (The dials "
-     "behind go honestly amber-flat: you raised the A on them.)"),
+     "-demo-open violin -demo-pose 62@-2,69@-4 "
+     "-demo-stage reference=442;temperament=pure;favorites=violin",
+     "The grid at A=442 on pure fifths, both worn in the footer where a "
+     "player looks while tuning: your section's A, and the fifths string "
+     "players actually tune. (The dials read honestly against the raised "
+     "A — that IS the story.)"),
     ("string-view",
-     "-demo-open violin -demo-pose 69@2",
-     "Tap the A string's dial: the single-string view holding 2¢ sharp — "
-     "big dial just off centre, the strobe band awake. Frame and shoot."),
+     "-demo-open violin:2 -demo-pose 69@2",
+     "The A string's own screen, holding 2¢ sharp — big dial just off "
+     "centre, the strobe band awake. Sub-cent error as motion."),
     ("launch",
-     "-demo-pose 69@-3",
+     "-demo-pose 69@-3 -demo-stage favorites=violin,guitar;pin=guitar:drop-d",
      "The chromatic tuner over the instrument rack: A4 green at −3¢, the "
-     "readout doing the talking. Stage first: star the violin and a guitar "
-     "in the chooser, pin Drop D on the guitar so a preset chip shows."),
+     "violin and guitar starred, Drop D pinned under the guitar."),
     ("presets",
-     "-demo-pose 69@-3",
-     "All presets… from the launch screen: the browser with the seeded "
-     "tunings (Drop D, DADGAD, Open G…), instrument filter visible."),
+     "-demo-pose 69@-3 -demo-stage favorites=violin,guitar;pin=guitar:drop-d;"
+     "present=presets",
+     "The preset browser: the seeded tunings across instruments, the "
+     "instrument filter visible. The collection is real and yours."),
     ("share",
-     "-demo-pose 69@-3",
-     "Share Drop D from the browser: the QR + link sheet. 'Hand a tuning "
-     "to a bandmate' in one image."),
+     "-demo-pose 69@-3 -demo-stage favorites=violin,guitar;pin=guitar:drop-d;"
+     "present=presets;share=drop-d",
+     "Drop D's share sheet — QR and link. Hand a tuning to a bandmate; "
+     "nothing but the setup travels."),
 ]
 
 # The site guide's shots (nitpitch.app/guide) — the states the ASC set

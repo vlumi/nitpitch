@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
-# Guided App Store screenshot capture. Walks the shot list, launching the app
-# with EACH SHOT'S own staged readings (-demo-pose: the demo is the real
-# pipeline hearing a synthesized signal, so a pose is simply what plays),
-# tells you what to stage on screen, and CAPTURES for you — no ⌘S, no
-# renaming, no file shuffling. Output lands canonically named at
+# App Store screenshot capture. Walks the shot list, launching the app with
+# EACH SHOT'S own staged readings (-demo-pose: the demo is the real pipeline
+# hearing a synthesized signal, so a pose is simply what plays) and its own
+# staged STATE (-demo-stage: stars, a pin, the reference, Dark, which sheet
+# is open), then CAPTURES — no ⌘S, no renaming, no file shuffling. Output
+# lands canonically named at
 #   <OUT>/<platform>/en/<shot>-<platform>.png
 # ready for the ASC upload (Scripts/asc/screenshots.py).
 #   PLATFORM=iphone|ipad|mac   (default iphone)
 #   OUT=shots                  (default ./shots)
+#   AUTO=1                     unattended: no prompts, settle-wait per shot
+#
+# AUTO is the normal way to run this (`make shots AUTO=1`, or all three
+# platforms with `make shots-all`). Every ASC shot is fully expressed in
+# launch arguments, so there is nothing left to stage by hand; the
+# interactive mode remains for judging a NEW shot before it joins the list,
+# and for the guide set, where a couple of shots still want a human eye.
 # Consecutive shots with the same launch args share one app session — that's
 # what keeps in-app staging (favorites, pins, Dark) alive across those shots.
 # One language today (en); when the deferred localization lands, grow the loop
@@ -23,6 +31,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+AUTO="${AUTO:-}"
 PLATFORM="${PLATFORM:-iphone}"
 OUT="${OUT:-shots}"
 # Which shot list to walk: asc (the store set) or guide (nitpitch.app/guide).
@@ -36,10 +45,85 @@ MAC_APP=".build-xcode/Build/Products/Debug/Nitpitch.app"
 # -demo-open/-demo-pose args ride on top.
 COMMON_ARGS="-demo -uitest-clean"
 
+# Wait until the screen stops MOVING, then leave that frame in $1.
+#
+# A tuner's dial is a live reading converging on its target and the strobe
+# band is an animation, so a fixed sleep captures whatever moment it lands
+# on — and byte-equality never arrives, because a needle a pixel wide keeps
+# twitching and the signal bar breathes. So compare consecutive grabs by
+# how MUCH of the frame changed: under `tolerance` percent means the layout
+# has arrived and only the live parts are alive. Gives up after `max` tries
+# and captures anyway — a shot that never settles belongs in the image as
+# evidence, not in a hang.
+settle_capture() {  # $1 = output file
+    local previous="" tries=0 max=15 tolerance=2
+    local scratch; scratch="$(mktemp -d)"
+    while [ "$tries" -lt "$max" ]; do
+        capture "$scratch/now.png"
+        if [ -n "$previous" ] && frame_delta "$previous" "$scratch/now.png" "$tolerance"; then
+            mkdir -p "$(dirname "$1")"
+            mv "$scratch/now.png" "$1"
+            rm -rf "$scratch"
+            return 0
+        fi
+        previous="$scratch/previous.png"
+        mv "$scratch/now.png" "$previous"
+        tries=$((tries + 1))
+        sleep 0.4
+    done
+    echo "  (never settled after $max tries — capturing as-is)" >&2
+    capture "$1"
+    rm -rf "$scratch"
+}
+
+# True when under $3 percent of the pixels differ between $1 and $2.
+frame_delta() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import struct, sys, zlib
+
+def rows(path):
+    data = open(path, "rb").read()
+    pos, width, height, raw = 8, 0, 0, b""
+    while pos < len(data):
+        length, kind = struct.unpack(">I4s", data[pos:pos + 8])
+        body = data[pos + 8:pos + 8 + length]
+        if kind == b"IHDR":
+            width, height = struct.unpack(">II", body[:8])
+        elif kind == b"IDAT":
+            raw += body
+        elif kind == b"IEND":
+            break
+        pos += length + 12
+    return width, height, zlib.decompress(raw)
+
+aw, ah, a = rows(sys.argv[1])
+bw, bh, b = rows(sys.argv[2])
+if (aw, ah) != (bw, bh):
+    sys.exit(1)
+# Sample every 97th byte: enough to see a layout change, cheap enough to
+# run twice a second (97 is prime, so the stride never aligns with the
+# row stride and sees the same column every time).
+step = 97
+differing = sum(1 for i in range(0, min(len(a), len(b)), step) if a[i] != b[i])
+total = max(1, len(range(0, min(len(a), len(b)), step)))
+sys.exit(0 if differing * 100 / total < float(sys.argv[3]) else 1)
+PY
+}
+
 capture() {  # $1 = output file
     mkdir -p "$(dirname "$1")"
     if [ "$PLATFORM" = mac ]; then
-        screencapture -o -x -l"$WINDOW_ID" "$1"
+        # "could not create image from window/display" means this terminal
+        # has no Screen Recording permission — the one thing here nobody
+        # can grant from a script. Say which permission, rather than
+        # leaving a bare CoreGraphics sentence.
+        if ! screencapture -o -x -l"$WINDOW_ID" "$1" 2>/dev/null; then
+            echo "" >&2
+            echo "Screen capture was refused. Grant your terminal Screen Recording:" >&2
+            echo "  System Settings ▸ Privacy & Security ▸ Screen Recording" >&2
+            echo "then quit and reopen the terminal (the permission is read at launch)." >&2
+            exit 1
+        fi
     else
         # By UDID — `booted` grabs an arbitrary device with several sims open.
         xcrun simctl io "$SIM_UDID" screenshot --display=internal "$1" >/dev/null
@@ -47,15 +131,19 @@ capture() {  # $1 = output file
 }
 
 # Find the app's window by PID — names are localized, PIDs aren't.
+# The window id of the running app — every candidate pid, not just the
+# first. A previous run that hasn't finished quitting still answers
+# `pgrep`, and asking only the first pid polled a dying process for fifteen
+# seconds and then declared the window missing ("App window never
+# appeared") while the real one sat there.
 mac_window_id() {
     for _ in $(seq 1 15); do
         local pid
-        pid=$(pgrep -x "$APP_NAME" | head -1)
-        if [ -n "$pid" ]; then
+        for pid in $(pgrep -x "$APP_NAME"); do
             if id=$(swift Scripts/asc/window-id.swift "$pid" 2>/dev/null); then
                 echo "$id"; return 0
             fi
-        fi
+        done
         sleep 1
     done
     return 1
@@ -98,7 +186,10 @@ launch_with() {  # $1 = shot's launch args (word-split on purpose)
             # shellcheck disable=SC2086
             open "$MAC_APP" --args $args
         fi
-        WINDOW_ID=$(mac_window_id) || { echo "App window never appeared." >&2; exit 1; }
+        WINDOW_ID=$(mac_window_id) || {
+            echo "App window never appeared — is another Nitpitch still quitting?" >&2
+            exit 1
+        }
         mac_pin_window
     else
         if [ -z "$LAUNCHED" ]; then
@@ -133,6 +224,11 @@ while IFS=$'\t' read -r name shot_args desc; do
     # Same args as the running session = same session, staging preserved.
     [ "$LAUNCHED" = "$COMMON_ARGS $shot_args" ] || launch_with "$shot_args"
     echo "  $desc"
+    if [ -n "$AUTO" ]; then
+        settle_capture "$file"
+        echo "  saved $file"
+        continue
+    fi
     printf "  ⏎ capture · s skip · q quit: "
     read -r reply </dev/tty
     [ "$reply" = q ] && exit 0

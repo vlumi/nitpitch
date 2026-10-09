@@ -165,9 +165,15 @@ public struct RootView: View {
         // the path any earlier (init, even `onAppear`) reliably left the
         // macOS window unmade.
         .task {
-            guard let route = LaunchStores.demoRoute, path.isEmpty else { return }
+            guard let route = LaunchStores.demoRouteInstrument, path.isEmpty else { return }
             try? await Task.sleep(nanoseconds: 300_000_000)
-            path = [.instrument(route)]
+            // `violin:2` lands on that string's own screen — the grid stays
+            // beneath it, so Back behaves as it would by hand.
+            if let index = LaunchStores.demoRouteString {
+                path = [.instrument(route), .string(route, index)]
+            } else {
+                path = [.instrument(route)]
+            }
         }
         // Forced onto the whole hierarchy, destinations included; nil follows
         // the system.

@@ -18,11 +18,28 @@ a VIOLIN, bowed pairs only — never framed as a fretted feature (AGENTS.md,
 "The App Store copy constraints"). And nothing in a shot may imply audio goes
 anywhere: there is no such screen, which makes this easy.
 
-## Workflow — one command
+## Workflow — one command, unattended
 
 ```sh
-make shots PLATFORM=iphone     # or ipad / mac; OUT=shots by default
+make shots-all                 # all three platforms, no prompts
+make shots PLATFORM=iphone AUTO=1   # one platform
 ```
+
+**Every ASC shot is fully declared in launch arguments** — `-demo-pose`
+stages what SOUNDS, `-demo-stage` stages the state around it (stars, a
+pin, the reference, the temperament, Dark, which sheet is open), and
+`-demo-open violin:2` lands on a string's own screen. Nothing is staged
+by hand, so the set is reproducible and CI-able; `organize-shots.py
+<platform> --list` prints each shot's exact arguments.
+
+Capture waits for the screen to STOP MOVING rather than sleeping a fixed
+time: a dial is a live reading converging on its target, so the script
+compares consecutive grabs and shoots when under 2% of the frame
+changes. A shot that never settles is captured anyway with a warning —
+that belongs in the image as evidence, not in a hang.
+
+Interactive mode (no `AUTO=1`) remains for judging a NEW shot before it
+joins the list, and for the guide set.
 
 It builds, then walks the shot list — relaunching the app with each shot's
 own pose (`-demo -uitest-clean` plus the args printed per shot), telling you
@@ -33,9 +50,12 @@ Consecutive shots with the same args share one app session, which is what
 keeps in-app staging (favorites, pins, Dark) alive across them. No ⌘S, no
 renaming: `shots/` is the handoff for the ASC upload.
 
-Before a Mac run, once: the first window grab asks for Screen Recording
-permission for your terminal, and the automatic 1440×900 window resize asks
-for Accessibility; grant both and re-run.
+Before a Mac run, once: the window grab needs Screen Recording permission
+for your terminal and the automatic 1440×900 resize needs Accessibility
+(System Settings ▸ Privacy & Security). Grant both, then QUIT AND REOPEN
+the terminal — the permission is read at process launch, so an already-
+running shell keeps being refused. Without it the script stops and says
+which permission is missing. iPhone and iPad need no permissions.
 
 Manual fallback (freehand capture, then rename by capture order):
 `make demo-iphone` / `make demo-mac` to just launch (append the shot's pose
@@ -80,19 +100,24 @@ are shared; the STORE order differs, see below). Same set on every platform.
    the interval lane beating at 2.0/s. One string done, one settling. The
    thesis shot: choosing an instrument means something, and double stops are
    read as the beats a violinist already listens for.
-2. **grid-dark** — same session: flip the in-app Appearance to Dark, capture,
-   flip back. The one dark-mode taster.
-3. **reference** — same session: open the tuning menu, step the reference to
-   A=442, temperament on Pure. The orchestra story: your section's A, and
-   fifths tuned the way string players tune them. (The dials behind go
-   honestly amber-flat — you raised the A on them; the menu is the subject.)
+2. **grid-dark** — the same staged screen in Dark (`appearance=dark`). The
+   one dark-mode taster.
+3. **reference** — the same screen at A=442 on pure fifths
+   (`reference=442;temperament=pure`), both worn in the FOOTER, where a
+   player looks while tuning. The orchestra story: your section's A, and
+   fifths tuned the way string players tune them. (The dials read honestly
+   flat against the raised A — that IS the story.) The tuning menu is
+   deliberately not the subject: SwiftUI's `Menu` can't be opened
+   programmatically, and a shot that needs a hand breaks the unattended
+   set for a control the footer already states.
 4. **string-view** — `-demo-open violin -demo-pose 69@2`: tap the A string's
    dial — the single-string view holding 2¢ sharp, the strobe band awake.
    The precision shot: sub-cent error as motion.
-5. **launch** — `-demo-pose 69@-3`: the chromatic tuner over the instrument
-   rack, A4 green at −3¢. Stage first: star the violin and a guitar in
-   the chooser, pin Drop D on the guitar so a preset chip shows under the
-   row. Home, with the app's breadth visible.
+5. **launch** — the chromatic tuner over the instrument rack, A4 green at
+   −3¢, violin and guitar starred with Drop D pinned under the guitar
+   (`favorites=violin,guitar;pin=guitar:drop-d` — the pin also expands its
+   row, since a chip only shows on an expanded one). Home, with the app's
+   breadth visible.
 6. **presets** — same session: "All presets…" from the launch screen, the
    browser with the seeded tunings across instruments, the instrument filter
    visible. The collection is real and yours — deletable, renameable,

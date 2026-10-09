@@ -161,8 +161,17 @@ release-upload:  ## Upload the already-built dist/ package (no rebuild)
 # `filter-out all`: the release lane defaults PLATFORM=all, which is not a
 # screenshot platform; stripped here so shoot.sh's own default (iphone) wins.
 .PHONY: shots
-shots: Nitpitch.xcodeproj  ## Guided screenshot capture: PLATFORM=iphone|ipad|mac [OUT=shots]
-	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(OUT)" Scripts/shoot.sh
+shots: Nitpitch.xcodeproj  ## Screenshot capture: PLATFORM=iphone|ipad|mac [AUTO=1] [OUT=shots]
+	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(OUT)" AUTO="$(AUTO)" Scripts/shoot.sh
+
+.PHONY: shots-all
+shots-all: Nitpitch.xcodeproj  ## The whole ASC set, unattended: all three platforms
+	@for p in iphone ipad mac; do \
+		echo "── $$p ──"; \
+		PLATFORM=$$p OUT="$(OUT)" AUTO=1 Scripts/shoot.sh || exit 1; \
+	done
+	@echo ""
+	@echo "All three platforms captured. Review, then: make asc-screenshots(-apply)"
 
 .PHONY: guide-shots
 guide-shots: Nitpitch.xcodeproj  ## Capture the site guide's shots: PLATFORM=iphone|mac [OUT=guide-shots]

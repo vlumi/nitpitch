@@ -113,7 +113,17 @@ PY
 capture() {  # $1 = output file
     mkdir -p "$(dirname "$1")"
     if [ "$PLATFORM" = mac ]; then
-        screencapture -o -x -l"$WINDOW_ID" "$1"
+        # "could not create image from window/display" means this terminal
+        # has no Screen Recording permission — the one thing here nobody
+        # can grant from a script. Say which permission, rather than
+        # leaving a bare CoreGraphics sentence.
+        if ! screencapture -o -x -l"$WINDOW_ID" "$1" 2>/dev/null; then
+            echo "" >&2
+            echo "Screen capture was refused. Grant your terminal Screen Recording:" >&2
+            echo "  System Settings ▸ Privacy & Security ▸ Screen Recording" >&2
+            echo "then quit and reopen the terminal (the permission is read at launch)." >&2
+            exit 1
+        fi
     else
         # By UDID — `booted` grabs an arbitrary device with several sims open.
         xcrun simctl io "$SIM_UDID" screenshot --display=internal "$1" >/dev/null
@@ -121,15 +131,19 @@ capture() {  # $1 = output file
 }
 
 # Find the app's window by PID — names are localized, PIDs aren't.
+# The window id of the running app — every candidate pid, not just the
+# first. A previous run that hasn't finished quitting still answers
+# `pgrep`, and asking only the first pid polled a dying process for fifteen
+# seconds and then declared the window missing ("App window never
+# appeared") while the real one sat there.
 mac_window_id() {
     for _ in $(seq 1 15); do
         local pid
-        pid=$(pgrep -x "$APP_NAME" | head -1)
-        if [ -n "$pid" ]; then
+        for pid in $(pgrep -x "$APP_NAME"); do
             if id=$(swift Scripts/asc/window-id.swift "$pid" 2>/dev/null); then
                 echo "$id"; return 0
             fi
-        fi
+        done
         sleep 1
     done
     return 1
@@ -172,7 +186,10 @@ launch_with() {  # $1 = shot's launch args (word-split on purpose)
             # shellcheck disable=SC2086
             open "$MAC_APP" --args $args
         fi
-        WINDOW_ID=$(mac_window_id) || { echo "App window never appeared." >&2; exit 1; }
+        WINDOW_ID=$(mac_window_id) || {
+            echo "App window never appeared — is another Nitpitch still quitting?" >&2
+            exit 1
+        }
         mac_pin_window
     else
         if [ -z "$LAUNCHED" ]; then

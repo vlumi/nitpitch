@@ -26,13 +26,25 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 
 # The carousel sells in this order — capture order is staging convenience only.
-STORE_ORDER = ["grid", "string-view", "reference", "launch",
-               "presets", "share", "grid-dark"]
+# The carousel sells in this order — capture order is staging convenience
+# only. Per platform, because the watch tells a shorter story with shots of
+# its own: the string being tuned, the double stop read as beats, then the
+# rack the phone's instruments arrive in.
+STORE_ORDER = {
+    "default": ["grid", "string-view", "reference", "launch",
+                "presets", "share", "grid-dark"],
+    "watch": ["reading", "pair", "root"],
+}
 
 # platform dir → (ASC version platform, screenshot display type)
 PLATFORMS = {
     "iphone": ("IOS", "APP_IPHONE_67"),
     "ipad": ("IOS", "APP_IPAD_PRO_3GEN_129"),
+    # The watch app ships INSIDE the iOS app, and its screenshots live in
+    # the iOS record beside the phone's and the iPad's — one more set, not
+    # a platform of its own. `APP_WATCH_ULTRA` is the 49 mm geometry, which
+    # the Ultra 3 simulator renders at 422×514.
+    "watch": ("IOS", "APP_WATCH_ULTRA"),
     "mac": ("MAC_OS", "APP_DESKTOP"),
 }
 # Pixel sizes ASC accepts for each platform dir. A capture at any other size
@@ -41,6 +53,9 @@ PLATFORMS = {
 EXPECTED_SIZES = {
     "iphone": {(1320, 2868)},
     "ipad": {(2064, 2752)},
+    # Every size ASC accepts for the Ultra set; the Ultra 3 simulator
+    # gives the second.
+    "watch": {(410, 502), (422, 514)},
     "mac": {(1440, 900), (2880, 1800)},
 }
 LOCALES = {"en": "en-US"}
@@ -51,7 +66,7 @@ EDITABLE = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED",
 def ordered_files(lang_dir, platform):
     """The captured files present, in store order."""
     out = []
-    for name in STORE_ORDER:
+    for name in STORE_ORDER.get(platform, STORE_ORDER["default"]):
         path = os.path.join(lang_dir, f"{name}-{platform}.png")
         if os.path.exists(path):
             out.append(path)

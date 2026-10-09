@@ -21,8 +21,9 @@ anywhere: there is no such screen, which makes this easy.
 ## Workflow — one command, unattended
 
 ```sh
-make shots-all                 # all three platforms, no prompts
+make shots-all                 # iPhone, iPad, Mac and watch — no prompts
 make shots PLATFORM=iphone AUTO=1   # one platform
+make watch-shots SET=asc            # the watch's store set alone
 ```
 
 Every shot names its APPEARANCE, the Light ones included: the app defaults
@@ -40,8 +41,9 @@ by hand, so the set is reproducible and CI-able; `organize-shots.py
 
 Capture waits for the screen to STOP MOVING rather than sleeping a fixed
 time: a dial is a live reading converging on its target, so the script
-compares consecutive grabs and shoots when under 2% of the frame
-changes. A shot that never settles is captured anyway with a warning —
+compares consecutive grabs and shoots when under 0.2% of the frame
+changes — a measured threshold, not a guessed one (settled frames differ
+by ~0.01%, two different screens by ~1.7%; see `Scripts/asc/frame-delta.py`). A shot that never settles is captured anyway with a warning —
 that belongs in the image as evidence, not in a hang.
 
 Interactive mode (no `AUTO=1`) remains for judging a NEW shot before it
@@ -87,12 +89,29 @@ Without a pose, a built-in score loops through a flat-ish open G, its octave,
 and the D+A pair — that's `make demo-*` for layout judging, and what the UI
 tests stage against.
 
+## The watch set
+
+The watch app ships inside the iOS app, and its screenshots live in the
+**same iOS record** as the phone's and the iPad's — one more set
+(`APP_WATCH_ULTRA`), not a platform of its own. Three shots, captured off
+an **Apple Watch Ultra simulator** (49 mm, 422×514, one of the sizes ASC
+accepts for that set):
+
+1. **reading** — A4 green at +2¢, the string row across the top. Tuning on
+   the wrist.
+2. **pair** — a double stop read as beats (4.1/s), the arc on the
+   interval's error. What no phone tuner does for you hands-free.
+3. **root** — the rack your phone's instruments arrive in.
+
+`make watch-shots` takes the guide's longer set instead (idle, settings,
+all-instruments — states a store carousel has no use for).
+
 ## Sizes
 
 iPhone 6.9" (1320×2868, a Pro Max simulator) · iPad 13" (2064×2752) ·
-Mac 1440×900 logical (2880×1800 captured on Retina; the script pins the
-window). The upload (`screenshots.py`) refuses any other size before it
-touches ASC.
+Apple Watch Ultra (422×514, also accepts 410×502) · Mac 1440×900 logical
+(2880×1800 captured on Retina; the script pins the window). The upload
+(`screenshots.py`) refuses any other size before it touches ASC.
 
 ## The shots
 

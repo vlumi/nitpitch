@@ -11,16 +11,23 @@ bundle_id="fi.misaki.nitpitch.watchkitapp"
 derived=".build-xcode"
 
 # The newest available Apple Watch simulator.
-udid="$(xcrun simctl list devices available --json | python3 -c '
-import json, sys
+# DEVICE picks a model by name fragment ("Ultra" for ASC screenshots,
+# whose display types are per size); unset takes the newest runtime's
+# newest watch, which is the right default for just running the thing.
+udid="$(DEVICE="${DEVICE:-}" xcrun simctl list devices available --json | python3 -c '
+import json, os, sys
 d = json.load(sys.stdin)["devices"]
+wanted = os.environ.get("DEVICE") or ""
 best = None  # (runtime-sortable, udid)
 for runtime, devs in d.items():
     if "watchOS" not in runtime:
         continue
     for dev in devs:
-        if dev.get("isAvailable") and "Watch" in dev["name"]:
-            best = max(best or ("", ""), (runtime, dev["udid"]))
+        if not (dev.get("isAvailable") and "Watch" in dev["name"]):
+            continue
+        if wanted and wanted.lower() not in dev["name"].lower():
+            continue
+        best = max(best or ("", ""), (runtime, dev["udid"]))
 print(best[1] if best else "")
 ')"
 [ -n "$udid" ] || { echo "error: no watchOS simulator available" >&2; exit 1; }

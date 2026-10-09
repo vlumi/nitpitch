@@ -21,6 +21,10 @@ from _client import ASC  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# Platform keys that may appear beside the locales in `version`, carrying
+# overrides rather than a whole listing (see the loop below).
+PLATFORM_SCOPES = {"IOS", "MAC_OS"}
+
 # ASC attribute keys, in the two localization scopes.
 APPINFO_FIELDS = ["name", "subtitle", "privacyPolicyUrl"]
 VERSION_FIELDS = [
@@ -33,15 +37,26 @@ LIMITS = {"name": 30, "subtitle": 30, "keywords": 100, "promotionalText": 170,
           "description": 4000, "whatsNew": 4000}
 
 
+def over_limit(scope, locale, fields):
+    """The fields in `fields` that exceed ASC's length limit."""
+    return [
+        f"  {scope} [{locale}] {field}: {len(text)} > {LIMITS[field]}"
+        for field, text in fields.items()
+        if field in LIMITS and len(text) > LIMITS[field]
+    ]
+
+
 def check_limits(doc):
     bad = []
     for scope in ("appInfo", "version"):
         for locale, fields in doc.get(scope, {}).items():
-            for field, text in fields.items():
-                limit = LIMITS.get(field)
-                if limit and len(text) > limit:
-                    bad.append(f"  {scope} [{locale}] {field}: "
-                               f"{len(text)} > {limit}")
+            if locale in PLATFORM_SCOPES:
+                # A platform override: check its own fields under its own
+                # locales, not as if the platform name were a locale.
+                for sub_locale, sub_fields in fields.items():
+                    bad += over_limit(scope, f"{locale}/{sub_locale}", sub_fields)
+                continue
+            bad += over_limit(scope, locale, fields)
     if bad:
         sys.exit("Over ASC length limits:\n" + "\n".join(bad))
 
@@ -127,6 +142,15 @@ def main():
             want = doc["version"].get(locale)
             if not want:
                 continue
+            # Per-platform overrides: `version.IOS` / `version.MAC_OS` layer
+            # on top of the shared text. One description serves both records
+            # almost entirely — but not quite, and the exception matters:
+            # the watch app ships inside the iOS record, so advertising it
+            # on the Mac's would promise something that record cannot
+            # deliver.
+            override = doc["version"].get(platform, {}).get(locale)
+            if override:
+                want = {**want, **override}
             changed += patch_localization(
                 asc, "appStoreVersionLocalizations", loc["id"], want,
                 loc["attributes"], fields, args.apply,

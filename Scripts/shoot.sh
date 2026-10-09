@@ -56,11 +56,15 @@ COMMON_ARGS="-demo -uitest-clean"
 # and captures anyway — a shot that never settles belongs in the image as
 # evidence, not in a hang.
 settle_capture() {  # $1 = output file
-    local previous="" tries=0 max=15 tolerance=2
+    # 0.2%: measured, not guessed — see frame-delta.py on why this number
+    # is so much smaller than it looks like it should be.
+    local previous="" tries=0 max=15 tolerance=0.2
     local scratch; scratch="$(mktemp -d)"
     while [ "$tries" -lt "$max" ]; do
         capture "$scratch/now.png"
-        if [ -n "$previous" ] && frame_delta "$previous" "$scratch/now.png" "$tolerance"; then
+        if [ -n "$previous" ] \
+            && Scripts/asc/frame-delta.py "$previous" "$scratch/now.png" "$tolerance"
+        then
             mkdir -p "$(dirname "$1")"
             mv "$scratch/now.png" "$1"
             rm -rf "$scratch"
@@ -76,39 +80,6 @@ settle_capture() {  # $1 = output file
     rm -rf "$scratch"
 }
 
-# True when under $3 percent of the pixels differ between $1 and $2.
-frame_delta() {
-    python3 - "$1" "$2" "$3" <<'PY'
-import struct, sys, zlib
-
-def rows(path):
-    data = open(path, "rb").read()
-    pos, width, height, raw = 8, 0, 0, b""
-    while pos < len(data):
-        length, kind = struct.unpack(">I4s", data[pos:pos + 8])
-        body = data[pos + 8:pos + 8 + length]
-        if kind == b"IHDR":
-            width, height = struct.unpack(">II", body[:8])
-        elif kind == b"IDAT":
-            raw += body
-        elif kind == b"IEND":
-            break
-        pos += length + 12
-    return width, height, zlib.decompress(raw)
-
-aw, ah, a = rows(sys.argv[1])
-bw, bh, b = rows(sys.argv[2])
-if (aw, ah) != (bw, bh):
-    sys.exit(1)
-# Sample every 97th byte: enough to see a layout change, cheap enough to
-# run twice a second (97 is prime, so the stride never aligns with the
-# row stride and sees the same column every time).
-step = 97
-differing = sum(1 for i in range(0, min(len(a), len(b)), step) if a[i] != b[i])
-total = max(1, len(range(0, min(len(a), len(b)), step)))
-sys.exit(0 if differing * 100 / total < float(sys.argv[3]) else 1)
-PY
-}
 
 capture() {  # $1 = output file
     mkdir -p "$(dirname "$1")"

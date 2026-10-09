@@ -25,6 +25,12 @@ make shots-all                 # all three platforms, no prompts
 make shots PLATFORM=iphone AUTO=1   # one platform
 ```
 
+Every shot names its APPEARANCE, the Light ones included: the app defaults
+to `.system`, so a Mac set captured on a machine in Dark came out entirely
+dark but for the deliberate twin (found the hard way — the simulators
+default to Light, so iPhone and iPad hid it). A screenshot must not depend
+on whose machine took it.
+
 **Every ASC shot is fully declared in launch arguments** — `-demo-pose`
 stages what SOUNDS, `-demo-stage` stages the state around it (stars, a
 pin, the reference, the temperament, Dark, which sheet is open), and

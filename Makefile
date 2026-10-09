@@ -165,21 +165,25 @@ shots: Nitpitch.xcodeproj  ## Screenshot capture: PLATFORM=iphone|ipad|mac [AUTO
 	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(OUT)" AUTO="$(AUTO)" Scripts/shoot.sh
 
 .PHONY: shots-all
-shots-all: Nitpitch.xcodeproj  ## The whole ASC set, unattended: all three platforms
+shots-all: Nitpitch.xcodeproj  ## Every image the project publishes: ASC set + the guide's watch shots
 	@for p in iphone ipad mac; do \
 		echo "── $$p ──"; \
 		PLATFORM=$$p OUT="$(OUT)" AUTO=1 Scripts/shoot.sh || exit 1; \
 	done
+	@echo "── watch ──"
+	@SET=asc OUT="$(OUT)" Scripts/watch-shots.sh || exit 1
 	@echo ""
-	@echo "All three platforms captured. Review, then: make asc-screenshots(-apply)"
+	@echo "All four sets captured. Review, then:"
+	@echo "  make asc-screenshots        # dry run"
+	@echo "  make asc-screenshots-apply  # upload"
 
 .PHONY: guide-shots
 guide-shots: Nitpitch.xcodeproj  ## Capture the site guide's shots: PLATFORM=iphone|mac [OUT=guide-shots]
 	@PLATFORM="$(filter-out all,$(PLATFORM))" OUT="$(or $(OUT),guide-shots)" SET=guide Scripts/shoot.sh
 
 .PHONY: watch-shots
-watch-shots: Nitpitch.xcodeproj  ## Capture the site guide's watch shots into guide-shots/watch
-	@Scripts/watch-shots.sh
+watch-shots: Nitpitch.xcodeproj  ## The guide's watch shots: SET=asc for the store set instead
+	@SET="$(SET)" OUT="$(OUT)" Scripts/watch-shots.sh
 
 .PHONY: shots-organize
 shots-organize:  ## Rename freehand captures: PLATFORM=iphone|ipad|mac DIR=<folder>

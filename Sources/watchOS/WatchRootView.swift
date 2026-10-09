@@ -49,7 +49,14 @@ struct WatchRootView: View {
             // (or `chromatic`) lands straight on the screen being judged —
             // simulator screenshots without scripting taps.
             .task {
-                guard path.isEmpty, let route = LaunchStores.demoRoute else { return }
+                // The instrument half only: `-demo-open violin:2` means the
+                // A string on the phone, where strings have their own
+                // screens. The wrist's pane IS the instrument screen (the
+                // crown picks the string), so the index has nothing to
+                // address here and is ignored rather than pushed as a route
+                // named "violin:2".
+                guard path.isEmpty, let route = LaunchStores.demoRouteInstrument
+                else { return }
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 path = [route]
             }

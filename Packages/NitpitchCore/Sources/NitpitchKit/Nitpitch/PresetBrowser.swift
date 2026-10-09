@@ -32,6 +32,9 @@ struct PresetBrowser: View {
     @State private var renaming: Preset?
     @State private var renameText = ""
     @State private var sharing: Preset?
+    /// A staged screenshot's share sheet (`-demo-stage share=drop-d`),
+    /// opened once this browser is itself on screen.
+    @State private var stagedShare = false
     /// A preset waiting for the user to say WHICH of several fitting
     /// instruments to load it onto.
     @State private var choosingInstrument: Preset?
@@ -124,6 +127,14 @@ struct PresetBrowser: View {
                 PresetShareView(
                     link: PresetLink(preset),
                     summary: PresetPayloadSummary.text(for: preset))
+            }
+            // The staged share sheet: this browser is on screen, so the
+            // sheet it owns can open on top of it.
+            .task {
+                guard !stagedShare, let wanted = DemoStage.current?.share else { return }
+                stagedShare = true
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                sharing = DemoStage.preset(named: wanted, in: presets)
             }
         }
         #if os(macOS)

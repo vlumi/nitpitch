@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/vlumi/nitpitch/actions/workflows/ci.yml/badge.svg)](https://github.com/vlumi/nitpitch/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/vlumi/nitpitch/branch/main/graph/badge.svg)](https://codecov.io/gh/vlumi/nitpitch)
 
+**[Download on the App Store](https://apps.apple.com/app/id6796988974)** — one purchase covers iPhone, iPad, and Mac.
+
 A tuner for violin, guitar, bass, and more — on iPhone, iPad, Mac, and Apple Watch. Born **violin**-first, for the way string players actually tune, and every bit as at home on a guitar or bass.
 
 *Nitpicking about pitch, which is the entire job.*

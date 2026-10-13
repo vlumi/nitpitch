@@ -2,7 +2,7 @@
 
 Planned work only — if it's not planned, it's not here. Settled decisions and their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** v0.2.0 build 10 on beta — iPhone, Mac, and the watch (embedded in every iPhone build and standalone-installable from the watch's own App Store). The sync-robustness round is built and unit-proven; its cross-device field pass is the open verification. The version number waits for a release that earns it.
+**Where things stand:** **1.0.0 (build 19) is on the App Store** — iOS released 2026-10-10, carrying the watch app; the Mac build of the same version is in review. [apps.apple.com/app/id6796988974](https://apps.apple.com/app/id6796988974). What follows is what a shipped app still owes: the field checks below, and the features worth considering once real users ask for them.
 
 ## 1. Other features worth considering
 
@@ -16,8 +16,7 @@ Planned work only — if it's not planned, it's not here. Settled decisions and 
 
 Not scheduled for any near milestone — the pile that matters when an App Store release does.
 
-- **Store submission legwork** — the plumbing is built and the capture is unattended; what remains is running it and the parts only a human can: `make shots-all` (iPhone, iPad, Mac, watch) then `make asc-screenshots-apply`, `make asc-listing-apply` for the text, the review notes from `Scripts/asc/REVIEW-NOTES.md` pasted into both platform records, and ASC's own questionnaires — App Privacy, age rating, pricing — by hand. The Mac leg needs Screen Recording and Accessibility granted to the capturing terminal once, with a terminal restart after.
-- **Screenshots in CI** — capture is unattended now (`make shots-all`: every ASC set plus the guide's watch shots, each shot's state declared in launch arguments), so a workflow could re-render the set on a UI change and fail when a shot stops showing what its description claims. What's missing is the comparison: "different from last time" is noise on a live dial, and the settle check's own tolerance (`Scripts/asc/frame-delta.py`) is the beginnings of an answer rather than a finished one. Worth it when a layout regression has actually reached a release; not before.
+- **The Mac's release**, once review passes: the same 1.0.0 build 19, released manually like iOS. The listing, screenshots and review notes are already in place for it (`Scripts/asc/`), so nothing remains but the button.
 - **Beta verification of unowned instruments** (viola, cello, double bass) — the digital piano verifies range in five minutes per instrument; timbre needs real players via TestFlight's "What to Test". No in-app "experimental" badge either way: it would communicate risk the math doesn't have, and a badge never bowed a cello.
 - **Bass through the phone microphone** — *passed on b16 (2026-08-21)*: bass through an amp reads fine at the iPhone, and violin D+G double stops stay legible (both strings' values readable, the interval delta continuously visible). Still open on this item: the iRig path on iOS specifically, and device hot-plug swapping capture over live.
 - **Two open guitar checks** (the high-e capture resolved on Mac/iRig; see CHANGELOG and the field notes in git history):

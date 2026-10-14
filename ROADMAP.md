@@ -2,7 +2,7 @@
 
 Planned work only — if it's not planned, it's not here. Settled decisions and their rationale live in [AGENTS.md](AGENTS.md); what has shipped, and when, is in [CHANGELOG.md](CHANGELOG.md).
 
-**Where things stand:** **1.0.0 (build 19) is on the App Store** — iOS released 2026-10-10, carrying the watch app; the Mac build of the same version is in review. [apps.apple.com/app/id6796988974](https://apps.apple.com/app/id6796988974). What follows is what a shipped app still owes: the field checks below, and the features worth considering once real users ask for them.
+**Where things stand:** **1.0.0 (build 19) is on the App Store, everywhere it goes** — iOS released 2026-10-10 carrying the watch app, macOS 2026-10-14, one Universal Purchase: [apps.apple.com/app/id6796988974](https://apps.apple.com/app/id6796988974). What follows is what a shipped app still owes — the field checks below, now about real users rather than a reviewer — and the features worth considering once someone asks for them.
 
 ## 1. Other features worth considering
 
@@ -12,11 +12,13 @@ Planned work only — if it's not planned, it's not here. Settled decisions and 
 - **A freeze control for the string view** — hands-free following is always on (watch parity, by field verdict); a snowflake to pin the screen to one string would be the opt-out, off by default, self-clearing on a manual string switch, with a keyboard shortcut on the Mac. Deferred as complication without a demonstrated need: a swipe already overrides any walk, and work on the focused string already resets every rival's claim.
 - **"Everything sounding" display** (watch first, maybe iOS/Mac): show all recognized pitches with debounced switching — appearance is already confirmation-gated and disappearance quiet-frames-gated; the new piece is switching hysteresis (the shown pitch keeps the screen until a rival is confidently louder/closer for N frames). With an instrument chosen this is the grid the phone already has; target-free (chromatic) polyphony needs a candidate-fundamental corroboration sweep — real DSP work, bounded, not yet earned. The bowed-only copy constraint (AGENTS.md) applies to any such display.
 
-## 2. Toward 1.0
+## 2. Owed to the app that shipped
 
-Not scheduled for any near milestone — the pile that matters when an App Store release does.
+1.0 is out, so this is no longer a countdown — it's the list of things real
+users can hit and the verifications still owed. Nothing here blocks anyone
+from tuning an instrument today; each entry says what would change if it
+were wrong.
 
-- **The Mac's release**, once review passes: the same 1.0.0 build 19, released manually like iOS. The listing, screenshots and review notes are already in place for it (`Scripts/asc/`), so nothing remains but the button.
 - **Beta verification of unowned instruments** (viola, cello, double bass) — the digital piano verifies range in five minutes per instrument; timbre needs real players via TestFlight's "What to Test". No in-app "experimental" badge either way: it would communicate risk the math doesn't have, and a badge never bowed a cello.
 - **Bass through the phone microphone** — *passed on b16 (2026-08-21)*: bass through an amp reads fine at the iPhone, and violin D+G double stops stay legible (both strings' values readable, the interval delta continuously visible). Still open on this item: the iRig path on iOS specifically, and device hot-plug swapping capture over live.
 - **Two open guitar checks** (the high-e capture resolved on Mac/iRig; see CHANGELOG and the field notes in git history):

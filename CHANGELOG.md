@@ -14,7 +14,10 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 - **Double stops read again on older phones.** Bowing two strings at once on an A12-era device (iPhone XS/XR, iPad 8) could leave only one of them reading, the quieter one dropping out — a regression from build 18, when the app started discarding audio frames to stay responsive on slow hardware. Reading two strings at once depends on consecutive frames, so what gets discarded now always leaves enough of them intact. Field-found on a violin's D and G.
 
-## [1.0.0] — unreleased
+## [1.0.0] — 2026-10-10
+
+The first release: iOS (carrying the watch app) on 2026-10-10, macOS on
+2026-10-14, one Universal Purchase.
 
 ### build 19 — 2026-10-06
 

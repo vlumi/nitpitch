@@ -10,6 +10,8 @@ Apple builds are identified as `version (build)`; the build number is shared acr
 
 ### Unreleased (next build)
 
+- **Double stops read again on older phones.** Bowing two strings at once on an A12-era device (iPhone XS/XR, iPad 8) could leave only one of them reading, the quieter one dropping out — a regression from build 18, when the app started discarding audio frames to stay responsive on slow hardware. Reading two strings at once depends on consecutive frames, so what gets discarded now always leaves enough of them intact. Field-found on a violin's D and G.
+
 ### build 19 — 2026-10-06
 
 - **Sync's iCloud check no longer races itself.** Whether this device is signed in to iCloud is read on a background thread (the check can stall on a cold start) and cleared on the main one when the account changes — two threads touching the same value with nothing between them. Harmless in practice, undefined in principle, and now properly guarded.

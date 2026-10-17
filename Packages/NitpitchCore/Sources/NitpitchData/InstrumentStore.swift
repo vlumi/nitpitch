@@ -320,9 +320,9 @@ public final class InstrumentStore: ObservableObject {
     /// **The string count cannot change here**, and the guard is the
     /// store's rather than the UI's: an instrument's shape is fixed once it
     /// exists (a seven-string guitar is a different instrument, made
-    /// through the creation sheet). Allowing it stranded every preset saved
-    /// at the old shape — a preset loads only onto an instrument with the
-    /// same number of strings — and left the live screen holding a dial per
+    /// through the creation sheet). Changing it strands every preset saved
+    /// at the old shape, since a preset loads only onto an instrument with
+    /// the same string count, and leaves any live screen holding a dial per
     /// old string.
     public func setEditedStrings(id: String, _ strings: [Int]) {
         guard let current = unlocked(id), !strings.isEmpty,

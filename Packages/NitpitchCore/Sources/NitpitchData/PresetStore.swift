@@ -136,9 +136,9 @@ public final class PresetStore: ObservableObject {
     /// template's own definition, the user's name when the pitches match a
     /// preset of theirs, "Custom" otherwise.
     ///
-    /// This replaces the old catalog matching for everything past Standard:
-    /// hand-tune to drop D and the pill says whatever YOUR "Drop D" is
-    /// called — renamed it, and it shows your word; deleted it, and the
+    /// Past Standard the name comes from the user's own collection, never
+    /// the catalog: hand-tune to drop D and the pill says whatever YOUR
+    /// "Drop D" is called; rename it and it follows; delete it and the
     /// honest answer is Custom, because nothing you own has that name.
     public func tuningDisplayName(for instance: InstrumentInstance) -> String {
         if let template = instance.template, template.strings == instance.strings {

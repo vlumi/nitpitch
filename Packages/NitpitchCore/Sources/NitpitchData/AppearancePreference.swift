@@ -6,8 +6,8 @@ import AppKit
 
 /// Whether the app follows the system appearance or forces one.
 ///
-/// Ported from donpa, including the three traps its comments record — each was
-/// found the hard way, and none of them fail loudly.
+/// Three traps below, none of which fail loudly: read them before changing
+/// how the scheme is resolved or applied.
 public enum AppearancePreference: String, CaseIterable, Identifiable, Codable, Sendable {
     case system
     case light

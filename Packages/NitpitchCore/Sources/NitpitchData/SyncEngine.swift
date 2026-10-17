@@ -333,8 +333,9 @@ struct SettingScalar: Codable, Equatable {
 }
 
 /// The v1 settings blob, kept decode-only for the one-shot migration into
-/// per-setting flags. Whole-value LWW on this is what a wrong stamp once
-/// used to wipe months of stars with — see `migrateSettingsBlobIfNeeded`.
+/// per-setting flags (`migrateSettingsBlobIfNeeded`). Whole-value LWW here
+/// means one wrong stamp can wipe every star and pin at once, which is why
+/// the flags replaced it.
 struct SyncedSettings: Codable, Equatable {
     var favorites: [String]
     var presetPins: [PresetPin]

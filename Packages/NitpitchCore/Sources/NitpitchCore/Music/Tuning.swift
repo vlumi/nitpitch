@@ -27,8 +27,8 @@ extension Instrument {
     ///
     /// Standard is the only tuning that is a fact about the TEMPLATE rather
     /// than a thing a user owns: it's what the instrument's name means.
-    /// Everything else that used to live here (Drop D, DADGAD, the opens)
-    /// ships as factory-SEEDED PRESETS instead (`factoryTunings`, seeded by
+    /// Everything else (Drop D, DADGAD, the opens)
+    /// ships as factory-SEEDED PRESETS (`factoryTunings`, seeded by
     /// `PresetStore`): present by default, but ordinary — deletable,
     /// renameable, shareable, synced. The long tail (scordatura, historical
     /// setups) lives on nitpitch.app as links, and the seeded ones are

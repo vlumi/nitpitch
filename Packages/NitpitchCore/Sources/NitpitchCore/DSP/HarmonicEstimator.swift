@@ -55,11 +55,10 @@ public final class HarmonicEstimator {
         /// not purity: at a hot input gain the OTHER strings' leftover
         /// rings rise out of the floor and land in the odd slots (a guitar
         /// A's 4th harmonic is the D string's 3rd slot, a low E's 3rd is
-        /// the B string's 1st), and a strict all-even test let one faint
-        /// ring partial flip the whole octave claim (field-found: raising
-        /// the input volume broke intonation on every string). Intonation
-        /// checking is built on this parity: one target, and the octave
-        /// recognized by what's missing.
+        /// the B string's 1st), so a strict all-even test lets one faint
+        /// ring partial flip the whole octave claim. Intonation checking
+        /// is built on this parity: one target, and the octave recognized
+        /// by what's missing.
         public let evenPartialsOnly: Bool
         /// The lowest partial order behind the estimate — 1 when the note's
         /// own fundamental was evidence. The harmonic lenses require

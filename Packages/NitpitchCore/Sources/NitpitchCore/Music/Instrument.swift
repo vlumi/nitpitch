@@ -64,15 +64,13 @@ public struct Instrument: Equatable, Hashable, Identifiable, Sendable {
     /// needs to be found and shown as flat, and stopped notes go well above
     /// the open top string.
     ///
-    /// The top reaches past the highest string's OCTAVE, not merely to it.
-    /// Both of this screen's jobs beyond plain tuning live up there and were
-    /// starving at the old +12 (field-found on a guitar): the intonation
-    /// check's second note is the top string's 12th fret — at exactly +12 it
-    /// sat on the band's own edge and flickered in and out frame by frame —
-    /// and the 3rd-harmonic lens needs 3·f, a fifth above that octave, which
-    /// fell outside the band entirely and simply never read. Twenty semitones
-    /// is 3·f (19.02) plus the estimator's own search window, so the lens has
-    /// somewhere to look rather than landing on the edge.
+    /// The top must reach PAST the highest string's octave, not merely to
+    /// it, because both jobs beyond plain tuning live up there: the
+    /// intonation check's second note is the top string's 12th fret, which
+    /// at exactly +12 sits on the band's own edge and flickers frame by
+    /// frame, and the 3rd-harmonic lens needs 3·f — a fifth above that
+    /// octave. Twenty semitones is 3·f (19.02) plus the estimator's search
+    /// window, so the lens has somewhere to look rather than an edge.
     public func band(reference: ReferencePitch = .standard) -> ClosedRange<Double> {
         guard let lowest = strings.min(), let highest = strings.max() else {
             return Detection.fullBand

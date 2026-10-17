@@ -24,12 +24,11 @@ public struct SettleMeter: Equatable, Sendable {
     /// bow wobble is a frame or two — the green must outlive its own
     /// announcement.
     public static let unsettleFrames = 8
-    /// What one out-of-tune reading costs the building verdict. A reset was
-    /// too harsh for a bowed string: uneven bow pressure bends the pitch
-    /// past the band for a frame or two, over and over, and every excursion
-    /// restarted the count from zero (field-found on a violin). Four means
-    /// in-tune evidence must outnumber wobble four to one to net forward —
-    /// a genuinely borderline string, half in and half out, never settles.
+    /// What one out-of-tune reading costs the building verdict. A cost
+    /// rather than a reset, because uneven bow pressure bends the pitch
+    /// past the band for a frame or two repeatedly, and resetting means a
+    /// bowed string can never settle. Four is the ratio in-tune evidence
+    /// must beat: a string half in and half out still never settles.
     public static let outOfTuneDecay = 4
 
     public private(set) var isSettled = false

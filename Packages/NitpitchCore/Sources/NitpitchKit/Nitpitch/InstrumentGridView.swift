@@ -391,12 +391,11 @@ struct InstrumentGridView: View {
                 }
                 .disabled(instance.isLocked)
             }
-            // The mode choice, visible where you look while playing — a
-            // buried menu toggle answered "why is the octave row there?"
-            // with a scavenger hunt (field-found). Fretted only: the check
-            // serves saddle work, and a violin has no saddle to move — so
-            // each family wears exactly one chip here, temperament or
-            // intonation, never both.
+            // The mode choice, visible where you look while playing: a
+            // buried toggle leaves "why is the octave row there?" a
+            // scavenger hunt. Fretted only, since the check serves saddle
+            // work and a violin has no saddle — each family wears exactly
+            // one chip here, temperament or intonation, never both.
             if instance.template?.family == .fretted {
                 IntonationChip(mode: intonationMode, identifier: "grid.intonation")
             }

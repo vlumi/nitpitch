@@ -207,12 +207,11 @@ struct StringView: View {
             // resolution. Rightward crawl = sharp; stationary = there.
             StrobeBand(strobe: single.tuner.strobe)
             stringSwitcher
-            // The octave's tuner and the intonation verdict — shown while
-            // the CHECK is running (the chip below starts it): checking
-            // intonation is a different activity from tuning, and in tuning
-            // mode a 12th-fret note is simply the string, no question asked
-            // (field-found: the ambient panel kept turning honest ambiguity
-            // into wrong answers).
+            // The octave's tuner and the intonation verdict, shown while
+            // the CHECK is running (the chip below starts it). In tuning
+            // mode a 12th-fret note is simply the string, no question
+            // asked — answering that question uninvited turns honest
+            // ambiguity into wrong answers.
             if intonationMode.isChecking {
                 IntonationPanel(
                     monitor: single.intonation,

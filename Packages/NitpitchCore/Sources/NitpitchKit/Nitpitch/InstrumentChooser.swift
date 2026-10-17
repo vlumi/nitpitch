@@ -393,7 +393,6 @@ struct InstrumentChooser: View {
     }
 }
 
-// The sync switch used to live at the foot of this list; it moved to
-// Settings (both platforms — the Mac's ⌘, window included), where an
-// account-scoped mode is looked for. Most users never need it, and the
-// two-device user who does will find Settings.
+// The sync switch lives in Settings (both platforms, the Mac's ⌘, window
+// included), not here: an account-scoped mode is looked for there, most
+// users never need it, and the two-device user who does will find it.

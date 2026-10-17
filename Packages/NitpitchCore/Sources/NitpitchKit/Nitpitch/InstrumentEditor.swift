@@ -7,13 +7,12 @@ import SwiftUI
 ///
 /// **The string COUNT is fixed once an instrument exists.** A six-string
 /// guitar doesn't become a seven-string guitar; that's a different
-/// instrument. Allowing it here was a real bug in both directions: the live
-/// screen kept a dial per old string (the tuners are built per string and
-/// were silently truncated), and every preset saved at the old shape was
-/// stranded, since a preset only loads onto an instrument with the same
-/// number of strings. "Change string count…" leads to the creation sheet
-/// instead, prefilled from this instrument — the honest move, and the one
-/// that leaves the original intact.
+/// instrument. Changing it here breaks two things at once: a live screen
+/// holds a dial per old string (the tuners are built per string), and every
+/// preset saved at the old shape is stranded, since a preset only loads
+/// onto an instrument with the same string count. "Change string count…"
+/// leads to the creation sheet instead, prefilled from this instrument,
+/// which leaves the original intact.
 ///
 /// Pitch nudges keep a loaded preset's claim, like the string view's
 /// stepper.

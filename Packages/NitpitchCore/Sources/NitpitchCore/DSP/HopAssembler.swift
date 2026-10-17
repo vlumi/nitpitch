@@ -31,10 +31,32 @@ public struct HopAssembler {
         public static let empty = Batch(windows: [], gapBefore: false)
     }
 
-    /// Two windows in flight is ~90 ms of lag at most before dropping
-    /// begins — one being analyzed, one waiting — which is at the edge of
-    /// what a dial can hide and well before the reading feels late.
-    public static let defaultMaxInFlight = 2
+    /// Six windows in flight is ~280 ms of lag at most before dropping
+    /// begins — two full runs (see `keepWindowsInRunsOf`). Two was tighter
+    /// and wrong: the cap is the budget a kept RUN is taken from, and a cap
+    /// below one run means every burst discards everything, which is what
+    /// took a double stop down to one string on an A12. The lag is the
+    /// price of reading at all on a device that falls behind, and a dial
+    /// hides it better than it hides a string that never lights.
+    public static let defaultMaxInFlight = 6
+
+    /// What a kept RUN of windows must contain to light a dial, and why
+    /// it is three rather than two.
+    ///
+    /// The spectral engine — the only one that reads two strings at once,
+    /// MPM being monophonic — measures frequency from the phase advance
+    /// between CONSECUTIVE windows, so after a discontinuity the first
+    /// window only rebuilds the reference and the second is the first that
+    /// can measure. On top of that sits the confirmation rule: a dial
+    /// lights after two AGREEING frames, never one. Two measurements means
+    /// three consecutive windows, and a run of two can never light
+    /// anything — it yields a single measurement that confirmation
+    /// correctly swallows.
+    ///
+    /// Field-found on an A12 iPhone (XR): bowing a violin's D and G, only
+    /// G read. Before b18 nothing was ever dropped (the backlog trim was
+    /// dead code), so this is the cost of making dropping real.
+    static let keepWindowsInRunsOf = 3
 
     public private(set) var droppedWindows = 0
 
@@ -66,10 +88,15 @@ public struct HopAssembler {
         }
         guard !windows.isEmpty else { return .empty }
 
-        let room = max(0, maxInFlight - inFlight)
+        var room = max(0, maxInFlight - inFlight)
         if windows.count > room {
             // Keep the NEWEST: a tuner shows what is sounding now, and the
-            // discarded windows were the oldest news in the batch.
+            // discarded windows were the oldest news in the batch. But keep
+            // an EVEN number of them, so what survives is a consecutive
+            // PAIR the spectral engine can actually measure across — an odd
+            // tail would be a window whose predecessor we just discarded,
+            // which costs a phase reset and reads nothing.
+            room -= room % Self.keepWindowsInRunsOf
             droppedWindows += windows.count - room
             windows = Array(windows.suffix(room))
             gapPending = true

@@ -28,29 +28,37 @@ final class HopAssemblerTests: XCTestCase {
     }
 
     func testASlowConsumerDropsTheOldestAndAnnouncesTheGap() {
-        var assembler = HopAssembler(windowSize: 8, hopSize: 4, maxInFlight: 2)
-        // Enough samples for five windows at once, nothing finished yet.
-        let batch = assembler.append(ramp(from: 0, count: 8 + 4 * 4))
-        XCTAssertEqual(batch.windows.count, 2, "capped at the in-flight bound")
-        XCTAssertTrue(batch.gapBefore, "three windows were discarded before these")
-        XCTAssertEqual(batch.windows.first, ramp(from: 12, count: 8), "the newest survive")
-        XCTAssertEqual(assembler.droppedWindows, 3)
+        var assembler = HopAssembler(windowSize: 8, hopSize: 4, maxInFlight: 6)
+        // Enough samples for eight windows at once, nothing finished yet.
+        let batch = assembler.append(ramp(from: 0, count: 8 + 7 * 4))
+        XCTAssertEqual(batch.windows.count, 6, "capped at the in-flight bound")
+        XCTAssertEqual(
+            batch.windows.count % 3, 0,
+            "and rounded DOWN to whole runs — a stranded window measures nothing")
+        XCTAssertTrue(batch.gapBefore, "two windows were discarded before these")
+        XCTAssertEqual(batch.windows.first, ramp(from: 8, count: 8), "the newest survive")
+        XCTAssertEqual(assembler.droppedWindows, 2)
+        for (first, second) in zip(batch.windows, batch.windows.dropFirst()) {
+            XCTAssertEqual(
+                Array(first.suffix(4)), Array(second.prefix(4)),
+                "what survives is CONSECUTIVE: the phase pair must not span a discard")
+        }
 
         // Still nothing finished: everything new is dropped, nothing queued.
-        let starved = assembler.append(ramp(from: 24, count: 8))
+        let starved = assembler.append(ramp(from: 32, count: 8))
         XCTAssertEqual(starved, .empty)
-        XCTAssertEqual(assembler.droppedWindows, 5, "one more window, dropped")
+        XCTAssertEqual(assembler.droppedWindows, 4, "two more windows, dropped")
 
-        // The consumer catches up: the next yield still carries the gap.
-        assembler.finished(2)
-        let resumed = assembler.append(ramp(from: 32, count: 4))
-        XCTAssertEqual(resumed.windows.count, 1)
+        // The consumer catches up by a whole run: the next yield carries
+        // the gap, and a run's worth of windows.
+        assembler.finished(3)
+        let resumed = assembler.append(ramp(from: 40, count: 12))
+        XCTAssertEqual(resumed.windows.count, 3, "a whole run, never a stranded window")
         XCTAssertTrue(
             resumed.gapBefore, "the discard is announced on the first window after it")
 
-        assembler.finished(1)
-        let steady = assembler.append(ramp(from: 36, count: 4))
-        XCTAssertEqual(steady.windows.count, 1)
+        assembler.finished(3)
+        let steady = assembler.append(ramp(from: 52, count: 12))
         XCTAssertFalse(steady.gapBefore, "announced once, then continuity resumes")
     }
 

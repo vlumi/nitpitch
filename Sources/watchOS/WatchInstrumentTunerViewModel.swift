@@ -179,9 +179,9 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         guard isChecking != on else { return }
         isChecking = on
         // Unconditional, the phone's rule: begin()/end() own the audio
-        // lifecycle (the old `state != .idle` gate encoded it wrongly —
-        // .denied and .unavailable passed it — and with audio stopped an
-        // active analyzer hears nothing anyway).
+        // lifecycle. Gating on `state` here would be a second, wrong copy
+        // of that ownership (.denied and .unavailable are not idle), and
+        // with audio stopped an active analyzer hears nothing anyway.
         analyzer.setActive(on)
         retuneIntonation()
     }
@@ -239,10 +239,10 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         consumeIntonation(frame)
         // The intonation analyzer confidently naming the focused string's
         // OCTAVE is the focused string speaking, even when the bank's
-        // per-band view disagrees (a bass E's 12th-fret note sits in the D
-        // string's BAND, and on frames the spectral engine missed, D was
-        // accumulating rival streak and stealing focus mid-measurement —
-        // resetting the very captures being taken; field-found). Octave
+        // per-band view disagrees: a bass E's 12th-fret note sits in the D
+        // string's BAND, so without this D accumulates rival streak on
+        // every frame the spectral engine misses and steals focus
+        // mid-measurement, resetting the captures being taken. Octave
         // claims ONLY: the open string reads in its own band, so the bank
         // already vouches for it — and the frame's level is the whole
         // window's, honest only while the claimed note dominates it. An
@@ -254,11 +254,10 @@ final class WatchInstrumentTunerViewModel: ObservableObject {
         }
         // Octave claims are parity-flagged and never masquerade as a pair
         // member (the interval readout's rule). Pair mode is BOWED only:
-        // beat-tuning fifths is the violin tradition (and the shipped copy
-        // stance); on a fretted instrument the "pair" is usually a plucked
-        // low string's own harmonics landing in its neighbours' bands
-        // (field-found on a bass: E lighting D+G), and the display got in
-        // tuning's way.
+        // beat-tuning fifths is the violin tradition and the shipped copy
+        // stance, while on a fretted instrument a "pair" is usually a
+        // plucked low string's own harmonics landing in its neighbours'
+        // bands, so the display would sit in tuning's way.
         let resolved: IntervalBeat.Reading?
         let pairFrequencies = results.map { $0.evenPartialsOnly ? nil : $0.frequency }
         if instrument.family == .bowed {

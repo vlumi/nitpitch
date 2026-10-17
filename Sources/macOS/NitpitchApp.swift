@@ -17,9 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct NitpitchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    // Qualified: SwiftUI's `Settings` SCENE shares the bare name on macOS,
-    // and an annotation can't lean on inference the way the old inline
-    // initializer could.
+    // Qualified because SwiftUI's `Settings` SCENE shares the bare name on
+    // macOS, and a type annotation can't fall back on inference.
     @StateObject private var settings: NitpitchKit.Settings
     @StateObject private var store: InstrumentStore
     @StateObject private var presets: PresetStore
@@ -53,12 +52,12 @@ struct NitpitchApp: App {
                 .capturesWhileActive(audio)
                 // A preset link opened from a browser is an EXTERNAL EVENT,
                 // and a WindowGroup answers those by spawning a new scene —
-                // so clicking a shared link with the app open produced a
-                // second tuner window (donpa has the same bug). This is the
-                // existing window volunteering for all of them: macOS then
-                // routes the URL here, through the same `onOpenURL`, and a
-                // new window appears only when none exists — which, since
-                // the app quits with its last window, means at launch.
+                // so without this, a shared link clicked while the app is
+                // open gets a SECOND tuner window. This volunteers the
+                // existing window for all of them: macOS routes the URL
+                // through the same `onOpenURL`, and a new window appears
+                // only when none exists, which (the app quitting with its
+                // last window) means at launch.
                 .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
         .windowResizability(.contentMinSize)

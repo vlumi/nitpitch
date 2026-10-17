@@ -6,9 +6,9 @@ import SwiftUI
 /// each a checkbox, both on by default: a preset is a situation, and the
 /// faithful capture is the default, narrowing it the deliberate act.
 ///
-/// A sheet rather than the old alert, which had one button per payload
-/// combination ("Tuning only" / "Tuning and reference") — a pattern that
-/// stopped scaling the moment temperament became a third dimension.
+/// A sheet rather than an alert: one button per payload combination
+/// ("Tuning only" / "Tuning and reference") stops scaling as soon as
+/// temperament makes a third dimension.
 struct PresetSaver: View {
     let instance: InstrumentInstance
     let naming: NoteNaming

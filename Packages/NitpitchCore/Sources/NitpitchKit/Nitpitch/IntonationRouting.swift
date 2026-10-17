@@ -29,14 +29,13 @@ enum IntonationRouting {
     /// except other strings, which pin the dial by design.
     static let octaveWindowCents = 150.0
 
-    /// The 3rd harmonic sits at 3·f = +1902¢. MPM reports it as exactly
-    /// that — a note at 3f IS a note, and the harmonic FOLDING lives only
-    /// in the spectral path (the lens; see `DetectorBank`), so an
-    /// MPM-carried frame reached the dial as "the open string, nineteen
-    /// hundred cents sharp" (field-found: every string, most of the time,
-    /// while touching the 7th-fret node — a real harmonic is quieter and
-    /// less clean than a bowed note, so spectral often reads nothing and
-    /// the hybrid falls through to MPM).
+    /// The 3rd harmonic sits at 3·f = +1902¢, and MPM reports exactly
+    /// that: a note at 3f IS a note, while the harmonic FOLDING lives only
+    /// in the spectral path (the lens; see `DetectorBank`). Without this,
+    /// an MPM-carried frame reaches the dial as "the open string, nineteen
+    /// hundred cents sharp" — which is most frames at a node, since a real
+    /// harmonic is quieter and less clean than a bowed note, so spectral
+    /// reads nothing and the hybrid falls through to MPM.
     ///
     /// Folded here rather than in the bank, for the same reason the octave
     /// is: the bank answers "what is sounding", and only this screen knows
@@ -55,11 +54,10 @@ enum IntonationRouting {
     ///
     /// `checking` is the intonation mode: the octave SLOT exists only while
     /// the check runs. In plain tuning a 12th-fret note is simply the
-    /// string, so an MPM-carried reading at 2f FOLDS onto the dial the way
-    /// the spectral engine's parity fold already does natively — it used to
-    /// slip through to the octave slot here, silencing the dial and feeding
-    /// a capture no screen was showing (and re-arming the focus boost the
-    /// mode had retired). The 3rd-harmonic fold below is mode-independent:
+    /// string, so an MPM-carried reading at 2f must FOLD onto the dial the
+    /// way the spectral engine's parity fold does natively — routing it to
+    /// the octave slot instead silences the dial and feeds a capture no
+    /// screen is showing. The 3rd-harmonic fold below is mode-independent:
     /// it serves plain tuning.
     static func route(
         result: DetectionResult, frame: IntonationAnalyzer.Frame?, target: Double,

@@ -19,7 +19,7 @@ struct StringListEditor: View {
     /// being decided. False for one that already exists: a six-string
     /// guitar doesn't become a seven-string guitar, it's a different
     /// instrument, and letting the count change under a live screen
-    /// stranded every preset saved at the old shape (see
+    /// strands every preset saved at the old shape (see
     /// `InstrumentEditor`'s "Change string count…").
     var canResize: Bool = true
     let onChange: ([Int]) -> Void

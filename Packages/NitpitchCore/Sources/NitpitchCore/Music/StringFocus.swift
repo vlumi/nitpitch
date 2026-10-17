@@ -2,40 +2,30 @@ import Foundation
 
 /// Which string owns the screen, for hands-free one-string-at-a-time tuning.
 ///
-/// The display stays PINNED to one string — a tuner that jumps to whatever
-/// sounded last is useless mid-adjustment, when a hand crossing the strings
-/// brushes a neighbour every few seconds. Focus moves for exactly three
+/// The display stays PINNED to one string, so a brush from a hand crossing
+/// the strings cannot take it mid-adjustment. Focus moves for exactly three
 /// reasons, in order of authority:
 ///
 /// 1. **An explicit pick** (`select`) — the crown, a tap. Instant, always.
-/// 2. **Deliberate play**: a NEIGHBOURING string sounding *sustained* — a
-///    brush is brief by nature, a string plucked to be tuned rings.
-///    Duration is the honest discriminator, so the rival must hold for
-///    `switchFrames`. Neighbours only: tuning proceeds string to string,
-///    and a distant claim is almost always another string's harmonic
-///    wearing the wrong band (a guitar low E's 12th fret is the D band's
-///    pitch; a played B IS the low E's 3rd harmonic) — the 2:1 and 3:1
-///    coincidences never land next door, because neighbours sit only a
-///    fourth or fifth apart (field-found: the screen jumped across the
-///    instrument chasing harmonics). Adjacency WRAPS: the extreme strings
-///    are each other's neighbours, so finishing a pass on the top string
-///    and replaying the bottom one walks straight back — one pass of big
-///    changes moves the other strings, and the verify pass is the same
-///    string-to-string act. (The 2:1/3:1 coincidences stay away from this
-///    edge too: no shipped extreme pair is an octave or twelfth apart —
-///    guitar's E2/E4 double octave is the nearest case, and a 4th-harmonic
-///    reading strong enough to clear the level and prominence bars isn't a
-///    thing a real pluck produces.) The crown, a swipe, a tap still
-///    reach any string instantly.
-/// 3. **The settled advance** — the hands-free heart: once the focused
-///    string has held in tune for `settledFrames`, it is marked done, and
-///    the switching threshold drops to `switchFramesSettled`: moving on is
-///    now the expected act, so the next string to speak takes the screen
-///    almost immediately. One policy, asymmetric by intent.
+/// 2. **Deliberate play**: a NEIGHBOURING string sounding *sustained* for
+///    `switchFrames`. Duration is the discriminator — a brush is brief, a
+///    string plucked to be tuned rings. Neighbours only, because a distant
+///    claim is usually another string's harmonic wearing the wrong band (a
+///    guitar low E's 12th fret is the D band's pitch; a played B IS that
+///    E's 3rd harmonic), and the 2:1 and 3:1 coincidences cannot land next
+///    door when neighbours sit a fourth or fifth apart. Adjacency WRAPS,
+///    so a verify pass walks from the top string back to the bottom; this
+///    stays safe only while no instrument's extreme pair is an octave or
+///    twelfth apart (guitar's E2/E4 double octave is the closest, and a
+///    4th-harmonic reading cannot clear the level and prominence bars).
+/// 3. **The settled advance**: once the focused string has held in tune
+///    for `settledFrames`, the switching threshold drops to
+///    `switchFramesSettled`, so the next string to speak takes the screen
+///    almost at once. One policy, asymmetric by intent.
 ///
 /// Pure state machine, one `ingest` per analysis frame (~21/s): everything
-/// it knows arrives as arguments, so every rule above is pinned by scripted
-/// sequences in `StringFocusTests`.
+/// it knows arrives as arguments, which is what lets `StringFocusTests`
+/// pin every rule above as a scripted sequence.
 public struct StringFocus: Sendable {
     /// What just happened, for the screen and the wrist (haptics): a focus
     /// change is a click, settling is a success tap.
@@ -48,7 +38,7 @@ public struct StringFocus: Sendable {
         case settled
     }
 
-    /// The settled arithmetic lives in `SettleMeter` — shared with the
+    /// The settled arithmetic lives in `SettleMeter`, shared with the
     /// grid's per-cell verdict.
     /// Frames a rival string must sustain to take focus while the focused
     /// string is still being worked on (~0.85 s — longer than any brush).
@@ -57,25 +47,21 @@ public struct StringFocus: Sendable {
     /// moving on, the screen should already be there).
     public static let switchFramesSettled = 5
 
-    /// A non-qualifying frame DECAYS a rival's streak instead of resetting
-    /// it: a marginal low string (a bass A through a wrist microphone)
-    /// reads intermittently, and a single missed frame was zeroing an
-    /// almost-complete streak — the string could never take the screen
-    /// (field-found). Gentle by design: even a 2-frames-in-3 reader must
-    /// still NET forward. A ring never accumulates anyway (it fails the
-    /// level bar every frame), and a stopped rival drains back to zero in
-    /// under a second.
+    /// A non-qualifying frame DECAYS a rival's streak rather than zeroing
+    /// it, so a string reading intermittently (a bass A through a wrist
+    /// microphone) can still accumulate. Decay must stay slow enough that
+    /// a 2-frames-in-3 reader nets forward, and fast enough that a stopped
+    /// rival drains to zero within a second.
     public static let rivalStreakDecay = 1
 
     /// The share of the focused string's recent peak strength a rival's
     /// reading must carry to count toward a switch. Duration alone is not
-    /// enough: on a bass with the other strings unmuted, plucking E rings D
-    /// sympathetically — a genuine, sustained reading that outlives the
-    /// pluck and was stealing the screen (field-found). A deliberately
-    /// played string arrives at comparable strength; a sympathetic ring is
-    /// well below it. The same share draws the working/ringing line for
-    /// the FOCUSED string in `ingest` — one physical claim, "a ring sits
-    /// well below the peak of deliberate play", used from both sides.
+    /// enough: an unmuted neighbour rings sympathetically and sustains past
+    /// the pluck that caused it. The separation this relies on is that a
+    /// deliberately played string arrives near the peak while a ring sits
+    /// well below it — one physical claim, used from both sides, since
+    /// `ingest` draws the focused string's own working/ringing line here
+    /// too.
     public static let rivalLevelShare = 0.6
     /// How the remembered peak fades per frame once the focused string goes
     /// quiet (half in ~6 s): long enough that a ring dies before the bar
@@ -84,15 +70,14 @@ public struct StringFocus: Sendable {
     public static let peakDecayPerFrame = 0.995
 
     /// How much STRONGER than the focused string's current reading a rival
-    /// must be — while the focused string still sounds — to count toward a
-    /// switch. Strength is logarithmic (~40 dB per unit), so this margin is
-    /// a ratio: 0.15 ≈ 6 dB. The peak-share bar alone could not free the
-    /// screen from a RING in that space: a just-tuned string's tail keeps
-    /// reading tens of dB above the presence gate for many seconds through
-    /// a line input (field-found: guitar + iRig, stuck on G). But a string
-    /// played with intent is clearly louder than a ring is NOW — while a
-    /// double stop's matched partner, bowed at comparable strength, never
-    /// clears this margin, so the pair keeps its protection.
+    /// must be, while that string still sounds, to count toward a switch.
+    /// Strength is logarithmic (~40 dB per unit), so this is a ratio:
+    /// 0.15 ≈ 6 dB. It exists because the peak bar alone cannot free the
+    /// screen from a long ring through a line input, which stays tens of
+    /// dB above the presence gate for seconds. The margin must stay above
+    /// what a ring can reach and below deliberate play — and a double
+    /// stop's matched partner must never clear it, or a bowed pair steals
+    /// focus from itself.
     public static let rivalProminenceMargin = 0.15
 
     public private(set) var focusIndex: Int
@@ -129,46 +114,39 @@ public struct StringFocus: Sendable {
         let focusedLevel = levels[focusIndex]
         if let focusedLevel { focusPeak = max(focusPeak, focusedLevel) }
 
-        // Whether the focused string is being WORKED — sounding near its
-        // own recent peak — or merely ringing on (a just-tuned string
-        // rings for many seconds, undamped, honest, and loud through a
-        // line input). The same share that separates a deliberate rival
-        // from a sympathetic ring draws this line.
+        // Worked (sounding near its own recent peak) or merely ringing on.
+        // The same share that separates a deliberate rival from a ring
+        // draws this line.
         let isWorked =
             focusedLevel.map { $0 >= focusPeak * Self.rivalLevelShare } ?? false
         if !isWorked { focusPeak *= Self.peakDecayPerFrame }
 
-        // Settle evidence continues on whatever the string reads — a ring
-        // IS the focused string, so green can finish landing while it
-        // fades — and silence is no evidence at all.
+        // A ring IS the focused string, so settling can finish landing
+        // while it fades; silence is no evidence either way.
         if settle.ingest(inTune: focusedLevel != nil ? focusedInTune : nil) {
             return .settled
         }
 
         let bar = focusPeak * Self.rivalLevelShare
         let threshold = isSettled ? Self.switchFramesSettled : Self.switchFrames
-        // NEIGHBOURS only, and the walk WRAPS — see the type doc's rule 2:
-        // distant claims are harmonics wearing the wrong band, the extreme
-        // strings are each other's neighbours, and the crown reaches
-        // anything. Two strings share one neighbour (counted once, so its
-        // streak grows at the honest pace); one string has none.
+        // Neighbours only, wrapping at the extremes (type doc, rule 2).
+        // Two strings share a single neighbour, which must be counted once
+        // or its streak grows at twice the honest pace; one string has no
+        // rival at all.
         var rivals = [
             (focusIndex + stringCount - 1) % stringCount,
             (focusIndex + 1) % stringCount,
         ]
         if rivals[0] == rivals[1] { rivals.removeLast() }
         for index in rivals where index != focusIndex {
-            // A rival's claim clears two bars: strong against the focused
-            // string's recent PEAK (a sympathetic ring never is), and —
-            // while the focused string still sounds — clearly stronger
-            // than that sound is NOW (`rivalProminenceMargin`): a ring
-            // loses that contest to deliberate play at once, while a
-            // double stop's matched partner and a brush alongside real
-            // work never win it. Non-qualifying frames reset a rival
-            // while the focused string is worked (a brush alongside the
-            // note being tuned must never accumulate), and merely decay
-            // it in the tail and in silence (an intermittent reading is
-            // not a retraction).
+            // Two bars, both required: strong against the focused string's
+            // recent PEAK, and — while that string still sounds — stronger
+            // than it is NOW by `rivalProminenceMargin`.
+            //
+            // Non-qualifying frames RESET a rival while the focused string
+            // is worked, so a brush alongside the note being tuned cannot
+            // accumulate, but only DECAY it in the tail and in silence,
+            // where an intermittent reading is not a retraction.
             let prominent =
                 focusedLevel.map { level in
                     (levels[index] ?? 0) >= level + Self.rivalProminenceMargin
@@ -190,8 +168,7 @@ public struct StringFocus: Sendable {
         focusIndex = index
         settle.reset()
         rivalStreaks = Array(repeating: 0, count: stringCount)
-        // The new string starts with its own story: the old peak belongs
-        // to the string that made it.
+        // The peak belongs to the string that made it.
         focusPeak = 0
     }
 }

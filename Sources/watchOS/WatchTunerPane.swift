@@ -115,9 +115,9 @@ struct WatchTunerPane<Footer: View>: View {
                     .foregroundStyle(TuningDisplay.isInTune(cents: cents) ? .green : .orange)
             }
         case .listening:
-            // A measured delta OWNS the quiet: a plucked octave decays in a
-            // second, and the verdict must outlive the note (field-found on
-            // a bass — the delta only flashed). It clears with the captures:
+            // A measured delta OWNS the quiet: a plucked octave decays in
+            // about a second, so a verdict that lived only while the note
+            // sounds would merely flash. It clears with the captures:
             // refocus, knobs, or the crown.
             if let delta = tuner.intonationDelta {
                 deltaLine(delta)
@@ -175,10 +175,10 @@ struct WatchTunerPane<Footer: View>: View {
             ForEach(window, id: \.self) { index in
                 if index == tuner.focusIndex {
                     // Settled reads as COLOUR, not a checkmark: a mark adds
-                    // width, and width mid-session flipped a five-name row
-                    // into the three-name window at the moment of success
-                    // (field-found on a half-down five-string). Green is
-                    // the vocabulary the needle and cents already speak.
+                    // width, and width changing mid-session flips a
+                    // five-name row into the three-name window at the
+                    // moment of success. Green is the vocabulary the needle
+                    // and cents already speak.
                     Text(verbatim: tuner.stringNames[index])
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
                         .foregroundStyle(tuner.isSettled ? .green : .primary)

@@ -208,7 +208,7 @@ Branch off `main`, one focused change per PR (details in [CONTRIBUTING.md](CONTR
 
 ## Conventions
 
-- **Comments minimal:** explain only what isn't obvious from the code. No historical / roadmap ("lands later") narration in source — that goes in commit messages. The DSP is the exception: the non-obvious invariants above are worth the lines, because each one silently produces *plausible* wrong answers.
+- **Comments minimal:** explain only what isn't obvious from the code. No historical / roadmap ("lands later") narration in source — that goes in commit messages, which is where `git log` and `git blame` already look. The line to hold: a comment states a CONSTRAINT the next change must respect ("a double stop's matched partner must never clear this margin", "three is bounded on both sides"); it does not record how the constraint was discovered, which field session found it, or what the code used to do. Both forms read as justification, so this drifts easily — the DSP and sync layers had accumulated a page of it by 1.0. The DSP remains the exception on VOLUME, not on kind: its invariants are worth many lines each, because every one of them silently produces *plausible* wrong answers.
 - **Never analyze on the audio thread.** The tap callback copies into the ring buffer and returns; DSP runs on `analysisQueue`. The render thread has a hard real-time deadline.
 - **Never assume the hardware sample rate.** It's 48 kHz on most Macs, 44.1 or 48 on iPhones; `AudioInput` converts to a fixed rate and the detector is built for the converted one.
 - **Everything persisted goes through `LaunchStores.defaults`**, never `UserDefaults.standard` — that's what makes the `-uitest-clean` isolation gate total rather than partial.

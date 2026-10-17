@@ -104,7 +104,7 @@ public enum LaunchStores {
 }
 
 /// The four stores an app shell owns, constructed together — one definition
-/// of the wiring the three platform shells used to paste verbatim.
+/// for all three platform shells.
 ///
 /// Built in the one order the seams require: Settings first (a new
 /// instrument's reference seeds from the chromatic screen's — "from

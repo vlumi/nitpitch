@@ -77,10 +77,9 @@ public struct SettingsView: View {
     #endif
 
     /// iCloud syncing — opt-in, and phrased as what it does rather than
-    /// what it is. It lives HERE (it used to sit at the foot of the
-    /// instrument list): an account-scoped mode is looked for in Settings,
-    /// and the footer states the promise the app makes when it's off,
-    /// since that promise is the reason the toggle exists at all.
+    /// what it is. It belongs in Settings because an account-scoped mode is
+    /// looked for there, and the footer states the promise the app makes
+    /// while it's off, since that promise is the reason the toggle exists.
     private var syncToggle: some View {
         Toggle(isOn: Binding(get: { sync.isEnabled }, set: { sync.setEnabled($0) })) {
             Text("Sync with iCloud", bundle: .module)
@@ -242,7 +241,7 @@ struct AppIconImage: View {
 
 /// What the app is, who made it, and where to check the claims.
 ///
-/// A centred stack rather than a `Form`, following donpa's shape: the icon and
+/// A centred stack rather than a `Form`: the icon and
 /// name are the subject, not rows in a list.
 public struct AboutView: View {
     public init() {}

@@ -78,8 +78,7 @@ public final class UbiquitousSyncStore: KeyValueSyncStore, @unchecked Sendable {
         if let identityObserver { NotificationCenter.default.removeObserver(identityObserver) }
     }
 
-    /// Whether this device is signed in to iCloud — the same check donpa
-    /// ships (`ubiquityIdentityToken`), proven in production there.
+    /// Whether this device is signed in to iCloud (`ubiquityIdentityToken`).
     ///
     /// Cached, because the underlying call reaches the ubiquity daemon and
     /// can take real time on a cold start — the engine asks on every sync,
@@ -90,11 +89,9 @@ public final class UbiquitousSyncStore: KeyValueSyncStore, @unchecked Sendable {
         // watchOS DEFINES `ubiquityIdentityToken` as always nil — signed in
         // or not — while KVS itself works there (watchOS 9+), and there is
         // no public account signal without a CloudKit container this app
-        // doesn't have. So the wrist reports available and lets the OS do
-        // what it does when genuinely signed out: keep writes local until
-        // an account appears. Less honest than the phone's gate, but the
-        // alternative was a sync switch that could never be turned on
-        // (field-found on the first wrist sync attempt).
+        // doesn't have. Gating on the token here would make the sync switch
+        // impossible to turn on, so the wrist reports available and lets the
+        // OS keep writes local until an account appears.
         return true
         #else
         availabilityLock.lock()

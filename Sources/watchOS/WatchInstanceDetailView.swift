@@ -77,10 +77,10 @@ struct WatchInstanceDetailView: View {
     private func tuningSection(for instance: InstrumentInstance) -> some View {
         Section {
             referenceRow(for: instance)
-            // Bowed only, as everywhere: beatless fifths by ear ARE pure —
-            // frets are equal temperament cast in metal, and the phone has
-            // never offered the choice there (this row on a guitar was a
-            // gate the wrist missed; field-found).
+            // Bowed only, as everywhere: beatless fifths by ear ARE pure,
+            // while frets are equal temperament cast in metal — so the
+            // choice is meaningless on a fretted instrument and the phone
+            // doesn't offer it either.
             if instance.instrument.family == .bowed {
                 Picker(
                     selection: Binding(

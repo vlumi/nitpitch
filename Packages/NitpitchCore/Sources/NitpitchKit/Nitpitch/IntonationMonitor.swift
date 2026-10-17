@@ -27,12 +27,12 @@ final class IntonationMonitor: ObservableObject {
     /// hears none. Octave claims only: the open string reads in its own
     /// band, so the bank already vouches for it — and the frame's level is
     /// the whole window's, honest only while the claimed note dominates it.
-    /// An `.open` claim can be a faint ring under a loud neighbour, and
-    /// boosting it stamped the NEIGHBOUR's loudness on the focused string,
-    /// freezing the screen (field-found: guitar + iRig). Deliberately NOT
-    /// the lingering `live` either — display grace read as focused-string
-    /// credit starves genuine rivals of the frames they need (the wrist
-    /// boosts from the raw frame for the same reasons). Not published: the
+    /// An `.open` claim can be a faint ring under a loud neighbour, so
+    /// boosting it stamps the NEIGHBOUR's loudness on the focused string
+    /// and freezes the screen. Deliberately NOT the lingering `live`
+    /// either: display grace counted as focused-string credit starves
+    /// genuine rivals of the frames they need (the wrist boosts from the
+    /// raw frame for the same reasons). Not published: the
     /// policy polls it, no view renders it.
     private(set) var voiceLevel: Double?
     /// The captured samples, quantized to tenths — sub-cent flutter in a

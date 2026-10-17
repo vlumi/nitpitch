@@ -72,24 +72,23 @@ public final class IntonationAnalyzer: @unchecked Sendable {
     private var quietFrames = 0
     /// Consecutive frames WITHOUT a reading of this string before a
     /// following note counts as a fresh attack rather than the same note
-    /// continuing. No reading, not RMS silence: fretting the 12th stops the
-    /// open string instantly while the OTHER strings ring on — the window
-    /// never goes quiet, but this string does (field-found: at a hot input
-    /// gain the RMS test saw no gap, ever, and every 12th fret stayed "the
-    /// open's tail" — unregistered on G/B/D, and on E the unclaimed octave
-    /// never fired the focus boost, so E3 read as the D string whose band
-    /// it sits in). Three frames (~140 ms): a fret-and-pluck is one quick
-    /// motion, and five frames (~230 ms) was slower than real hands — most
-    /// 12th frets arrived "too soon" and died as the open's tail
-    /// (field-found).
+    /// continuing.
+    ///
+    /// No reading, deliberately, rather than RMS silence: fretting the
+    /// 12th stops the open string instantly while the OTHER strings ring
+    /// on, so the window never goes quiet even though this string does. An
+    /// RMS test therefore sees no gap at a hot input gain and reads every
+    /// 12th fret as the open's tail.
+    ///
+    /// Three frames (~140 ms) is bounded on both sides: a fret-and-pluck
+    /// is one quick motion, and five (~230 ms) is slower than real hands,
+    /// so most 12th frets arrive "too soon" and die as the open's tail.
     private static let freshAttackQuietFrames = 3
     /// The loudest recent window RMS, fading slowly — what "silence" is
-    /// judged AGAINST. An absolute threshold broke at a hot input gain: the
-    /// interface's noise floor alone exceeded it, no damp was ever seen,
-    /// and every octave was reclassified as the open string's decay tail —
-    /// intonation died entirely (field-found: raising the Mac input volume
-    /// for a quiet guitar killed the panel; lowering it starved the plain
-    /// strings instead).
+    /// judged AGAINST. It must stay relative: at a hot input gain an
+    /// interface's own noise floor exceeds any absolute threshold, so no
+    /// damp is ever seen and every octave reads as the open string's decay
+    /// tail.
     private var peakRMS: Float = 0
     /// A window this far below the recent peak is a damp whatever the
     /// absolute floor: ~34 dB down — below any tail worth measuring, above
@@ -164,13 +163,11 @@ public final class IntonationAnalyzer: @unchecked Sendable {
         let cents = PitchMath.cents(from: target, to: reading.frequency)
         var slot: IntonationSlot = reading.evenPartialsOnly ? .octave : .open
         // A decaying open string sheds its ODD partials first — the weak
-        // fundamental and the 3rd fade into the floor while the 2nd lingers —
-        // so its tail reads even-only: the octave's fingerprint on a note
-        // that isn't one (field-found on a bass, flashing the delta at the
-        // end of every open pluck). A real octave arrives after a GAP (damp,
-        // refinger); a direct open→octave transition with no silence between
-        // is the same note dying, and is measured as what it is — the folded
-        // cents are identical by construction.
+        // fundamental and the 3rd fade into the floor while the 2nd lingers
+        // — so its tail wears the octave's fingerprint without being one.
+        // A real octave arrives after a GAP (damp, refinger), so a direct
+        // open→octave transition is the same note dying and is measured as
+        // such; the folded cents are identical either way.
         if slot == .octave, lastNoteSlot == .open,
             quietFrames < Self.freshAttackQuietFrames
         {

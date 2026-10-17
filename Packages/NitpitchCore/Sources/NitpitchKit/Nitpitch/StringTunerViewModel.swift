@@ -225,8 +225,7 @@ public final class StringTunerViewModel: ObservableObject {
             updateSettle(nil)
             // A silenced frame carries no harmonic claim: the routing hands
             // the dial nothing while the octave sounds, and a label left
-            // standing from the last claim reads as a live one (field-found:
-            // "· 2nd harmonic" stuck under the dial while the octave played).
+            // standing from the last claim reads as a live one.
             updateHarmonic(1)
             quietFrames += 1
             if quietFrames >= Self.quietFramesBeforeIdle, audio.status == .running {

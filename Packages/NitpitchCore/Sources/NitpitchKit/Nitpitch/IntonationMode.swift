@@ -4,9 +4,8 @@ import SwiftUI
 /// Which job the instrument screens are doing: TUNING (the default) or the
 /// INTONATION check. One mode for the grid and the string view alike — the
 /// two screens are one workflow, and they must never disagree about what a
-/// 12th-fret note means (field-found: the grid's buried toggle and the
-/// string view's always-on panel each answered differently, and the octave
-/// kept being read as ambiguity instead of intent).
+/// 12th-fret note means — one owning a toggle while the other is always on
+/// makes the same note mean two things.
 ///
 /// Deliberately a visible choice, not an ambient inference: checking
 /// intonation is a different activity from tuning — the player starts one
@@ -64,10 +63,10 @@ struct IntonationChip: View {
 }
 
 /// The instrument screens' shared bottom bar. Fixed chrome that still
-/// GROWS a little with a big window: the string view's canvas-scaled row
-/// dwarfed the grid's fixed one, and a fixed row reads tiny beside a big
-/// dial (field-found, both directions) — so both screens wear this, and
-/// it scales together, capped where chrome starts competing with content.
+/// GROWS a little with a big window, because the error runs both ways: a
+/// canvas-scaled row dwarfs a fixed one, and a fixed row reads tiny beside
+/// a big dial. Both screens wear this so they scale together, capped where
+/// chrome would start competing with content.
 struct TunerFooter<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @State private var scale: CGFloat = 1
